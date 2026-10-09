@@ -1,0 +1,14 @@
+{
+  "v": 1,
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "ts": 1728400000000,
+  "type": "hello",
+  "payload": {
+    "hostname": "PC-LAB-12",
+    "username": "alumno",
+    "os": "windows",
+    "os_version": "10.0.19045",
+    "agent_version": "0.1.0",
+    "capabilities": ["code.view", "msg.show"]
+  }
+}

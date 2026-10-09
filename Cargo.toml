@@ -19,6 +19,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 thiserror = "2"
 anyhow = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
 
 # Internal crates
 aula-protocol = { path = "crates/protocol" }

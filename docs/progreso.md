@@ -3,7 +3,7 @@
 | Etapa | Descripción                                    | Estado       |
 |-------|------------------------------------------------|--------------|
 | 01    | Estructura del repositorio y scaffold          | ✅ Completada |
-| 02    | Protocolo: tipos de mensajes básicos           | ⬜ Pendiente  |
+| 02    | Protocolo: tipos de mensajes básicos           | ✅ Completada |
 | 03    | TLS y autenticación Ed25519                    | ⬜ Pendiente  |
 | 04    | Descubrimiento UDP y conexión WebSocket        | ⬜ Pendiente  |
 | 05    | Sesión: registro de agentes y heartbeat        | ⬜ Pendiente  |

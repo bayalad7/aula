@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "id": "ff0e8400-e29b-41d4-a716-446655440010",
+  "ts": 1728400010000,
+  "type": "error",
+  "payload": {
+    "ref_id": "aa0e8400-e29b-41d4-a716-446655440005",
+    "code": "invalid_payload",
+    "message": "El campo 'lang' es obligatorio"
+  }
+}

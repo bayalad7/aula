@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "id": "dd0e8400-e29b-41d4-a716-446655440008",
+  "ts": 1728400008000,
+  "type": "msg.show",
+  "payload": {
+    "text": "Tienen 10 minutos para terminar el ejercicio.",
+    "level": "info"
+  }
+}

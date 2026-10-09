@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "id": "770e8400-e29b-41d4-a716-446655440002",
+  "ts": 1728400002000,
+  "type": "auth.proof",
+  "payload": {
+    "ref_id": "660e8400-e29b-41d4-a716-446655440001",
+    "signature": "c2lnbmF0dXJlX2V4YW1wbGVfYmFzZTY0X2VuY29kZWQ="
+  }
+}

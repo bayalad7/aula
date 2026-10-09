@@ -1,0 +1,13 @@
+{
+  "v": 1,
+  "id": "aa0e8400-e29b-41d4-a716-446655440005",
+  "ts": 1728400005000,
+  "type": "code.share",
+  "payload": {
+    "snippet_id": "ejercicio-01",
+    "title": "Ejemplo: Hola Mundo",
+    "lang": "python",
+    "content": "print('Hola, mundo')",
+    "mode": "replace"
+  }
+}

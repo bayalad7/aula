@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicosalm/tauri-docs/refs/heads/v2/tooling/cli/schema.json",
+  "productName": "Aula",
+  "version": "0.1.0",
+  "identifier": "com.aula.console",
+  "build": {
+    "frontendDist": "../src",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ]
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Aula — Consola",
+        "width": 1024,
+        "height": 768
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicosalm/tauri-docs/refs/heads/v2/tooling/cli/schema.json",
+  "identifier": "default",
+  "description": "Default capability for Aula console",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

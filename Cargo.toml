@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/protocol",
+    "crates/core",
+    "crates/platform",
+    "crates/agent",
+    "apps/console/src-tauri",
+]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.24"
+rustls = "0.23"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+thiserror = "2"
+anyhow = "1"
+
+# Internal crates
+aula-protocol = { path = "crates/protocol" }
+aula-core = { path = "crates/core" }
+aula-platform = { path = "crates/platform" }

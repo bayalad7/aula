@@ -1,0 +1,12 @@
+[package]
+name = "aula-agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aula-core = { workspace = true }
+aula-platform = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

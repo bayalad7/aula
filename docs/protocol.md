@@ -137,9 +137,9 @@ Agente                                          Consola
   │                                                │
   │◀── auth.challenge ────────────────────────────│
   │                                                │
-  │─── auth.proof ────────────────────────────────▶│
+  │◀── auth.proof ────────────────────────────────│
   │                                                │
-  │◀── auth.ok ──────────────────────────────────│
+  │─── auth.ok ──────────────────────────────────▶│
   │                                                │
   │◀── heartbeat ─────────────────────────────────│
   │─── heartbeat ─────────────────────────────────▶│
@@ -428,3 +428,65 @@ Si un extremo recibe un mensaje con `v` distinto de `1`, responde con un error
   }
 }
 ```
+
+---
+
+## 8. Seguridad
+
+### 8.1 Modelo de confianza
+
+Cada instalación de la consola del maestro posee una pareja de claves Ed25519 que funciona
+como su identidad criptográfica. La clave pública de la consola se incluye en la
+configuración de cada agente al momento de instalarlo (distribución fuera de banda).
+
+Los agentes solo aceptan órdenes de una consola que demuestre poseer la clave privada
+Ed25519 correspondiente a la clave pública configurada.
+
+### 8.2 TLS (capa de transporte)
+
+- La consola genera un certificado TLS autofirmado (ECDSA P-256) en su primer arranque y
+  lo guarda en disco.
+- El anuncio UDP incluye el campo `cert_fingerprint` con la huella SHA-256 del certificado
+  DER (formato `SHA256:<64 hex>`).
+- Al conectarse, el agente valida que el certificado presentado por la consola coincida
+  con la huella recibida en el anuncio UDP (**fijado de certificado / certificate pinning**).
+- Si la huella no coincide, el agente rechaza la conexión TLS y registra el evento con
+  `tracing::warn!`.
+
+### 8.3 Autenticación Ed25519 (capa de aplicación)
+
+Sobre la conexión TLS ya establecida, el protocolo realiza una autenticación adicional
+para verificar que la consola posee la clave privada Ed25519 esperada:
+
+1. El agente envía `hello`.
+2. La consola responde con `auth.challenge` que contiene un nonce aleatorio de 32 bytes
+   (codificado en base64). El nonce lo genera la consola.
+3. La consola firma los bytes crudos del nonce con su clave privada Ed25519 y envía
+   `auth.proof` con la firma codificada en base64.
+4. El agente decodifica el nonce y la firma, y verifica la firma usando la clave pública
+   Ed25519 configurada.
+   - Si la firma es válida: envía `auth.ok` y la sesión queda autenticada.
+   - Si la firma es inválida: cierra la conexión y registra el intento con
+     `tracing::warn!`.
+
+La combinación de TLS (integridad y confidencialidad del canal) con la verificación
+Ed25519 (identidad de la consola) impide ataques de intermediario (MITM) y suplantación
+de consola.
+
+### 8.4 Gestión de claves
+
+- **`console keygen`**: genera la pareja Ed25519 y muestra la clave pública en base64
+  para copiarla a la configuración de los agentes.
+- La clave privada se guarda en un archivo con permisos restringidos (solo lectura del
+  propietario) en el equipo de la consola.
+- La clave privada **nunca** se registra en logs, se incluye en binarios ni se transmite
+  por la red.
+- El certificado TLS y su clave privada son independientes de la pareja Ed25519.
+
+### 8.5 Resumen de capas de seguridad
+
+| Capa       | Mecanismo                        | Protege contra                    |
+|------------|----------------------------------|-----------------------------------|
+| Transporte | TLS con certificado autofirmado  | Escucha pasiva, inyección         |
+| Fijado     | Huella SHA-256 en anuncio UDP    | Certificado TLS suplantado (MITM) |
+| Identidad  | Firma Ed25519 del nonce          | Consola impostora con otro par de claves |

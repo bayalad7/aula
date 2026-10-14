@@ -17,6 +17,15 @@ pub enum CoreError {
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
 
+    #[error("TLS error: {0}")]
+    Tls(String),
+
+    #[error("Authentication error: {0}")]
+    Auth(String),
+
+    #[error("Authentication failed: signature verification failed")]
+    AuthFailed,
+
     #[error("Connection closed")]
     ConnectionClosed,
 

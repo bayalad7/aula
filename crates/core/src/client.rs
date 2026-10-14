@@ -1,15 +1,23 @@
 //! WebSocket client for the student's agent.
 //!
-//! Connects to the console, sends `hello`, maintains heartbeat, and
+//! Connects to the console over TLS with certificate pinning, verifies
+//! Ed25519 authentication, sends `hello`, maintains heartbeat, and
 //! reconnects with exponential backoff on disconnection.
 
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use aula_protocol::{decode, encode, Envelope, HeartbeatPayload, HelloPayload, Message};
+use aula_protocol::{
+    decode, encode, AuthOkPayload, Envelope, ErrorCode, ErrorPayload, HeartbeatPayload,
+    HelloPayload, Message,
+};
+use ed25519_dalek::VerifyingKey;
 use futures_util::{SinkExt, StreamExt};
+use rustls::pki_types::ServerName;
+use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite;
 
+use crate::auth;
 use crate::error::CoreError;
 
 /// Minimum backoff before reconnecting.
@@ -22,10 +30,12 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const HEARTBEAT_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// Configuration for the agent client.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ClientConfig {
     /// The hello payload to send on connection.
     pub hello: HelloPayload,
+    /// The console's Ed25519 public key (for verifying auth.proof).
+    pub console_public_key: VerifyingKey,
 }
 
 /// The agent-side WebSocket client.
@@ -40,13 +50,21 @@ impl Client {
 
     /// Connect to the console at the given address and run until cancelled.
     ///
-    /// Sends `hello`, maintains heartbeat every 5 s, and reconnects with
-    /// exponential backoff if the connection drops.
+    /// `expected_fingerprint` is the `SHA256:<hex>` fingerprint from the UDP
+    /// announcement, used for TLS certificate pinning.
+    ///
+    /// Sends `hello`, performs Ed25519 authentication, maintains heartbeat
+    /// every 5 s, and reconnects with exponential backoff if the connection
+    /// drops.
     pub async fn run(
         &self,
         console_addr: SocketAddr,
+        expected_fingerprint: &str,
         cancel: tokio_util::sync::CancellationToken,
     ) -> Result<(), CoreError> {
+        let tls_config = crate::tls::client_config_pinned(expected_fingerprint)?;
+        let tls_connector = tokio_rustls::TlsConnector::from(tls_config);
+
         let mut backoff = BACKOFF_MIN;
 
         loop {
@@ -54,19 +72,18 @@ impl Client {
                 return Ok(());
             }
 
-            let url = format!("ws://{console_addr}"); // TODO(05): use wss:// with TLS
-            tracing::info!(addr = %console_addr, "Connecting to console");
+            tracing::info!(addr = %console_addr, "Connecting to console (TLS)");
 
-            match tokio_tungstenite::connect_async(&url).await {
-                Ok((ws_stream, _)) => {
-                    tracing::info!(addr = %console_addr, "Connected to console");
-                    backoff = BACKOFF_MIN; // reset on successful connection
+            match self
+                .try_connect(console_addr, &tls_connector, &cancel)
+                .await
+            {
+                Ok(ws_stream) => {
+                    tracing::info!(addr = %console_addr, "Connected to console (TLS)");
+                    backoff = BACKOFF_MIN;
 
                     match self.run_session(ws_stream, &cancel).await {
-                        Ok(()) => {
-                            // Graceful shutdown (cancel triggered).
-                            return Ok(());
-                        }
+                        Ok(()) => return Ok(()),
                         Err(e) => {
                             tracing::warn!(error = %e, "Session ended");
                         }
@@ -82,7 +99,6 @@ impl Client {
                 }
             }
 
-            // Wait with backoff before retrying.
             tokio::select! {
                 _ = cancel.cancelled() => return Ok(()),
                 _ = tokio::time::sleep(backoff) => {}
@@ -92,26 +108,155 @@ impl Client {
         }
     }
 
-    /// Run a single session: hello → heartbeat loop.
+    /// Establish TCP -> TLS -> WebSocket connection.
+    async fn try_connect(
+        &self,
+        addr: SocketAddr,
+        tls_connector: &tokio_rustls::TlsConnector,
+        cancel: &tokio_util::sync::CancellationToken,
+    ) -> Result<
+        tokio_tungstenite::WebSocketStream<tokio_rustls::client::TlsStream<TcpStream>>,
+        CoreError,
+    > {
+        // TCP connect.
+        let tcp_stream = tokio::select! {
+            _ = cancel.cancelled() => return Err(CoreError::ConnectionClosed),
+            result = TcpStream::connect(addr) => result?,
+        };
+
+        // TLS handshake with certificate pinning.
+        // Use a dummy server name — the pinning verifier ignores it.
+        let server_name = ServerName::try_from("aula.local")
+            .map_err(|e| CoreError::Tls(format!("invalid server name: {e}")))?;
+        let tls_stream = tls_connector
+            .connect(server_name, tcp_stream)
+            .await
+            .map_err(|e| CoreError::Tls(format!("TLS handshake failed: {e}")))?;
+
+        // WebSocket handshake over TLS.
+        let url = format!("wss://{addr}");
+        let (ws_stream, _) = tokio_tungstenite::client_async(&url, tls_stream)
+            .await
+            .map_err(CoreError::from)?;
+
+        Ok(ws_stream)
+    }
+
+    /// Run a single session: hello -> auth -> heartbeat loop.
     async fn run_session(
         &self,
-        ws_stream: tokio_tungstenite::WebSocketStream<
-            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-        >,
+        ws_stream: tokio_tungstenite::WebSocketStream<tokio_rustls::client::TlsStream<TcpStream>>,
         cancel: &tokio_util::sync::CancellationToken,
     ) -> Result<(), CoreError> {
         let (mut ws_sink, mut ws_rx) = ws_stream.split();
 
-        // Send hello.
+        // --- Send hello ---
         let hello_envelope = Envelope::new(now_millis(), Message::Hello(self.config.hello.clone()));
         let json = encode(&hello_envelope)?;
         ws_sink.send(tungstenite::Message::Text(json)).await?;
 
         tracing::info!(msg_type = "hello", "Sent hello");
 
-        // TODO(05): wait for auth.challenge, send auth.proof, wait for auth.ok
+        // --- Wait for auth.challenge ---
+        let nonce_b64 = loop {
+            tokio::select! {
+                _ = cancel.cancelled() => return Ok(()),
+                msg = ws_rx.next() => {
+                    match msg {
+                        Some(Ok(tungstenite::Message::Text(text))) => {
+                            let envelope = decode(&text)?;
+                            match envelope.message {
+                                Message::AuthChallenge(challenge) => {
+                                    tracing::info!("Received auth.challenge");
+                                    break challenge.nonce;
+                                }
+                                other => {
+                                    let got = format!("{:?}", std::mem::discriminant(&other));
+                                    return Err(CoreError::UnexpectedMessage {
+                                        expected: "auth.challenge".to_string(),
+                                        got,
+                                    });
+                                }
+                            }
+                        }
+                        Some(Ok(tungstenite::Message::Close(_))) | None => {
+                            return Err(CoreError::ConnectionClosed);
+                        }
+                        Some(Ok(_)) => continue,
+                        Some(Err(e)) => return Err(CoreError::from(e)),
+                    }
+                }
+            }
+        };
 
-        // Main loop: send heartbeats and receive messages.
+        // --- Wait for auth.proof ---
+        let (proof_id, signature_b64) = loop {
+            tokio::select! {
+                _ = cancel.cancelled() => return Ok(()),
+                msg = ws_rx.next() => {
+                    match msg {
+                        Some(Ok(tungstenite::Message::Text(text))) => {
+                            let envelope = decode(&text)?;
+                            match envelope.message {
+                                Message::AuthProof(proof) => {
+                                    tracing::info!("Received auth.proof");
+                                    break (envelope.id, proof.signature);
+                                }
+                                other => {
+                                    let got = format!("{:?}", std::mem::discriminant(&other));
+                                    return Err(CoreError::UnexpectedMessage {
+                                        expected: "auth.proof".to_string(),
+                                        got,
+                                    });
+                                }
+                            }
+                        }
+                        Some(Ok(tungstenite::Message::Close(_))) | None => {
+                            return Err(CoreError::ConnectionClosed);
+                        }
+                        Some(Ok(_)) => continue,
+                        Some(Err(e)) => return Err(CoreError::from(e)),
+                    }
+                }
+            }
+        };
+
+        // --- Verify signature ---
+        let nonce_bytes = auth::decode_nonce(&nonce_b64)?;
+        match auth::verify_signature(
+            &self.config.console_public_key,
+            &nonce_bytes,
+            &signature_b64,
+        ) {
+            Ok(()) => {
+                tracing::info!("Ed25519 signature verified — console authenticated");
+                // Send auth.ok.
+                let ok_envelope = Envelope::new(
+                    now_millis(),
+                    Message::AuthOk(AuthOkPayload { ref_id: proof_id }),
+                );
+                let json = encode(&ok_envelope)?;
+                ws_sink.send(tungstenite::Message::Text(json)).await?;
+            }
+            Err(_) => {
+                tracing::warn!("Ed25519 signature verification FAILED — rejecting console");
+                // Send error and close.
+                let err_envelope = Envelope::new(
+                    now_millis(),
+                    Message::Error(ErrorPayload {
+                        ref_id: proof_id,
+                        code: ErrorCode::AuthFailed,
+                        message: "signature verification failed".into(),
+                    }),
+                );
+                let json = encode(&err_envelope)?;
+                let _ = ws_sink.send(tungstenite::Message::Text(json)).await;
+                let _ = ws_sink.send(tungstenite::Message::Close(None)).await;
+                return Err(CoreError::AuthFailed);
+            }
+        }
+
+        // --- Main loop: send heartbeats and receive messages ---
         let mut heartbeat_interval = tokio::time::interval(HEARTBEAT_INTERVAL);
         heartbeat_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
 
@@ -151,7 +296,6 @@ impl Client {
                                 msg_type = ?std::mem::discriminant(&envelope.message),
                                 "Received message"
                             );
-                            // Reset heartbeat timeout on any valid message.
                             timeout.as_mut().reset(tokio::time::Instant::now() + HEARTBEAT_TIMEOUT);
                         }
                         Some(Ok(tungstenite::Message::Close(_))) | None => {
@@ -159,7 +303,6 @@ impl Client {
                             return Err(CoreError::ConnectionClosed);
                         }
                         Some(Ok(_)) => {
-                            // ping/pong/binary — reset timeout
                             timeout.as_mut().reset(tokio::time::Instant::now() + HEARTBEAT_TIMEOUT);
                         }
                         Some(Err(e)) => {

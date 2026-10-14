@@ -1,21 +1,27 @@
 //! WebSocket server for the teacher's console.
 //!
-//! Accepts agent connections, processes `hello` messages, maintains a session
-//! registry, and monitors heartbeats.
+//! Accepts agent connections over TLS, authenticates with Ed25519, processes
+//! `hello` messages, maintains a session registry, and monitors heartbeats.
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use aula_protocol::{decode, encode, Capability, Envelope, HeartbeatPayload, Message};
+use aula_protocol::{
+    decode, encode, AuthChallengePayload, AuthProofPayload, Capability, Envelope, HeartbeatPayload,
+    Message,
+};
+use ed25519_dalek::SigningKey;
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite;
 use uuid::Uuid;
 
+use crate::auth;
 use crate::error::CoreError;
+use crate::tls::TlsIdentity;
 
 /// How often the server checks for stale sessions.
 const REAP_INTERVAL: Duration = Duration::from_secs(5);
@@ -115,17 +121,38 @@ impl SessionRegistry {
 pub struct ServerConfig {
     /// Address to bind the TCP listener.
     pub bind_addr: SocketAddr,
+    /// TLS identity (certificate + key) for the server.
+    pub tls_identity: TlsIdentity,
+    /// Ed25519 signing key for authentication.
+    pub signing_key: SigningKey,
 }
 
 /// The WebSocket server that accepts agent connections.
 pub struct Server {
-    config: ServerConfig,
+    config: Arc<ServerInner>,
     registry: SessionRegistry,
 }
 
+/// Shared server state (behind `Arc` for spawned tasks).
+struct ServerInner {
+    bind_addr: SocketAddr,
+    tls_acceptor: tokio_rustls::TlsAcceptor,
+    signing_key: SigningKey,
+}
+
 impl Server {
-    pub fn new(config: ServerConfig, registry: SessionRegistry) -> Self {
-        Self { config, registry }
+    pub fn new(config: ServerConfig, registry: SessionRegistry) -> Result<Self, CoreError> {
+        let tls_config = crate::tls::server_config(&config.tls_identity)?;
+        let tls_acceptor = tokio_rustls::TlsAcceptor::from(tls_config);
+
+        Ok(Self {
+            config: Arc::new(ServerInner {
+                bind_addr: config.bind_addr,
+                tls_acceptor,
+                signing_key: config.signing_key,
+            }),
+            registry,
+        })
     }
 
     pub fn registry(&self) -> &SessionRegistry {
@@ -142,7 +169,7 @@ impl Server {
         let listener = TcpListener::bind(self.config.bind_addr).await?;
         let local_addr = listener.local_addr()?;
 
-        tracing::info!(addr = %local_addr, "Server listening");
+        tracing::info!(addr = %local_addr, "Server listening (TLS)");
 
         let (event_tx, event_rx) = mpsc::channel(64);
 
@@ -165,6 +192,7 @@ impl Server {
         });
 
         // Spawn the accept loop.
+        let inner = self.config.clone();
         let registry = self.registry.clone();
         tokio::spawn(async move {
             loop {
@@ -176,13 +204,14 @@ impl Server {
                     result = listener.accept() => {
                         match result {
                             Ok((stream, addr)) => {
-                                tracing::info!(peer = %addr, "Accepted connection");
+                                tracing::info!(peer = %addr, "Accepted TCP connection");
+                                let inner = inner.clone();
                                 let registry = registry.clone();
                                 let event_tx = event_tx.clone();
                                 let conn_cancel = cancel.clone();
                                 tokio::spawn(async move {
                                     if let Err(e) = handle_connection(
-                                        stream, addr, registry, event_tx, conn_cancel,
+                                        stream, addr, &inner, registry, event_tx, conn_cancel,
                                     ).await {
                                         tracing::warn!(peer = %addr, error = %e, "Connection error");
                                     }
@@ -201,20 +230,30 @@ impl Server {
     }
 }
 
-/// Handle a single agent connection.
+/// Handle a single agent connection: TLS → WebSocket → hello → auth → heartbeat loop.
 async fn handle_connection(
     stream: TcpStream,
     addr: SocketAddr,
+    inner: &ServerInner,
     registry: SessionRegistry,
     event_tx: mpsc::Sender<SessionEvent>,
     cancel: tokio_util::sync::CancellationToken,
 ) -> Result<(), CoreError> {
-    // TODO(05): upgrade to TLS before WebSocket handshake
-    let ws_stream = tokio_tungstenite::accept_async(stream).await?;
+    // --- TLS handshake ---
+    let tls_stream = inner
+        .tls_acceptor
+        .accept(stream)
+        .await
+        .map_err(|e| CoreError::Tls(format!("TLS accept failed: {e}")))?;
+
+    tracing::info!(peer = %addr, "TLS handshake complete");
+
+    // --- WebSocket handshake over TLS ---
+    let ws_stream = tokio_tungstenite::accept_async(tls_stream).await?;
     let (mut ws_sink, mut ws_stream_rx) = ws_stream.split();
 
-    // Wait for the hello message.
-    let (session_id, hello) = loop {
+    // --- Wait for the hello message ---
+    let (hello_id, hello) = loop {
         tokio::select! {
             _ = cancel.cancelled() => return Ok(()),
             msg = ws_stream_rx.next() => {
@@ -243,16 +282,93 @@ async fn handle_connection(
                     Some(Ok(tungstenite::Message::Close(_))) | None => {
                         return Err(CoreError::ConnectionClosed);
                     }
-                    Some(Ok(_)) => continue, // ignore ping/pong/binary
+                    Some(Ok(_)) => continue,
                     Some(Err(e)) => return Err(CoreError::from(e)),
                 }
             }
         }
     };
 
-    // TODO(05): send auth.challenge, verify auth.proof, send auth.ok
-    let _ = session_id; // will be used as ref_id for auth.challenge
+    // --- Authentication: send auth.challenge + auth.proof ---
 
+    // Generate nonce and send auth.challenge.
+    let nonce = auth::generate_nonce();
+    let nonce_b64 = auth::encode_nonce(&nonce);
+
+    let challenge_envelope = Envelope::new(
+        now_millis(),
+        Message::AuthChallenge(AuthChallengePayload {
+            ref_id: hello_id,
+            nonce: nonce_b64,
+        }),
+    );
+    let challenge_id = challenge_envelope.id;
+    let json = encode(&challenge_envelope)?;
+    ws_sink.send(tungstenite::Message::Text(json)).await?;
+
+    tracing::info!(peer = %addr, "Sent auth.challenge");
+
+    // Sign the nonce and send auth.proof.
+    let signature_b64 = auth::sign_nonce(&inner.signing_key, &nonce);
+
+    let proof_envelope = Envelope::new(
+        now_millis(),
+        Message::AuthProof(AuthProofPayload {
+            ref_id: challenge_id,
+            signature: signature_b64,
+        }),
+    );
+    let json = encode(&proof_envelope)?;
+    ws_sink.send(tungstenite::Message::Text(json)).await?;
+
+    tracing::info!(peer = %addr, "Sent auth.proof");
+
+    // --- Wait for auth.ok from agent ---
+    let auth_deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+    loop {
+        tokio::select! {
+            _ = cancel.cancelled() => return Ok(()),
+            _ = tokio::time::sleep_until(auth_deadline) => {
+                tracing::warn!(peer = %addr, "Auth timeout — closing connection");
+                return Err(CoreError::Auth("auth.ok timeout".into()));
+            }
+            msg = ws_stream_rx.next() => {
+                match msg {
+                    Some(Ok(tungstenite::Message::Text(text))) => {
+                        let envelope = decode(&text)?;
+                        match envelope.message {
+                            Message::AuthOk(_) => {
+                                tracing::info!(peer = %addr, "Authentication successful");
+                                break;
+                            }
+                            Message::Error(err) => {
+                                tracing::warn!(
+                                    peer = %addr,
+                                    code = ?err.code,
+                                    "Agent rejected authentication"
+                                );
+                                return Err(CoreError::AuthFailed);
+                            }
+                            other => {
+                                let got = format!("{:?}", std::mem::discriminant(&other));
+                                return Err(CoreError::UnexpectedMessage {
+                                    expected: "auth.ok".to_string(),
+                                    got,
+                                });
+                            }
+                        }
+                    }
+                    Some(Ok(tungstenite::Message::Close(_))) | None => {
+                        return Err(CoreError::ConnectionClosed);
+                    }
+                    Some(Ok(_)) => continue,
+                    Some(Err(e)) => return Err(CoreError::from(e)),
+                }
+            }
+        }
+    }
+
+    // --- Session established ---
     let session = SessionInfo {
         id: Uuid::new_v4(),
         hostname: hello.hostname,
@@ -270,7 +386,7 @@ async fn handle_connection(
     registry.insert(session.clone()).await;
     let _ = event_tx.send(SessionEvent::Connected(session)).await;
 
-    // Main loop: heartbeat sending + message receiving.
+    // --- Main loop: heartbeat sending + message receiving ---
     let mut heartbeat_interval = tokio::time::interval(HEARTBEAT_INTERVAL);
     heartbeat_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
 
@@ -318,7 +434,6 @@ async fn handle_connection(
                         return Ok(());
                     }
                     Some(Ok(_)) => {
-                        // ping/pong/binary — update last_seen
                         registry.update_last_seen(&sid).await;
                     }
                     Some(Err(e)) => {

@@ -1,12 +1,12 @@
 # Progreso
 
-Última actualización: 2026-10-23 (etapa 03).
+Última actualización: 2026-10-23 (etapa 04).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
 | 02 | Entorno y repositorio: monorepo Go + dos apps Wails, Git, CI | ✅ Completada |
 | 03 | Especificación del protocolo (`docs/protocol.md`, paquete `protocol`) | ✅ Completada |
-| 04 | Descubrimiento mDNS con canales + servidor/cliente WebSocket | ⏳ Pendiente |
+| 04 | Descubrimiento mDNS con canales + servidor/cliente WebSocket | ✅ Completada (falta prueba en VMs) |
 | 05 | Seguridad: TLS y autenticación Ed25519 | ⏳ Pendiente |
 | 06 | App estudiante: overlay con Monaco y botón Copiar | ⏳ Pendiente |
 | 07 | App profesor: lista, hotkey de captura, emisión | ⏳ Pendiente |
@@ -70,3 +70,33 @@
   contenido demasiado grandes, JSON inválido y un fuzz de `Decode` (`FuzzDecode`).
 - Pendiente para etapas siguientes: la consola no autentica al agente en v0 (limitación
   documentada en §3.2).
+
+## Etapa 04: notas
+
+- `internal/discovery`: `Announcer` publica `_aula._tcp` con los TXT del protocolo
+  (`cert_fingerprint` = `PlaceholderFingerprint` hasta la etapa 05). `Browser` filtra por
+  canal y `proto`, reinicia la búsqueda cada 30 s porque zeroconf deja de preguntar tras la
+  primera respuesta, y ordena las direcciones de equipos con varias interfaces (D-006).
+- `internal/transport` (`github.com/coder/websocket`, D-005): `Server` con canal de eventos
+  (`connect`, `message`, `disconnect`) y `Client` (`Dial`, `Incoming`). Por conexión hay una
+  goroutine lectora y una escritora con cola. Aplica el límite de 1 MiB (cierre 1009),
+  responde `error` a mensajes inválidos (cierre 1008 por versión), cierra conexiones mudas a los
+  15 s y envía `heartbeat` cada 5 s. El `error` sale siempre antes del frame de cierre.
+- `internal/session`: `Registry` (por canal, concurrente, marca desconectada la sesión sin
+  señal en 15 s y reemplaza la sesión vieja del mismo equipo al reconectar). `Console` exige
+  `hello` como primer mensaje (10 s) y enruta por tipo. `Agent` busca, conecta, envía `hello`
+  y `heartbeat`, y reconecta con retroceso 1, 2, 4…30 s ±20 %; tras 3 fallos vuelve a
+  descubrir. `StaticSource` permite conectar sin mDNS.
+- **Temporal hasta la etapa 05:** sin TLS (`ws://`) y sin autenticación; `hello` es el primer
+  mensaje. En la etapa 05 se antepone `auth.challenge` → `auth.proof` → `auth.ok` (§3.1).
+- Pruebas: loopback con servidor y dos agentes (aparecen, uno se va), agente "congelado"
+  marcado desconectado tras el timeout, primer mensaje distinto de `hello`, timeout de
+  handshake y reconexión cuando la consola vuelve. Además, filtrado de otro canal (lógica) y
+  mDNS real con dos consolas de canales distintos. Esta última se salta si no hay multicast;
+  con `AULA_REQUIRE_MDNS=1` falla. En este equipo pasa con multicast real.
+- Ejemplo: `go run ./examples/dos_alumnos` (profesor + 2 alumnos por mDNS; el alumno 2 se
+  apaga a los 10 s). En VMs: `-rol profesor` en una y `-rol alumno` en otras (o
+  `-rol alumno -directo IP:47830` si la red bloquea multicast). Verificado en un solo equipo.
+- Pendiente de la etapa: probar en VMs reales que un alumno aparece y desaparece del registro.
+  Windows pide permiso de firewall la primera vez (TCP 47830 entrante y UDP 5353 de mDNS).
+- Las apps Wails todavía no usan estos paquetes; se cablean en las etapas 06 y 07.

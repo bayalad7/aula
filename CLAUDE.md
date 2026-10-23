@@ -12,7 +12,8 @@ Dos aplicaciones, mismo monorepo:
 ## Stack (no cambiar sin actualizar este archivo)
 - **Go** estable. Concurrencia con goroutines y channels.
 - **Wails v2** para ambas apps (backend Go + frontend web; WebView2 en Windows, WebKit en Linux/macOS).
-- Red tiempo real: WebSocket (`nhooyr.io/websocket` o `gorilla/websocket`; elegir uno y justificarlo).
+- Red tiempo real: WebSocket con `github.com/coder/websocket` (sucesor oficial de
+  `nhooyr.io/websocket`; justificación en `docs/decisiones.md`, D-005).
 - Descubrimiento LAN: mDNS/Zeroconf (`github.com/grandcat/zeroconf`), con canal en los TXT records.
 - Streaming de pantalla (Fase 2): WebRTC (`github.com/pion/webrtc`).
 - Captura: `github.com/kbinani/screenshot`. Portapapeles: `golang.design/x/clipboard`.

@@ -39,6 +39,18 @@ cd apps/student && wails build   # -> apps/student/build/bin/aula-cliente(.exe)
 
 En Linux: `wails build -tags webkit2_41`.
 
+## Ejemplo: descubrimiento y registro en vivo
+
+```sh
+go run ./examples/dos_alumnos                     # profesor + 2 alumnos simulados en un equipo
+go run ./examples/dos_alumnos -rol profesor       # en el equipo del profesor
+go run ./examples/dos_alumnos -rol alumno         # en cada equipo de alumno (mDNS)
+go run ./examples/dos_alumnos -rol alumno -directo 192.168.1.10:47830   # sin mDNS
+```
+
+Opciones: `-canal AULA_101`, `-puerto 47830`, `-nombre "Consola de ejemplo"`, `-v` (logs).
+En Windows, permite el acceso en el firewall la primera vez.
+
 ## Verificaciones antes de cada commit
 
 ```sh

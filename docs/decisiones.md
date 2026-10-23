@@ -71,3 +71,40 @@ línea en el registro; la prueba de ida y vuelta falla si falta el ejemplo.
 - `Encode` no escapa `<`, `>` ni `&` (a diferencia de `json.Marshal`): el código está lleno de
   esos caracteres y escaparlos multiplicaría por 6 su tamaño.
 - UUID v4 propio (`crypto/rand`, 15 líneas) en lugar de una dependencia externa.
+
+## D-005: Librería de WebSocket
+
+**Fecha:** 2026-10-23 · **Etapa:** 04
+
+**Opciones.** CLAUDE.md proponía `nhooyr.io/websocket` o `gorilla/websocket`. `nhooyr.io/websocket`
+está archivada: su mantenimiento pasó a `github.com/coder/websocket` (misma API, mismo autor
+original).
+
+**Decisión: `github.com/coder/websocket` v1.8.15.**
+- Todas las operaciones reciben `context.Context`, como exige CLAUDE.md para la red; con
+  gorilla hay que traducir cancelaciones a `SetReadDeadline` a mano.
+- `SetReadLimit` cierra con 1009 al pasar 1 MiB, que es justo el límite del protocolo.
+- Cierre con handshake (`Close(code, reason)`) y códigos tipados, que el protocolo usa (§1.2).
+- Comprueba `Origin` por defecto: una página web abierta en el navegador del alumno no puede
+  abrir un socket hacia la consola (CSWSH).
+
+Aunque la librería admite escrituras concurrentes, `transport` usa una sola goroutine
+escritora por conexión con una cola: así se garantiza el orden (un `error` sale antes del
+frame de cierre) y una sola goroutine es dueña del socket.
+
+## D-006: Descubrimiento con `grandcat/zeroconf` y búsqueda periódica
+
+**Fecha:** 2026-10-23 · **Etapa:** 04
+
+`zeroconf` v1.0.0 (2019) deja de preguntar en cuanto recibe la primera respuesta y entrega
+cada anuncio una sola vez. Una consola encendida después no se vería nunca. Por eso
+`discovery.Browser` reinicia la búsqueda cada 30 s (`RequeryInterval`) y deduplica por
+instancia: solo reemplaza una consola si cambian sus direcciones.
+- La dependencia transitiva `miekg/dns` se fija en v1.1.73 (zeroconf pedía v1.1.27, de 2020).
+- Equipos con varias interfaces: se anuncia en todas las interfaces con multicast y el
+  alumno ordena las direcciones recibidas. Primero van las de sus propias subredes, luego
+  IPv4 antes que IPv6, y al final las link-local. Las IPv6 link-local se descartan porque mDNS
+  no da la zona.
+- El nombre de instancia DNS-SD es ASCII seguro más un sufijo aleatorio; el nombre visible
+  viaja en el TXT `console_name`.
+- Si la red bloquea multicast, `session.StaticSource` permite conectar a una dirección fija.

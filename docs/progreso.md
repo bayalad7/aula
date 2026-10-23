@@ -29,6 +29,11 @@
 
 ## Entorno de desarrollo (equipo del profesor, Windows 10)
 
+- CLI de Wails v2 (obligatoria para `wails dev` y `wails build`). Guía oficial:
+  <https://wails.io/docs/gettingstarted/installation>. Ejecuta
+  `go install github.com/wailsapp/wails/v2/cmd/wails@latest` para instalar la CLI de Wails.
+  El binario queda en `%USERPROFILE%\go\bin`, que debe estar en el PATH. Comprueba con
+  `wails doctor` (debe terminar en *SUCCESS*). Versión instalada: v2.17.0.
 - gcc 16.2.0 (WinLibs POSIX UCRT, instalado con
   `winget install BrechtSanders.WinLibs.POSIX.UCRT`) para cgo y `go test -race`.
 - winget lo instala bajo `C:\Users\Benjamín Ayala\...`. `ld` no soporta el espacio de esa ruta

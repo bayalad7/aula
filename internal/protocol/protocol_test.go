@@ -296,6 +296,19 @@ func TestRequiredCapability(t *testing.T) {
 	}
 }
 
+func TestValidChannel(t *testing.T) {
+	for _, ok := range []string{"AULA_101", "CURSO_PYTHON_A", "X", strings.Repeat("A", 32)} {
+		if !ValidChannel(ok) {
+			t.Errorf("ValidChannel(%q) = false", ok)
+		}
+	}
+	for _, bad := range []string{"", "aula_101", "AULA 101", "AULA-101", strings.Repeat("A", 33)} {
+		if ValidChannel(bad) {
+			t.Errorf("ValidChannel(%q) = true", bad)
+		}
+	}
+}
+
 func FuzzDecode(f *testing.F) {
 	files, _ := filepath.Glob(filepath.Join("testdata", "*", "*.json"))
 	for _, file := range files {

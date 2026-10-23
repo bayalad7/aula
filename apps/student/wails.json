@@ -1,0 +1,12 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "aula-cliente",
+  "outputfilename": "aula-cliente",
+  "frontend:dir": "frontend",
+  "frontend:install": "",
+  "frontend:build": "",
+  "author": {
+    "name": "Benjamín Ayala",
+    "email": "bayala0@ucol.mx"
+  }
+}

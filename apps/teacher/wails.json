@@ -1,0 +1,12 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "aula-consola",
+  "outputfilename": "aula-consola",
+  "frontend:dir": "frontend",
+  "frontend:install": "",
+  "frontend:build": "",
+  "author": {
+    "name": "Benjamín Ayala",
+    "email": "bayala0@ucol.mx"
+  }
+}

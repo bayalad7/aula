@@ -1,0 +1,30 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.*
+go.work
+go.work.sum
+
+# Wails: build output and generated bindings
+apps/*/build/bin/
+apps/*/frontend/wailsjs/
+
+# Node
+node_modules/
+npm-debug.log*
+.npm/
+
+# Secrets (keys and certificates)
+*.key
+*.pem
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

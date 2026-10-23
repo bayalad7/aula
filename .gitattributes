@@ -1,0 +1,4 @@
+# LF everywhere so gofmt -l is stable on Windows runners.
+* text=auto eol=lf
+*.png binary
+*.ico binary

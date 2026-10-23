@@ -45,3 +45,29 @@ primera opción.
 
 `go.mod` declara `go 1.26.0`, el mínimo que garantiza CI (`1.26.x`, último parche). Los equipos
 de desarrollo pueden usar un Go más nuevo sin forzar a CI a descargar otro toolchain.
+
+## D-004: Deserialización del protocolo en dos pasos
+
+**Fecha:** 2026-10-23 · **Etapa:** 03
+
+**Opciones.** (1) Exponer `Payload json.RawMessage` en `Envelope` y que cada consumidor haga
+`json.Unmarshal` según `Type`; (2) deserializar en dos pasos dentro de `protocol`: primero la
+envoltura con el payload como `json.RawMessage` *interno*, se valida `v` y `type`, y luego se
+decodifica el payload en su tipo concreto mediante un registro `Type → decodificador`.
+
+**Decisión: (2).** `Decode` devuelve `Envelope.Payload` como un valor concreto
+(`CodeShare`, `HelloInfo`…) ya validado contra los límites de `docs/protocol.md`, y quien llama
+hace un `switch p := e.Payload.(type)`. La validación vive en un solo lugar, en lugar de
+repetirse en `transport`, `session` y las apps. `json.RawMessage` se usa solo como paso
+intermedio. Agregar un mensaje implica un tipo, sus métodos `MessageType`/`Validate` y una
+línea en el registro; la prueba de ida y vuelta falla si falta el ejemplo.
+
+**Detalles.**
+- Errores como centinelas (`ErrUnsupportedVersion`, `ErrInvalidMessage`, `ErrMessageTooLarge`,
+  `ErrUnknownType`) envueltos con `%w`; `ErrorCodeFor` los traduce al código del mensaje `error`.
+- Ante un error, `Decode` devuelve los campos de cabecera que pudo leer, para responder con
+  `ref_id`. El `id` solo se devuelve si es un UUID v4 válido, así nunca se refleja contenido
+  arbitrario del emisor.
+- `Encode` no escapa `<`, `>` ni `&` (a diferencia de `json.Marshal`): el código está lleno de
+  esos caracteres y escaparlos multiplicaría por 6 su tamaño.
+- UUID v4 propio (`crypto/rand`, 15 líneas) en lugar de una dependencia externa.

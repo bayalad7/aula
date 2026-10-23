@@ -17,6 +17,9 @@ equipos de forma transparente. Está hecho en Go + [Wails v2](https://wails.io).
 - Windows: WebView2 (incluido en Windows 10/11).
 - Linux: `libgtk-3-dev` y `libwebkit2gtk-4.1-dev`; compila con `-tags webkit2_41`.
 - macOS: Xcode Command Line Tools.
+- Para `go test -race` en Windows: gcc de MinGW-w64 (p. ej. `winget install
+  BrechtSanders.WinLibs.POSIX.UCRT`). Si tu carpeta de usuario tiene espacios, `ld` falla; ver
+  "Entorno de desarrollo" en `docs/progreso.md` para la solución.
 
 ## Desarrollo
 

@@ -12,7 +12,7 @@ transmisión en vivo de la pantalla del profesor a todos los alumnos del canal, 
 (`github.com/pion/webrtc`). Trabaja en dos partes y DETENTE al final de la Parte A.
 
 ## Parte A: diseño (detente para que lo apruebe)
-1. **Topología.** Analiza y recomienda, para un aula de hasta ~40 alumnos en LAN:
+1. **Topología.** Analiza y recomienda, para un aula de hasta ~50 alumnos en LAN:
    - Malla (el profesor abre un PeerConnection por alumno) vs. un SFU ligero en el proceso del
      profesor. Compara uso de CPU y subida del profesor. Da una recomendación y un umbral de
      alumnos para cambiar de estrategia.
@@ -28,6 +28,17 @@ transmisión en vivo de la pantalla del profesor a todos los alumnos del canal, 
    Agrégalos a docs/protocol.md.
 4. **Privacidad.** Define el overlay/indicador en el alumno mientras recibe la transmisión y
    agrégalo a docs/privacidad.md.
+5. El transmitir la pantalla del profesor deberá poder funcionar teniendo en cuenta los siguientes puntos:
+  - Poder seleccionar a ciertos alumnos o a todos
+  - Ventana completa que se pueda superponer a todo lo que el alumno tenga abierto de programas
+    y no pueda minimizar o cerrar la proyección del profesor: esto sirve para cuando un profesor
+    quiere proyectar su presentación de power point, canva, etc el alumno lo vea de la mejor manera
+    y no lo pueda cerrar
+  - Ventana pequeña que se pueda superponer a todo lo que el alumno tenga abierto de programas,
+    pero a diferencia del punto anterior que el alumno pueda hacer que la ventana se pueda volver
+    mas grande o mas pequeña "redimensionar (o cambiar el tamaño de la ventana)"
+  - Si el profesor tiene más de 1 monitor conectado preguntar cual pantalla quiere presentar a los alumnos
+  - Poder detener la presentación de la pantalla compartida del profesor
 Espera mi aprobación.
 
 ## Parte B: implementación (cuando apruebe)

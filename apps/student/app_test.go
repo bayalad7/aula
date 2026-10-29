@@ -175,6 +175,42 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
+// The machine file written by the installer wins over the user's own file.
+func TestMachineConfigWinsOverUserConfig(t *testing.T) {
+	teacher, _ := security.GenerateIdentity()
+	rogue, _ := security.GenerateIdentity()
+	dir := t.TempDir()
+	machine, user := filepath.Join(dir, "machine.json"), filepath.Join(dir, "user.json")
+	oldM, oldU := machineConfigPath, userConfigPath
+	t.Cleanup(func() { machineConfigPath, userConfigPath = oldM, oldU })
+	machineConfigPath = func() string { return machine }
+	userConfigPath = func() (string, error) { return user, nil }
+
+	write := func(path, channel string, id *security.Identity) {
+		data, err := Config{Channel: channel, ConsolePublicKey: security.EncodePublicKey(id.Public())}.Marshal()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(user, "AULA_666", rogue)
+	if cfg, _, err := loadConfig(nil); err != nil || cfg.Channel != "AULA_666" {
+		t.Fatalf("user file alone: %+v %v", cfg, err)
+	}
+	write(machine, "AULA_101", teacher)
+	cfg, pub, err := loadConfig(nil)
+	if err != nil || cfg.Channel != "AULA_101" || !pub.Equal(teacher.Public()) {
+		t.Fatalf("machine file must win: %+v %v", cfg, err)
+	}
+	_ = os.Remove(user)
+	_ = os.Remove(machine)
+	if _, _, err := loadConfig(nil); err == nil || !strings.Contains(err.Error(), "aula-alumno.json") {
+		t.Fatalf("no config: %v", err)
+	}
+}
+
 // The event names in events.js must be the ones the backend emits.
 func TestEventContractMatchesFrontend(t *testing.T) {
 	js, err := os.ReadFile(filepath.Join("frontend", "dist", "events.js"))

@@ -5,6 +5,13 @@
   "frontend:dir": "frontend",
   "frontend:install": "",
   "frontend:build": "",
+  "info": {
+    "companyName": "Aula",
+    "productName": "Aula Cliente",
+    "productVersion": "0.1.0",
+    "copyright": "Aula",
+    "comments": "Agente del alumno: recibe código de la consola del profesor"
+  },
   "author": {
     "name": "Benjamín Ayala",
     "email": "bayala0@ucol.mx"

@@ -11,7 +11,7 @@ import (
 
 // version is the agent's SemVer, sent in hello. Releases set it with
 // -ldflags "-X main.version=x.y.z".
-var version = "0.1.0"
+var version = "0.1.0-dev"
 
 // localHello describes this machine. The agent always identifies itself with
 // its real hostname and user: there is no anonymous or hidden mode.

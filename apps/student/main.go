@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -21,7 +22,16 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+// singleInstanceID keeps one agent per user session: opening the app again
+// (or the autostart plus a manual start) just brings the window forward.
+const singleInstanceID = "aula-cliente-5f0c2a4e-agent"
+
 func main() {
+	if len(os.Args) == 2 && isVersionFlag(os.Args[1]) {
+		platform.AttachParentConsole()
+		fmt.Println("aula-cliente " + version)
+		return
+	}
 	log := slog.Default()
 	cfg, pub, cfgErr := loadConfig(os.Args[1:])
 	if cfgErr != nil {
@@ -54,11 +64,19 @@ func main() {
 		},
 		OnShutdown: func(context.Context) { app.stop() },
 		Bind:       []any{app},
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               singleInstanceID,
+			OnSecondInstanceLaunch: func(options.SecondInstanceData) { app.raise() },
+		},
 	})
 	if err != nil {
 		log.Error("wails run failed", "err", err)
 		os.Exit(1)
 	}
+}
+
+func isVersionFlag(s string) bool {
+	return s == "version" || s == "-version" || s == "--version"
 }
 
 // raiseWindow shows the window when something arrives. Toggling always-on-top

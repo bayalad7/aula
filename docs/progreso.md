@@ -98,7 +98,7 @@
   apaga a los 10 s). En VMs: `-rol profesor` en una y `-rol alumno` en otras (o
   `-rol alumno -directo IP:47830` si la red bloquea multicast). Verificado en un solo equipo.
 - Pendiente de la etapa: probar en VMs reales que un alumno aparece y desaparece del registro
-  (pasos en `docs/prueba-vms.md`).
+  (pasos en `docs/prueba-vms.md` §4, casos 04-A a 04-G).
   Windows pide permiso de firewall la primera vez (TCP 47830 entrante y UDP 5353 de mDNS).
 - Las apps Wails todavía no usan estos paquetes; se cablean en las etapas 06 y 07.
 
@@ -170,4 +170,4 @@
 - Corregido: la regla `dist/` del `.gitignore` (etapa 05) ignoraba también `frontend/dist`; ahora
   es `/dist/`.
 - Pendiente de la etapa: en una VM, emitir desde la consola y pegar en el editor del alumno
-  (pasos en `docs/prueba-vms.md` §7).
+  (pasos en `docs/prueba-vms.md` §5, casos 06-A a 06-J).

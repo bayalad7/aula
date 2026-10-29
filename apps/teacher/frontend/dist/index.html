@@ -49,6 +49,7 @@
         <code id="class-fingerprint"></code>
       </div>
       <button type="button" id="screens-open" title="Ver las pantallas de los alumnos en miniatura">Ver pantallas</button>
+      <button type="button" id="restr-open" title="Bloquear aplicaciones o filtrar sitios durante la clase">Restricciones</button>
       <div class="bc-controls" title="Muestra uno de tus monitores a los alumnos del canal">
         <select id="bc-display" aria-label="Monitor a transmitir"></select>
         <button type="button" id="bc-toggle">Transmitir mi pantalla</button>
@@ -138,6 +139,64 @@
     </section>
   </section>
 
+  <!-- 6. Class restrictions (docs/protocol.md §5.13-5.14, docs/privacidad.md rules 20-25). -->
+  <section id="restr" class="screens restr" hidden aria-label="Restricciones de la clase">
+    <header class="screens-head">
+      <h2>Restricciones de la clase</h2>
+      <p id="restr-support" class="muted"></p>
+      <button type="button" id="restr-close">Cerrar</button>
+    </header>
+    <div class="restr-grid">
+      <section class="panel restr-kind" data-kind="apps">
+        <h3>Aplicaciones</h3>
+        <select class="r-mode" aria-label="Modo de las aplicaciones">
+          <option value="deny">Bloquear estas</option>
+          <option value="allow">Permitir solo estas</option>
+        </select>
+        <textarea class="r-items" rows="8" spellcheck="false" aria-label="Aplicaciones, una por línea"
+          placeholder="Una por línea, el nombre del ejecutable:&#10;steam&#10;discord.exe"></textarea>
+        <div class="chips"><button type="button" class="chip r-tpl" data-tpl="games">Plantilla: juegos y chats</button></div>
+        <p class="r-state muted"></p>
+        <div class="actions">
+          <button type="button" class="r-apply primary">Aplicar</button>
+          <button type="button" class="r-clear">Quitar</button>
+        </div>
+      </section>
+      <section class="panel restr-kind" data-kind="web">
+        <h3>Sitios web</h3>
+        <select class="r-mode" aria-label="Modo de los sitios">
+          <option value="deny">Bloquear estos</option>
+          <option value="allow">Permitir solo estos</option>
+        </select>
+        <textarea class="r-items" rows="8" spellcheck="false" aria-label="Sitios, uno por línea"
+          placeholder="Uno por línea; incluye sus subdominios:&#10;youtube.com&#10;tiktok.com"></textarea>
+        <div class="chips">
+          <button type="button" class="chip r-tpl" data-tpl="social">Plantilla: redes y video</button>
+          <button type="button" class="chip r-tpl" data-tpl="docs">Plantilla: solo documentación</button>
+        </div>
+        <p class="r-state muted"></p>
+        <div class="actions">
+          <button type="button" class="r-apply primary">Aplicar</button>
+          <button type="button" class="r-clear">Quitar</button>
+        </div>
+      </section>
+    </div>
+    <fieldset class="restr-target">
+      <legend>Aplicar a</legend>
+      <label><input type="radio" name="restr-target" value="all" checked> Todo el canal</label>
+      <label><input type="radio" name="restr-target" value="marked"> <span id="restr-marked">Alumnos marcados (0)</span></label>
+      <span class="muted">Marca alumnos con la casilla de su tarjeta.</span>
+    </fieldset>
+    <p class="restr-limits muted">
+      Los alumnos ven un aviso mientras haya restricciones, y todo se quita solo al cerrar la clase o
+      si se pierde la conexión. <strong>No se puede garantizar del todo:</strong> un alumno con
+      permisos de administrador puede detener el agente; renombrar un ejecutable evita el bloqueo por
+      nombre; entrar a un sitio por su IP, con una VPN o con un DNS cifrado propio evita el filtro;
+      Ctrl+Alt+Supr no se bloquea.
+    </p>
+    <div class="actions"><button type="button" id="restr-clear-all">Quitar todas las restricciones</button></div>
+  </section>
+
   <template id="tile-template">
     <li class="tile">
       <button type="button" class="tile-view" title="Ver en detalle">
@@ -151,6 +210,7 @@
   <template id="student-template">
     <li class="student">
       <div class="student-head">
+        <input type="checkbox" class="pick" title="Marcar para aplicarle restricciones">
         <span class="state-dot" aria-hidden="true"></span>
         <strong class="host"></strong>
         <span class="state"></span>

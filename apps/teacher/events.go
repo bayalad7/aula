@@ -28,6 +28,10 @@ const (
 	// EventBroadcast carries a BroadcastState when the broadcast of the
 	// teacher's screen starts, stops or its receiver count changes.
 	EventBroadcast = "aula:broadcast"
+	// EventRestrictions carries a RestrictionsView when the class
+	// restrictions change (per-student acknowledgements arrive with
+	// aula:students).
+	EventRestrictions = "aula:restrictions"
 )
 
 // Setup is what the channel selection screen needs.
@@ -66,6 +70,10 @@ type Student struct {
 	CanNotice    bool     `json:"canNotice"`
 	CanThumb     bool     `json:"canThumb"`     // screen.thumb (Windows agents)
 	CanBroadcast bool     `json:"canBroadcast"` // screen.broadcast (Windows agents)
+	CanAppBlock  bool     `json:"canAppBlock"`  // app.block (Windows service agents)
+	CanWebFilter bool     `json:"canWebFilter"` // web.filter (Windows service agents)
+	AppsActive   bool     `json:"appsActive"`   // acknowledged the class's app policy
+	WebActive    bool     `json:"webActive"`    // acknowledged the class's web filter
 	LastCodeAck  string   `json:"lastCodeAck"`  // snippet_id; "" after a clear
 	AckedAt      string   `json:"ackedAt"`      // "" if nothing acknowledged yet
 }
@@ -79,6 +87,9 @@ type Students struct {
 	CanThumb  int       `json:"canThumb"`  // connected agents with screen.thumb
 	// CanBroadcast counts connected agents with screen.broadcast.
 	CanBroadcast int `json:"canBroadcast"`
+	// CanAppBlock and CanWebFilter count connected agents with each.
+	CanAppBlock  int `json:"canAppBlock"`
+	CanWebFilter int `json:"canWebFilter"`
 }
 
 // DisplayInfo is a monitor the teacher can broadcast.
@@ -141,6 +152,8 @@ type View struct {
 	Deliveries []codedist.Delivery     `json:"deliveries"`
 	Hotkey     HotkeyStatus            `json:"hotkey"`
 	Broadcast  BroadcastState          `json:"broadcast"`
+	// Restrictions are the class restrictions.
+	Restrictions RestrictionsView `json:"restrictions"`
 }
 
 // EmitRequest is the code panel content when an emit button is pressed.

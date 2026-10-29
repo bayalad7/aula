@@ -15,12 +15,13 @@
     ["kotlin", "Kotlin"], ["plaintext", "Texto"],
   ];
   const CAP_NAMES = { "code.view": "código", "msg.show": "avisos", "screen.thumb": "pantalla",
-    "screen.broadcast": "ve tu pantalla" };
+    "screen.broadcast": "ve tu pantalla", "app.block": "bloqueo de apps", "web.filter": "filtro web" };
 
   let editor = null;          // Monaco instance
   let students = { connected: 0, canCode: 0, canNotice: 0, students: [] };
   let deliveries = [];
   let lastDeliveryId = "";
+  let restrictionsReady = false; // set once the restrictions code below has run
 
   // --- Monaco -----------------------------------------------------------------------
   function initEditor() {
@@ -110,6 +111,7 @@
     warn.textContent = view.hotkey.error || "";
     renderStudents(view.students);
     renderBroadcast(view.broadcast);
+    renderRestrictions(view.restrictions);
     loadDisplays();
     renderHistory(view.history);
     renderDeliveries(view.deliveries);
@@ -159,12 +161,24 @@
       }));
       if (!st.canCode) li.querySelector(".caps").append(Object.assign(document.createElement("span"),
         { className: "cap missing", textContent: "no recibe código" }));
+      if (st.appsActive) li.querySelector(".caps").append(Object.assign(document.createElement("span"),
+        { className: "cap locked", textContent: "🔒 apps" }));
+      if (st.webActive) li.querySelector(".caps").append(Object.assign(document.createElement("span"),
+        { className: "cap locked", textContent: "🔒 sitios" }));
+      const pick = li.querySelector(".pick");
+      pick.checked = marked.has(st.hostname);
+      pick.disabled = !st.canAppBlock && !st.canWebFilter;
+      pick.addEventListener("change", () => {
+        if (pick.checked) marked.add(st.hostname); else marked.delete(st.hostname);
+        updateMarked();
+      });
       li.querySelector(".ack").textContent = st.ackedAt
         ? (st.lastCodeAck ? "✓ código recibido " : "✓ pantalla limpia ") + st.ackedAt : "";
       return li;
     }));
     updateActions();
     renderTiles();
+    if (typeof renderRestrictions === "function" && restrictionsReady) renderRestrictions(restrictions);
   }
 
   // Actions are enabled only when someone can receive them.
@@ -422,6 +436,89 @@
   $("bc-toggle").addEventListener("click", toggleBroadcast);
   $("bc-stop").addEventListener("click", () => api.StopBroadcast().then(renderBroadcast));
 
+  // --- Class restrictions -------------------------------------------------------------
+  // Students are marked by hostname, which survives reconnections. The
+  // backend decides who gets what and resends it to whoever reconnects.
+  const TEMPLATES = {
+    games: { kind: "apps", mode: "deny", items: ["steam", "epicgameslauncher", "riotclientservices", "leagueclient",
+      "robloxplayerbeta", "minecraftlauncher", "discord", "whatsapp", "telegram", "spotify"] },
+    social: { kind: "web", mode: "deny", items: ["youtube.com", "tiktok.com", "instagram.com", "facebook.com", "x.com",
+      "twitter.com", "twitch.tv", "netflix.com", "roblox.com", "discord.com", "web.whatsapp.com"] },
+    docs: { kind: "web", mode: "allow", items: ["python.org", "developer.mozilla.org", "w3schools.com", "cppreference.com",
+      "docs.oracle.com", "go.dev", "learn.microsoft.com", "stackoverflow.com", "github.com", "githubusercontent.com",
+      "fonts.googleapis.com", "fonts.gstatic.com", "cdnjs.cloudflare.com", "cdn.jsdelivr.net"] },
+  };
+  const marked = new Set();
+  let restrictions = { apps: null, web: null };
+
+  function kindPanel(kind) { return document.querySelector('.restr-kind[data-kind="' + kind + '"]'); }
+
+  function openRestrictions() {
+    $("restr").hidden = false;
+    renderRestrictions(restrictions);
+  }
+
+  function renderRestrictions(v) {
+    restrictions = v;
+    $("restr-open").textContent = v.apps || v.web ? "Restricciones 🔒" : "Restricciones";
+    for (const kind of ["apps", "web"]) {
+      const panel = kindPanel(kind);
+      const rule = v[kind];
+      const canKey = kind === "apps" ? "canAppBlock" : "canWebFilter";
+      const activeKey = kind === "apps" ? "appsActive" : "webActive";
+      let state = "Sin restricción.";
+      if (rule) {
+        const n = students.students.filter((s) => s.state === "connected" && s[activeKey]).length;
+        const scope = rule.hosts.length ? rule.hosts.length + " alumno(s) marcados" : "todo el canal";
+        state = (rule.mode === "allow" ? "Solo se permiten " : "Bloqueados: ") + rule.items.length +
+          " · para " + scope + " · activa en " + n + " de " + (students[canKey] || 0) + " alumnos";
+      }
+      panel.querySelector(".r-state").textContent = state;
+      panel.querySelector(".r-clear").disabled = !rule;
+    }
+    const can = Math.max(students.canAppBlock || 0, students.canWebFilter || 0);
+    $("restr-support").textContent = can + " de " + students.connected +
+      " alumnos conectados pueden recibirlas (agente como servicio en Windows).";
+  }
+
+  function applyRestriction(kind) {
+    const panel = kindPanel(kind);
+    const items = panel.querySelector(".r-items").value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const target = document.querySelector('input[name="restr-target"]:checked').value;
+    const hosts = target === "marked" ? [...marked] : [];
+    if (target === "marked" && hosts.length === 0) {
+      toast("Marca al menos un alumno o elige «Todo el canal».", "error");
+      return;
+    }
+    api.SetRestriction({ kind, mode: panel.querySelector(".r-mode").value, items, hosts })
+      .then((v) => { renderRestrictions(v); toast("Restricción aplicada."); }, (err) => toast(String(err), "error"));
+  }
+
+  for (const kind of ["apps", "web"]) {
+    const panel = kindPanel(kind);
+    panel.querySelector(".r-apply").addEventListener("click", () => applyRestriction(kind));
+    panel.querySelector(".r-clear").addEventListener("click", () => api.ClearRestriction(kind).then(renderRestrictions));
+  }
+  for (const b of document.querySelectorAll(".r-tpl")) {
+    b.addEventListener("click", () => {
+      const t = TEMPLATES[b.dataset.tpl];
+      const panel = kindPanel(t.kind);
+      panel.querySelector(".r-mode").value = t.mode;
+      panel.querySelector(".r-items").value = t.items.join("\n");
+    });
+  }
+  $("restr-open").addEventListener("click", openRestrictions);
+  $("restr-close").addEventListener("click", () => { $("restr").hidden = true; });
+  $("restr-clear-all").addEventListener("click", () => {
+    if (!window.confirm("¿Quitar todas las restricciones de la clase?")) return;
+    api.ClearAllRestrictions().then(renderRestrictions);
+  });
+  function updateMarked() {
+    $("restr-marked").textContent = "Alumnos marcados (" + marked.size + ")";
+  }
+
+  restrictionsReady = true;
+  rt.EventsOn(ev.RESTRICTIONS, renderRestrictions);
   rt.EventsOn(ev.BROADCAST, renderBroadcast);
   rt.EventsOn(ev.STUDENTS, renderStudents);
   rt.EventsOn(ev.FRAME, onFrame);

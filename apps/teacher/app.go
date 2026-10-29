@@ -13,6 +13,7 @@ import (
 	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/platform"
+	"github.com/bayalad7/aula/internal/policy"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/security"
@@ -65,6 +66,8 @@ type App struct {
 	broadcastUDPPort int       // ws port + 1 (docs/protocol.md §5.12)
 	bcClass          classroom // the class the broadcast goes to; guarded by mu
 
+	restr *policy.ClassPolicy // class restrictions: who has what (D-017)
+
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
 	// with respect to acks, so a fast agent's ack is never counted as unknown.
 	sendMu sync.Mutex
@@ -84,6 +87,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 		exclude: platform.ExcludeFromCapture,
 	}
 	a.broadcastUDPPort = a.port + 1
+	a.restr = policy.NewClassPolicy()
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	return a
 }
@@ -177,7 +181,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	}
 	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
-		onBroadcast: a.onBroadcastMessage}, a.log)
+		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -204,6 +208,7 @@ func (a *App) EndClass() {
 	a.mu.Unlock()
 	if class != nil {
 		a.StopBroadcast() // agents also stop when the connection closes
+		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
 		class.Stop()
 	}
@@ -219,10 +224,11 @@ func (a *App) View() View {
 		v.History = []codedist.HistoryEntry{}
 	}
 	if a.class != nil {
-		v.Students = studentsOf(a.class.Sessions())
+		v.Students = a.studentsOf(a.class.Sessions())
 	} else {
 		v.Students = studentsOf(nil)
 	}
+	v.Restrictions = a.Restrictions()
 	v.Broadcast = a.stateOf(a.bc.Status())
 	return v
 }
@@ -450,9 +456,10 @@ func (a *App) onChange() {
 	if class == nil {
 		return
 	}
-	a.emit(EventStudents, studentsOf(class.Sessions()))
+	a.emit(EventStudents, a.studentsOf(class.Sessions()))
 	a.syncScreens()
 	a.bc.Sync(class.Sessions())
+	a.sendRestrictions(class, a.restr.Plan(class.Sessions())) // students who reconnect get them again
 }
 
 // onFrame forwards a thumbnail of the stream in force to the screens view.
@@ -492,6 +499,7 @@ func studentsOf(list []session.Session) Students {
 			AgentVersion: s.AgentVersion, State: "disconnected",
 			CanCode: s.Can(protocol.CapCodeView), CanNotice: s.Can(protocol.CapMsgShow),
 			CanThumb: s.Can(protocol.CapScreenThumb), CanBroadcast: s.Can(protocol.CapScreenBroadcast),
+			CanAppBlock: s.Can(protocol.CapAppBlock), CanWebFilter: s.Can(protocol.CapWebFilter),
 			LastCodeAck: s.LastCodeAck,
 		}
 		for _, c := range s.Capabilities {
@@ -514,6 +522,12 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanBroadcast {
 				out.CanBroadcast++
+			}
+			if st.CanAppBlock {
+				out.CanAppBlock++
+			}
+			if st.CanWebFilter {
+				out.CanWebFilter++
 			}
 		}
 		out.Students = append(out.Students, st)

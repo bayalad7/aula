@@ -9,4 +9,5 @@ window.AulaEvents = Object.freeze({
   CLASS: "aula:class",
   FRAME: "aula:frame",
   BROADCAST: "aula:broadcast",
+  RESTRICTIONS: "aula:restrictions",
 });

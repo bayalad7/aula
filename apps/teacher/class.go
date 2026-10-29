@@ -38,6 +38,8 @@ type classHooks struct {
 	// onBroadcast receives the agents' screen.broadcast answers, candidates
 	// and errors.
 	onBroadcast func(sessionID string, env protocol.Envelope)
+	// onPolicyAck receives app.block.ack and web.filter.ack.
+	onPolicyAck func(sessionID string, p protocol.Payload)
 }
 
 type classConfig struct {
@@ -138,6 +140,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 			case protocol.ScreenThumbFrame:
 				if hooks.onFrame != nil {
 					hooks.onFrame(conn.ID(), p)
+				}
+			case protocol.AppBlockAck, protocol.WebFilterAck:
+				if hooks.onPolicyAck != nil {
+					hooks.onPolicyAck(conn.ID(), env.Payload)
 				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {

@@ -233,6 +233,24 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   .bc-band { background: #b91c1c; }
 }
 
+/* Class restrictions */
+.restr { overflow: auto; }
+.restr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 0.8rem; }
+.restr-kind { display: flex; flex-direction: column; gap: 0.5rem; }
+.restr-kind h3 { margin: 0; font-size: 1rem; }
+.restr-kind textarea {
+  font: 0.95rem Consolas, "Cascadia Mono", monospace;
+  color: var(--fg); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.6rem; resize: vertical;
+}
+.restr-kind .chips { margin-top: 0; }
+.restr-kind .chip { font-family: inherit; cursor: pointer; }
+.r-state { margin: 0; min-height: 1.2em; }
+.restr-target { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; align-items: center; border: 1px solid var(--border); border-radius: 8px; }
+.restr-limits { margin: 0; font-size: 0.9rem; }
+.pick { margin: 0; }
+.cap.locked { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+
 .key-warning {
   margin: 0;
   padding: 0.5rem 1rem;

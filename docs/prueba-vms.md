@@ -1,4 +1,4 @@
-# Prueba en VMs: etapas 04, 06, 07, 09 y transmisión de la pantalla del profesor
+# Prueba en VMs: etapas 04, 06, 07, 09, transmisión de la pantalla y agente como servicio
 
 Guía paso a paso para cerrar las tres etapas que siguen marcadas "falta prueba en VMs" en
 `docs/progreso.md`:
@@ -970,3 +970,37 @@ y 100–320 kbit/s con el patrón; ~130 % de un núcleo si cada cuadro cambia.
 
 Copia los resultados (TP-A a TP-K y esta tabla) a `docs/progreso.md`, en las notas de la
 transmisión.
+
+## 13. El agente como servicio de Windows (D-016)
+
+Comprueba que el agente arranca con el equipo como servicio y abre la ventana del alumno en su
+sesión, y que el alumno sigue viendo el distintivo de identidad (`docs/privacidad.md`, reglas
+17–19). Hazlo en una VM: instala un servicio real.
+
+### 13.1 Preparación
+
+- VM del profesor con la consola abierta en el canal 1, y una VM de alumno con Windows y **dos
+  cuentas**: una **estándar** (el alumno) y una de administrador.
+- Instala el alumno con el `Aula-Alumno-Setup-…` de esta versión, como administrador (canal 1 y la
+  clave del centro). Si la VM tenía una versión anterior, el instalador la actualiza: quita el
+  inicio automático por usuario y deja el servicio.
+
+### 13.2 Casos
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **SV-A** Instalado como servicio | En la VM del alumno (administrador): `"C:\Program Files\Aula\Cliente\aula-cliente.exe" servicio estado`. | `Servicio AulaAgente: en ejecución (PID …); arranca con el equipo; se reinicia si falla`. En `services.msc` aparece "Aula — agente del aula", tipo de inicio Automático, cuenta Sistema local, y en *Recuperación* "Reiniciar el servicio" en los tres fallos. |
+| **SV-B** Arranca con el equipo (**aceptación**) | Reinicia la VM del alumno y **no inicies sesión**. Mira la consola. | El equipo aparece conectado **sin usuario** y sin etiquetas de capacidades. No se le puede emitir código ni ver su pantalla. |
+| **SV-C** Ventana en la sesión del alumno (**aceptación**) | Inicia sesión con la cuenta **estándar**. | En segundos se abre la ventana de Aula con "Aula — conectado a la clase de … (canal 1)". En la consola, el equipo pasa a mostrar el usuario y sus etiquetas (código, avisos, pantalla, ve tu pantalla). Emite código: llega y **Copiar** funciona. |
+| **SV-D** El ayudante no tiene privilegios | En el Administrador de tareas → Detalles, agrega la columna *Elevado*. | `aula-cliente.exe` del usuario: Elevado = No, usuario = el alumno. El del servicio: usuario SYSTEM. |
+| **SV-E** Cerrar la ventana a la fuerza | Como alumno, termina `aula-cliente.exe` (el de su usuario) desde el Administrador de tareas. | En pocos segundos la ventana vuelve a abrirse sola con el distintivo. En la consola el equipo se reconecta: unos segundos sin etiquetas y luego con ellas. |
+| **SV-F** El alumno no puede detener el servicio | Como alumno: `sc stop AulaAgente` (o en `services.msc`). | "Acceso denegado". El agente sigue conectado. |
+| **SV-G** Reinicio ante fallo | Como administrador, termina el `aula-cliente.exe` de **SYSTEM**. | A los ~5 s el servicio vuelve a estar en ejecución con otro PID (`servicio estado`), se reconecta y relanza la ventana del alumno. |
+| **SV-H** Cerrar sesión y cambiar de usuario | Cierra la sesión del alumno; luego entra con otra cuenta. | Al cerrar sesión: el equipo queda sin usuario ni capacidades en la consola. Al entrar la otra cuenta: la ventana se abre en **su** sesión y la consola muestra el nuevo usuario. |
+| **SV-I** Miniaturas y transmisión a través del ayudante | Con el alumno en sesión: **Ver pantallas** y luego **Transmitir mi pantalla** en la consola. | Igual que en §11 y §12: la franja roja "Tu pantalla está siendo vista" aparece en el alumno antes de la imagen, y la vista de transmisión con su franja azul. |
+| **SV-J** Logs | Abre `C:\ProgramData\Aula\alumno\logs\aula-agente.log` como alumno. | Se puede leer (no modificar). Dice "helper started", "helper ready", sesiones y usuarios; nunca código ni imágenes. |
+| **SV-K** Desinstalar | Desinstala Aula Cliente desde Configuración → Aplicaciones. | `sc query AulaAgente` dice que no existe; ningún `aula-cliente.exe` queda corriendo. |
+
+**Para aceptar** bastan SV-B, SV-C, SV-E y SV-H en ✅.
+
+Copia los resultados a `docs/progreso.md`, en las notas del agente como servicio.

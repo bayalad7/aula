@@ -257,7 +257,7 @@ agente envía `hello` de inmediato.
 | Campo | Tipo | Regla |
 |---|---|---|
 | `hostname` | string | 1–255 caracteres. |
-| `username` | string | Usuario de la sesión del SO, 0–256 caracteres (vacío si no se puede obtener). |
+| `username` | string | Usuario de la sesión del SO, 0–256 caracteres (vacío si no se puede obtener). Con el agente como servicio (D-016), es el usuario de la **sesión de consola activa**, y vacío si nadie inició sesión; en ese caso `capabilities` va vacío y el agente se reconecta con un `hello` nuevo cuando alguien entra. |
 | `os` | string | `windows`, `linux` o `darwin`. |
 | `os_version` | string | Libre, ≤ 64 caracteres. |
 | `agent_version` | string | SemVer `x.y.z` del agente (la misma del release). |

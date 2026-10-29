@@ -14,6 +14,7 @@
 | 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 En curso (miniaturas; pantalla en blanco documentada y pendiente) |
 | 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada (falta prueba en VMs, `docs/prueba-vms.md` §12) |
+| 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado (falta CI en GitHub y prueba en VM, `docs/prueba-vms.md` §13) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 
@@ -435,3 +436,62 @@
 - **Confirmado** con las dos laptops de la prueba (Wi-Fi de casa, consola en la que tiene
   Hyper-V): el alumno v0.3.0-rc.1 sin cambios se conectó con la consola corregida, o subiendo la
   métrica de `vEthernet (Default Switch)`.
+
+## Etapa 09.3: el agente del alumno como servicio de Windows (D-016) — notas
+
+- **Diseño aprobado** (2026-10-29):
+  - sin mensajes de protocolo nuevos;
+  - el mismo conjunto de capacidades, declaradas solo si el ayudante de la sesión puede
+    cumplirlas;
+  - el servicio mantiene la conexión con la consola y el ayudante en la sesión del alumno muestra
+    todo;
+  - reglas de privacidad 17–19.
+- **`internal/platform`:**
+  - `ServiceControl`: instalar o actualizar, desinstalar, iniciar, detener, estado (este último sin
+    administrador);
+  - `RunAsService` con avisos de cambio de sesión;
+  - `SessionManager`: sesión de consola activa y lanzamiento con el token del usuario;
+  - canal local `ListenLocal`, `DialLocal` y `PeerPID` (named pipe con DACL, go-winio);
+  - fallback "no soportado" fuera de Windows;
+  - log del servicio en `ProgramData` (`OpenLogFileIn`, `AgentServiceLogDir`).
+- **`internal/agentsvc`** (sin APIs del SO):
+  - `Supervisor`: lanza, relanza con retroceso y reubica el ayudante, y solo acepta al proceso que
+    lanzó;
+  - `Link`: JSON por líneas, llamadas con respuesta y eventos, hasta 4 MiB por línea;
+  - *proxies* de portapapeles, captura y distintivo.
+- **`apps/student`:**
+  - subcomandos `servicio instalar|desinstalar|iniciar|detener|estado|ejecutar [-nombre]`;
+  - modo servicio: `App` sin ventana, `hello` con el usuario de la sesión y capacidades según el
+    ayudante, y reconexión cuando llega o se va;
+  - modo ayudante `--ayudante <canal>`: la ventana de siempre con los bindings reenviados;
+  - si el servicio corre, abrir el programa solo trae la ventana al frente.
+- **Instalador:** quita la clave `Run`, detiene el servicio y las ventanas antes de copiar,
+  instala e inicia el servicio, lo desinstala al desinstalar y crea `logs\`. Compila con Inno
+  Setup 6; no se ejecutó en este equipo para no instalar un servicio en él.
+- **CI:** job `servicio` (windows-latest) con `TestServiceLifecycle` (etiqueta `servicetest`):
+  - instala `AulaAgentePrueba`;
+  - verifica arranque automático y reinicio ante fallo en la configuración;
+  - lo inicia, **mata su proceso y espera a que el administrador de servicios lo levante con otro
+    PID**, lo detiene y lo desinstala;
+  - un paso `if: always()` lo borra con `sc.exe` aunque la prueba falle.
+- **Pruebas locales:**
+  - supervisor con dobles: sin sesión no lanza; logon; PID ajeno rechazado; relanzar tras morir;
+    cambio de usuario; cierre de sesión; canal cerrado; fallo al lanzar;
+  - `Link` (llamadas concurrentes, errores, 900 KiB) y *proxies*;
+  - agente-servicio contra una **consola real**: sin capacidades sin ayudante, reconexión con
+    usuario y capacidades cuando el ayudante avisa, "Copiar" llega al portapapeles del ayudante, y
+    vuelta a sin capacidades cuando se va;
+  - el pipe real con DACL y PID del cliente, y el estado de servicios sin administrador.
+- **Verificado en este equipo, sin administrador:** con un programa temporal haciendo de servicio,
+  el `aula-cliente.exe --ayudante` real (Wails y WebView2):
+  - se conectó por el pipe con su PID verificado;
+  - informó sus capacidades reales (captura, portapapeles, WebRTC con H.264);
+  - mostró el distintivo y el código pedidos por el canal (vista reenviada y título por evento);
+  - terminó solo al cerrarse el canal.
+
+  No se tocó el portapapeles ni se capturó la pantalla.
+- **Falta:**
+  - correr el job `servicio` en GitHub;
+  - la prueba en VM de `docs/prueba-vms.md` §13: arranque con el equipo sin sesión, ayudante en
+    la sesión estándar, relanzar, cambio de usuario;
+  - Linux (systemd) y macOS (launchd).

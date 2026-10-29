@@ -17,6 +17,8 @@ Dos aplicaciones, mismo monorepo:
 - Descubrimiento LAN: mDNS/Zeroconf (`github.com/grandcat/zeroconf`), con canal en los TXT records.
 - Streaming de pantalla (Fase 2): WebRTC (`github.com/pion/webrtc`).
 - Captura: `github.com/kbinani/screenshot`. Portapapeles: `golang.design/x/clipboard`.
+- Servicio de Windows: `golang.org/x/sys/windows/svc` y `.../svc/mgr`; canal local con el ayudante
+  por named pipe con `github.com/Microsoft/go-winio` (D-016).
 - Serialización del protocolo: JSON (`encoding/json`).
 - Editor en el cliente: Monaco Editor (fallback Prism.js si Monaco pesa demasiado en el overlay).
 
@@ -35,8 +37,10 @@ Dos aplicaciones, mismo monorepo:
     y de la consola, sobre las interfaces de `platform`.
   - `internal/broadcast`: transmisión de la pantalla del profesor (WebRTC con pion): captura y
     codificación por `platform`, una conexión por alumno y la señalización `screen.broadcast.*`.
+  - `internal/agentsvc`: el agente como servicio: supervisor del ayudante en la sesión del alumno,
+    canal local servicio ↔ ayudante y *proxies* de portapapeles, captura y distintivo.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

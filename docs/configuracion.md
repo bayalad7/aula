@@ -94,6 +94,35 @@ mismo texto queda en `%LOCALAPPDATA%\Aula\alumno\aula-cliente.log`. Para un diag
 Imprime la configuración usada, las consolas del canal que ve por mDNS y el resultado de un
 intento de conexión.
 
+### Como servicio de Windows (D-016)
+
+El instalador deja el agente como servicio **`AulaAgente`** ("Aula — agente del aula"):
+
+| Qué | Valor |
+|---|---|
+| Cuenta | LocalSystem (necesaria para abrir la ventana del alumno en su sesión) |
+| Arranque | Automático, con el equipo |
+| Ante fallos | Se reinicia a los 5, 10 y 30 s; el contador vuelve a cero tras un día sin fallos |
+| Ventana del alumno | El servicio lanza `aula-cliente.exe --ayudante …` en la sesión activa, con los permisos normales del alumno |
+| Configuración | Solo la de máquina, `C:\ProgramData\Aula\alumno\config.json` |
+| Log del servicio | `C:\ProgramData\Aula\alumno\logs\aula-agente.log` (los usuarios lo leen; solo administradores y SYSTEM escriben) |
+| Log de la ventana | `%LOCALAPPDATA%\Aula\alumno\aula-cliente.log` |
+| Firewall | Sin reglas nuevas: la de "Aula Cliente (mDNS)" es por programa y cubre al servicio |
+
+Órdenes, como administrador (útiles en scripts y GPO):
+
+```bat
+aula-cliente.exe servicio instalar      :: o actualiza un servicio existente
+aula-cliente.exe servicio iniciar
+aula-cliente.exe servicio estado        :: también sin administrador
+aula-cliente.exe servicio detener
+aula-cliente.exe servicio desinstalar   :: lo detiene antes
+```
+
+`servicio estado` sale con **0** si está en ejecución, **3** si está detenido, **4** si no está
+instalado y **1** ante un error. Un alumno sin permisos de administrador no puede detener el
+servicio; sí puede cerrar la ventana, y el servicio la vuelve a abrir en segundos.
+
 ## Consola del profesor (`aula-consola`)
 
 ### De la máquina: `C:\ProgramData\Aula\consola\config.json`

@@ -97,6 +97,25 @@ Reglas para `screen.broadcast.*` (`docs/protocol.md` §5.12), aprobadas el 2026-
 16. **Sin grabación.** Ni la consola ni el agente graban el video ni escriben cuadros en disco.
     Los logs registran identificadores, intentos, estados y tamaños; no el SDP ni los candidatos.
 
+## El agente como servicio de Windows (D-016)
+
+17. **Correr como servicio no oculta nada.** El servicio no tiene ventana: el distintivo de
+    identidad, el código, los avisos, el distintivo "Tu pantalla está siendo vista" y la vista de
+    transmisión (reglas 1, 4, 6 y 12) los muestra el **ayudante**, un `aula-cliente.exe` que el
+    servicio lanza en la sesión del alumno con sus permisos normales. El servicio **no puede
+    capturar la pantalla ni mostrar nada por sí mismo**: la captura solo existe en el ayudante,
+    que muestra el distintivo antes. Sin ayudante (nadie inició sesión, o se acaba de cerrar), el
+    agente se conecta **sin capacidades**: la consola solo ve que el equipo está encendido y no
+    puede pedirle pantalla ni código.
+18. **El alumno ve el agente.** El servicio se llama "Aula — agente del aula" en
+    `services.msc`, con una descripción clara, y el ayudante aparece como `aula-cliente.exe` en el
+    Administrador de tareas. No hay nombres engañosos ni procesos escondidos. Si el alumno cierra
+    el ayudante, el servicio lo vuelve a abrir en segundos y con él el distintivo.
+19. **Lo que cambia con los privilegios.** Antes, el alumno podía cerrar el agente; ahora solo un
+    administrador puede detener el servicio. Correr como SYSTEM no habilita por sí mismo ninguna
+    función nueva: cada una que use esos privilegios (`power.*`, `app.block`, `web.filter`,
+    `remote.*`) se documentará aquí, con su aviso visible, antes de implementarse.
+
 ## Pendiente para etapas futuras
 
 - Guardar una captura por petición explícita del profesor, y Linux y macOS (incluida la

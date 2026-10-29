@@ -465,3 +465,46 @@ alumno se quedó en "buscando la clase del canal 1". Corregido en v0.3.0-rc.2.
 ventana stderr no es válido, `MultiWriter` se detiene en el primer error y **el archivo nunca
 recibía nada**: `aula-cliente.log` y `aula-consola.log` estaban vacíos en las instalaciones
 reales. Ahora el archivo va primero.
+
+## D-016: El agente del alumno como servicio de Windows, con un ayudante en la sesión
+
+**Fecha:** 2026-10-29 · **Estado:** aprobada e implementada (Windows; Linux y macOS después).
+
+**Contexto.** El agente era un proceso de usuario que arrancaba con la clave `Run`: el alumno
+podía cerrarlo, no existía sin sesión iniciada y nada podía correr con privilegios. Las funciones
+futuras (`power.*`, `app.block`, `web.filter`, `remote.*`) los necesitan.
+
+**Decisión.**
+- **Servicio `AulaAgente`** (LocalSystem, arranque automático, reinicio ante fallos a los 5, 10 y
+  30 s, también si sale con error). Mantiene la conexión con la consola: la lógica de siempre
+  (`App` con `session.Agent`, `codedist`, `screen.Streamer`, `broadcast.Viewer`) corre sin ventana.
+- **Ayudante** `aula-cliente.exe --ayudante <canal>` en la **sesión de consola activa**, con el
+  token del usuario (`WTSQueryUserToken` + `CreateProcessAsUser`, sin elevar). Es la ventana de
+  siempre: distintivo, código, avisos, transmisión, portapapeles, captura y distintivo nativo.
+- **Canal local:** named pipe con nombre aleatorio por lanzamiento y DACL solo para SYSTEM y el
+  usuario de la sesión. El servicio acepta únicamente al proceso que lanzó (PID del cliente). Por
+  él viajan JSON por líneas: eventos de la ventana (`emit`, `raise`, `maximize`), los bindings de
+  la ventana hacia el agente y los pedidos al ayudante (portapapeles, captura, distintivo). No es
+  el protocolo con la consola: no sale del equipo.
+- **Puente sin reescribir `App`:** en el servicio, `platform.Clipboard`, `ScreenCapture` y
+  `ScreenIndicator` son *proxies* hacia el ayudante (`internal/agentsvc`), y `internal/screen` e
+  `internal/broadcast` no cambian.
+- **Sin protocolo nuevo.** El `hello` lleva el usuario de la sesión y las capacidades que el
+  ayudante puede cumplir. Sin ayudante, ninguna. Cuando el ayudante llega o se va, el agente se
+  reconecta con un `hello` nuevo (el mismo mecanismo que un cambio de configuración).
+- **Sesiones:** aviso `SERVICE_CONTROL_SESSIONCHANGE` más revisión cada 2 s. Al cerrar sesión el
+  ayudante termina; al cambiar de usuario se reubica; si muere se relanza con retroceso (1, 2, 4…
+  30 s); un ayudante que duró 30 s olvida sus fallos. Las sesiones RDP se ignoran.
+- **Modo sin servicio** (desarrollo, portables, Linux, macOS): igual que antes. Si el servicio
+  corre, abrir `aula-cliente.exe` solo trae al frente la ventana del ayudante.
+- **Named pipes con `github.com/Microsoft/go-winio`** (ya venía como dependencia indirecta de
+  Wails): E/S solapada, DACL por SDDL y handle para `GetNamedPipeClientProcessId`.
+- **Instalador:** quita la clave `Run` (dos agentes se pelearían la conexión), detiene el servicio
+  y las ventanas antes de copiar, instala e inicia el servicio, y lo desinstala al desinstalar.
+- **Logs:** el servicio escribe en `C:\ProgramData\Aula\alumno\logs\aula-agente.log` (SYSTEM no
+  tiene perfil útil); el ayudante, en `%LOCALAPPDATA%\Aula\alumno\aula-cliente.log`.
+- **Firewall:** sin reglas nuevas. "Aula Cliente (mDNS)" es por programa y cubre al servicio, que
+  es el mismo ejecutable; la conexión con la consola y la transmisión son salientes.
+- **Pruebas:** la lógica (supervisor, canal, *proxies*, `hello` según el ayudante) con dobles y una
+  consola real. El ciclo de un servicio real solo en el job de CI `servicio`, con otro nombre
+  (`AulaAgentePrueba`) y un paso que siempre lo borra.

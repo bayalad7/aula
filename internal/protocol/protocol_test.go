@@ -297,14 +297,24 @@ func TestRequiredCapability(t *testing.T) {
 }
 
 func TestValidChannel(t *testing.T) {
-	for _, ok := range []string{"AULA_101", "CURSO_PYTHON_A", "X", strings.Repeat("A", 32)} {
+	for _, ok := range []string{"1", "2", "12", "999", "16000"} {
 		if !ValidChannel(ok) {
 			t.Errorf("ValidChannel(%q) = false", ok)
 		}
 	}
-	for _, bad := range []string{"", "aula_101", "AULA 101", "AULA-101", strings.Repeat("A", 33)} {
+	for _, bad := range []string{"", "0", "01", "16001", "99999", "-1", "1.5", " 1", "AULA_101", strings.Repeat("1", 6)} {
 		if ValidChannel(bad) {
 			t.Errorf("ValidChannel(%q) = true", bad)
+		}
+	}
+	for in, want := range map[string]string{"1": "1", " 02 ": "2", "16000": "16000"} {
+		if got, err := ParseChannel(in); err != nil || got != want {
+			t.Errorf("ParseChannel(%q) = %q, %v", in, got, err)
+		}
+	}
+	for _, bad := range []string{"", "0", "16001", "uno", "AULA_101"} {
+		if _, err := ParseChannel(bad); err == nil {
+			t.Errorf("ParseChannel(%q) accepted", bad)
 		}
 	}
 }

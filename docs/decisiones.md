@@ -163,3 +163,38 @@ necesita cgo en Linux (X11/Wayland en Go puro), y donde no hay portapapeles `Ini
 **Eventos de Wails con el estado completo** (no cambios incrementales), con el contrato en
 `apps/student/events.go` y `docs/eventos-ui.md`. Redibujar una lista de a lo sumo 20 fragmentos
 es barato y evita que la interfaz y Go se desincronicen.
+
+## D-009: Consola del profesor: Monaco, atajo global y conteo de acuses
+
+**Fecha:** 2026-10-28 · **Etapa:** 07
+
+**Monaco en la consola (no en el alumno).** El profesor sí edita código, así que aquí Monaco
+aporta lo que Prism no tiene: edición con sangría automática, espacios visibles y deshacer. Se
+incluye un **subconjunto** de monaco-editor 0.52.2 (MIT) en
+`apps/teacher/frontend/dist/vendor/monaco/`, sin bundler (cargador AMD):
+- núcleo (`loader.js`, `editor/`, `base/worker`, fuente de íconos) y 13 gramáticas de
+  `basic-languages`: unos **4,3 MB de 14 MB**;
+- **fuera** los servicios de lenguaje (`vs/language/*`, 7 MB, TypeScript solo 5,6 MB) y las
+  traducciones. El resaltado viene de `basic-languages`; sin servicios no hay autocompletado ni
+  diagnósticos, que en clase no hacen falta. Verificado en la app: Monaco carga y colorea
+  Python.
+- CSP de la consola: `style-src 'unsafe-inline'` (Monaco crea estilos), `worker-src 'self' blob:`
+  y `font-src 'self'`. Scripts siguen siendo solo `'self'`.
+
+**Atajo global `Ctrl+Alt+Shift+C`** (`platform.Hotkeys`, `RegisterHotKey` con un hilo de mensajes
+propio en Windows; en Linux/macOS devuelve `ErrNotSupported` y queda el botón flotante). Se evita
+Ctrl+Alt solo: en teclados en español es AltGr y escribe `@`, `#`, `[`. Si otra aplicación ya lo
+usa, la consola lo explica y sigue con el botón. Capturar **nunca emite**: carga el editor y
+propone un lenguaje (heurística simple, editable).
+
+**Acuses por ID de sobre.** `Console.Broadcast` ahora devuelve el ID del sobre enviado a cada
+sesión. `codedist.Deliveries` cuenta los `code.ack` y `msg.ack` cuyo `ref_id` coincide, una vez
+por sobre. El envío y el registro de sus IDs ocurren bajo un mismo candado que también toma el
+manejador de acuses, así que un alumno muy rápido nunca responde a un envío "desconocido".
+
+**Estado en Go, interfaz pasiva.** Alumnos, historial y confirmaciones viven en `App`; la interfaz
+recibe eventos con el estado completo. `session.Console.OnChange` avisa cuando cambia el registro.
+
+**Pruebas sin tocar el escritorio.** La prueba de pulsación real del atajo (`SendInput`) solo corre
+con `AULA_HOTKEY_TEST=1`. Las pruebas de la interfaz se hacen con dobles y con la red real
+(`TestLiveClassTwoAgentsAck`), no simulando clics.

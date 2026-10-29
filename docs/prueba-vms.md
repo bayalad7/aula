@@ -474,3 +474,32 @@ Datos del entorno: hipervisor y modo de red, versión de Windows de cada VM, si 
 - **06:** basta con 06-B, 06-C y 06-D en ✅. Quita "(falta prueba en VM)" de la fila 06.
 
 Cualquier ❌ va a "Pendientes conocidos" de `docs/progreso.md` con el caso y las notas.
+
+---
+
+## 9. Etapa 07: consola del profesor
+
+Usa la **app real de la consola** en la VM del profesor en lugar de `dos_alumnos.exe`. Compílala
+en tu equipo (`cd apps/teacher && wails build`) y copia
+`apps/teacher/build/bin/aula-consola.exe` a la VM del profesor. Los alumnos son
+`aula-cliente.exe` en **dos** VMs (o uno real y `dos_alumnos.exe -rol alumno` en otra; ambos
+confirman el código).
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **07-A** Abrir el aula | Abre `aula-consola.exe`. Escribe `AULA_101` (o pulsa el botón del aula), un nombre, y **Abrir clase**. Pulsa **Copiar clave** y pega la clave en la configuración de los alumnos (§5, 06-B). | Arriba: "Canal AULA_101" y tu nombre. La ventana abre maximizada. |
+| **07-B** Alumnos en vivo | Arranca los dos alumnos. Cierra uno y vuelve a abrirlo. | Aparece una tarjeta por alumno con equipo, usuario, SO y las etiquetas "código" y "avisos". Al cerrar uno, su tarjeta se atenúa y dice "desconectado"; al volver, "conectado". |
+| **07-C** Emitir y ver dos acuses (**aceptación**) | Escribe o pega código en el editor, elige el lenguaje y pulsa **Emitir a todos**. | Bajo los botones: "Ejercicio 1 · … — enviado a 2 · confirmados 2/2 ✓" (en verde). Cada tarjeta muestra "✓ código recibido HH:MM:SS". Los dos alumnos ven el código. |
+| **07-D** Agregar bloque | Cambia el código y pulsa **Agregar bloque**. | Los alumnos ven dos bloques. El historial muestra Ejercicio 1 y 2. |
+| **07-E** Reemitir | En el historial, pulsa **Reemitir** en Ejercicio 1. | Los alumnos vuelven a ver solo el Ejercicio 1 (mismo número). En el historial dice "emitido 2 veces". Confirmación 2/2. |
+| **07-F** Atajo global (**aceptación**) | Abre el Bloc de notas (o PowerPoint) **en la VM del profesor**, escribe código, selecciónalo y copia (`Ctrl+C`). Sin cambiar de ventana, pulsa **Ctrl+Alt+Shift+C**. Luego vuelve a la consola. | El editor de la consola ya tiene ese código y el lenguaje propuesto. Aparece el aviso "Capturado del portapapeles…". **No se emitió nada**: los alumnos no ven cambios hasta que pulses Emitir. |
+| **07-G** Botón flotante | Copia otro texto y pulsa **Capturar portapapeles** (abajo a la derecha). | Igual que 07-F. Con el portapapeles vacío: aviso rojo "el portapapeles está vacío". |
+| **07-H** Limpiar y avisos | Pulsa **Limpiar pantallas** (confirma). Luego escribe un aviso, elige **Advertencia** y **Enviar aviso**. | "pantalla limpia ✓" en las tarjetas; aviso amarillo en los alumnos; confirmaciones 2/2. |
+| **07-I** Sin alumnos | Cierra todos los alumnos. | "Emitir", "Agregar", "Limpiar" y "Enviar aviso" se deshabilitan, con el motivo "No hay alumnos conectados." |
+| **07-J** Cambiar de aula | Pulsa **Cambiar de aula** y abre `AULA_102`. | Los alumnos de `AULA_101` pasan a "buscando" y no aparecen en `AULA_102`. |
+
+Si el atajo no funciona, en la esquina inferior derecha aparece el motivo (por ejemplo, otra
+aplicación ya usa la combinación). El botón flotante funciona igual.
+
+Anota los resultados en la tabla de §8 (agrega las filas 07-A a 07-J). Para cerrar la etapa 07
+bastan 07-C y 07-F en ✅.

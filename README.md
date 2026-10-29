@@ -39,6 +39,19 @@ cd apps/student && wails build   # -> apps/student/build/bin/aula-cliente(.exe)
 
 En Linux: `wails build -tags webkit2_41`.
 
+## Usar la consola del profesor
+
+1. Abre `aula-consola`, elige el canal del aula (p. ej. `AULA_101`) y el nombre que verán los
+   alumnos, y pulsa **Abrir clase**. La primera vez se crea la clave de la consola; con
+   **Copiar clave** la llevas a la configuración de los alumnos.
+2. Las tarjetas de la izquierda muestran a los alumnos conectados en vivo.
+3. Escribe o pega código en el editor y pulsa **Emitir a todos** (reemplaza) o **Agregar
+   bloque**. Abajo verás "confirmados N/N ✓" a medida que cada alumno lo muestra. El historial
+   de la derecha permite **Reemitir** un ejercicio anterior.
+4. **Captura rápida:** mientras presentas, copia código (`Ctrl+C`) y pulsa
+   **Ctrl+Alt+Shift+C** (o el botón **Capturar portapapeles**). El código queda en el editor
+   para que revises el lenguaje y lo emitas; nunca se envía solo.
+
 ## Configurar el cliente del alumno
 
 El cliente necesita el canal y la clave pública de la consola. Puedes pasarlos como argumentos

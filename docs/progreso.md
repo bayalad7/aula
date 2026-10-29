@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-10-28 (etapa 06).
+Última actualización: 2026-10-28 (etapa 07).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -9,7 +9,7 @@
 | 04 | Descubrimiento mDNS con canales + servidor/cliente WebSocket | ✅ Completada (falta prueba en VMs) |
 | 05 | Seguridad: TLS y autenticación Ed25519 | ✅ Completada |
 | 06 | App estudiante: overlay con Prism (D-008) y botón Copiar | ✅ Completada (falta prueba en VM) |
-| 07 | App profesor: lista, hotkey de captura, emisión | ⏳ Pendiente |
+| 07 | App profesor: lista, hotkey de captura, emisión | ✅ Completada (falta prueba en VMs) |
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ⏳ Pendiente |
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | ⏳ Pendiente |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
@@ -171,3 +171,42 @@
   es `/dist/`.
 - Pendiente de la etapa: en una VM, emitir desde la consola y pegar en el editor del alumno
   (pasos en `docs/prueba-vms.md` §5, casos 06-A a 06-J).
+
+## Etapa 07: notas
+
+- `apps/teacher` (consola Wails):
+  - **Selección de aula:** canales recientes, accesos rápidos y nombre visible. La primera clase
+    crea la clave y el certificado.
+  - **Tarjetas de alumno en vivo:** equipo, usuario, SO, estado, capacidades y último código
+    confirmado.
+  - **Panel de código con Monaco:** título, lenguaje, "Emitir a todos", "Agregar bloque",
+    "Limpiar pantallas".
+  - **Historial numerado** ("Ejercicio N") con "Reemitir" (doble clic lo carga en el editor) y
+    **avisos** info/advertencia.
+  - **Confirmaciones:** "enviado a N · confirmados M/N ✓", con quién no soporta la capacidad.
+  - **Botones deshabilitados** si ningún alumno conectado declara la capacidad.
+- **Captura rápida:** atajo global `Ctrl+Alt+Shift+C` (Windows) y botón flotante equivalente.
+  Cargan el portapapeles en el editor y proponen el lenguaje; nunca emiten solos.
+- Nuevo en `internal`: `platform.Hotkeys` (impl. Windows, fallback "no soportado"),
+  `codedist.History` y `codedist.Deliveries`. `session.Console.Broadcast` devuelve los IDs de sobre
+  y `Console.OnChange` avisa los cambios del registro. Decisión en D-009; contrato en
+  `docs/eventos-ui.md`.
+- `AULA_CONSOLE_DIR` cambia el directorio de la clave y la configuración de la consola (pruebas).
+- Pruebas:
+  - binding de emisión con aula doble (payload correcto, acuses, sin capacidad);
+  - historial (emitir, agregar, reemitir con el mismo número e ID);
+  - atajo y botón con portapapeles doble (carga sin emitir, portapapeles vacío);
+  - registro real del atajo (conflicto y liberación);
+  - `TestLiveClassTwoAgentsAck`: consola real con TLS y dos agentes, 2/2 `code.ack` y 2/2
+    `msg.ack`;
+  - contrato `events.js` ↔ Go.
+- Verificado a mano en este equipo con la app real (capturas de su ventana):
+  - la selección de aula funciona;
+  - Monaco colorea Python;
+  - el atajo real cargó el portapapeles y detectó Python;
+  - "Emitir a todos" creó el Ejercicio 1 y el alumno real lo confirmó.
+
+  El segundo alumno, de consola (`dos_alumnos`), no respondía `code.ack`. Ya lo hace, pero falta
+  verlo en pantalla.
+- Pendiente de la etapa: en VMs, dos alumnos confirman (2/2) y el atajo captura desde otra
+  aplicación (pasos en `docs/prueba-vms.md` §9).

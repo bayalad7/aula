@@ -12,6 +12,10 @@
 ;     [/CLAVECENTRO=<ruta a aula-centro.pub | aula-ed25519:…>] [/DIRECTO=IP:47830]
 ;     [/MERGETASKS="redpublica"]  (abre también el perfil Público del firewall, D-012)
 ;
+; El agente queda instalado como SERVICIO de Windows "AulaAgente" (LocalSystem, arranca con el
+; equipo, se reinicia si falla) que lanza la ventana del alumno en su sesión (D-016). También se
+; opera a mano: aula-cliente.exe servicio instalar|desinstalar|iniciar|detener|estado.
+;
 ; Formato de la configuración que escribe: docs/configuracion.md.
 
 #ifndef AppVersion
@@ -64,14 +68,17 @@ Source: "{#SourceDir}\aula-cliente.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Dirs]
 Name: "{commonappdata}\Aula\alumno"
+; Logs of the service (SYSTEM): users can read them, only administrators and SYSTEM write.
+Name: "{commonappdata}\Aula\alumno\logs"
 
 [Icons]
 Name: "{autoprograms}\Aula Cliente"; Filename: "{app}\aula-cliente.exe"
 
 [Registry]
-; Starts with every user session (the system service arrives in phase 2).
-Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; \
-  ValueName: "AulaCliente"; ValueData: """{app}\aula-cliente.exe"""; Flags: uninsdeletevalue
+; Versions before the service started the agent with every user session. The service now
+; does it: remove that entry, or two agents would compete for the connection.
+Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; \
+  ValueName: "AulaCliente"; Flags: deletevalue
 
 [Run]
 ; Only administrators may change the channel or the key: otherwise a student
@@ -87,19 +94,44 @@ Filename: "{sys}\netsh.exe"; \
 Filename: "{sys}\netsh.exe"; \
   Parameters: "advfirewall firewall add rule name=""Aula Cliente (mDNS)"" dir=in action=allow program=""{app}\aula-cliente.exe"" protocol=UDP profile=private,domain,public"; \
   Flags: runhidden; StatusMsg: "Configurando el firewall…"; Tasks: redpublica
-Filename: "{app}\aula-cliente.exe"; Description: "Abrir Aula Cliente"; \
-  Flags: nowait postinstall skipifsilent runasoriginaluser
+; The agent service: installed (or updated) and started. It opens the student's window in
+; the active session by itself.
+Filename: "{app}\aula-cliente.exe"; Parameters: "servicio instalar"; \
+  Flags: runhidden waituntilterminated; StatusMsg: "Instalando el servicio del agente…"
+Filename: "{app}\aula-cliente.exe"; Parameters: "servicio iniciar"; \
+  Flags: runhidden waituntilterminated; StatusMsg: "Iniciando el agente…"
 
 [UninstallRun]
+; Stops and deletes the service; its helpers end with it.
+Filename: "{app}\aula-cliente.exe"; Parameters: "servicio desinstalar"; \
+  Flags: runhidden waituntilterminated; RunOnceId: "DeleteService"
+Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM aula-cliente.exe"; \
+  Flags: runhidden waituntilterminated; RunOnceId: "EndHelpers"
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Aula Cliente (mDNS)"""; \
   Flags: runhidden; RunOnceId: "DeleteFirewallRule"
 
 [UninstallDelete]
+Type: filesandordirs; Name: "{commonappdata}\Aula\alumno\logs"
 Type: files; Name: "{commonappdata}\Aula\alumno\config.json"
 Type: dirifempty; Name: "{commonappdata}\Aula\alumno"
 Type: dirifempty; Name: "{commonappdata}\Aula"
 
 [Code]
+// Before copying the new executable, stop the running agent: the service (if
+// this computer already had it) and any window in the users' sessions.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Code: Integer;
+  Exe: String;
+begin
+  Result := '';
+  Exe := ExpandConstant('{app}\aula-cliente.exe');
+  if FileExists(Exe) then
+    Exec(Exe, 'servicio detener', '', SW_HIDE, ewWaitUntilTerminated, Code);
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM aula-cliente.exe', '', SW_HIDE,
+    ewWaitUntilTerminated, Code);
+end;
+
 var
   SettingsPage: TInputQueryWizardPage;
 

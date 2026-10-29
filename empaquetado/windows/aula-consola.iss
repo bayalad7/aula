@@ -75,7 +75,8 @@ Name: "{autodesktop}\Aula Consola"; Filename: "{app}\aula-consola.exe"; Tasks: d
 Filename: "{sys}\icacls.exe"; \
   Parameters: """{commonappdata}\Aula\consola"" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F *S-1-5-32-545:(OI)(CI)RX"; \
   Flags: runhidden
-; Agents connect in (TCP 47830, TLS) and mDNS questions arrive in (UDP 5353).
+; Agents connect in (TCP 47830, TLS), mDNS questions arrive in (UDP 5353) and the
+; broadcast of the teacher's screen arrives on UDP 47831: one rule for the program covers all.
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Aula Consola"""; Flags: runhidden
 Filename: "{sys}\netsh.exe"; \
   Parameters: "advfirewall firewall add rule name=""Aula Consola"" dir=in action=allow program=""{app}\aula-consola.exe"" profile=private,domain"; \

@@ -31,8 +31,10 @@ Dos aplicaciones, mismo monorepo:
     servicio, hotkey) detrás de interfaces Go, con archivos `*_windows.go`, `*_linux.go`,
     `*_darwin.go` por build constraints y un fallback que devuelve "no soportado".
   - `internal/codedist`: captura y distribución de snippets de código.
+  - `internal/screen`: monitoreo de pantalla (miniaturas y pantalla en blanco) del lado del agente
+    y de la consola, sobre las interfaces de `platform`.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

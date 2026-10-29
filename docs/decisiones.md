@@ -281,3 +281,39 @@ incluye el perfil Público.
 - Lo recomendado sigue siendo marcar la red del laboratorio como Privada (o Dominio), a mano o
   por GPO.
 - Inno Setup recuerda la opción al actualizar; para quitarla, `/MERGETASKS="!redpublica"`.
+
+## D-013: Monitoreo de pantalla en Windows: miniaturas por WebSocket y freeze nativo
+
+**Fecha:** 2026-10-29 · **Etapa:** 09 (Módulo B)
+
+**Contexto.** El profesor necesita ver las pantallas de los alumnos en miniatura, ampliar una y
+poner las pantallas en blanco. La regla de privacidad exige que el alumno vea siempre que su
+pantalla se está viendo.
+
+**Decisiones** (elegidas por el usuario donde había alternativas):
+- **Transporte:** cuadros JPEG dentro de la misma conexión WebSocket/TLS (`screen.thumb.frame`),
+  como máximo 2 por segundo. Una miniatura de 320 px pesa unos 10–25 KiB; con 20 alumnos a 1
+  cuadro/s son menos de 0,5 MiB/s. WebRTC (`pion/webrtc`) queda para la transmisión de la
+  pantalla del profesor, donde sí hace falta video continuo.
+- **Qué se captura:** solo el **monitor principal**, como LanSchool (miniaturas con proporción
+  normal).
+- **Vista en detalle:** el mismo mensaje `screen.thumb.start` con `max_width` 1280 a un solo
+  agente; no hay un segundo flujo.
+- **Indicador:** un **distintivo nativo** de Win32, siempre encima y que no recibe clics, en la
+  parte superior del monitor principal, más el cambio de la barra de la ventana de Aula. Se ve
+  aunque la ventana esté minimizada.
+- **Pantalla en blanco:** **ventana nativa siempre encima en todos los monitores**, que vuelve a
+  quedar encima y pide el foco cada medio segundo. **No intercepta el teclado:** el alumno podría
+  hacer Alt+Tab y escribir a ciegas en otra ventana; es un límite aceptado. Bloquear también el
+  teclado queda fuera de Aula (por ejemplo, con directivas de Windows que administre TI). Se
+  descartó la ventana de Wails: cubre un solo monitor y se puede minimizar.
+- **Seguridad del alumno:** al cerrarse la conexión el agente quita la pantalla en blanco y el
+  indicador por sí mismo.
+- **Paquete nuevo `internal/screen`** (sin APIs del SO): la lógica del agente (transmisión,
+  indicador, freeze) y de la consola (qué equipos transmiten, último cuadro, estado de freeze),
+  probada con dobles de las interfaces de `platform`.
+- **Actualización (2026-10-29):** la pantalla en blanco se **retiró del código** y queda
+  documentada como pendiente (`docs/protocol.md` §5.9–5.11). Esta etapa entrega solo las
+  miniaturas, la vista en detalle y el indicador.
+- Linux y macOS devuelven "no soportado" y no declaran las capacidades `screen.thumb` ni
+  `screen.freeze`. Versión **0.3.0** (función nueva compatible).

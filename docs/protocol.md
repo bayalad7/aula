@@ -299,9 +299,10 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 |---|---|---|
 | `code.view` | `code.share`, `code.clear` | v0 |
 | `msg.show` | `msg.show` | v0 |
-| `screen.thumb` | `screen.thumb.*` | Reservada (Fase 2) |
-| `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Reservada (Fase 2) |
-| `screen.broadcast` | `screen.broadcast.*` | Reservada (Fase 2) |
+| `screen.thumb` | `screen.thumb.start`, `screen.thumb.stop` | v0.3 (Windows) |
+| `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Documentada, **pendiente** (§5.9) |
+| `screen.broadcast` | `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
+| `screen.broadcast.*` | Reservada (Fase 2) |
 | `app.block` | `app.block` | Reservada |
 | `web.filter` | `web.filter` | Reservada |
 | `file.collect` | `file.collect` | Reservada |
@@ -330,6 +331,9 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `code.clear` | P → A | `code.view` | `{}` | `code.ack` o `error` |
 | `msg.show` | P → A | `msg.show` | `text`, `level` | `msg.ack` o `error` |
 | `msg.ack` | A → P | — | `ref_id` | — |
+| `screen.thumb.start` | P → A | `screen.thumb` | `interval_ms`, `quality`, `max_width` | `screen.thumb.frame` periódicos o `error` |
+| `screen.thumb.frame` | A → P | — | `ref_id`, `seq`, `width`, `height`, `jpeg` | — |
+| `screen.thumb.stop` | P → A | `screen.thumb` | `{}` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -387,6 +391,97 @@ Payload `{}`. El agente vacía el overlay de código y responde `code.ack`.
 
 Confirma que el mensaje se mostró. No registra si el alumno lo leyó.
 
+### 5.6 `screen.thumb.start` (P → A)
+
+Pide al agente que capture su **monitor principal** y envíe un cuadro cada `interval_ms`. La
+consola lo envía al abrir la vista de pantallas y lo vuelve a enviar, con otros valores, para ver
+un equipo en detalle: un `start` nuevo **reemplaza** los parámetros del anterior y reinicia `seq`.
+
+```json
+{ "interval_ms": 1000, "quality": 50, "max_width": 320 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `interval_ms` | entero | 500–10 000. Como máximo **2 cuadros por segundo**. |
+| `quality` | entero | Calidad JPEG, 10–95. |
+| `max_width` | entero | Ancho máximo en píxeles, 160–1920. La imagen se reduce conservando la proporción; nunca se amplía. |
+
+Valores de la consola: miniaturas `1000 ms / 50 / 320`; vista en detalle `1000 ms / 70 / 1280`.
+
+Reglas del agente:
+
+- **Indicador visible antes del primer cuadro.** Mientras haya una transmisión activa, el equipo
+  muestra "Tu pantalla está siendo vista por el profesor" (`docs/privacidad.md`).
+- El primer cuadro sale de inmediato; los siguientes, cada `interval_ms` contado desde que se
+  encoló el anterior.
+- Si no puede capturar (por ejemplo, la sesión está bloqueada), responde **una vez** `error`
+  `internal` con ese `ref_id` y lo sigue intentando en cada intervalo; el indicador sigue visible.
+- La transmisión termina con `screen.thumb.stop` o al **cerrarse la conexión**. Las capturas
+  solo viven en memoria; el agente no las escribe en disco.
+
+### 5.7 `screen.thumb.frame` (A → P)
+
+```json
+{ "ref_id": "<id del screen.thumb.start>", "seq": 12, "width": 320, "height": 180,
+  "jpeg": "/9j/4AAQSkZJRgABAQ…" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `ref_id` | string | `id` del `screen.thumb.start` vigente. La consola descarta cuadros de un `start` anterior. |
+| `seq` | entero | 1, 2, 3… por cada `start`. |
+| `width`, `height` | entero | Tamaño de la imagen, 1–1920 y 1–1920. |
+| `jpeg` | string | Imagen JPEG en Base64, ≤ **640 KiB** antes de codificar. Si la excede, el agente baja la calidad y lo reintenta. |
+
+La consola tampoco guarda los cuadros en disco: muestra el último de cada equipo y lo descarta
+al cerrar la vista, salvo que el profesor pida explícitamente guardar una captura (etapa futura).
+
+### 5.8 `screen.thumb.stop` (P → A)
+
+Payload `{}`. El agente deja de capturar y quita el indicador. Es idempotente y no tiene
+respuesta: la prueba de que se detuvo es que no llegan más cuadros.
+
+### 5.9 `screen.freeze` (P → A) — pendiente
+
+> **Documentado, no implementado** (D-013). Los agentes actuales no declaran `screen.freeze` y
+> responden `unknown_type`. §5.9–5.11 describen el diseño previsto.
+
+Pone la **pantalla en blanco**: el agente cubre todos los monitores con una ventana siempre
+encima, que tapa lo que hay en pantalla, recibe los clics y explica por qué.
+
+```json
+{ "message": "Atención al pizarrón, por favor." }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `message` | string | **Opcional**, 0–300 caracteres, texto plano. Se muestra debajo del texto fijo. |
+
+El texto fijo es "Tu profesor pausó esta computadora" y el nombre de la clase y el canal; así el
+alumno siempre sabe quién la bloqueó. Un `screen.freeze` sobre una pantalla ya en blanco solo
+cambia el mensaje.
+
+- **Al cerrarse la conexión, el agente quita la pantalla en blanco** por sí mismo: si la consola
+  se cierra o se cae la red, el alumno no queda bloqueado.
+- **No intercepta el teclado** (D-013): el alumno podría cambiar de ventana con Alt+Tab y
+  escribir a ciegas, aunque la pantalla en blanco vuelve a quedar encima cada medio segundo.
+  Cerrar Aula Cliente (por ejemplo, desde el Administrador de tareas) la quita, como cualquier
+  cierre del agente, y la consola lo ve como desconexión.
+
+### 5.10 `screen.unfreeze` (P → A) — pendiente
+
+Payload `{}`. Quita la pantalla en blanco. Es idempotente.
+
+### 5.11 `screen.freeze.ack` (A → P) — pendiente
+
+```json
+{ "ref_id": "<id del screen.freeze o screen.unfreeze>", "frozen": true }
+```
+
+Confirma el estado en que quedó la pantalla: `true` tras `screen.freeze` y `false` tras
+`screen.unfreeze`.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -395,8 +490,7 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 
 | Tipo | Descripción |
 |---|---|
-| `screen.thumb.*` | Solicitud y envío periódico de miniaturas de pantalla (con indicador visible en el agente). |
-| `screen.freeze` / `screen.unfreeze` | Bloquear la pantalla del alumno con un aviso a pantalla completa y liberarla. |
+| `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
 | `screen.broadcast.*` | Señalización WebRTC (offer/answer/ICE) para transmitir la pantalla del profesor. |
 | `app.block` | Lista de aplicaciones que el agente no permite abrir durante la clase. |
 | `web.filter` | Lista de sitios permitidos o bloqueados durante la clase. |
@@ -417,6 +511,9 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `code.share.title` | 200 caracteres | `error` `invalid_message` |
 | `code.share.exercise` | 16 caracteres | `error` `invalid_message` |
 | `msg.show.text` | 2000 caracteres | `error` `invalid_message` |
+| `screen.thumb.start.interval_ms` | 500–10 000 ms (≤ 2 cuadros/s) | `error` `invalid_message` |
+| `screen.thumb.frame.jpeg` | 640 KiB antes de Base64 | `error` `message_too_large`; la sesión sigue. |
+| `screen.freeze.message` (pendiente) | 300 caracteres | `error` `invalid_message` |
 | `error.message` | 500 caracteres | El emisor lo trunca. |
 | `hello.capabilities` | 64 entradas | `error` `invalid_message` y cierre |
 | Versión `v` ≠ 1 | — | `error` `unsupported_version` y cierre `1008` |
@@ -441,6 +538,8 @@ emisor verifica el tamaño final de la envoltura.
 
 - Los logs pueden registrar `type`, `id`, `ref_id`, `code`, tamaños y hostname. **No** deben
   registrar `content`, `text`, `title`, nonces, firmas ni claves.
+- Los logs **no** registran el contenido de `screen.thumb.frame` (`jpeg`) ni `screen.freeze.message`;
+  sí `seq`, tamaños y dimensiones. Ningún extremo escribe los cuadros en disco.
 - `hello` revela al profesor el usuario y el equipo del alumno. Es intencional (monitoreo
   transparente) y se explica en `docs/privacidad.md`.
 

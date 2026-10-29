@@ -209,4 +209,4 @@
   El segundo alumno, de consola (`dos_alumnos`), no respondía `code.ack`. Ya lo hace, pero falta
   verlo en pantalla.
 - Pendiente de la etapa: en VMs, dos alumnos confirman (2/2) y el atajo captura desde otra
-  aplicación (pasos en `docs/prueba-vms.md` §9).
+  aplicación (pasos en `docs/prueba-vms.md` §6, casos 07-A a 07-J).

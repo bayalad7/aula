@@ -1,15 +1,17 @@
-# Prueba en VMs: etapas 04 y 06
+# Prueba en VMs: etapas 04, 06 y 07
 
-Guía paso a paso para cerrar las dos etapas que siguen marcadas "falta prueba en VMs" en
+Guía paso a paso para cerrar las tres etapas que siguen marcadas "falta prueba en VMs" en
 `docs/progreso.md`:
 
-| Etapa | Qué tiene que pasar en VMs reales |
-|---|---|
-| **04** Descubrimiento y registro | Levantas el profesor y un alumno **aparece** en el registro. Al cerrarlo (o si su equipo se cuelga) **desaparece**. |
-| **06** Código en el alumno | Emites código desde la consola y el alumno lo **copia y pega intacto** en su editor. |
+| Etapa | Qué tiene que pasar en VMs reales | Sección |
+|---|---|---|
+| **04** Descubrimiento y registro | Levantas el profesor y un alumno **aparece** en el registro. Al cerrarlo (o si su equipo se cuelga) **desaparece**. | §4 |
+| **06** Código en el alumno | Emites código desde la consola y el alumno lo **copia y pega intacto** en su editor. | §5 |
+| **07** Consola del profesor | Con **dos alumnos** en VMs, emites código desde la consola real y ves **los dos acuses** (2/2). El **atajo** captura el portapapeles y lo deja listo para emitir. | §6 |
 
-Cada caso tiene un identificador (04-A, 06-C…). Al final hay una tabla para anotar los
-resultados (§8). Calcula unos **45 minutos** la primera vez.
+Hazlas en orden: la 04 prueba la red, la 06 la app del alumno y la 07 usa ambas. Cada caso
+tiene un identificador (04-A, 06-C, 07-F…). Al final hay una tabla para anotar los resultados
+(§9). Calcula unos **75 minutos** la primera vez (45 para la 04 y la 06, 30 para la 07).
 
 ---
 
@@ -19,11 +21,15 @@ resultados (§8). Calcula unos **45 minutos** la primera vez.
 |---|---|
 | Tu equipo de desarrollo (`C:\aula`) | Go y la CLI de Wails, para compilar (ya los tienes). |
 | Hipervisor | VirtualBox, Hyper-V o VMware. |
-| **VM del profesor** | Windows 10/11. No hay que instalar nada. |
-| **VM(s) del alumno** | Windows 10/11 con **WebView2** (lo trae Windows 11 y Windows 10 actualizado; ver §2.4). Una sola VM basta; con dos se prueba mejor el registro. |
+| **VM del profesor** | Windows 10/11. Para la etapa 07 necesita **WebView2** (la consola es una ventana Wails; ver §2.4). |
+| **VMs del alumno** | Windows 10/11 con **WebView2**. Para las etapas 04 y 06 basta **una**; para la 07 hacen falta **dos** (el criterio es ver 2/2 acuses). La segunda puede ser un clon de la primera (cambia su nombre de equipo para distinguir las tarjetas). |
 | Opcional en el alumno | Python (`winget install Python.Python.3.12`) para ejecutar lo que pegues (06-D). Sin Python, la comprobación se hace a ojo en el Bloc de notas. |
 
-No instalas Go ni el repositorio en las VMs: copias tres archivos ya compilados.
+No instalas Go ni el repositorio en las VMs: copias unos pocos archivos ya compilados.
+
+> **Sin segunda VM de alumno**, la etapa 07 también se puede cerrar con un alumno real
+> (`aula-cliente.exe`) y otro de consola (`dos_alumnos.exe -rol alumno`) en la **misma** VM:
+> los dos confirman el código. Anótalo en los resultados.
 
 ---
 
@@ -43,6 +49,10 @@ $env:CGO_ENABLED = '0'; go build -o dist\dos_alumnos.exe ./examples/dos_alumnos;
 Push-Location apps\student; wails build; Pop-Location
 Copy-Item apps\student\build\bin\aula-cliente.exe dist\
 
+# App real de la consola del profesor (ventana Wails, etapa 07)
+Push-Location apps\teacher; wails build; Pop-Location
+Copy-Item apps\teacher\build\bin\aula-consola.exe dist\
+
 # Código de muestra para enviar
 Copy-Item examples\snippets\*.py dist\
 ```
@@ -51,8 +61,9 @@ En `dist\` quedan:
 
 | Archivo | Va a |
 |---|---|
-| `dos_alumnos.exe` | VM del profesor **y** VMs de alumno (etapa 04) |
-| `aula-cliente.exe` | VMs de alumno (etapa 06) |
+| `dos_alumnos.exe` | VM del profesor **y** VMs de alumno (etapas 04 y 06) |
+| `aula-cliente.exe` | VMs de alumno (etapas 06 y 07) |
+| `aula-consola.exe` | VM del profesor (etapa 07) |
 | `prueba_sangria.py`, `saludo.py` | VM del profesor (es lo que se envía) |
 
 `dist/` está en `.gitignore`: los binarios no se suben al repositorio.
@@ -87,12 +98,13 @@ Get-NetConnectionProfile                      # mira NetworkCategory e Interface
 Set-NetConnectionProfile -InterfaceIndex <n> -NetworkCategory Private
 ```
 
-### 2.4 WebView2 en la VM del alumno
+### 2.4 WebView2 en las VMs con apps de ventana
 
-`aula-cliente.exe` dibuja su ventana con WebView2. Para comprobar si está instalado, abre
-**Configuración → Aplicaciones** y busca "Microsoft Edge WebView2 Runtime". Si falta, al abrir
-`aula-cliente.exe` aparece un aviso para descargarlo. Acéptalo, o instálalo desde
-<https://developer.microsoft.com/microsoft-edge/webview2/> ("Evergreen Bootstrapper").
+`aula-cliente.exe` (alumnos) y `aula-consola.exe` (profesor, etapa 07) dibujan su ventana con
+WebView2. Para comprobar si está instalado, abre **Configuración → Aplicaciones** y busca
+"Microsoft Edge WebView2 Runtime". Si falta, al abrir la app aparece un aviso para descargarlo.
+Acéptalo, o instálalo desde <https://developer.microsoft.com/microsoft-edge/webview2/>
+("Evergreen Bootstrapper").
 
 ### 2.5 Firewall de la VM del profesor
 
@@ -105,6 +117,10 @@ New-NetFirewallRule -DisplayName "Aula consola (TCP 47830)" -Direction Inbound -
 New-NetFirewallRule -DisplayName "Aula mDNS (UDP 5353)"     -Direction Inbound -Protocol UDP -LocalPort 5353  -Action Allow
 ```
 
+El aviso de Windows es **por programa**: `aula-consola.exe` (etapa 07) vuelve a preguntar la
+primera vez aunque ya hayas permitido `dos_alumnos.exe`. Las reglas por puerto de arriba sirven
+para los dos.
+
 Las VMs de alumno no necesitan reglas: solo hacen conexiones salientes.
 
 > `ping` entre VMs Windows suele fallar aunque la red esté bien, porque el firewall bloquea ICMP
@@ -112,7 +128,11 @@ Las VMs de alumno no necesitan reglas: solo hacen conexiones salientes.
 
 ---
 
-## 3. Arrancar el profesor (común a ambas etapas)
+## 3. Arrancar el profesor de ejemplo (etapas 04 y 06)
+
+> En la etapa 07 el profesor es la app real `aula-consola.exe` (§6.1). Usa **la misma clave**
+> que `dos_alumnos.exe` (las dos la guardan en `%AppData%\Aula\consola\`), así que los alumnos
+> ya configurados siguen sirviendo.
 
 ### 3.1 En la VM del profesor
 
@@ -399,7 +419,155 @@ Cierra la ventana de Aula con la **X**.
 
 ---
 
-## 6. Comandos de referencia
+## 6. Etapa 07: la consola del profesor
+
+Aquí el profesor es la **app real** `aula-consola.exe` y los alumnos son `aula-cliente.exe` en
+**dos** VMs, ya configurados como en 06-B (canal `AULA_101` y la clave del profesor).
+
+Antes de empezar, en la VM del profesor **cierra `dos_alumnos.exe`** (`Ctrl+C`). Las dos usan
+el puerto 47830 y no pueden correr a la vez. En las VMs de alumno, cierra cualquier
+`dos_alumnos.exe -rol alumno`.
+
+### 6.1 Abrir la consola
+
+**07-A Abrir el aula.** En la VM del profesor, haz doble clic en `aula-consola.exe`.
+
+1. Se abre la ventana **maximizada** con la pantalla "Aula — Consola". En **Canal** escribe
+   `AULA_101`; también puedes pulsar el botón `AULA_101` de abajo. Las letras se pasan solas a
+   mayúsculas y los espacios a `_`.
+2. En **Nombre que verán los alumnos** escribe, por ejemplo, `Prof. Ayala — Programación I`.
+3. Pulsa **Abrir clase**. Si Windows pregunta por el firewall, permite **Redes privadas**
+   (§2.5).
+
+| Esperado |
+|---|
+| Barra superior: **"Canal AULA_101"**, tu nombre, "Clave para los alumnos: XXXX-XXXX-XXXX-XXXX" y los botones **Copiar clave** y **Cambiar de aula**. |
+| La huella es **la misma** que imprimía `dos_alumnos.exe` en §3.1 (misma clave). Si es otra (por ejemplo, porque abriste la consola con otro usuario de Windows: la clave se guarda por usuario), pulsa **Copiar clave** y actualiza la configuración de los alumnos (06-B). |
+| Izquierda: "Alumnos 0 conectados" y "Esperando alumnos en este canal…". Centro: editor vacío y los botones de emisión **deshabilitados**, con el motivo "No hay alumnos conectados." Abajo a la derecha: el botón azul **Capturar portapapeles · Ctrl+Alt+Shift+C**. |
+
+Si encima del botón azul aparece un recuadro amarillo, el atajo global no se pudo registrar
+(normalmente porque otra aplicación ya usa la combinación). Anótalo; el botón funciona igual.
+
+**07-B Alumnos en vivo.** Abre `aula-cliente.exe` en las **dos** VMs de alumno.
+
+| Esperado |
+|---|
+| En la consola aparece **una tarjeta por alumno**, en menos de 5 s, con punto verde, nombre del equipo, "conectado", usuario, `windows · … · agente 0.1.0` y las etiquetas **código** y **avisos**. El contador dice "2 conectados". |
+| **Limpiar pantallas** se habilita (ya hay a quién enviarlo). **Emitir a todos** y **Agregar bloque** siguen deshabilitados mientras el editor esté vacío; el motivo cambia a "Escribe o captura código para emitir." **Enviar aviso** se habilita en cuanto escribas un texto. |
+
+Ahora **cierra la ventana** de uno de los alumnos: su tarjeta se atenúa, el punto se pone rojo y
+dice **desconectado** (en menos de 1 s); el contador baja a 1. Vuelve a abrirlo: la tarjeta pasa
+a **conectado** sin duplicarse.
+
+### 6.2 Captura rápida con el atajo (criterio de aceptación)
+
+**07-F Atajo global.** Prueba el atajo **mientras otra aplicación está al frente**, como cuando
+presentas.
+
+1. En la VM del profesor, abre `C:\aula-prueba\prueba_sangria.py` con el **Bloc de notas**
+   (clic derecho → *Abrir con* → *Bloc de notas*). También sirve PowerPoint o VS Code.
+2. Selecciona todo (`Ctrl+A`) y copia (`Ctrl+C`).
+3. **Sin cambiar de ventana**, con el Bloc de notas al frente, pulsa **Ctrl+Alt+Shift+C**
+   (usa el **Ctrl izquierdo**; ver la nota del hipervisor más abajo).
+4. Cambia a la ventana de la consola.
+
+| Esperado |
+|---|
+| El editor de la consola tiene **el contenido completo** de `prueba_sangria.py` (32 líneas), con la sangría marcada con puntos grises. |
+| El selector de lenguaje dice **Python** (lo propuso la consola; puedes cambiarlo). |
+| Abajo apareció el aviso verde "Capturado del portapapeles (32 líneas, python). Revisa el lenguaje y pulsa Emitir." (dura 5 s). |
+| **No se emitió nada:** las ventanas de los alumnos no cambiaron. Capturar nunca envía; hay que pulsar un botón de emisión. |
+
+> **El hipervisor puede quedarse el atajo.** VirtualBox usa el **Ctrl derecho** como "tecla
+> anfitriona": pulsa el atajo con el **izquierdo**. VMware libera el ratón con `Ctrl+Alt` si la
+> VM no tiene el foco del teclado: haz clic dentro de la VM antes. En Hyper-V, haz clic dentro
+> de la ventana de la VM para que reciba el teclado. Si ni así llega, anota el hipervisor y usa
+> el botón (07-G); el atajo se puede verificar luego en un equipo físico.
+
+**07-G Botón flotante.**
+
+1. En el Bloc de notas, abre `C:\aula-prueba\saludo.py`, selecciona todo y copia.
+2. En la consola, pulsa **Capturar portapapeles** (abajo a la derecha).
+
+| Esperado |
+|---|
+| El editor tiene las 3 líneas de `saludo.py`, lenguaje **Python**, y el mismo aviso verde. Nada se emite. |
+| Copia una selección vacía (o un espacio) y vuelve a pulsar el botón: aviso **rojo** "el portapapeles está vacío: copia el código primero (Ctrl+C)". El editor no cambia. |
+
+### 6.3 Emitir y ver los dos acuses (criterio de aceptación)
+
+**07-C Emitir a todos.**
+
+1. Vuelve a cargar `prueba_sangria.py` en el editor (repite 07-F, o pega con `Ctrl+V` dentro del
+   editor).
+2. En **Título** escribe `Sangría`. Deja el lenguaje en **Python**.
+3. Pulsa **Emitir a todos**.
+
+| Dónde | Esperado (en 1–2 s) |
+|---|---|
+| Consola, bajo los botones | "Ejercicio 1 · Sangría — enviado a 2 · confirmados **2/2 ✓**", en **verde**. Primero puede verse "0/2" o "1/2" un instante. |
+| Consola, tarjetas | Cada alumno muestra "✓ código recibido HH:MM:SS". |
+| Consola, historial (derecha) | "Ejercicio 1 · Sangría", "python · 32 líneas", con el botón **Reemitir**. En **Confirmaciones**, la misma línea 2/2. |
+| Alumnos | La ventana pasa al frente con la tarjeta "Ejercicio 1" + "Sangría". Pulsa **Copiar al portapapeles** en uno y pega en el Bloc de notas: el código queda idéntico (como en 06-D). |
+
+Si ves **"1/2"** y no sube, el alumno que falta no está confirmando: mira si su tarjeta dice
+"✓ código recibido" y si en su ventana apareció el código. Anota cuál falló.
+
+**07-D Agregar bloque.**
+
+1. Carga `saludo.py` en el editor (07-G) y escribe el título `Saludo`.
+2. Pulsa **Agregar bloque**.
+
+| Esperado |
+|---|
+| Consola: "Ejercicio 2 · Saludo — enviado a 2 · confirmados 2/2 ✓". El historial muestra **Ejercicio 2** arriba y **Ejercicio 1** debajo. |
+| Alumnos: **dos** tarjetas (Ejercicio 1 y Ejercicio 2), la nueva debajo. |
+
+**07-E Reemitir.** En el historial, pulsa **Reemitir** en **Ejercicio 1**.
+
+| Esperado |
+|---|
+| Consola: "Ejercicio 1 · Sangría (reemitido) — enviado a 2 · confirmados 2/2 ✓". En el historial, Ejercicio 1 dice "**emitido 2 veces**"; no aparece un Ejercicio 3. |
+| Alumnos: vuelven a ver **solo** el Ejercicio 1 (reemitir reemplaza la pantalla). |
+
+Haz **doble clic** en una entrada del historial: su código, título y lenguaje se cargan de nuevo
+en el editor, sin emitir.
+
+### 6.4 Limpiar, avisos y casos límite
+
+**07-H Limpiar y avisos.**
+
+1. Pulsa **Limpiar pantallas** y confirma.
+2. En **Aviso a todos** escribe `Guarden su trabajo: en 5 minutos cerramos.`, elige
+   **Advertencia** y pulsa **Enviar aviso**.
+
+| Esperado |
+|---|
+| Tras limpiar: "Limpiar pantallas — enviado a 2 · confirmados 2/2 ✓"; las tarjetas dicen "✓ pantalla limpia"; los alumnos ya no tienen código. |
+| Tras el aviso: "Aviso: Guarden su trabajo… — confirmados 2/2 ✓"; en los alumnos aparece el aviso **amarillo** con **Entendido**. El campo de aviso se vacía. |
+
+**07-I Sin alumnos.** Cierra las ventanas de los dos alumnos.
+
+| Esperado |
+|---|
+| Las dos tarjetas pasan a "desconectado" y el contador a 0. **Emitir**, **Agregar**, **Limpiar** y **Enviar aviso** se deshabilitan con el motivo "No hay alumnos conectados." |
+
+Vuelve a abrir los dos alumnos antes del siguiente caso.
+
+**07-J Cambiar de aula.**
+
+1. Pulsa **Cambiar de aula** y confirma. Vuelves a la pantalla de selección, con `AULA_101` como
+   canal reciente.
+2. Abre `AULA_102`.
+
+| Esperado |
+|---|
+| Los alumnos (configurados en `AULA_101`) muestran "Aula — sin conexión…" y luego "buscando la clase del canal AULA_101". **No** aparecen en `AULA_102`. El historial de la nueva clase empieza vacío. |
+| Vuelve a `AULA_101` (**Cambiar de aula**): los alumnos reconectan solos en menos de 30 s. |
+
+---
+
+## 7. Comandos de referencia
 
 **Profesor** (`dos_alumnos.exe -rol profesor`, escritos en su ventana mientras corre):
 
@@ -419,9 +587,14 @@ El lenguaje se deduce de la extensión: `.py`, `.go`, `.js`, `.ts`, `.java`, `.c
 `-nombre "Consola de ejemplo"`, `-v` (logs detallados). Las de `aula-cliente.exe` son `-canal`,
 `-clave`, `-directo IP:puerto` y `-config archivo.json`.
 
+**Consola real** (`aula-consola.exe`, etapa 07): se usa con la ventana y no tiene opciones de
+arranque; siempre escucha en el puerto 47830. Desde una terminal acepta dos subcomandos:
+`aula-consola.exe pubkey` (muestra la clave pública) y `aula-consola.exe keygen` (la crea si no
+existe). El atajo de captura es **Ctrl+Alt+Shift+C**.
+
 ---
 
-## 7. Si algo falla
+## 8. Si algo falla
 
 | Síntoma | Qué probar |
 |---|---|
@@ -433,14 +606,18 @@ El lenguaje se deduce de la extensión: `.py`, `.go`, `.js`, `.ts`, `.java`, `.c
 | "Copiar" dice **No se pudo copiar** | Pasa el ratón sobre el botón para ver el motivo. En una sesión remota (RDP), activa el portapapeles compartido de la conexión. |
 | El código no llega pero el alumno está `conectado` | Revisa la ruta del comando `codigo` (sin espacios) y que el profesor diga `enviado a 1 equipo(s)`. |
 | Se pegan las líneas juntas en un editor | Anota qué editor y su versión: es justo lo que esta prueba debe detectar. |
-| Puerto ocupado | `-puerto 47900` en el profesor (y en `-directo` si lo usas). |
+| Puerto ocupado | `-puerto 47900` en el profesor (y en `-directo` si lo usas). En la etapa 07, "el puerto 47830 está ocupado (¿hay otra consola abierta?)" al abrir la clase significa que `dos_alumnos.exe` u otra `aula-consola.exe` sigue abierta: ciérrala. |
+| La consola dice "confirmados 1/2" y no sube | Uno de los alumnos no confirma: mira qué tarjeta no tiene "✓ código recibido" y si ese alumno vio el código. Si es `dos_alumnos.exe -rol alumno`, usa una versión compilada después del 28/10/2026 (antes no confirmaba). |
+| El atajo `Ctrl+Alt+Shift+C` no hace nada | Mira el recuadro amarillo sobre el botón Capturar (otra aplicación usa la combinación). En una VM, el hipervisor puede quedarse las teclas (nota de 07-F): usa el Ctrl izquierdo o el botón. |
+| Los botones de emisión están grises | Lee el motivo junto a ellos: no hay alumnos conectados, ninguno recibe código o el editor está vacío. |
+| Los alumnos no se conectan a la consola real pero sí a `dos_alumnos` | Compara la huella de la barra superior (07-A) con la de los alumnos; si cambió, pulsa **Copiar clave** y actualiza su configuración. |
 
 Para ver logs detallados, agrega `-v` en `dos_alumnos.exe`. `aula-cliente.exe` es una app de
 ventana y no muestra logs en la terminal.
 
 ---
 
-## 8. Registro de resultados
+## 9. Registro de resultados
 
 Copia esta tabla en un issue o al final de `docs/progreso.md` y complétala:
 
@@ -463,6 +640,16 @@ Copia esta tabla en un issue o al final de `docs/progreso.md` y complétala:
 | 06-H Avisos | | |
 | 06-I Cerrar no deja procesos | | |
 | 06-J Clave equivocada (app) | | |
+| 07-A Abrir el aula | | ¿misma huella que `dos_alumnos`? |
+| 07-B Alumnos en vivo (entran y salen) | | |
+| 07-C Emitir: confirmados 2/2 ✓ | | dos VMs o alumno real + de consola: |
+| 07-D Agregar bloque | | |
+| 07-E Reemitir | | |
+| 07-F Atajo global desde otra app | | hipervisor / app al frente: |
+| 07-G Botón flotante y portapapeles vacío | | |
+| 07-H Limpiar y avisos (2/2) | | |
+| 07-I Sin alumnos: botones deshabilitados | | |
+| 07-J Cambiar de aula | | |
 
 Datos del entorno: hipervisor y modo de red, versión de Windows de cada VM, si se usó
 `-directo`.
@@ -472,34 +659,9 @@ Datos del entorno: hipervisor y modo de red, versión de Windows de cada VM, si 
 - **04:** basta con 04-A (o 04-G si la red no permite mDNS), 04-B y 04-C en ✅. Quita
   "(falta prueba en VMs)" de la fila 04.
 - **06:** basta con 06-B, 06-C y 06-D en ✅. Quita "(falta prueba en VM)" de la fila 06.
+- **07:** basta con 07-C (2/2 con dos alumnos) y 07-F (atajo con otra aplicación al frente) en
+  ✅. Quita "(falta prueba en VMs)" de la fila 07. Si el atajo solo falló por el hipervisor y el
+  botón (07-G) funcionó, anótalo: el atajo se confirma después en un equipo físico.
 
 Cualquier ❌ va a "Pendientes conocidos" de `docs/progreso.md` con el caso y las notas.
 
----
-
-## 9. Etapa 07: consola del profesor
-
-Usa la **app real de la consola** en la VM del profesor en lugar de `dos_alumnos.exe`. Compílala
-en tu equipo (`cd apps/teacher && wails build`) y copia
-`apps/teacher/build/bin/aula-consola.exe` a la VM del profesor. Los alumnos son
-`aula-cliente.exe` en **dos** VMs (o uno real y `dos_alumnos.exe -rol alumno` en otra; ambos
-confirman el código).
-
-| Caso | Pasos | Esperado |
-|---|---|---|
-| **07-A** Abrir el aula | Abre `aula-consola.exe`. Escribe `AULA_101` (o pulsa el botón del aula), un nombre, y **Abrir clase**. Pulsa **Copiar clave** y pega la clave en la configuración de los alumnos (§5, 06-B). | Arriba: "Canal AULA_101" y tu nombre. La ventana abre maximizada. |
-| **07-B** Alumnos en vivo | Arranca los dos alumnos. Cierra uno y vuelve a abrirlo. | Aparece una tarjeta por alumno con equipo, usuario, SO y las etiquetas "código" y "avisos". Al cerrar uno, su tarjeta se atenúa y dice "desconectado"; al volver, "conectado". |
-| **07-C** Emitir y ver dos acuses (**aceptación**) | Escribe o pega código en el editor, elige el lenguaje y pulsa **Emitir a todos**. | Bajo los botones: "Ejercicio 1 · … — enviado a 2 · confirmados 2/2 ✓" (en verde). Cada tarjeta muestra "✓ código recibido HH:MM:SS". Los dos alumnos ven el código. |
-| **07-D** Agregar bloque | Cambia el código y pulsa **Agregar bloque**. | Los alumnos ven dos bloques. El historial muestra Ejercicio 1 y 2. |
-| **07-E** Reemitir | En el historial, pulsa **Reemitir** en Ejercicio 1. | Los alumnos vuelven a ver solo el Ejercicio 1 (mismo número). En el historial dice "emitido 2 veces". Confirmación 2/2. |
-| **07-F** Atajo global (**aceptación**) | Abre el Bloc de notas (o PowerPoint) **en la VM del profesor**, escribe código, selecciónalo y copia (`Ctrl+C`). Sin cambiar de ventana, pulsa **Ctrl+Alt+Shift+C**. Luego vuelve a la consola. | El editor de la consola ya tiene ese código y el lenguaje propuesto. Aparece el aviso "Capturado del portapapeles…". **No se emitió nada**: los alumnos no ven cambios hasta que pulses Emitir. |
-| **07-G** Botón flotante | Copia otro texto y pulsa **Capturar portapapeles** (abajo a la derecha). | Igual que 07-F. Con el portapapeles vacío: aviso rojo "el portapapeles está vacío". |
-| **07-H** Limpiar y avisos | Pulsa **Limpiar pantallas** (confirma). Luego escribe un aviso, elige **Advertencia** y **Enviar aviso**. | "pantalla limpia ✓" en las tarjetas; aviso amarillo en los alumnos; confirmaciones 2/2. |
-| **07-I** Sin alumnos | Cierra todos los alumnos. | "Emitir", "Agregar", "Limpiar" y "Enviar aviso" se deshabilitan, con el motivo "No hay alumnos conectados." |
-| **07-J** Cambiar de aula | Pulsa **Cambiar de aula** y abre `AULA_102`. | Los alumnos de `AULA_101` pasan a "buscando" y no aparecen en `AULA_102`. |
-
-Si el atajo no funciona, en la esquina inferior derecha aparece el motivo (por ejemplo, otra
-aplicación ya usa la combinación). El botón flotante funciona igual.
-
-Anota los resultados en la tabla de §8 (agrega las filas 07-A a 07-J). Para cerrar la etapa 07
-bastan 07-C y 07-F en ✅.

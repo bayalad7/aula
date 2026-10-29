@@ -1,4 +1,4 @@
-# Prueba en VMs: etapas 04, 06 y 07
+# Prueba en VMs: etapas 04, 06, 07, 09 y transmisión de la pantalla del profesor
 
 Guía paso a paso para cerrar las tres etapas que siguen marcadas "falta prueba en VMs" en
 `docs/progreso.md`:
@@ -883,3 +883,90 @@ miniatura, pero sí el costo de capturarla).
 
 Copia los resultados (09-A a 09-L y esta tabla) a `docs/progreso.md`, en las notas de la etapa
 09.
+
+## 12. Transmisión de la pantalla del profesor (Windows)
+
+Comprueba que 2 o 3 alumnos reciben la pantalla del profesor y la leen nítida, que **siempre**
+saben que están viendo la transmisión, que un alumno que cae vuelve solo y que la lista de
+alumnos nunca sale en el video (`docs/privacidad.md`, reglas 12–16). Mide además la CPU y la
+subida del profesor (`docs/decisiones.md` D-014).
+
+### 12.1 Preparación
+
+- Compila las dos apps (§2.1) y reemplaza los `.exe` como en §11.1. La transmisión necesita
+  **las dos** apps nuevas.
+- En cada VM de alumno, la tarjeta de la consola debe mostrar la etiqueta **ve tu pantalla**. Si
+  no aparece:
+  - el agente es viejo; o
+  - su WebView2 no tiene H.264 (Windows "N" sin *Media Feature Pack*): `aula-cliente.log` dice
+    `frontend media support … h264=false`.
+- **Firewall:** la regla "Aula Consola" del instalador es por programa y ya cubre el UDP 47831.
+  Con portables, agrega la regla de §2.5 para `aula-consola.exe` (sin puerto) o abre el UDP:
+  `New-NetFirewallRule -DisplayName "Aula transmision" -Direction Inbound -Protocol UDP -LocalPort 47831 -Action Allow -Profile Private,Domain`.
+- Si la consola de la VM del profesor no tiene H.264 (Windows N), al pulsar **Transmitir mi
+  pantalla** dice que falta el codificador.
+
+### 12.2 Casos
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **TP-A** Controles | En la consola, mira la barra superior. | A la derecha: selector "Monitor 1 (principal) · 1920×1080" (uno por monitor) y el botón **Transmitir mi pantalla**. |
+| **TP-B** Empezar y aviso del alumno (**aceptación**) | Abre un archivo de código en el Bloc de notas o VS Code de la VM del profesor y pulsa **Transmitir mi pantalla**. | **En cada alumno, antes del video:** la ventana de Aula pasa al frente, se maximiza y muestra la franja azul "▶ Estás viendo la pantalla de <profesor> (canal 1)". La barra de la ventana dice "Aula — viendo la pantalla de …". En 1–3 s aparece el video. **En la consola:** la franja roja "● Transmitiendo tu pantalla (monitor 1) a N de N alumnos" con **Detener**. |
+| **TP-C** Código nítido (**aceptación**) | Con una fuente de 14–16 pt en el editor del profesor, escribe y desplázate. | El texto se lee en los alumnos; al escribir, el cambio llega en menos de 1 s. Si la pantalla del alumno es más chica, **Tamaño real** lo muestra 1:1 con barras de desplazamiento y **Ajustar a la ventana** vuelve. |
+| **TP-D** La consola no sale en el video (**privacidad**) | Pon la ventana de la consola (con la lista de alumnos) sobre el monitor transmitido. | Los alumnos **no** la ven: ven lo que hay detrás (o un rectángulo negro en Windows anteriores a 10 2004). Al **Detener**, la consola vuelve a salir en capturas normales (prueba con Win+Shift+S). |
+| **TP-E** El alumno no puede ocultar el aviso | En un alumno, minimiza o achica la ventana de Aula. | La transmisión sigue. La barra de tareas sigue diciendo "Aula — viendo la pantalla de …". Al restaurar la ventana, la franja azul sigue arriba del video. |
+| **TP-F** Un alumno cae y vuelve (**aceptación**) | Desconecta la red de una VM de alumno 20 s y vuelve a conectarla (o cierra y abre Aula Cliente). | Al caer, su vista se cierra sola y la consola cuenta un receptor menos. Al volver, en menos de 30 s reaparecen la franja y el video **sin tocar la consola**. |
+| **TP-G** Alumno nuevo durante la transmisión | Con la transmisión activa, abre Aula Cliente en otra VM. | Recibe la transmisión sola y la consola cuenta un receptor más. |
+| **TP-H** Detener | Pulsa **Detener** (en la franja o en el botón de la barra). | En cada alumno, en 1–2 s desaparecen la franja y el video, la ventana se restaura y vuelve la vista de código. La franja roja de la consola desaparece. |
+| **TP-I** Cambiar de canal o cerrar | Transmite y cambia la consola al canal 2 (o ciérrala). | La transmisión termina en todos los alumnos del canal 1. |
+| **TP-J** Pantalla vista + transmisión | Transmite y abre además **Ver pantallas**. | En los alumnos aparecen las dos cosas: la franja **azul** de la transmisión y el distintivo **rojo** "Tu pantalla está siendo vista por el profesor". Son avisos distintos. |
+| **TP-K** Nada en disco | Tras la prueba, busca videos o imágenes nuevas en `%LOCALAPPDATA%\Aula` y `%APPDATA%\Aula` (como 09-L, agregando `*.mp4,*.webm,*.h264`). | No hay ninguna. Los logs dicen "broadcast started/stopped", intentos y tamaños, nunca SDP ni candidatos. |
+
+**Para aceptar la transmisión** bastan TP-B, TP-C, TP-D, TP-F y TP-H en ✅, más la medición de
+§12.3.
+
+### 12.3 Medición: CPU y subida del profesor
+
+Hay dos formas, y conviene hacer las dos:
+
+1. **Con la consola real** (Administrador de tareas o `typeperf`, como en §11.3): CPU de
+   `aula-consola.exe` y *Bytes enviados/s* de la tarjeta de red del profesor. Mide 2 minutos
+   así:
+   - sin transmitir (línea base);
+   - transmitiendo un editor quieto;
+   - transmitiendo mientras escribes y te desplazas sin parar (peor caso).
+2. **Con `examples/transmision`** en la VM del profesor (cierra antes la consola real; usa el
+   mismo puerto):
+
+   ```powershell
+   go build -o transmision.exe ./examples/transmision     # en tu equipo; copia el .exe a la VM
+   .\transmision.exe -canal 1 -dir "$env:APPDATA\Aula\consola"           # patrón sintético de código
+   .\transmision.exe -canal 1 -dir "$env:APPDATA\Aula\consola" -monitor 0 # el monitor real
+   ```
+
+   `-dir` debe apuntar a la carpeta donde está la clave con la que se instalaron los alumnos (en
+   un centro, la clave del centro: usa una consola portable con esa clave). Cada 5 s imprime:
+   `receptores 2/2 · video 250 kbit/s · subida ≈ 0.5 Mbit/s · 4.0 cuadros/s · codificar 15ms/cuadro · CPU 40 % de un núcleo`.
+
+**Proyección a 40 alumnos:** la CPU casi no depende del número de alumnos, porque se codifica
+una sola vez. La subida sí: *video × alumnos*.
+
+| Medida | Aceptable (D-014) |
+|---|---|
+| Subida pico proyectada a 40 (tope 2,5 Mbit/s) | ≤ 100 Mbit/s y ≤ 50 % del enlace del profesor; si no, baja `broadcast_max_kbps` |
+| CPU del profesor transmitiendo un editor quieto | ≤ 50 % de un núcleo |
+| CPU del profesor escribiendo sin parar (peor caso) | anótala; con el codificador de software puede pasar de un núcleo en equipos modestos |
+
+Referencia en el equipo de desarrollo (Ryzen 5 3450U, 1080p, 1 receptor): 25–45 % de un núcleo
+y 100–320 kbit/s con el patrón; ~130 % de un núcleo si cada cuadro cambia.
+
+| Medida | Línea base | Editor quieto | Escribiendo | Tras detener |
+|---|---|---|---|---|
+| N (receptores) | | | | |
+| CPU consola (% de un núcleo) | | | | |
+| Video (kbit/s, del ejemplo) | — | | | — |
+| Enviados (Mbit/s, profesor) | | | | |
+| **Proyección a 40:** subida (Mbit/s) | — | | | — |
+
+Copia los resultados (TP-A a TP-K y esta tabla) a `docs/progreso.md`, en las notas de la
+transmisión.

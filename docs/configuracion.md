@@ -103,14 +103,16 @@ Lo escribe el instalador. Todos los usuarios lo leen y solo los administradores 
 ```json
 {
   "default_channel": 1,
-  "port": 47830
+  "port": 47830,
+  "broadcast_max_kbps": 2500
 }
 ```
 
 | Campo | Descripción |
 |---|---|
 | `default_channel` | Canal en el que **arranca** la consola. El maestro puede cambiarlo con el selector de la barra superior. |
-| `port` | Puerto TCP del servidor (TLS). Opcional; por defecto **47830**. Los alumnos lo descubren por mDNS. |
+| `port` | Puerto TCP del servidor (TLS). Opcional; por defecto **47830**. Los alumnos lo descubren por mDNS. La transmisión de la pantalla del profesor usa el UDP siguiente (**47831**). |
+| `broadcast_max_kbps` | Tope de la tasa de video al transmitir la pantalla del profesor, en kbit/s. Opcional; por defecto **2500**, mínimo 800. Con un enlace de 100 Mbit/s en el equipo del profesor y más de 20 alumnos, usa `50000 / alumnos` (`docs/decisiones.md` D-014). |
 
 ### Del usuario: `%AppData%\Aula\consola\`
 

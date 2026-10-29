@@ -28,6 +28,8 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
 | `aula:status` | `Status` | Cambia la conexión: buscando, conectado, desconectado, sin configurar. |
 | `aula:board` | `Board` | Llega `code.share` o `code.clear`. |
 | `aula:notices` | `Notices` | Llega `msg.show` o el alumno cierra un aviso. |
+| `aula:broadcast` | `BroadcastView` | Empieza o termina la transmisión de la pantalla del profesor. Llega **antes** que la oferta: la vista y su franja se muestran primero. |
+| `aula:broadcast-signal` | `broadcast.Signal` | Una oferta SDP (`kind: "offer"`) o un candidato ICE del profesor (`kind: "ice"`), ya validados por Go. |
 
 ```jsonc
 // Status
@@ -36,7 +38,18 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
   "channel": "1",
   "banner": "Aula — conectado a la clase de Lab 3 — Prof. Ayala (canal 1)",
   "detail": "",                      // ayuda extra, p. ej. por qué está sin configurar
-  "viewed": false }                  // true mientras el profesor recibe esta pantalla
+  "viewed": false,                   // true mientras el profesor recibe esta pantalla
+  "watching": false }                // true mientras esta pantalla muestra la del profesor
+
+// BroadcastView: la transmisión de la pantalla del profesor
+{ "active": true, "broadcastId": "7d1f…", "width": 1920, "height": 1080, "fps": 15,
+  "teacher": "Lab 3 — Prof. Ayala", "channel": "1",
+  "notice": "▶ Estás viendo la pantalla de Lab 3 — Prof. Ayala (canal 1)" }
+
+// Signal: para el RTCPeerConnection de la interfaz; un attempt mayor reemplaza la conexión
+{ "kind": "offer", "broadcastId": "7d1f…", "attempt": 1, "sdp": "v=0…" }
+{ "kind": "ice", "broadcastId": "7d1f…", "attempt": 1,
+  "candidate": "candidate:1 1 udp 2130706431 192.168.1.20 47831 typ host", "sdpMid": "0", "sdpMLineIndex": 0 }
 
 // Board: lista completa, la más antigua primero (máx. 20 con "append")
 { "snippets": [ { "id": "0c9a…", "exercise": "3", "title": "Factorial", "lang": "python",
@@ -53,9 +66,13 @@ llevar estado propio.
 
 | Método | Devuelve | Uso |
 |---|---|---|
-| `App.View()` | `View` = `{status, snippets, notices}` | Estado completo para el primer dibujo. |
+| `App.View()` | `View` = `{status, snippets, notices, broadcast}` | Estado completo para el primer dibujo. |
 | `App.Copy(snippetId)` | error (promesa rechazada con texto en español) | Copia el fragmento al portapapeles del sistema. |
 | `App.DismissNotice(noticeId)` | — | Cierra un aviso; emite `aula:notices`. |
+| `App.ReportMedia(webrtc, h264)` | — | Al cargar: si hay `RTCPeerConnection` y decodificador H.264. Go espera este aviso (máx. 5 s) antes de conectarse y solo entonces declara `screen.broadcast`. |
+| `App.BroadcastAnswer(broadcastId, attempt, sdp)` | error | La respuesta SDP de la interfaz. Go comprueba que sea solo recepción de video y la envía con el `ref_id` de la oferta. |
+| `App.BroadcastCandidate(broadcastId, attempt, candidate, sdpMid, sdpMLineIndex)` | error | Un candidato ICE local; `""` cierra la lista. |
+| `App.BroadcastFailed(broadcastId, attempt)` | error | La interfaz no pudo abrir la conexión: Go responde `error` `internal` a la oferta y la consola reintenta. |
 
 `Copy` recibe solo el **ID**: el texto sale de la copia que guarda Go, no de la página. Así lo
 que se pega es exactamente lo que envió el profesor, sin depender de cómo lo dibujó el
@@ -70,6 +87,13 @@ navegador.
 - Con `viewed: true` la barra se pone roja y dice "Aula — tu pantalla está siendo vista por
   <profesor> (canal N)". Es un aviso adicional: el principal es el distintivo nativo de Windows,
   que se ve aunque la ventana esté minimizada (`docs/privacidad.md`, regla 6).
+- **Transmisión del profesor** (`docs/privacidad.md`, reglas 12–14): con `aula:broadcast`
+  activo, Go trae la ventana al frente y la maximiza; la interfaz oculta el código y muestra la
+  franja azul fija con `notice` y el `<video>`. El `RTCPeerConnection` vive en la interfaz, sin
+  servidores ICE, y solo recibe: nunca pide cámara, micrófono ni pantalla. Los candidatos que
+  llegan antes de aplicar la oferta se guardan y se aplican después. Al terminar (`active:
+  false`) la interfaz cierra la conexión y Go restaura la ventana. La CSP permite
+  `media-src mediastream: blob:` para el video.
 
 ## Consola del profesor (`apps/teacher`)
 
@@ -90,6 +114,10 @@ interfaz ──App.OpenScreens()──▶ screen.Wall ──screen.thumb.start�
 agentes ──screen.thumb.frame──▶ screen.Wall (solo el start vigente) ──"aula:frame"──▶ <img> de la cuadrícula
 interfaz ──App.ViewScreen(id)──▶ nuevo start a ese agente (1280 px); ViewScreen("") vuelve a 320 px
 interfaz ──App.CloseScreens()──▶ screen.thumb.stop a todos; Go olvida los cuadros
+interfaz ──App.StartBroadcast(monitor)──▶ excluye la consola de la captura ──▶ broadcast.Broadcaster
+          ──screen.broadcast.start/offer/ice──▶ agentes con screen.broadcast ──answer/ice──▶ Go
+broadcast.Broadcaster (receptores conectados) ──"aula:broadcast"──▶ franja roja "a M de N alumnos"
+interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la consola vuelve a las capturas
 ```
 
 ### Eventos (Go → interfaz)
@@ -102,14 +130,16 @@ interfaz ──App.CloseScreens()──▶ screen.thumb.stop a todos; Go olvida 
 | `aula:capture` | `Capture` | Al pulsar el atajo global o el botón Capturar. |
 | `aula:class` | `View` | Al terminar el arranque automático en el canal predeterminado. Si falló, `active` es `false` y el motivo está en `Setup().startError`. |
 | `aula:frame` | `Thumb` | Por cada cuadro recibido mientras la vista de pantallas está abierta (≤ 1 por segundo y alumno). Solo cuadros del `screen.thumb.start` vigente. |
+| `aula:broadcast` | `BroadcastState` | La transmisión de tu pantalla empieza, termina o cambia su número de receptores. |
 
 ```jsonc
 // Students: la lista del canal y los conteos que habilitan los botones
 { "students": [ { "id": "…", "hostname": "LAB3-PC07", "username": "alumno07", "os": "windows",
                   "osVersion": "…", "agentVersion": "0.1.0", "state": "connected",
                   "capabilities": ["code.view", "msg.show", "screen.thumb"], "canCode": true,
-                  "canNotice": true, "canThumb": true, "lastCodeAck": "0c9a…", "ackedAt": "10:00:05" } ],
-  "connected": 1, "canCode": 1, "canNotice": 1, "canThumb": 1 }
+                  "canNotice": true, "canThumb": true, "canBroadcast": true,
+                  "lastCodeAck": "0c9a…", "ackedAt": "10:00:05" } ],
+  "connected": 1, "canCode": 1, "canNotice": 1, "canThumb": 1, "canBroadcast": 1 }
 
 // History: fragmentos de la sesión, numerados ("Ejercicio N")
 { "entries": [ { "snippetId": "…", "number": 1, "title": "Factorial", "lang": "python",
@@ -129,6 +159,15 @@ interfaz ──App.CloseScreens()──▶ screen.thumb.stop a todos; Go olvida 
   "jpeg": "/9j/4AAQ…",               // JPEG en Base64
   "detail": false,                   // true si es el alumno de la vista en detalle (1280 px)
   "at": "2026-10-29T10:00:05-06:00" }
+
+// BroadcastState: la transmisión de la pantalla del profesor
+{ "active": true, "display": 0,      // monitor transmitido; -1 sin transmisión
+  "receivers": 2,                    // alumnos con la conexión de video arriba
+  "eligible": 3,                     // alumnos conectados que pueden recibirla
+  "available": true }                // este equipo puede capturar sus monitores
+
+// DisplayInfo (Displays()): un monitor
+{ "index": 0, "label": "Monitor 1 (principal) · 1920×1080", "width": 1920, "height": 1080, "primary": true }
 ```
 
 ### Métodos enlazados (interfaz → Go)
@@ -147,6 +186,10 @@ interfaz ──App.CloseScreens()──▶ screen.thumb.stop a todos; Go olvida 
 | `OpenScreens()` | error | Abre la vista de pantallas (botón **Ver pantallas**): envía `screen.thumb.start` (1000 ms, calidad 50, 320 px) a cada alumno conectado con `canThumb`, y también a los que se conecten mientras siga abierta. Error si no hay clase. |
 | `CloseScreens()` | — | Cierra la vista (**Cerrar** o Esc): envía `screen.thumb.stop` a todos los que transmitían y olvida los cuadros. |
 | `ViewScreen(sessionId)` | — | Vista en detalle de un alumno (clic en su miniatura): nuevo `screen.thumb.start` con 1280 px y calidad 70 solo a él. `ViewScreen("")` lo devuelve a miniatura. |
+| `Displays()` | `DisplayInfo[]` | Monitores para el selector de la transmisión. |
+| `StartBroadcast(monitor)` | `BroadcastState` / error | **Transmitir mi pantalla.** Excluye la ventana de la consola de la captura (si no puede, no transmite) y envía `screen.broadcast.start` + oferta a cada alumno con `canBroadcast`, y a los que se conecten después. Error si no hay clase, si ya transmite o si falta el codificador H.264. |
+| `StopBroadcast()` | `BroadcastState` | **Detener.** `screen.broadcast.stop` a todos; la consola vuelve a aparecer en las capturas. También ocurre al cambiar de canal o cerrar la clase. |
+| `BroadcastState()` | `BroadcastState` | Estado actual (también viene en `View().broadcast`). |
 
 ### Reglas
 
@@ -160,6 +203,9 @@ interfaz ──App.CloseScreens()──▶ screen.thumb.stop a todos; Go olvida 
 - **Las pantallas solo se transmiten con la vista abierta.** La interfaz llama a
   `CloseScreens()` al cerrarla y al cambiar de canal o de nombre; Go además detiene todo al
   cerrar la clase (`EndClass`), y cada agente se detiene solo si se pierde la conexión.
+- **La transmisión de la pantalla es visible para los dos lados:** la consola muestra la franja
+  roja con "Detener" mientras dura y su propia ventana no aparece en el video
+  (`docs/privacidad.md`, regla 15).
 - **Los cuadros solo viven en memoria:** Go guarda el último de cada alumno mientras la vista
   está abierta y la interfaz solo los tiene en sus `<img>`. Nada se escribe en disco
   (`docs/privacidad.md`, regla 7). La CSP permite `img-src data:` para mostrarlos.

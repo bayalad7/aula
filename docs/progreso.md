@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-10-29 (v0.2.0: canales tipo LanSchool y clave del centro).
+Última actualización: 2026-10-29 (transmisión de la pantalla del profesor con WebRTC).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -13,6 +13,7 @@
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ✅ **Hito 1 completado** (falta validación en laboratorio) |
 | 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 En curso (miniaturas; pantalla en blanco documentada y pendiente) |
+| 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada (falta prueba en VMs, `docs/prueba-vms.md` §12) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 
@@ -332,6 +333,89 @@
   - correr los casos 09-A a 09-L y la medición de `docs/prueba-vms.md` §11;
   - prueba real en VMs Windows (miniaturas, distintivo visible, detener la vista detiene la
     captura) y los commits.
+
+## Etapa 09.2: transmisión de la pantalla del profesor — notas
+
+- **Diseño aprobado** (2026-10-29), con las recomendaciones:
+  - H.264 con Media Foundation, sin cgo;
+  - el alumno puede minimizar la vista;
+  - la consola siempre excluida de la captura;
+  - UDP 47831.
+
+  Documentado en:
+  - `docs/protocol.md` §5.12 (`screen.broadcast.start/offer/answer/ice/stop`), con su tabla en
+    §5, límites en §7, logs en §9 y amenaza en §10.3; también se corrigió la fila rota de
+    `screen.broadcast` en §4;
+  - `docs/privacidad.md`, reglas 12–16;
+  - `docs/decisiones.md`, D-014: un codificador repartido a N conexiones; un SFU dentro del
+    proceso no ahorra subida. Umbral: subida pico > 50 % del enlace o CPU > 50 %.
+- **Protocolo:** `internal/protocol/broadcast.go` (validación, límites de SDP y de candidatos),
+  `CapScreenBroadcast` y su mapa de capacidades, fixtures válidos e inválidos y pruebas.
+- **`internal/platform`:**
+  - interfaces `DisplayCapture` (monitores y captura continua) y `VideoEncoder`;
+  - `RGBAToNV12`, `ExcludeFromCapture`;
+  - en Windows: monitores con `EnumDisplayMonitors` y `GetMonitorInfoW` propios (los de
+    `kbinani/screenshot` fallan `checkptr` con `-race`), captura con `CaptureRect`, exclusión con
+    `SetWindowDisplayAffinity` y el codificador H.264 de Media Foundation por COM sin cgo;
+  - fallback "no soportado" en Linux, macOS y Windows de 32 bits.
+- **`internal/broadcast`** (sin APIs del SO):
+  - `Caster`: señalización por sesión con intentos, reintentos con retroceso, expiración del
+    intento, gracia de desconexión y conteo de receptores;
+  - `Source`: captura y codificación a 15 cuadros/s; un cuadro idéntico no se codifica, se
+    reenvía una vez por segundo; cuadros clave a pedido, como máximo uno por segundo;
+  - `Media`: pion, ICE-lite, `UDPMux` en un puerto y un track H.264 compartido;
+  - `Broadcaster`: une las tres piezas;
+  - `Viewer` (agente): valida que la oferta sea solo video de recepción y muestra la vista
+    antes de entregarla.
+- **Consola:**
+  - selector de monitor y **Transmitir mi pantalla / Detener transmisión** en la barra
+    superior;
+  - franja roja "Transmitiendo tu pantalla (monitor N) a M de K alumnos" con **Detener**;
+  - etiqueta "ve tu pantalla" en las tarjetas de los alumnos;
+  - la ventana se excluye de la captura antes de transmitir (si no puede, no transmite);
+  - cambiar de canal o cerrar la clase detienen la transmisión;
+  - `broadcast_max_kbps` en la configuración de máquina.
+- **Alumno:**
+  - el frontend informa con `ReportMedia` si tiene WebRTC y H.264; el agente espera ese aviso
+    hasta 5 s antes de conectarse y solo entonces declara `screen.broadcast`;
+  - la vista de transmisión trae la ventana al frente y la maximiza, con la franja azul fija,
+    el `<video>`, **Tamaño real** y la barra "Aula — viendo la pantalla de …";
+  - el RTCPeerConnection vive en el frontend y Go valida y reenvía la señalización;
+  - al perder la conexión la vista se cierra sola.
+- **Pruebas automáticas:**
+  - señalización con un doble de PeerConnection (`caster_test.go`): orden start → offer → ice,
+    respuesta a la oferta vigente, respuestas viejas ignoradas, candidatos `.local` filtrados,
+    reintento por falla, desconexión, error del agente y expiración; un alumno que sale y otro
+    que entra; stop a todos al detener;
+  - `Viewer`: aviso antes de la oferta, rechazo de audio y canal de datos, intentos, límite de
+    candidatos;
+  - **de punta a punta con pion real en ambos lados** por loopback: dos receptores, uno cae y
+    vuelve como sesión nueva y recibe video otra vez, detener y volver a empezar;
+  - salto de cuadros idénticos, codificador real de Media Foundation (IDR con SPS/PPS, cuadro
+    clave forzado), NV12, exclusión de la captura (leyendo la afinidad, sin capturar la
+    pantalla);
+  - bindings de ambas apps y contrato de eventos.
+- **Verificado en este equipo con el WebView2 real** (`aula-cliente.exe` compilado y
+  `examples/transmision` con el patrón sintético de código, sin transmitir el escritorio):
+  - ICE-lite y DTLS conectan (receptores 1/1) y el H.264 de Media Foundation se decodifica;
+  - la captura de la ventana del alumno muestra el código legible bajo la franja azul;
+  - al cerrar la consola la vista desaparece sola, y al volver el alumno se reconecta y recibe
+    la nueva transmisión sin intervención;
+  - la ventana se maximiza al empezar y se restaura al terminar. Una vez, con la transmisión
+    llegando ~2 s después de abrir la app, quedó maximizada; no se reprodujo.
+- **Medido** (Ryzen 5 3450U, 1080p, un receptor):
+  - NV12: 3,7 ms por cuadro; codificación de software: ~9 ms por cuadro;
+  - con cada cuadro distinto, ~130 % de un núcleo; con el salto de cuadros idénticos y el
+    cursor del patrón cambiando 5 veces por segundo, 25–45 % de un núcleo;
+  - video de 100–320 kbit/s.
+- **Falta:**
+  - prueba en VMs con 2–3 alumnos y la medición de `docs/prueba-vms.md` §12 (CPU y subida del
+    profesor con la consola real);
+  - probar la interfaz de la consola con clics (selector, Transmitir, Detener, franja), que solo
+    se verificó con pruebas de los bindings;
+  - codificadores H.264 por hardware (MFT asíncronos), que bajarían la CPU;
+  - Linux y macOS (cuando se indique);
+  - los commits.
 
 ## v0.3.0-rc.2: el alumno no encontraba la consola (D-015)
 

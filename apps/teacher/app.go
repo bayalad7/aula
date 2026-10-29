@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
@@ -56,6 +57,14 @@ type App struct {
 	hotkey     HotkeyStatus
 	wall       *screen.Wall // screens view: who streams and their last frame
 
+	// Broadcast of the teacher's screen. bcMu orders start and stop;
+	// exclude hides the console from captures (replaced in tests).
+	bc               *broadcast.Broadcaster
+	bcMu             sync.Mutex
+	exclude          func(bool) error
+	broadcastUDPPort int       // ws port + 1 (docs/protocol.md §5.12)
+	bcClass          classroom // the class the broadcast goes to; guarded by mu
+
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
 	// with respect to acks, so a fast agent's ack is never counted as unknown.
 	sendMu sync.Mutex
@@ -64,15 +73,19 @@ type App struct {
 // NewApp builds the console. dir holds the identity and settings.
 func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform.Hotkeys, log *slog.Logger) *App {
 	m, s := loadMachineConfig(), loadSettings(dir)
-	return &App{
+	a := &App{
 		dir: dir, siteKeyDir: siteKeyDir(), port: serverPort(m, s),
 		defaultChannel: defaultChannel(m, s), defaultName: s.ConsoleName,
 		log: log, clip: clip, clipErr: clipErr, hotkeys: hotkeys,
 		start: startLiveClass, now: time.Now, emit: func(string, any) {}, raise: func() {},
 		history: &codedist.History{}, deliveries: &codedist.Deliveries{},
-		hotkey: HotkeyStatus{Combo: platform.DefaultCaptureHotkey.String()},
-		wall:   screen.NewWall(),
+		hotkey:  HotkeyStatus{Combo: platform.DefaultCaptureHotkey.String()},
+		wall:    screen.NewWall(),
+		exclude: platform.ExcludeFromCapture,
 	}
+	a.broadcastUDPPort = a.port + 1
+	a.bc = a.newBroadcaster(broadcastKbps(m))
+	return a
 }
 
 // startup registers the capture hotkey for the lifetime of ctx.
@@ -163,7 +176,8 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		ctx = context.Background()
 	}
 	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
-		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame}, a.log)
+		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
+		onBroadcast: a.onBroadcastMessage}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -189,7 +203,8 @@ func (a *App) EndClass() {
 	a.class = nil
 	a.mu.Unlock()
 	if class != nil {
-		a.sendScreen(class, a.wall.Close()) // agents also stop when the connection closes
+		a.StopBroadcast() // agents also stop when the connection closes
+		a.sendScreen(class, a.wall.Close())
 		class.Stop()
 	}
 }
@@ -208,6 +223,7 @@ func (a *App) View() View {
 	} else {
 		v.Students = studentsOf(nil)
 	}
+	v.Broadcast = a.stateOf(a.bc.Status())
 	return v
 }
 
@@ -436,6 +452,7 @@ func (a *App) onChange() {
 	}
 	a.emit(EventStudents, studentsOf(class.Sessions()))
 	a.syncScreens()
+	a.bc.Sync(class.Sessions())
 }
 
 // onFrame forwards a thumbnail of the stream in force to the screens view.
@@ -474,7 +491,7 @@ func studentsOf(list []session.Session) Students {
 			ID: s.ID, Hostname: s.Hostname, Username: s.Username, OS: string(s.OS), OSVersion: s.OSVersion,
 			AgentVersion: s.AgentVersion, State: "disconnected",
 			CanCode: s.Can(protocol.CapCodeView), CanNotice: s.Can(protocol.CapMsgShow),
-			CanThumb:    s.Can(protocol.CapScreenThumb),
+			CanThumb: s.Can(protocol.CapScreenThumb), CanBroadcast: s.Can(protocol.CapScreenBroadcast),
 			LastCodeAck: s.LastCodeAck,
 		}
 		for _, c := range s.Capabilities {
@@ -494,6 +511,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanThumb {
 				out.CanThumb++
+			}
+			if st.CanBroadcast {
+				out.CanBroadcast++
 			}
 		}
 		out.Students = append(out.Students, st)

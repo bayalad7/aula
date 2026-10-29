@@ -35,6 +35,9 @@ type classHooks struct {
 	onAck    func(refID string)                                  // a code.ack or msg.ack arrived
 	onChange func()                                              // the registry changed
 	onFrame  func(sessionID string, f protocol.ScreenThumbFrame) // a screen thumbnail arrived
+	// onBroadcast receives the agents' screen.broadcast answers, candidates
+	// and errors.
+	onBroadcast func(sessionID string, env protocol.Envelope)
 }
 
 type classConfig struct {
@@ -135,6 +138,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 			case protocol.ScreenThumbFrame:
 				if hooks.onFrame != nil {
 					hooks.onFrame(conn.ID(), p)
+				}
+			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
+				if hooks.onBroadcast != nil {
+					hooks.onBroadcast(conn.ID(), env)
 				}
 			}
 		},

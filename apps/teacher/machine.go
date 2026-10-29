@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
 )
@@ -15,6 +16,9 @@ import (
 type machineConfig struct {
 	DefaultChannel int `json:"default_channel"`
 	Port           int `json:"port,omitempty"`
+	// BroadcastMaxKbps caps the broadcast of the teacher's screen (D-014);
+	// 0 means broadcast.DefaultMaxKbps.
+	BroadcastMaxKbps int `json:"broadcast_max_kbps,omitempty"`
 }
 
 // machineConfigPath is replaced in tests.
@@ -42,6 +46,15 @@ func defaultChannel(m machineConfig, s settings) string {
 		}
 	}
 	return "1"
+}
+
+// broadcastKbps is the configured cap, kept at or above broadcast.MinKbps so
+// still code stays legible; 0 means the default.
+func broadcastKbps(m machineConfig) int {
+	if m.BroadcastMaxKbps <= 0 {
+		return 0
+	}
+	return max(m.BroadcastMaxKbps, broadcast.MinKbps)
 }
 
 // serverPort is the machine port, else the user's, else DefaultPort.

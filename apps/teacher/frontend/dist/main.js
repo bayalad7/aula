@@ -14,7 +14,8 @@
     ["html", "HTML"], ["css", "CSS"], ["shell", "Shell"], ["json", "JSON"], ["rust", "Rust"],
     ["kotlin", "Kotlin"], ["plaintext", "Texto"],
   ];
-  const CAP_NAMES = { "code.view": "código", "msg.show": "avisos", "screen.thumb": "pantalla" };
+  const CAP_NAMES = { "code.view": "código", "msg.show": "avisos", "screen.thumb": "pantalla",
+    "screen.broadcast": "ve tu pantalla" };
 
   let editor = null;          // Monaco instance
   let students = { connected: 0, canCode: 0, canNotice: 0, students: [] };
@@ -108,6 +109,8 @@
     warn.hidden = view.hotkey.active;
     warn.textContent = view.hotkey.error || "";
     renderStudents(view.students);
+    renderBroadcast(view.broadcast);
+    loadDisplays();
     renderHistory(view.history);
     renderDeliveries(view.deliveries);
     if (!editor) initEditor();
@@ -369,6 +372,57 @@
     if (detailId) hideDetail(); else closeScreens();
   });
 
+  // --- Broadcast of the teacher's screen ------------------------------------------------
+  // The students see it in a window with a fixed band; here the band is red
+  // and says how many receive it. The console window is excluded from the
+  // capture by the backend.
+  let bc = { active: false, display: -1, receivers: 0, eligible: 0, available: false };
+
+  function loadDisplays() {
+    api.Displays().then((ds) => {
+      const sel = $("bc-display");
+      const keep = sel.value;
+      sel.replaceChildren(...ds.map((d) => Object.assign(document.createElement("option"),
+        { value: String(d.index), textContent: d.label })));
+      if (ds.some((d) => String(d.index) === keep)) sel.value = keep;
+      renderBroadcast(bc);
+    });
+  }
+
+  function renderBroadcast(s) {
+    if (bc.active && !s.active) loadDisplays(); // monitors may have changed meanwhile
+    bc = s;
+    const sel = $("bc-display");
+    const btn = $("bc-toggle");
+    btn.textContent = s.active ? "Detener transmisión" : "Transmitir mi pantalla";
+    btn.classList.toggle("primary", !s.active);
+    btn.disabled = !s.available || sel.options.length === 0;
+    btn.title = s.available ? "" : "Este equipo no puede capturar sus monitores";
+    sel.disabled = s.active;
+    if (s.active && s.display >= 0) sel.value = String(s.display);
+    $("bc-band").hidden = !s.active;
+    if (s.active) {
+      const n = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].textContent.split(" · ")[0] : "";
+      $("bc-text").textContent = "Transmitiendo tu pantalla (" + n.toLowerCase() + ") a " + s.receivers +
+        " de " + s.eligible + " alumno" + (s.eligible === 1 ? "" : "s");
+    }
+  }
+
+  function toggleBroadcast() {
+    if (bc.active) {
+      api.StopBroadcast().then(renderBroadcast);
+      return;
+    }
+    $("bc-toggle").disabled = true;
+    api.StartBroadcast(Number($("bc-display").value)).then(renderBroadcast, (err) => {
+      toast(String(err), "error");
+      renderBroadcast(bc);
+    });
+  }
+  $("bc-toggle").addEventListener("click", toggleBroadcast);
+  $("bc-stop").addEventListener("click", () => api.StopBroadcast().then(renderBroadcast));
+
+  rt.EventsOn(ev.BROADCAST, renderBroadcast);
   rt.EventsOn(ev.STUDENTS, renderStudents);
   rt.EventsOn(ev.FRAME, onFrame);
   rt.EventsOn(ev.HISTORY, (h) => renderHistory(h.entries));

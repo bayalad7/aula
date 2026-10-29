@@ -25,6 +25,9 @@ const (
 	// EventFrame carries a screen.Thumb for every screen thumbnail received
 	// while the screens view is open. Frames only live in memory.
 	EventFrame = "aula:frame"
+	// EventBroadcast carries a BroadcastState when the broadcast of the
+	// teacher's screen starts, stops or its receiver count changes.
+	EventBroadcast = "aula:broadcast"
 )
 
 // Setup is what the channel selection screen needs.
@@ -61,9 +64,10 @@ type Student struct {
 	Capabilities []string `json:"capabilities"`
 	CanCode      bool     `json:"canCode"`
 	CanNotice    bool     `json:"canNotice"`
-	CanThumb     bool     `json:"canThumb"`    // screen.thumb (Windows agents)
-	LastCodeAck  string   `json:"lastCodeAck"` // snippet_id; "" after a clear
-	AckedAt      string   `json:"ackedAt"`     // "" if nothing acknowledged yet
+	CanThumb     bool     `json:"canThumb"`     // screen.thumb (Windows agents)
+	CanBroadcast bool     `json:"canBroadcast"` // screen.broadcast (Windows agents)
+	LastCodeAck  string   `json:"lastCodeAck"`  // snippet_id; "" after a clear
+	AckedAt      string   `json:"ackedAt"`      // "" if nothing acknowledged yet
 }
 
 // Students is the list for the channel plus the counts that enable actions.
@@ -73,6 +77,26 @@ type Students struct {
 	CanCode   int       `json:"canCode"`   // connected agents with code.view
 	CanNotice int       `json:"canNotice"` // connected agents with msg.show
 	CanThumb  int       `json:"canThumb"`  // connected agents with screen.thumb
+	// CanBroadcast counts connected agents with screen.broadcast.
+	CanBroadcast int `json:"canBroadcast"`
+}
+
+// DisplayInfo is a monitor the teacher can broadcast.
+type DisplayInfo struct {
+	Index   int    `json:"index"`
+	Label   string `json:"label"` // "Monitor 1 (principal) · 1920×1080"
+	Width   int    `json:"width"`
+	Height  int    `json:"height"`
+	Primary bool   `json:"primary"`
+}
+
+// BroadcastState is the broadcast of the teacher's screen.
+type BroadcastState struct {
+	Active    bool `json:"active"`
+	Display   int  `json:"display"`   // monitor on air; -1 when inactive
+	Receivers int  `json:"receivers"` // students whose video connection is up
+	Eligible  int  `json:"eligible"`  // connected students who can receive it
+	Available bool `json:"available"` // this machine can capture its monitors
 }
 
 // History is the numbered list of snippets of the session.
@@ -116,6 +140,7 @@ type View struct {
 	History    []codedist.HistoryEntry `json:"history"`
 	Deliveries []codedist.Delivery     `json:"deliveries"`
 	Hotkey     HotkeyStatus            `json:"hotkey"`
+	Broadcast  BroadcastState          `json:"broadcast"`
 }
 
 // EmitRequest is the code panel content when an emit button is pressed.

@@ -49,7 +49,18 @@
         <code id="class-fingerprint"></code>
       </div>
       <button type="button" id="screens-open" title="Ver las pantallas de los alumnos en miniatura">Ver pantallas</button>
+      <div class="bc-controls" title="Muestra uno de tus monitores a los alumnos del canal">
+        <select id="bc-display" aria-label="Monitor a transmitir"></select>
+        <button type="button" id="bc-toggle">Transmitir mi pantalla</button>
+      </div>
     </header>
+    <!-- Broadcast of the teacher's screen (docs/privacidad.md rule 15). -->
+    <p id="bc-band" class="bc-band" role="status" aria-live="polite" hidden>
+      <span class="bc-dot" aria-hidden="true">●</span>
+      <span id="bc-text"></span>
+      <span class="bc-note">La ventana de Aula no aparece en la transmisión.</span>
+      <button type="button" id="bc-stop">Detener</button>
+    </p>
     <p id="key-warning" class="key-warning" hidden>
       Este equipo no tiene la <strong>clave del centro</strong>: la consola usa una clave personal y los
       alumnos instalados con la clave del centro no la reconocerán. Instálala con

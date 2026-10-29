@@ -213,6 +213,26 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 #channel-input { width: 6.5rem; font-family: Consolas, "Cascadia Mono", monospace; font-size: 1.05rem; font-weight: 600; }
 #name-input { width: 16rem; }
 #setup-channel { width: 8rem; }
+/* Broadcast of the teacher's screen */
+.bc-controls { display: flex; gap: 0.4rem; align-items: center; margin-left: auto; }
+.bc-controls select { max-width: 16rem; }
+.bc-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin: 0;
+  padding: 0.45rem 1rem;
+  background: var(--error);
+  color: #fff;
+  font-weight: 600;
+}
+.bc-band .bc-note { font-weight: 400; opacity: 0.9; font-size: 0.9rem; }
+.bc-band button { margin-left: auto; background: #fff; color: #7f1212; border-color: #fff; font-weight: 600; }
+@media (prefers-color-scheme: dark) {
+  .bc-band { background: #b91c1c; }
+}
+
 .key-warning {
   margin: 0;
   padding: 0.5rem 1rem;

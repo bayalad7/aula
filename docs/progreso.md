@@ -1,13 +1,13 @@
 # Progreso
 
-Última actualización: 2026-10-23 (etapa 04).
+Última actualización: 2026-10-28 (etapa 05).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
 | 02 | Entorno y repositorio: monorepo Go + dos apps Wails, Git, CI | ✅ Completada |
 | 03 | Especificación del protocolo (`docs/protocol.md`, paquete `protocol`) | ✅ Completada |
 | 04 | Descubrimiento mDNS con canales + servidor/cliente WebSocket | ✅ Completada (falta prueba en VMs) |
-| 05 | Seguridad: TLS y autenticación Ed25519 | ⏳ Pendiente |
+| 05 | Seguridad: TLS y autenticación Ed25519 | ✅ Completada |
 | 06 | App estudiante: overlay con Monaco y botón Copiar | ⏳ Pendiente |
 | 07 | App profesor: lista, hotkey de captura, emisión | ⏳ Pendiente |
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ⏳ Pendiente |
@@ -97,6 +97,41 @@
 - Ejemplo: `go run ./examples/dos_alumnos` (profesor + 2 alumnos por mDNS; el alumno 2 se
   apaga a los 10 s). En VMs: `-rol profesor` en una y `-rol alumno` en otras (o
   `-rol alumno -directo IP:47830` si la red bloquea multicast). Verificado en un solo equipo.
-- Pendiente de la etapa: probar en VMs reales que un alumno aparece y desaparece del registro.
+- Pendiente de la etapa: probar en VMs reales que un alumno aparece y desaparece del registro
+  (pasos en `docs/prueba-vms.md`).
   Windows pide permiso de firewall la primera vez (TCP 47830 entrante y UDP 5353 de mDNS).
 - Las apps Wails todavía no usan estos paquetes; se cablean en las etapas 06 y 07.
+
+## Etapa 05: notas
+
+- Modelo de confianza documentado en `docs/protocol.md` §10 (antes de programar). Decisión de
+  diseño en D-007.
+- `internal/security`: identidad Ed25519 (`CreateIdentity`/`LoadIdentity`, formato
+  `aula-ed25519:<Base64>`, huella corta), firma y verificación de `auth.proof` ligadas a nonce,
+  canal y huella del certificado, certificado TLS autofirmado persistente y `ClientTLS` con
+  fijación de huella.
+- `internal/platform`: `RestrictToOwner` (DACL protegida en Windows, `0600`/`0700` en Unix) y
+  `AttachParentConsole` para los subcomandos de la app de ventana.
+- `transport`: `Options.TLS`; el servidor envuelve el listener y el cliente usa `wss://`.
+- `session`: `Console` hace el handshake completo (`auth.challenge` → `auth.proof` → `auth.ok`
+  → `hello`) y rechaza con `unauthorized` + 1008 lo que llegue antes. `Agent` exige `Channel` y
+  `ConsolePublicKey`, fija la huella anunciada, verifica la firma, registra el rechazo y marca la
+  consola como no confiable durante 5 min.
+- `aula-consola keygen [-dir] [-force]` y `aula-consola pubkey`: crean la clave o muestran la
+  pública. `keygen` no sobrescribe sin `-force`.
+- Ejemplo `dos_alumnos`: el profesor usa la clave de `keygen` (o la crea si falta) y la imprime;
+  el alumno necesita `-clave aula-ed25519:…`. `-rol todo` usa una clave temporal.
+- **Cómo se comprobó que el tráfico va por TLS:** `TestTrafficIsEncrypted` graba los bytes crudos
+  de la conexión en ambos sentidos. Con `wss://` empiezan con un registro de handshake TLS
+  (`16 03`) y no contienen el texto enviado, ni `msg.show`, ni `GET /ws`. En el control con
+  `ws://` el texto sí aparece, así que la prueba detectaría texto plano. Además, el servidor
+  registra `tls=true` y el cliente solo acepta TLS 1.3.
+- Pruebas de la etapa: clave correcta se autentica; otra clave es rechazada; huella distinta es
+  rechazada; `code.share` antes de `auth.ok` es rechazado y no llega a `OnMessage`; la consola
+  rechaza mensajes antes de la autenticación; conexión directa sin huella funciona; un relay con
+  su propio certificado es detectado por la firma; la clave privada no aparece en los logs (ni al
+  registrar la identidad a propósito) ni en la salida de `keygen`.
+- Verificado a mano: el `.exe` de `wails build` imprime con `keygen`, e `icacls` muestra una sola
+  entrada (el usuario, control total) en el archivo de la clave.
+- Pendiente: la configuración persistente del agente (dónde se guarda la clave pública al
+  instalar) llega con la app del alumno (etapa 06) y los instaladores (etapa 08).

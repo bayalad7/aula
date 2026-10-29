@@ -108,3 +108,33 @@ instancia: solo reemplaza una consola si cambian sus direcciones.
 - El nombre de instancia DNS-SD es ASCII seguro más un sufijo aleatorio; el nombre visible
   viaja en el TXT `console_name`.
 - Si la red bloquea multicast, `session.StaticSource` permite conectar a una dirección fija.
+
+## D-007: TLS, identidad y almacenamiento de claves
+
+**Fecha:** 2026-10-28 · **Etapa:** 05
+
+- **Dos claves separadas.** La identidad Ed25519 firma `auth.proof` y es lo que se configura en
+  los agentes. El certificado TLS (ECDSA P-256 autofirmado, 10 años) solo cifra. Así se puede
+  regenerar el certificado sin tocar los agentes. ECDSA en lugar de Ed25519 para el certificado
+  por compatibilidad con cualquier pila TLS; ambos lados son Go, pero no cuesta nada.
+- **TLS 1.3 como mínimo** en servidor y cliente; sin HTTP/2 ni proxy en el cliente.
+- **Verificación por huella, no por CA.** `ClientTLS` desactiva la validación de cadena y la
+  reemplaza por `VerifyConnection`, que compara el SHA-256 del certificado. Además guarda ese hash
+  para la firma.
+- **Conexión directa sin huella** (`-directo`): se acepta el certificado, pero la firma va ligada a
+  la huella vista, así que un intermediario sigue sin poder autenticarse. La prueba
+  `TestRelayWithOwnCertificateDetected` lo demuestra con un relay fiel. Una mutación que quita la
+  huella del mensaje firmado hace que el relay pase, lo que confirma que la prueba detecta el
+  ataque.
+- **Clave privada en disco** en `%AppData%\Aula\consola\identidad-ed25519.pem` (PKCS#8). En Windows
+  `0600` no protege nada, así que `platform.RestrictToOwner` aplica una DACL protegida con una sola
+  entrada para el usuario actual (verificado con `icacls`). En Linux/macOS usa `0600`/`0700`, y
+  `LoadIdentity` rechaza claves legibles por otros, como ssh. Se escribe en un temporal ya
+  restringido y se renombra, para que nunca exista legible por otros.
+- **La clave no se puede filtrar por accidente.** `security.Identity` no expone la clave privada, y
+  `String`, `GoString`, `Format` y `LogValue` (con receptor por valor, para cubrir también copias)
+  muestran solo la huella pública. Una prueba lo encontró: con receptor puntero, `fmt.Sprint(*id)`
+  imprimía los bytes de la clave.
+- **`aula-consola keygen` en una app de ventana.** `wails build` produce un ejecutable sin
+  consola; `platform.AttachParentConsole` lo conecta a la terminal que lo lanzó para que los
+  subcomandos impriman.

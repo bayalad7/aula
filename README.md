@@ -39,17 +39,32 @@ cd apps/student && wails build   # -> apps/student/build/bin/aula-cliente(.exe)
 
 En Linux: `wails build -tags webkit2_41`.
 
-## Ejemplo: descubrimiento y registro en vivo
+## Clave de la consola
+
+Cada consola tiene una clave Ed25519 que la identifica ante los alumnos (ver
+`docs/protocol.md` §10):
+
+```sh
+aula-consola keygen     # crea la clave (una vez) y muestra la clave pública aula-ed25519:…
+aula-consola pubkey     # vuelve a mostrar la clave pública
+```
+
+La clave privada queda en `%AppData%\Aula\consola\` con acceso solo para tu usuario. La
+pública es la que se configura en cada alumno. `keygen -force` crea otra clave, y entonces hay
+que reconfigurar todos los alumnos.
+
+## Ejemplo: descubrimiento, TLS y registro en vivo
 
 ```sh
 go run ./examples/dos_alumnos                     # profesor + 2 alumnos simulados en un equipo
-go run ./examples/dos_alumnos -rol profesor       # en el equipo del profesor
-go run ./examples/dos_alumnos -rol alumno         # en cada equipo de alumno (mDNS)
-go run ./examples/dos_alumnos -rol alumno -directo 192.168.1.10:47830   # sin mDNS
+go run ./examples/dos_alumnos -rol profesor       # en el equipo del profesor (imprime la clave)
+go run ./examples/dos_alumnos -rol alumno -clave aula-ed25519:...                            # mDNS
+go run ./examples/dos_alumnos -rol alumno -clave aula-ed25519:... -directo 192.168.1.10:47830 # sin mDNS
 ```
 
 Opciones: `-canal AULA_101`, `-puerto 47830`, `-nombre "Consola de ejemplo"`, `-v` (logs).
-En Windows, permite el acceso en el firewall la primera vez.
+En Windows, permite el acceso en el firewall la primera vez. Pasos para VMs en
+`docs/prueba-vms.md`.
 
 ## Verificaciones antes de cada commit
 

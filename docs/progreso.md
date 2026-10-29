@@ -15,6 +15,7 @@
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 En curso (miniaturas; pantalla en blanco documentada y pendiente) |
 | 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
+| 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado (falta CI en GitHub y prueba en VM, `docs/prueba-vms.md` §14) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 
@@ -513,3 +514,71 @@
   - que un alumno estándar no pueda detenerlo (SV-F).
 - **Queda medir** CPU y subida del profesor al transmitir (§12.3).
 
+## Etapa 10.2: bloqueo de apps y filtro web (D-017) — notas
+
+- **Diseño aprobado** (2026-10-29):
+  - `app.block.set/clear/ack` y `web.filter.set/clear/ack`;
+  - capacidades `app.block` y `web.filter`, solo con el agente como servicio y su ayudante;
+  - filtro DNS local con NRPT, no proxy;
+  - cierre de procesos por sondeo;
+  - diario para deshacer siempre;
+  - reglas de privacidad 20–25.
+- **`internal/protocol`:** los 6 mensajes con validación (nombres de proceso, dominios en
+  punycode, duplicados, límites 100 y 500), ejemplos válidos e inválidos y `AppKey`/`DomainKey`.
+- **`internal/platform`:**
+  - `ProcessControl`: Toolhelp, filtro por sesión y ruta, terminar;
+  - `DNSRedirect`: NRPT con cmdlets y marcada `aula-filtro-web`, vaciar caché, DNS y sufijos de
+    los adaptadores;
+  - `BrowserDoH`: leer, apagar y restaurar exacto las directivas de Chrome, Edge y Firefox,
+    incluidas las claves creadas;
+  - fallback "no soportado".
+- **`internal/policy`** (nuevo):
+  - `AppPolicy` y `AppEnforcer`: protegidos y aviso agrupado;
+  - `WebPolicy`: subdominios; siempre bloquea el canario y los DoH conocidos; con lista blanca
+    siempre deja pasar lo que Windows necesita;
+  - `Resolver` (`miekg/dns`, UDP y TCP, no registra nombres);
+  - `Journal`;
+  - `Manager`: aviso antes de aplicar, deshace todo si un paso falla, `Clear`, `Restore`;
+  - `ClassPolicy` en la consola: destinatarios por nombre de equipo, reenvío al reconectar,
+    `clear` a quien deja de estar marcado y acuses.
+- **Alumno (servicio):**
+  - `Restore` antes de conectarse;
+  - se limpia al desconectarse, cuando se va el ayudante y al detenerse el servicio;
+  - `servicio desinstalar` también restaura;
+  - franja "🔒 Restricciones de la clase activas…" con **Ver detalles**, aviso "Aula cerró «…»"
+    y barra "· restricciones activas".
+- **Consola:**
+  - botón **Restricciones**: apps y sitios, modo, plantillas, todo el canal o alumnos marcados
+    (casilla en la tarjeta);
+  - estado "activa en M de N", **Quitar** y **Quitar todas las restricciones**;
+  - texto de límites (regla 25) y "🔒 apps / 🔒 sitios" en las tarjetas;
+  - cerrar la clase envía los `clear`.
+- **Pruebas locales:**
+  - políticas y protegidos;
+  - aplicador (cierra, avisa una vez cada 30 s, sin política ni sesión no cierra);
+  - resolvedor real en loopback contra un DNS falso (bloquea, reenvía por UDP y TCP, el
+    canario, sin DNS de origen → SERVFAIL);
+  - `Manager` con dobles:
+    - orden aviso → diario → directivas → NRPT;
+    - reemplazo sin tocar el equipo;
+    - quitar deja el "registro" **idéntico**;
+    - un fallo al aplicar no deja nada a medias;
+    - **caída**: un `Manager` nuevo restaura desde el diario, y sin diario borra reglas
+      huérfanas;
+  - `ClassPolicy`;
+  - agente-servicio contra consola real (sin ayudante no declara `app.block`, aviso y cierre,
+    limpieza cuando se va el ayudante);
+  - bindings de la consola;
+  - Windows sin administrador: listar y cerrar un proceso hijo real, leer DNS y directivas,
+    vaciar la caché.
+- **Requiere administrador (job de CI `servicio`):**
+  - NRPT: aplicar, borrar, sin residuos;
+  - directivas DoH restauradas exactas, con una directiva previa de la escuela que sobrevive;
+  - **punta a punta por el resolvedor del sistema**: con el filtro, `youtube.com` no resuelve y
+    `github.com` sí; al quitarlo, todo como antes.
+- **Falta:**
+  - correr el job en GitHub;
+  - la prueba en VM de `docs/prueba-vms.md` §14, en especial RB-H (equipo idéntico), RB-J (caída)
+    y RB-K (apagado);
+  - probar la interfaz de la consola con clics;
+  - Linux y macOS.

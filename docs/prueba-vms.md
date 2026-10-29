@@ -1005,3 +1005,38 @@ sesión, y que el alumno sigue viendo el distintivo de identidad (`docs/privacid
 **Para aceptar** bastan SV-B, SV-C, SV-E y SV-H en ✅.
 
 Copia los resultados a `docs/progreso.md`, en las notas del agente como servicio.
+
+## 14. Restricciones de la clase: bloqueo de apps y filtro web (D-017)
+
+Comprueba que el profesor bloquea apps y sitios, que el alumno lo ve, y que al terminar el equipo
+queda **exactamente** como estaba (`docs/privacidad.md`, reglas 20–25). Necesita el agente como
+servicio (§13) y una VM, porque cambia la configuración DNS del equipo.
+
+### 14.1 Antes de empezar (línea base)
+
+En la VM del alumno, PowerShell **como administrador**; guarda la salida:
+
+```powershell
+Get-DnsClientNrptRule | Format-List Namespace, NameServers, Comment > C:\aula-prueba\nrpt-antes.txt
+reg query HKLM\SOFTWARE\Policies /s > C:\aula-prueba\politicas-antes.txt 2>&1
+Get-DnsClientServerAddress | Format-Table > C:\aula-prueba\dns-antes.txt
+```
+
+### 14.2 Casos
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **RB-A** Aviso antes de aplicar (**aceptación**) | En la consola, **Restricciones** → Aplicaciones: escribe una app instalada en `Program Files`, p. ej. `notepad++` o `code` (las de `C:\Windows`, como el Bloc de notas, están protegidas y nunca se cierran). Modo **Bloquear estas**, Todo el canal → **Aplicar**. | En el alumno, la ventana pasa al frente con "🔒 Restricciones de la clase activas: aplicaciones bloqueadas" y la barra dice "· restricciones activas". En la consola, la tarjeta muestra "🔒 apps" y el panel "activa en 1 de 1". |
+| **RB-B** La app se cierra | En el alumno, abre la app bloqueada. | Se cierra en menos de 1 s y aparece "Aula cerró «…»: está bloqueada durante la clase". |
+| **RB-C** Lista blanca de apps | Modo **Permitir solo estas** con `code`. Abre otra app de `Program Files`. | Se cierra; `code`, el explorador y Aula siguen abiertos. |
+| **RB-D** Filtro web (**aceptación**) | Sitios: `youtube.com`, **Bloquear estos** → Aplicar. En el alumno, abre `https://www.youtube.com` en Edge y en Chrome (y Firefox si está). | No carga ("no se encuentra el sitio"), en ningún navegador. `https://python.org` sí. El aviso dice "sitios web filtrados". |
+| **RB-E** Lista blanca web | **Plantilla: solo documentación** → Aplicar. | `docs.python.org` y `developer.mozilla.org` cargan; `youtube.com` no. |
+| **RB-F** Ver detalles | En el alumno, **Ver detalles**. | Lista las apps y los sitios; con la plantilla de documentación muestra 14 y no dice "y N más"; con más de 15 sí. |
+| **RB-G** Solo a alumnos marcados | Con 2 alumnos: marca uno, elige "Alumnos marcados" y aplica un sitio. | Solo ese alumno tiene el aviso y el bloqueo. |
+| **RB-H** Quitar y equipo limpio (**aceptación**) | **Quitar todas las restricciones**. Repite los comandos de 14.1 con `-despues` y compara (`fc`). | El aviso desaparece, YouTube carga, y los tres archivos son **idénticos** a los de antes: sin regla NRPT de Aula, sin directivas nuevas, DNS de los adaptadores igual. |
+| **RB-I** Desconexión | Aplica un sitio; cierra la consola. | En segundos el aviso desaparece y el sitio carga. Equipo limpio como en RB-H. |
+| **RB-J** Caída del agente (**aceptación**) | Aplica un sitio. Como administrador, termina el `aula-cliente.exe` de **SYSTEM**. Espera ~10 s. | El servicio se reinicia solo, y **antes de reconectarse** deshace el filtro (el log `aula-agente.log` dice "restoring a web filter left by a previous run"). Al reconectar, la consola le reenvía la política. |
+| **RB-K** Apagado a mitad de clase | Aplica un sitio y **apaga** la VM del alumno sin cerrar nada (Apagar desde el hipervisor). Enciéndela **sin** abrir la consola. | Al arrancar, el sitio carga y el equipo queda limpio (RB-H), aunque no haya consola. |
+| **RB-L** No se vigila la navegación | Revisa `aula-agente.log` tras navegar con el filtro activo. | Solo dice "web filter applied/removed" con conteos; **ningún** nombre de sitio visitado. |
+
+**Para aceptar** bastan RB-A, RB-D, RB-H y RB-J en ✅.

@@ -30,6 +30,8 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
 | `aula:notices` | `Notices` | Llega `msg.show` o el alumno cierra un aviso. |
 | `aula:broadcast` | `BroadcastView` | Empieza o termina la transmisión de la pantalla del profesor. Llega **antes** que la oferta: la vista y su franja se muestran primero. |
 | `aula:broadcast-signal` | `broadcast.Signal` | Una oferta SDP (`kind: "offer"`) o un candidato ICE del profesor (`kind: "ice"`), ya validados por Go. |
+| `aula:restrictions` | `policy.State` | Empiezan, cambian o terminan las restricciones de la clase. Llega **antes** de aplicarlas. `{apps, web}`: cada uno `null` o `{policyId, mode, items (≤ 15), total}`. |
+| `aula:app-closed` | `AppClosed` | El agente cerró una app bloqueada: `{app: "steam.exe"}`, como mucho uno por app cada 30 s. |
 
 ```jsonc
 // Status
@@ -131,6 +133,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:class` | `View` | Al terminar el arranque automático en el canal predeterminado. Si falló, `active` es `false` y el motivo está en `Setup().startError`. |
 | `aula:frame` | `Thumb` | Por cada cuadro recibido mientras la vista de pantallas está abierta (≤ 1 por segundo y alumno). Solo cuadros del `screen.thumb.start` vigente. |
 | `aula:broadcast` | `BroadcastState` | La transmisión de tu pantalla empieza, termina o cambia su número de receptores. |
+| `aula:restrictions` | `RestrictionsView` | Cambian las restricciones de la clase: `{apps, web}`, cada uno `null` o `{policyId, mode, items, hosts}` (`hosts` vacío: todo el canal). Los acuses de cada alumno llegan en `aula:students` (`appsActive`, `webActive`). |
 
 ```jsonc
 // Students: la lista del canal y los conteos que habilitan los botones
@@ -190,6 +193,10 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `StartBroadcast(monitor)` | `BroadcastState` / error | **Transmitir mi pantalla.** Excluye la ventana de la consola de la captura (si no puede, no transmite) y envía `screen.broadcast.start` + oferta a cada alumno con `canBroadcast`, y a los que se conecten después. Error si no hay clase, si ya transmite o si falta el codificador H.264. |
 | `StopBroadcast()` | `BroadcastState` | **Detener.** `screen.broadcast.stop` a todos; la consola vuelve a aparecer en las capturas. También ocurre al cambiar de canal o cerrar la clase. |
 | `BroadcastState()` | `BroadcastState` | Estado actual (también viene en `View().broadcast`). |
+| `Restrictions()` | `RestrictionsView` | Restricciones de la clase (también en `View().restrictions`). |
+| `SetRestriction({kind, mode, items, hosts})` | `RestrictionsView` / error | `kind` `apps` o `web`; `mode` `deny` o `allow`; `items` como los escribe el profesor (Go quita rutas, `.exe` duplicados, `https://`, `www.` y rutas de URL); `hosts` los alumnos marcados, o vacío para todo el canal. Se reenvía sola a quien se reconecta. |
+| `ClearRestriction(kind)` | `RestrictionsView` | Quita una de las dos. |
+| `ClearAllRestrictions()` | `RestrictionsView` | **Quitar todas las restricciones.** Cerrar la clase o cambiar de canal también las quita. |
 
 ### Reglas
 

@@ -123,6 +123,26 @@ aula-cliente.exe servicio desinstalar   :: lo detiene antes
 instalado y **1** ante un error. Un alumno sin permisos de administrador no puede detener el
 servicio; sí puede cerrar la ventana, y el servicio la vuelve a abrir en segundos.
 
+### Restricciones de la clase (D-017)
+
+Requieren el agente como servicio. Lo que tocan en el equipo del alumno, y cómo se deshace:
+
+| Qué | Dónde | Cuándo se deshace |
+|---|---|---|
+| Bloqueo de apps | Nada en disco: el servicio cierra los procesos prohibidos de la sesión del alumno cada 500 ms | Al quitar la restricción, desconectarse, cerrar sesión o detener el servicio, simplemente deja de cerrarlos |
+| Filtro web: resolvedor | `127.0.0.1:53`, solo loopback (sin regla de firewall) | Al quitar el filtro |
+| Filtro web: regla NRPT `.` → `127.0.0.1` | Comentario `aula-filtro-web` (`Get-DnsClientNrptRule`) | Al quitar el filtro; al arrancar el servicio si quedó de una caída; al desinstalar |
+| Filtro web: DNS sobre HTTPS apagado | `HKLM\SOFTWARE\Policies\Google\Chrome` y `\Microsoft\Edge` (`DnsOverHttpsMode`), `\Mozilla\Firefox\DNSOverHTTPS` (`Enabled`) | Se restauran los valores exactos que había (o se borran si no existían) |
+| Diario | `C:\ProgramData\Aula\alumno\politica-activa.json` | Se borra al deshacer todo |
+
+Para comprobar a mano que un equipo quedó limpio:
+
+```powershell
+Get-DnsClientNrptRule | Where-Object Comment -eq 'aula-filtro-web'   # nada
+Test-Path C:\ProgramData\Aula\alumno\politica-activa.json          # False
+reg query HKLM\SOFTWARE\Policies\Google\Chrome /v DnsOverHttpsMode  # lo que había antes (o no existe)
+```
+
 ## Consola del profesor (`aula-consola`)
 
 ### De la máquina: `C:\ProgramData\Aula\consola\config.json`

@@ -260,3 +260,24 @@ en un canal predeterminado que el maestro puede cambiar. No se pasan configuraci
   alumnos de la rc.1 y la rc.2 se reinstalan. Aceptable en 0.x (SemVer).
 - Se elimina el flujo por maestro: el botón "Configuración de alumnos", `SaveAgentConfig` y
   `config-alumno`.
+
+## D-012: Redes Públicas solo como opción explícita del instalador
+
+**Fecha:** 2026-10-29 · **Etapa:** 08 (prueba real de la v0.2.0-rc.1)
+
+**Contexto.** En la prueba real los dos equipos estaban en una red con perfil **Público**. Las
+reglas de firewall de los instaladores solo cubren Privado y Dominio, así que Windows descartaba
+el mDNS y el alumno decía "No se encontró ninguna consola del canal 1". Hay laboratorios donde
+TI no deja cambiar el perfil de la red.
+
+**Decisión.** Los dos instaladores ofrecen **"Permitir también en redes Públicas"**, desmarcada
+por defecto (silencioso: `/MERGETASKS="redpublica"`). Al marcarla, la regla de firewall de Aula
+incluye el perfil Público.
+- No se activa por defecto: el perfil Público es el de redes no confiables (cafeterías, hoteles).
+  Ahí cualquiera vería la consola anunciada y podría conectarse a ella como si fuera un alumno y
+  recibir el código emitido. Tampoco conviene que las laptops de los alumnos respondan a mDNS
+  fuera de la escuela. La autenticación sigue impidiendo que una consola ajena controle a los
+  alumnos.
+- Lo recomendado sigue siendo marcar la red del laboratorio como Privada (o Dominio), a mano o
+  por GPO.
+- Inno Setup recuerda la opción al actualizar; para quitarla, `/MERGETASKS="!redpublica"`.

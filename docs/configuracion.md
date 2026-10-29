@@ -130,9 +130,29 @@ carpeta del usuario y `AULA_SITE_KEY_DIR` la de la clave del centro (solo para p
 | Profesor | TCP **47830** (agentes, TLS) y UDP **5353** (preguntas mDNS) | El instalador crea **"Aula Consola"**: entrada permitida para `aula-consola.exe` en perfiles Privado y Dominio. |
 | Alumno | UDP **5353** (respuestas mDNS) | El instalador crea **"Aula Cliente (mDNS)"**: UDP de entrada para `aula-cliente.exe` en perfiles Privado y Dominio. Las conexiones al profesor son salientes. |
 
-Las reglas no cubren el perfil **Público**: marca la red del laboratorio como Privada o de
-Dominio. Para los portables, sin instalador, crea las reglas a mano (PowerShell como
-administrador):
+Por defecto las reglas **no cubren el perfil Público**, y en una red Pública los alumnos no
+encuentran la consola ("No se encontró ninguna consola del canal N"). Lo recomendado es marcar la
+red del laboratorio como Privada (o Dominio), como administrador:
+
+```powershell
+Get-NetConnectionProfile                                    # NetworkCategory e InterfaceAlias
+Set-NetConnectionProfile -InterfaceAlias "Wi-Fi" -NetworkCategory Private
+```
+
+En muchos equipos, con la GPO *Configuración del equipo → Configuración de Windows →
+Configuración de seguridad → Directivas del administrador de listas de redes* (tipo de
+ubicación: Privada).
+
+**Si la red tiene que quedar Pública**, marca en los dos instaladores **"Permitir también en
+redes Públicas"** (silencioso: `/MERGETASKS="redpublica"`). La regla incluye entonces el
+perfil Público.
+Úsala solo en equipos que se queden en el laboratorio: en una red Pública ajena (cafetería,
+hotel) cualquiera vería la consola y podría conectarse como alumno y recibir el código emitido
+(D-012). Al actualizar se conserva la opción; para quitarla, reinstala con
+`/MERGETASKS="!redpublica"`.
+
+Para los portables, sin instalador, crea las reglas a mano (PowerShell como administrador;
+agrega `Public` a `-Profile` solo si lo necesitas):
 
 ```powershell
 New-NetFirewallRule -DisplayName "Aula Consola" -Direction Inbound -Action Allow `

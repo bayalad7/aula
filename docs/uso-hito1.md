@@ -147,7 +147,7 @@ La ventana del alumno explica el motivo bajo "buscando la clase del canal N…":
 
 | Motivo que muestra | Qué hacer |
 |---|---|
-| "No se encontró ninguna consola del canal N" | ¿Hay una consola abierta **en ese canal**? ¿La red de ese equipo es Privada o de Dominio (no Pública)? ¿Ambos en la misma red? |
+| "No se encontró ninguna consola del canal N" | ¿Hay una consola abierta **en ese canal**? ¿La red de **los dos** equipos es Privada o de Dominio (no Pública, ver §7)? ¿Ambos en la misma red? |
 | "Se encontró la consola «…», pero su clave no es la de este centro" | Esa consola no tiene la clave del centro (dice "Clave personal"): impórtala (§2). O el alumno se instaló con otra `aula-centro.pub`. |
 | "… pero no se pudo conectar a …" | Firewall del equipo del profesor (regla "Aula Consola") o redes distintas. |
 | "Aula — sin configurar" | Falta el canal o la clave: reinstala con `aula-centro.pub` junto al instalador. |
@@ -164,7 +164,12 @@ Los registros quedan en `%LOCALAPPDATA%\Aula\alumno\aula-cliente.log` y
 ## 7. Red y firewall
 
 - Puertos: **TCP 47830** de entrada en los profesores y **UDP 5353** (mDNS) en todos. Los
-  instaladores crean las reglas.
+  instaladores crean las reglas para redes **Privadas y de Dominio**.
+- **Red Pública:** Windows bloquea Aula y los alumnos dicen "No se encontró ninguna consola".
+  Marca la red como Privada (`Set-NetConnectionProfile -InterfaceAlias "Wi-Fi" -NetworkCategory
+  Private`, como administrador). Si no se puede, instala la consola y los alumnos con la casilla
+  **"Permitir también en redes Públicas"** (o `/MERGETASKS="redpublica"`); detalles y riesgos en
+  `docs/configuracion.md`.
 - Si la red bloquea multicast y los alumnos nunca encuentran la consola, se puede fijar la
   dirección del profesor al instalar el alumno: `/DIRECTO=192.168.1.10:47830`.
 

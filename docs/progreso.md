@@ -295,5 +295,11 @@
 - **Pruebas nuevas:** dos salas con la misma clave del centro (`TestTwoRoomsShareTheSiteKey`),
   motivos del diagnóstico (`TestDiagnostic*`), arranque en el canal predeterminado, comandos
   `centro`, ACL de máquina y log con rotación.
-- **Pendiente:** prueba real con los instaladores de `v0.2.0-rc.1` (`docs/prueba-vms.md` §10,
-  casos 08-A a 08-P).
+- **Prueba real de la rc.1 (29/10/2026):** instalaciones correctas; la consola generó la clave del
+  centro y el alumno tomó `aula-centro.pub`, pero dijo "No se encontró ninguna consola del canal
+  1": los dos equipos estaban en una red **Pública**, que las reglas de firewall no cubren. El
+  diagnóstico nuevo cumplió su propósito. **Agregado (D-012):** casilla "Permitir también en
+  redes Públicas" en los dos instaladores (`/MERGETASKS="redpublica"`), desmarcada por defecto;
+  lo recomendado sigue siendo marcar la red como Privada. Caso 08-Q en `docs/prueba-vms.md`.
+- **Pendiente:** prueba real con los instaladores de `v0.2.0-rc.2` (`docs/prueba-vms.md` §10,
+  casos 08-A a 08-Q).

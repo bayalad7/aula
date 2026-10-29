@@ -707,6 +707,7 @@ hay dudas.
 | **08-N** Actualizar | Instala de nuevo el mismo setup (o uno más nuevo) **sin** `aula-centro.pub` junto a él y sin `/CANAL`. | El agente se cierra, se reemplaza y sigue con su canal y su clave. |
 | **08-O** Desinstalar | *Configuración → Aplicaciones → Aula Cliente → Desinstalar*. | Se quitan el programa, el arranque automático y la regla de firewall (`Get-NetFirewallRule -DisplayName "Aula Cliente (mDNS)"` ya no la encuentra). |
 | **08-P** Carga (opcional) | En una VM de alumno: `go run ./examples/muchos_alumnos -n 12 -config C:\ProgramData\Aula\alumno\config.json` (o su `.exe`). Emite código y reinicia la consola. | "conectados 12/12", la consola cuenta 12 (más los alumnos reales), confirmados N/N y, tras el reinicio, "reconexiones 12". |
+| **08-Q** Red Pública | Marca la red de los dos equipos como **Pública**. Luego reinstala la consola y el alumno marcando **"Permitir también en redes Públicas"** (o `/MERGETASKS="redpublica"` en silencioso). | Antes de reinstalar: el alumno dice "No se encontró ninguna consola del canal 1". Después se conecta solo. `Get-NetFirewallRule -DisplayName "Aula*" \| Select-Object DisplayName, Profile` muestra `Any` (o los tres perfiles). |
 
-Anota los resultados en la tabla de §9 (agrega las filas 08-A a 08-P). **Para aceptar la v0.2.0**
+Anota los resultados en la tabla de §9 (agrega las filas 08-A a 08-Q). **Para aceptar la v0.2.0**
 bastan 08-A, 08-C, 08-D, 08-E, 08-G, 08-H, 08-I y 08-J en ✅.

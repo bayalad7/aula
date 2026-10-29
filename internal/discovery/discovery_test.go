@@ -5,8 +5,10 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"math/rand/v2"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -36,12 +38,12 @@ func entryFor(a Announcement, ips ...string) *zeroconf.ServiceEntry {
 }
 
 func TestParseEntryMatchingChannel(t *testing.T) {
-	a := announcement("AULA_101")
-	c, err := parseEntry(entryFor(a, "192.168.1.10"), "AULA_101", nil)
+	a := announcement("1")
+	c, err := parseEntry(entryFor(a, "192.168.1.10"), "1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Channel != "AULA_101" || c.Name != a.ConsoleName || c.Port != 47830 || c.CertFingerprint != PlaceholderFingerprint {
+	if c.Channel != "1" || c.Name != a.ConsoleName || c.Port != 47830 || c.CertFingerprint != PlaceholderFingerprint {
 		t.Fatalf("console = %+v", c)
 	}
 	if got := c.HostPorts(); len(got) != 1 || got[0] != "192.168.1.10:47830" {
@@ -50,14 +52,14 @@ func TestParseEntryMatchingChannel(t *testing.T) {
 }
 
 func TestParseEntryIgnoresOtherChannel(t *testing.T) {
-	_, err := parseEntry(entryFor(announcement("CURSO_PYTHON_A"), "192.168.1.11"), "AULA_101", nil)
+	_, err := parseEntry(entryFor(announcement("3"), "192.168.1.11"), "1", nil)
 	if !errors.Is(err, errOtherChannel) {
 		t.Fatalf("err = %v, want errOtherChannel", err)
 	}
 }
 
 func TestParseEntryRejects(t *testing.T) {
-	base := announcement("AULA_101")
+	base := announcement("1")
 	tests := []struct {
 		name string
 		edit func(e *zeroconf.ServiceEntry)
@@ -76,7 +78,7 @@ func TestParseEntryRejects(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			e := entryFor(base, "192.168.1.10")
 			tt.edit(e)
-			if _, err := parseEntry(e, "AULA_101", nil); !errors.Is(err, tt.want) {
+			if _, err := parseEntry(e, "1", nil); !errors.Is(err, tt.want) {
 				t.Fatalf("err = %v, want %v", err, tt.want)
 			}
 		})
@@ -84,8 +86,8 @@ func TestParseEntryRejects(t *testing.T) {
 }
 
 func TestParseTXTFirstKeyWinsAndCaseInsensitive(t *testing.T) {
-	m := parseTXT([]string{"Channel=AULA_101", "channel=OTRA", "flag", "extra=1"})
-	if m["channel"] != "AULA_101" || m["extra"] != "1" {
+	m := parseTXT([]string{"Channel=1", "channel=OTRA", "flag", "extra=1"})
+	if m["channel"] != "1" || m["extra"] != "1" {
 		t.Fatalf("parseTXT = %v", m)
 	}
 	if _, ok := m["flag"]; !ok {
@@ -117,7 +119,7 @@ func TestOrderAddrsPrefersOwnSubnet(t *testing.T) {
 }
 
 func TestAnnouncementValidation(t *testing.T) {
-	ok := announcement("AULA_101")
+	ok := announcement("1")
 	if err := ok.validate(); err != nil {
 		t.Fatal(err)
 	}
@@ -159,9 +161,12 @@ func TestBrowseOverMulticast(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 
-	mine := Announcement{Channel: "AULA_TEST_" + randSuffix(), ConsoleName: "Consola de prueba", WSPort: 47001, CertFingerprint: PlaceholderFingerprint}
+	// Random channels in the upper range, so a real classroom on the same
+	// network (low channel numbers) or a parallel run does not interfere.
+	n := 10000 + rand.IntN(5000)
+	mine := Announcement{Channel: strconv.Itoa(n), ConsoleName: "Consola de prueba", WSPort: 47001, CertFingerprint: PlaceholderFingerprint}
 	other := mine
-	other.Channel = mine.Channel + "_X"
+	other.Channel = strconv.Itoa(n + 1)
 	other.WSPort = 47002
 	for _, a := range []Announcement{mine, other} {
 		an := &Announcer{Announcement: a, Logger: quiet}
@@ -211,8 +216,4 @@ func skipOrFail(t *testing.T, msg string) {
 		t.Fatal(msg)
 	}
 	t.Skip(msg + " (multicast unavailable?)")
-}
-
-func randSuffix() string {
-	return strings.ToUpper(strings.ReplaceAll(instanceName("x")[2:8], "-", "0"))
 }

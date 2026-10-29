@@ -15,7 +15,7 @@ import (
 
 // Announcement is what a console publishes over mDNS.
 type Announcement struct {
-	Channel         string // e.g. "AULA_101"
+	Channel         string // e.g. "1"
 	ConsoleName     string // shown to students; 1-63 bytes
 	WSPort          int    // TCP port of the WebSocket server
 	CertFingerprint string // "sha256:<64 hex>"; PlaceholderFingerprint until TLS exists

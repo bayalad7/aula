@@ -10,7 +10,7 @@ import (
 func TestAgentConfig(t *testing.T) {
 	id, _ := security.GenerateIdentity()
 	key := security.EncodePublicKey(id.Public())
-	cfg := AgentConfig{Channel: "AULA_101", ConsolePublicKey: key}
+	cfg := AgentConfig{Channel: "1", ConsolePublicKey: key}
 	data, err := cfg.Marshal()
 	if err != nil {
 		t.Fatal(err)
@@ -23,11 +23,11 @@ func TestAgentConfig(t *testing.T) {
 		t.Fatalf("Validate: %v", err)
 	}
 	for _, bad := range []AgentConfig{
-		{Channel: "AULA_101"},
+		{Channel: "1"},
 		{Channel: "aula 101", ConsolePublicKey: key},
-		{Channel: "AULA_101", ConsolePublicKey: "aula-ed25519:xx"},
-		{Channel: "AULA_101", ConsolePublicKey: key, Direct: "10.0.0.5"},
-		{Channel: "AULA_101", ConsolePublicKey: key, Direct: "10.0.0.5:99999"},
+		{Channel: "1", ConsolePublicKey: "aula-ed25519:xx"},
+		{Channel: "1", ConsolePublicKey: key, Direct: "10.0.0.5"},
+		{Channel: "1", ConsolePublicKey: key, Direct: "10.0.0.5:99999"},
 	} {
 		if _, err := bad.Marshal(); err == nil {
 			t.Errorf("Marshal(%+v) succeeded", bad)

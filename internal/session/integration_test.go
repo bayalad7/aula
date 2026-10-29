@@ -711,3 +711,74 @@ func TestSendRefusesMissingCapability(t *testing.T) {
 		t.Fatalf("Send to unknown = %v", err)
 	}
 }
+
+// --- Diagnostics: why the agent is not connected -------------------------------
+
+// diagAgent runs an agent until it reports a diagnostic containing want.
+func diagAgent(t *testing.T, src ConsoleSource, pub ed25519.PublicKey, want string) string {
+	t.Helper()
+	got := make(chan string, 16)
+	ctx, cancel := context.WithCancel(context.Background())
+	a := &Agent{
+		Channel: testChannel, ConsolePublicKey: pub, Hello: hello("PC40"), Source: src,
+		HandshakeTimeout: time.Second, SearchHint: 200 * time.Millisecond,
+		Backoff: Backoff{Base: 20 * time.Millisecond, Max: 100 * time.Millisecond},
+		Conn:    connOpts(), Logger: quiet,
+		OnDiagnostic: func(msg string) {
+			select {
+			case got <- msg:
+			default:
+			}
+		},
+	}
+	done := make(chan struct{})
+	go func() { defer close(done); _ = a.Run(ctx) }()
+	defer func() { cancel(); <-done }()
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case msg := <-got:
+			if strings.Contains(msg, want) {
+				return msg
+			}
+		case <-deadline:
+			t.Fatalf("no diagnostic containing %q", want)
+		}
+	}
+}
+
+func TestDiagnosticWrongCentreKey(t *testing.T) {
+	tc := startTeacher(t, "127.0.0.1:0", newKeys(t), quiet)
+	other, _ := security.GenerateIdentity()
+	msg := diagAgent(t, tc.source(), other.Public(), "no es la de este centro")
+	if !strings.Contains(msg, "Prueba") || !strings.Contains(msg, "canal "+testChannel) {
+		t.Fatalf("diagnostic lacks console name or channel: %q", msg)
+	}
+}
+
+func TestDiagnosticUnreachableConsole(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := ln.Addr().(*net.TCPAddr)
+	ln.Close() // nobody listens there now
+	k := newKeys(t)
+	msg := diagAgent(t, sourceFor(addr, k.cert.Fingerprint()), k.id.Public(), "no se pudo conectar")
+	if !strings.Contains(msg, addr.String()) {
+		t.Fatalf("diagnostic lacks the address: %q", msg)
+	}
+}
+
+func TestDiagnosticNoConsoleInChannel(t *testing.T) {
+	k := newKeys(t)
+	diagAgent(t, StaticSource{}, k.id.Public(), "No se encontró ninguna consola del canal "+testChannel)
+}
+
+func TestDiagnosticClearedOnConnect(t *testing.T) {
+	tc := startTeacher(t, "127.0.0.1:0", newKeys(t), quiet)
+	msg := diagAgent(t, tc.source(), tc.keys.id.Public(), "")
+	if msg != "" {
+		t.Fatalf("connected agent reported %q", msg)
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/bayalad7/aula/internal/discovery"
@@ -84,8 +85,19 @@ type Agent struct {
 	OnMessage func(ctx context.Context, c *transport.Client, env protocol.Envelope)
 	// OnState is called on state changes; console is empty while searching.
 	OnState func(state AgentState, console discovery.Console)
-	Logger  *slog.Logger
+	// OnDiagnostic explains, in Spanish for the student's screen, why the agent
+	// is not connected yet (no console found, wrong key, unreachable…); it is
+	// called with "" once connected.
+	OnDiagnostic func(msg string)
+	// SearchHint is how long to search before reporting that no console of
+	// the channel was found; 0 means DefaultSearchHint.
+	SearchHint time.Duration
+	Logger     *slog.Logger
 }
+
+// DefaultSearchHint is how long the agent searches silently before it says no
+// console of its channel was found.
+const DefaultSearchHint = 10 * time.Second
 
 // Run keeps the agent connected until ctx is canceled; then it returns nil.
 func (a *Agent) Run(ctx context.Context) error {
@@ -134,8 +146,16 @@ func (a *Agent) Run(ctx context.Context) error {
 		known, updates = drain(known, updates)
 		if len(known) == 0 {
 			a.state(AgentSearching, discovery.Console{})
+			hint := a.SearchHint
+			if hint <= 0 {
+				hint = DefaultSearchHint
+			}
 			var ok bool
-			known, updates, ok = waitConsole(ctx, known, updates)
+			known, updates, ok = waitConsole(ctx, known, updates, hint, func() {
+				a.diagnose(fmt.Sprintf("No se encontró ninguna consola del canal %s. Revisa que la consola "+
+					"del profesor esté abierta en ese canal, que la red de este equipo sea Privada o de "+
+					"Dominio (no Pública) y que el firewall permita Aula.", a.Channel))
+			})
 			if ctx.Err() != nil {
 				return nil
 			}
@@ -192,7 +212,12 @@ func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.
 	var (
 		cl      *transport.Client
 		certSHA [32]byte
+		tried   []string
 	)
+	name := target.Name
+	if name == "" {
+		name = target.Instance
+	}
 	for _, hp := range target.HostPorts() {
 		url := "wss://" + hp + transport.Path
 		var seen [32]byte
@@ -207,22 +232,35 @@ func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.
 		if err != nil {
 			if errors.Is(err, security.ErrFingerprintMismatch) {
 				log.Warn("console certificate does not match its announcement", "console", target.Name, "url", url)
+				a.diagnose(fmt.Sprintf("La consola «%s» (%s) presentó un certificado distinto del que anuncia; "+
+					"se ignora.", name, hp))
 				return false, true
 			}
-			log.Debug("dial failed", "url", url, "err", err)
+			log.Warn("dial failed", "url", url, "err", err)
+			tried = append(tried, hp)
 			continue
 		}
 		cl, certSHA = c, seen
 		break
 	}
 	if cl == nil {
+		a.diagnose(fmt.Sprintf("Se encontró la consola «%s» del canal %s, pero no se pudo conectar a %s. "+
+			"Revisa el firewall del equipo del profesor (TCP %d) y que ambos estén en la misma red.",
+			name, a.Channel, strings.Join(tried, ", "), target.Port))
 		return false, false
 	}
 	if err := a.authenticate(ctx, cl, certSHA); err != nil {
 		log.Warn("console rejected", "console", target.Name, "addr", cl.RemoteAddr(), "reason", err)
 		cl.Close(transport.ClosePolicyViolation, "authentication failed")
 		<-cl.Done()
-		return false, errors.Is(err, errBadProof)
+		if errors.Is(err, errBadProof) {
+			a.diagnose(fmt.Sprintf("Se encontró la consola «%s» del canal %s, pero su clave no es la de este "+
+				"centro: no se le obedece. Si es la consola de tu profesor, este equipo tiene otra clave del "+
+				"centro; avisa al administrador.", name, a.Channel))
+			return false, true
+		}
+		a.diagnose(fmt.Sprintf("La consola «%s» no completó la autenticación; se reintentará.", name))
+		return false, false
 	}
 	if _, err := cl.Send(ctx, a.Hello); err != nil {
 		log.Warn("cannot send hello", "err", err)
@@ -231,6 +269,7 @@ func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.
 		return false, false
 	}
 	cl.StartHeartbeat()
+	a.diagnose("")
 	a.state(AgentConnected, target)
 	log.Info("connected to console", "console", target.Name, "addr", cl.RemoteAddr())
 
@@ -317,6 +356,12 @@ func (a *Agent) state(s AgentState, c discovery.Console) {
 	}
 }
 
+func (a *Agent) diagnose(msg string) {
+	if a.OnDiagnostic != nil {
+		a.OnDiagnostic(msg)
+	}
+}
+
 // drain applies pending updates without blocking.
 func drain(known []discovery.Console, updates <-chan discovery.Console) ([]discovery.Console, <-chan discovery.Console) {
 	for updates != nil {
@@ -334,15 +379,22 @@ func drain(known []discovery.Console, updates <-chan discovery.Console) ([]disco
 }
 
 // waitConsole blocks until a console is known. ok is false if the source
-// finished without any.
-func waitConsole(ctx context.Context, known []discovery.Console, updates <-chan discovery.Console) ([]discovery.Console, <-chan discovery.Console, bool) {
+// finished without any. If none appears within slowAfter, onSlow is called
+// once (the search goes on).
+func waitConsole(ctx context.Context, known []discovery.Console, updates <-chan discovery.Console,
+	slowAfter time.Duration, onSlow func()) ([]discovery.Console, <-chan discovery.Console, bool) {
+	slow := time.NewTimer(slowAfter)
+	defer slow.Stop()
 	for len(known) == 0 {
 		if updates == nil {
+			onSlow()
 			return known, nil, false
 		}
 		select {
 		case <-ctx.Done():
 			return known, updates, false
+		case <-slow.C:
+			onSlow()
 		case c, ok := <-updates:
 			if !ok {
 				updates = nil

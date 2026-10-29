@@ -10,7 +10,7 @@ import (
 	"github.com/bayalad7/aula/internal/protocol"
 )
 
-const testChannel = "AULA_101"
+const testChannel = "1"
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
 
@@ -75,7 +75,7 @@ func TestRegistryListByChannelAndReconnect(t *testing.T) {
 	r, _ := newTestRegistry()
 	r.Connect("1", testChannel, "", hello("PC02"))
 	r.Connect("2", testChannel, "", hello("PC01"))
-	r.Connect("3", "CURSO_PYTHON_A", "", hello("PC09"))
+	r.Connect("3", "3", "", hello("PC09"))
 
 	list := r.List(testChannel)
 	if len(list) != 2 || list[0].Hostname != "PC01" || list[1].Hostname != "PC02" {

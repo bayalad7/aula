@@ -14,7 +14,7 @@
 | 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 En curso (miniaturas; pantalla en blanco documentada y pendiente) |
 | 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada (falta prueba en VMs, `docs/prueba-vms.md` §12) |
-| 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado (falta CI en GitHub y prueba en VM, `docs/prueba-vms.md` §13) |
+| 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 
@@ -490,8 +490,10 @@
   - terminó solo al cerrarse el canal.
 
   No se tocó el portapapeles ni se capturó la pantalla.
+- **CI en GitHub (29/10/2026):** el job `servicio` pasó en `windows-latest`: instaló
+  `AulaAgentePrueba`, se mató su proceso (PID 620) y el administrador de servicios lo levantó solo
+  (PID 2260), y luego se detuvo y desinstaló; el paso final confirmó que no quedó instalado.
 - **Falta:**
-  - correr el job `servicio` en GitHub;
   - la prueba en VM de `docs/prueba-vms.md` §13: arranque con el equipo sin sesión, ayudante en
     la sesión estándar, relanzar, cambio de usuario;
   - Linux (systemd) y macOS (launchd).

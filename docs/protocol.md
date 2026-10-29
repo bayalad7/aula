@@ -31,7 +31,7 @@ TXT records (todos obligatorios; claves en minúsculas; cada par `clave=valor` �
 | Clave | Ejemplo | Descripción |
 |---|---|---|
 | `proto` | `1` | Versión mayor del protocolo. Debe coincidir con `v` de la envoltura. |
-| `channel` | `AULA_101` | Canal (aula). Formato `^[A-Z0-9_]{1,32}$`. Comparación exacta. |
+| `channel` | `1` | Canal: número del 1 al 16000 en decimal, sin ceros a la izquierda (`^[1-9][0-9]{0,4}$`, valor ≤ 16000). Comparación exacta. |
 | `console_name` | `Lab 3 — Prof. Ayala` | Nombre visible para el alumno. Solo informativo. |
 | `ws_port` | `47830` | Puerto TCP del servidor WebSocket/TLS. |
 | `cert_fingerprint` | `sha256:9f86d0…` | SHA-256 del certificado TLS (DER) de la consola, en hex minúsculas (64 dígitos). |
@@ -62,30 +62,37 @@ El agente:
 
 ### 1.3 Aislamiento por canal
 
-Cada agente tiene en su configuración (instalada por el administrador o elegida en el
-cliente):
+Cada agente tiene en su configuración, instalada por el administrador y que el alumno no puede
+cambiar:
 
-- `channel`: el canal al que pertenece, p. ej. `AULA_101`.
-- `console_public_key`: la clave pública Ed25519 de la consola autorizada.
+- `channel`: el canal de **esa computadora**, p. ej. `1` para la sala principal y `2` para la
+  alterna.
+- `console_public_key`: la **clave pública del centro** (§10.1), la misma en todas las
+  computadoras del centro.
 
-Ejemplo con dos profesores en la misma LAN:
+Ejemplo: una red para todo un piso con dos salas.
 
 ```
-Consola A  ── anuncia channel=AULA_101, clave KA
-Consola B  ── anuncia channel=CURSO_PYTHON_A, clave KB
-Agente X   ── configurado con channel=AULA_101, clave KA
+Consola A (sala principal)  ── anuncia channel=1, firmada con la clave del centro KC
+Consola B (sala alterna)    ── anuncia channel=2, firmada con KC
+Alumnos de la sala principal (40) ── channel=1, clave KC
+Alumnos de la sala alterna   (12) ── channel=2, clave KC
+Equipo de un alumno con una consola instalada por su cuenta ── anuncia channel=1, clave KX
 ```
 
-1. **Filtro por canal (descubrimiento):** X ve ambos anuncios, descarta el de B por canal y
-   solo intenta conectar con A.
-2. **Filtro por clave (autenticación):** aunque B (o un equipo malicioso) anunciara también
-   `AULA_101`, no puede firmar el reto con la clave privada de KA, así que X lo rechaza
-   (§3.2), lo marca como no confiable durante 5 minutos y sigue buscando.
-3. Si varias instancias anuncian el mismo canal, el agente las prueba una por una y se queda
-   con la primera que se autentique. **Un agente mantiene como máximo una sesión a la vez.**
+1. **Filtro por canal (descubrimiento):** los alumnos del canal 1 ven todos los anuncios,
+   descartan los del canal 2 y solo intentan conectar con consolas del canal 1.
+2. **Filtro por clave (autenticación):** la consola instalada por un alumno también anuncia el
+   canal 1, pero no puede firmar el reto con la clave privada del centro, así que el agente la
+   rechaza (§3.2), la marca como no confiable durante 5 minutos y sigue buscando.
+3. Si el maestro de la sala principal cambia su consola al canal 2, ve a los alumnos de la
+   sala alterna; sus alumnos del canal 1 lo pierden hasta que vuelva.
+4. Si varias consolas legítimas anuncian el mismo canal, el agente las prueba una por una y se
+   queda con la primera que se autentique. **Un agente mantiene como máximo una sesión a la
+   vez.**
 
-El canal separa aulas en la operación diaria y la clave impide la suplantación. Ninguno de los
-dos basta por separado.
+El canal separa salas en la operación diaria y la clave del centro impide la suplantación.
+Ninguno de los dos basta por separado.
 
 ---
 
@@ -443,18 +450,25 @@ emisor verifica el tamaño final de la envoltura.
 
 | Clave | Quién la tiene | Para qué |
 |---|---|---|
-| **Identidad de la consola** (Ed25519) | Privada: solo el equipo del profesor. Pública: la configuración de cada agente. | Firmar `auth.proof`. Es lo que identifica a la consola. |
-| **Certificado TLS** (ECDSA P-256, autofirmado) | Equipo del profesor; se genera al primer arranque y se persiste. | Cifrar la conexión. Su huella SHA-256 viaja en el TXT `cert_fingerprint`. |
+| **Clave del centro** (Ed25519) | Privada: los equipos de profesor del centro, instalada por el administrador. Pública: la configuración de cada agente del centro. | Firmar `auth.proof`. Distingue las consolas del centro de cualquier otra. |
+| **Certificado TLS** (ECDSA P-256, autofirmado) | Cada equipo de profesor, por usuario; se genera al primer arranque y se persiste. | Cifrar la conexión. Su huella SHA-256 viaja en el TXT `cert_fingerprint`. |
 
-- La pareja Ed25519 se crea con `aula-consola keygen`, que muestra la clave pública en el
-  formato `aula-ed25519:<32 bytes en Base64>` (para copiarla al configurar agentes) y una huella
-  corta `XXXX-XXXX-XXXX-XXXX` para verificarla de palabra.
-- La clave privada vive en el directorio de configuración del usuario del profesor
-  (`%AppData%\Aula\consola\` en Windows), en PEM PKCS#8, con acceso solo para el dueño (ACL en
-  Windows, `0600` en Linux/macOS). Nunca se registra en logs, nunca viaja por la red y nunca se
-  incluye en el binario del agente.
-- El certificado TLS y la identidad son independientes: regenerar el certificado no obliga a
-  reconfigurar agentes; regenerar la identidad sí (`keygen` exige `-force` para sobrescribirla).
+- **Una sola clave por centro de cómputo**, no por maestro. El administrador la crea al instalar
+  la primera consola (`aula-consola centro crear`) y la importa en las demás
+  (`aula-consola centro importar aula-centro.key`). Los alumnos reciben solo la **pública**,
+  `aula-centro.pub`, con el formato `aula-ed25519:<32 bytes en Base64>`. Huella corta
+  `XXXX-XXXX-XXXX-XXXX` para verificarla de palabra.
+- La privada vive en `C:\ProgramData\Aula\centro\clave-centro.pem` (PEM PKCS#8). ACL:
+  Administradores y SYSTEM con control total; **Usuarios del equipo del profesor, solo
+  lectura**, para que cualquier maestro que inicie sesión ahí pueda dar clase. Nunca se registra
+  en logs, nunca viaja por la red y nunca se instala en los equipos de alumno.
+- **Riesgo aceptado:** cualquier usuario local de un equipo de profesor puede leer la clave del
+  centro. Los equipos de profesor deben usarlos solo profesores. Si la clave se filtra, el
+  administrador crea otra y reinstala consolas y alumnos (rotación).
+- Compatibilidad y desarrollo: sin clave del centro, la consola usa una identidad por usuario
+  (`%AppData%\Aula\consola\identidad-ed25519.pem`, `aula-consola keygen`).
+- El certificado TLS y la clave son independientes: regenerar el certificado no obliga a
+  reconfigurar agentes; cambiar la clave del centro sí.
 
 ### 10.2 Qué comprueba el agente
 

@@ -38,11 +38,16 @@ Dos aplicaciones, mismo monorepo:
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se
   conectan al profesor** por WebSocket sobre TLS, nunca al revés.
 - Un agente solo acepta órdenes de una consola autenticada con la clave Ed25519 cuya pública
-  está en su configuración.
+  está en su configuración: la **clave del centro**, una sola por centro de cómputo, que el
+  administrador instala en las consolas. No hay claves por maestro.
 
 ## Canales / Aulas
-El profesor define un canal (ej. `AULA_101`, `CURSO_PYTHON_A`). El alumno filtra por canal al
-descubrir y solo se conecta al que coincide. Varias aulas pueden coexistir en la misma LAN.
+Modelo tipo LanSchool. Un canal es un **número del 1 al 16000** que agrupa salas y maestros, no
+un aula virtual. Cada computadora de alumno se instala con **su canal fijo** (p. ej. centro de
+cómputo principal = 1, alterno = 2), que solo un administrador cambia. La consola se instala con
+un canal predeterminado, arranca directo en él y el maestro puede cambiar de canal. El alumno
+filtra por canal al descubrir y solo se conecta al que coincide. Varias salas coexisten en la
+misma LAN.
 
 ## Convenciones
 - Código, identificadores y comentarios técnicos en inglés; interfaz y documentación en español.

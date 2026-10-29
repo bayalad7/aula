@@ -229,3 +229,34 @@ con `AULA_HOTKEY_TEST=1`. Las pruebas de la interfaz se hacen con dobles y con l
 - **Robustez:** `TestTwelveAgentsAndConsoleRestart` (red real, 12 agentes, reinicio de la consola
   en el mismo puerto) y el ejemplo `examples/muchos_alumnos`, que en este equipo sostuvo 15
   agentes y su reconexión.
+
+## D-011: Canales tipo LanSchool y clave del centro (v0.2.0)
+
+**Fecha:** 2026-10-29 · **Etapa:** 08 (revisión tras la prueba real)
+
+**Contexto.** En la prueba con la rc.1 y la rc.2, el modelo "un canal y una clave por maestro,
+con `aula-alumno.json` generado por ese maestro" resultó ajeno a cómo se opera un centro de
+cómputo. El usuario espera el modelo LanSchool: cada computadora de alumno tiene su canal fijo
+(sala principal = 1, alterna = 2), lo fija el administrador al instalarla, y la consola arranca
+en un canal predeterminado que el maestro puede cambiar. No se pasan configuraciones por maestro.
+
+**Opciones evaluadas.**
+1. **Solo canal, sin autenticación** (LanSchool clásico): cualquier consola del canal controla a
+   sus alumnos. Un alumno que instale la consola podría enviar código a sus compañeros y, desde
+   la etapa 09, ver sus pantallas. Rompe la regla no negociable de CLAUDE.md.
+2. **Solo canal más contraseña opcional:** dos modos que mantener, y la contraseña tiende a
+   quedarse sin activar.
+3. **Clave del centro (elegida):** una sola pareja Ed25519 por centro, instalada por el
+   administrador en las consolas. Los alumnos llevan la pública y su canal. Los maestros cambian
+   de canal libremente y nadie distribuye nada por clase.
+
+**Decisión: (3)**, con canales **numéricos 1–16000** como en LanSchool.
+- El protocolo en la red no cambia: `auth.proof` sigue firmado con Ed25519 y ligado al canal y al
+  certificado. Solo cambian el formato de `channel` (§1.1) y de quién es la clave (§10.1).
+- La clave privada vive en `ProgramData` con lectura para los usuarios del equipo del profesor,
+  para que cualquier maestro de ese equipo pueda dar clase. Riesgo aceptado y documentado en
+  §10.1: los equipos de profesor son de profesores.
+- **Versión 0.2.0**, un cambio incompatible: los canales `AULA_101` ya no son válidos y los
+  alumnos de la rc.1 y la rc.2 se reinstalan. Aceptable en 0.x (SemVer).
+- Se elimina el flujo por maestro: el botón "Configuración de alumnos", `SaveAgentConfig` y
+  `config-alumno`.

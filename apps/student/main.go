@@ -101,7 +101,10 @@ func openLog() *slog.Logger {
 	if err != nil {
 		return slog.Default()
 	}
-	return slog.New(slog.NewTextHandler(io.MultiWriter(os.Stderr, f), &slog.HandlerOptions{Level: slog.LevelInfo}))
+	// The file goes first: io.MultiWriter stops at the first failing writer,
+	// and a window app has no usable stderr, so with stderr first nothing
+	// reached the file.
+	return slog.New(slog.NewTextHandler(io.MultiWriter(f, os.Stderr), &slog.HandlerOptions{Level: slog.LevelInfo}))
 }
 
 func isVersionFlag(s string) bool {

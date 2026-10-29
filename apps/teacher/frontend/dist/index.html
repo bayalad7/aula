@@ -3,14 +3,127 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Monaco needs inline styles, its font and a same-origin worker. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; worker-src 'self' blob:; connect-src 'self' ws: wss:">
   <title>Aula — Consola</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="vendor/monaco/vs/editor/editor.main.css">
 </head>
 <body>
-  <main>
-    <h1>Aula — Consola</h1>
-    <p>Consola del profesor</p>
-  </main>
+  <!-- 1. Channel selection -->
+  <section id="setup" class="setup" hidden>
+    <form id="setup-form" class="setup-card">
+      <h1>Aula — Consola</h1>
+      <p class="muted">Elige el aula de esta clase. Los alumnos configurados con el mismo canal se conectarán solos.</p>
+      <label>Canal
+        <input id="setup-channel" list="setup-recent" required maxlength="32" autocomplete="off"
+               placeholder="AULA_101" spellcheck="false">
+        <datalist id="setup-recent"></datalist>
+      </label>
+      <div id="setup-chips" class="chips"></div>
+      <label>Nombre que verán los alumnos
+        <input id="setup-name" required maxlength="63" placeholder="Prof. Ayala — Programación I">
+      </label>
+      <p id="setup-error" class="error" role="alert"></p>
+      <button type="submit" class="primary">Abrir clase</button>
+      <p id="setup-key" class="key muted"></p>
+    </form>
+  </section>
+
+  <!-- 2–4. Console -->
+  <section id="console" class="console" hidden>
+    <header class="topbar">
+      <div class="class-id">
+        <strong id="class-channel"></strong>
+        <span id="class-name" class="muted"></span>
+      </div>
+      <div class="class-key">
+        <span class="muted">Clave para los alumnos:</span>
+        <code id="class-fingerprint"></code>
+        <button type="button" id="copy-key">Copiar clave</button>
+      </div>
+      <button type="button" id="end-class">Cambiar de aula</button>
+    </header>
+
+    <div class="layout">
+      <aside class="students">
+        <h2>Alumnos <span id="students-count" class="count"></span></h2>
+        <p id="students-empty" class="muted">Esperando alumnos en este canal…</p>
+        <ul id="students-list"></ul>
+      </aside>
+
+      <main class="work">
+        <section class="panel code-panel">
+          <div class="code-head">
+            <input id="code-title" maxlength="200" placeholder="Título (opcional), p. ej. Factorial recursivo">
+            <select id="code-lang" aria-label="Lenguaje"></select>
+          </div>
+          <div id="editor" class="editor" aria-label="Editor de código"></div>
+          <div class="actions">
+            <button type="button" id="emit" class="primary">Emitir a todos</button>
+            <button type="button" id="append">Agregar bloque</button>
+            <button type="button" id="clear">Limpiar pantallas</button>
+            <span id="code-reason" class="muted reason"></span>
+          </div>
+          <p id="last-delivery" class="delivery" aria-live="polite"></p>
+        </section>
+
+        <section class="panel notice-panel">
+          <h2>Aviso a todos</h2>
+          <div class="notice-row">
+            <input id="notice-text" maxlength="2000" placeholder="Guarden su trabajo: en 5 minutos cerramos.">
+            <select id="notice-level" aria-label="Nivel">
+              <option value="info">Información</option>
+              <option value="warning">Advertencia</option>
+            </select>
+            <button type="button" id="notice-send">Enviar aviso</button>
+          </div>
+        </section>
+      </main>
+
+      <aside class="side">
+        <h2>Historial de la sesión</h2>
+        <p id="history-empty" class="muted">Lo que emitas aparecerá aquí para reemitirlo con un clic.</p>
+        <ol id="history-list" class="history"></ol>
+        <h2>Confirmaciones</h2>
+        <ul id="delivery-list" class="deliveries"></ul>
+      </aside>
+    </div>
+
+    <button type="button" id="capture" class="fab" title="Carga el portapapeles en el editor">
+      Capturar portapapeles <small id="capture-combo"></small>
+    </button>
+    <p id="hotkey-warning" class="hotkey-warning" hidden></p>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </section>
+
+  <template id="student-template">
+    <li class="student">
+      <div class="student-head">
+        <span class="state-dot" aria-hidden="true"></span>
+        <strong class="host"></strong>
+        <span class="state"></span>
+      </div>
+      <div class="muted user"></div>
+      <div class="muted os"></div>
+      <div class="caps"></div>
+      <div class="ack"></div>
+    </li>
+  </template>
+
+  <template id="history-template">
+    <li class="history-item">
+      <div>
+        <strong class="h-label"></strong>
+        <div class="muted h-meta"></div>
+      </div>
+      <button type="button" class="h-reemit">Reemitir</button>
+    </li>
+  </template>
+
+  <script src="events.js"></script>
+  <script src="vendor/monaco/vs/loader.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

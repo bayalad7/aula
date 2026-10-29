@@ -18,6 +18,12 @@ func OpenLogFile(app, name string) (*os.File, string, error) {
 	if err != nil {
 		return nil, "", fmt.Errorf("log dir: %w", err)
 	}
+	return OpenLogFileIn(dir, name)
+}
+
+// OpenLogFileIn is OpenLogFile in a given directory, e.g. AgentServiceLogDir
+// for the agent service, which has no user profile of its own.
+func OpenLogFileIn(dir, name string) (*os.File, string, error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, "", fmt.Errorf("log dir: %w", err)
 	}

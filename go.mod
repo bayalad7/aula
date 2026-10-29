@@ -3,6 +3,7 @@ module github.com/bayalad7/aula
 go 1.26.0
 
 require (
+	github.com/Microsoft/go-winio v0.6.4
 	github.com/coder/websocket v1.8.15
 	github.com/grandcat/zeroconf v1.0.0
 	github.com/kbinani/screenshot v0.0.0-20250624051815-089614a94018
@@ -17,7 +18,7 @@ require (
 	golang.design/x/clipboard v0.11.0
 	golang.org/x/image v0.41.0
 	golang.org/x/net v0.57.0
-	golang.org/x/sys v0.47.0
+	golang.org/x/sys v0.49.0
 )
 
 require (

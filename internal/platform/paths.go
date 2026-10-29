@@ -41,6 +41,13 @@ func ConsoleMachineConfigPath() string {
 	return filepath.Join(MachineConfigDir(), "Aula", "consola", "config.json")
 }
 
+// AgentServiceLogDir is where the agent service logs, e.g.
+// C:\ProgramData\Aula\alumno\logs: administrators and the service write,
+// users read (the installer sets the ACL of the parent directory).
+func AgentServiceLogDir() string {
+	return filepath.Join(MachineConfigDir(), "Aula", "alumno", "logs")
+}
+
 // LogDir is where an app writes its log file: %LOCALAPPDATA%\Aula\<app> on
 // Windows, the user cache directory elsewhere.
 func LogDir(app string) (string, error) {

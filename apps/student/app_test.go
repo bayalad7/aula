@@ -52,7 +52,7 @@ func (r *recorder) last(name string) any {
 func newTestApp(clip *fakeClipboard) (*App, *recorder) {
 	rec := &recorder{}
 
-	a := NewApp(Config{Channel: "AULA_101"}, nil, nil, localHello(), nil, errors.New("sin portapapeles"), quiet)
+	a := NewApp(Config{Channel: "1"}, nil, nil, localHello(), nil, errors.New("sin portapapeles"), quiet)
 	if clip != nil {
 		a.clip = clip
 	}
@@ -134,7 +134,7 @@ func TestBannerAlwaysIdentifiesClass(t *testing.T) {
 	a, rec := newTestApp(nil)
 	a.onState(session.AgentConnected, discovery.Console{Name: "Lab 3 — Prof. Ayala"})
 	s := rec.last(EventStatus).(Status)
-	if s.Banner != "Aula — conectado a la clase de Lab 3 — Prof. Ayala (canal AULA_101)" {
+	if s.Banner != "Aula — conectado a la clase de Lab 3 — Prof. Ayala (canal 1)" {
 		t.Fatalf("banner = %q", s.Banner)
 	}
 	a.onState(session.AgentDisconnected, discovery.Console{Name: "Lab 3"})
@@ -152,22 +152,22 @@ func TestLoadConfig(t *testing.T) {
 	key := security.EncodePublicKey(id.Public())
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.json")
-	if err := os.WriteFile(path, []byte(`{"channel":"AULA_101","console_public_key":"`+key+`"}`), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(`{"channel":"1","console_public_key":"`+key+`"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	cfg, pub, err := loadConfig([]string{"-config", path})
-	if err != nil || cfg.Channel != "AULA_101" || !pub.Equal(id.Public()) {
+	if err != nil || cfg.Channel != "1" || !pub.Equal(id.Public()) {
 		t.Fatalf("from file: %+v %v", cfg, err)
 	}
-	cfg, _, err = loadConfig([]string{"-config", path, "-canal", "AULA_102", "-directo", "10.0.0.5:47830"})
-	if err != nil || cfg.Channel != "AULA_102" || cfg.Direct != "10.0.0.5:47830" {
+	cfg, _, err = loadConfig([]string{"-config", path, "-canal", "2", "-directo", "10.0.0.5:47830"})
+	if err != nil || cfg.Channel != "2" || cfg.Direct != "10.0.0.5:47830" {
 		t.Fatalf("flags override: %+v %v", cfg, err)
 	}
 	missing := filepath.Join(dir, "no-existe.json")
 	if _, _, err := loadConfig([]string{"-config", missing}); err == nil || !strings.Contains(err.Error(), "-clave") {
 		t.Fatalf("missing config: %v", err)
 	}
-	if _, _, err := loadConfig([]string{"-config", missing, "-canal", "AULA_101", "-clave", "aula-ed25519:xx"}); err == nil {
+	if _, _, err := loadConfig([]string{"-config", missing, "-canal", "1", "-clave", "aula-ed25519:xx"}); err == nil {
 		t.Fatal("invalid key accepted")
 	}
 	if _, _, err := loadConfig([]string{"-config", missing, "-canal", "aula 101", "-clave", key}); err == nil {
@@ -195,13 +195,13 @@ func TestMachineConfigWinsOverUserConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	write(user, "AULA_666", rogue)
-	if cfg, _, err := loadConfig(nil); err != nil || cfg.Channel != "AULA_666" {
+	write(user, "666", rogue)
+	if cfg, _, err := loadConfig(nil); err != nil || cfg.Channel != "666" {
 		t.Fatalf("user file alone: %+v %v", cfg, err)
 	}
-	write(machine, "AULA_101", teacher)
+	write(machine, "1", teacher)
 	cfg, pub, err := loadConfig(nil)
-	if err != nil || cfg.Channel != "AULA_101" || !pub.Equal(teacher.Public()) {
+	if err != nil || cfg.Channel != "1" || !pub.Equal(teacher.Public()) {
 		t.Fatalf("machine file must win: %+v %v", cfg, err)
 	}
 	_ = os.Remove(user)

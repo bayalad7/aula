@@ -8,6 +8,7 @@ import (
 	"crypto/ed25519"
 	"embed"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"time"
@@ -33,7 +34,12 @@ func main() {
 		fmt.Println("aula-cliente " + version)
 		return
 	}
-	log := slog.Default()
+	log := openLog()
+	if len(os.Args) == 2 && os.Args[1] == "diagnostico" {
+		platform.AttachParentConsole()
+		os.Exit(runDiagnose(os.Stdout, log))
+	}
+	log.Info("aula-cliente starting", "version", version)
 	cfg, pub, cfgErr := loadConfig(os.Args[1:])
 	if cfgErr != nil {
 		log.Warn("agent not configured", "err", cfgErr)
@@ -78,6 +84,17 @@ func main() {
 		log.Error("wails run failed", "err", err)
 		os.Exit(1)
 	}
+}
+
+// openLog logs to %LOCALAPPDATA%\Aula\alumno\aula-cliente.log as well as
+// stderr: a window app has no console, and the administrator needs to know why
+// an agent does not connect. Nothing secret or private is logged.
+func openLog() *slog.Logger {
+	f, _, err := platform.OpenLogFile("alumno", "aula-cliente.log")
+	if err != nil {
+		return slog.Default()
+	}
+	return slog.New(slog.NewTextHandler(io.MultiWriter(os.Stderr, f), &slog.HandlerOptions{Level: slog.LevelInfo}))
 }
 
 func isVersionFlag(s string) bool {

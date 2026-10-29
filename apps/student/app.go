@@ -50,6 +50,7 @@ type App struct {
 	mu      sync.Mutex
 	status  Status
 	notices []codedist.Notice
+	diag    string // why the agent is not connected (session.Agent.OnDiagnostic)
 	cancel  context.CancelFunc
 	done    chan struct{}
 }
@@ -114,6 +115,9 @@ func (a *App) supervise(ctx context.Context) {
 			a.log.Info("configuration changed, restarting the agent", "channel", cfg.Channel, "valid", err == nil)
 			stopAgent()
 			a.cfg, a.pub, a.cfgErr = cfg, pub, err
+			a.mu.Lock()
+			a.diag = ""
+			a.mu.Unlock()
 			if err != nil {
 				a.setStatus(Status{State: StateUnconfigured, Channel: cfg.Channel, Banner: "Aula — sin configurar", Detail: err.Error()})
 			} else {
@@ -137,6 +141,7 @@ func (a *App) runAgent(ctx context.Context) (stop func()) {
 		Source:           a.source(),
 		OnMessage:        a.onMessage,
 		OnState:          a.onState,
+		OnDiagnostic:     a.onDiagnostic,
 		Logger:           a.log,
 	}
 	actx, cancel := context.WithCancel(ctx)
@@ -188,13 +193,40 @@ func (a *App) source() session.ConsoleSource {
 // --- Agent callbacks (agent goroutine) -------------------------------------------
 
 func (a *App) onState(s session.AgentState, c discovery.Console) {
+	var st Status
 	switch s {
 	case session.AgentConnected:
-		a.setStatus(statusFor(StateConnected, a.cfg.Channel, c.Name))
+		st = statusFor(StateConnected, a.cfg.Channel, c.Name)
 	case session.AgentDisconnected:
-		a.setStatus(statusFor(StateDisconnected, a.cfg.Channel, c.Name))
+		st = statusFor(StateDisconnected, a.cfg.Channel, c.Name)
 	default:
-		a.setStatus(statusFor(StateSearching, a.cfg.Channel, ""))
+		st = statusFor(StateSearching, a.cfg.Channel, "")
+	}
+	a.mu.Lock()
+	if st.State != StateConnected {
+		st.Detail = a.diag
+	}
+	a.mu.Unlock()
+	a.setStatus(st)
+}
+
+// onDiagnostic shows under the banner why the agent is not connected; "" when
+// it connects. The same text goes to the log, for the administrator.
+func (a *App) onDiagnostic(msg string) {
+	if msg != "" {
+		a.log.Warn("agent not connected", "reason", msg)
+	}
+	a.mu.Lock()
+	a.diag = msg
+	st := a.status
+	changed := st.State != StateConnected && st.State != StateUnconfigured && st.Detail != msg
+	if changed {
+		st.Detail = msg
+		a.status = st
+	}
+	a.mu.Unlock()
+	if changed {
+		a.emit(EventStatus, st)
 	}
 }
 

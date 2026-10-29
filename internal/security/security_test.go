@@ -12,6 +12,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/bayalad7/aula/internal/platform"
 )
 
 func TestPublicKeyTextRoundTrip(t *testing.T) {
@@ -103,20 +105,20 @@ func TestProofVerification(t *testing.T) {
 	other, _ := GenerateIdentity()
 	nonce := NewNonce()
 	cert := [32]byte{1, 2, 3}
-	sig := id.SignProof(nonce, "AULA_101", cert)
+	sig := id.SignProof(nonce, "1", cert)
 
-	if !VerifyProof(id.Public(), nonce, "AULA_101", cert, sig) {
+	if !VerifyProof(id.Public(), nonce, "1", cert, sig) {
 		t.Fatal("valid proof rejected")
 	}
 	otherCert := cert
 	otherCert[0] = 9
 	cases := map[string]bool{
-		"other key":     VerifyProof(other.Public(), nonce, "AULA_101", cert, sig),
-		"other nonce":   VerifyProof(id.Public(), NewNonce(), "AULA_101", cert, sig),
-		"other channel": VerifyProof(id.Public(), nonce, "AULA_102", cert, sig),
-		"other cert":    VerifyProof(id.Public(), nonce, "AULA_101", otherCert, sig),
-		"short nonce":   VerifyProof(id.Public(), nonce[:16], "AULA_101", cert, sig),
-		"bad signature": VerifyProof(id.Public(), nonce, "AULA_101", cert, sig[:63]),
+		"other key":     VerifyProof(other.Public(), nonce, "1", cert, sig),
+		"other nonce":   VerifyProof(id.Public(), NewNonce(), "1", cert, sig),
+		"other channel": VerifyProof(id.Public(), nonce, "2", cert, sig),
+		"other cert":    VerifyProof(id.Public(), nonce, "1", otherCert, sig),
+		"short nonce":   VerifyProof(id.Public(), nonce[:16], "1", cert, sig),
+		"bad signature": VerifyProof(id.Public(), nonce, "1", cert, sig[:63]),
 	}
 	for name, ok := range cases {
 		if ok {
@@ -214,5 +216,57 @@ func TestClientTLSPinning(t *testing.T) {
 
 	if _, err := ClientTLS("sha256:zz", &seen3); err == nil {
 		t.Fatal("ClientTLS accepted a malformed fingerprint")
+	}
+}
+
+// The site key is created on one console, exported, imported on another, and
+// both sign proofs the agents of the centre accept.
+func TestSiteKeyCreateExportImport(t *testing.T) {
+	first, second := t.TempDir(), t.TempDir()
+	// The site key is read-only for non-administrators by design; as its owner
+	// the test can take access back so TempDir can delete it.
+	t.Cleanup(func() {
+		for _, d := range []string{first, second} {
+			_ = platform.RestrictToOwner(d)
+			_ = platform.RestrictToOwner(filepath.Join(d, SiteKeyFile))
+		}
+	})
+	site, err := CreateSiteKey(first, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := CreateSiteKey(first, false); !errors.Is(err, ErrSiteKeyExists) {
+		t.Fatalf("second create: %v", err)
+	}
+	exported, err := ExportSiteKeyPEM(site)
+	if err != nil {
+		t.Fatal(err)
+	}
+	imported, err := ImportSiteKey(second, exported, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := LoadSiteKey(second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !loaded.Public().Equal(site.Public()) || !imported.Public().Equal(site.Public()) {
+		t.Fatal("imported site key differs")
+	}
+	nonce, cert := NewNonce(), [32]byte{7}
+	if !VerifyProof(site.Public(), nonce, "1", cert, loaded.SignProof(nonce, "1", cert)) {
+		t.Fatal("proof from the imported key does not verify with the site public key")
+	}
+	if _, err := ImportSiteKey(second, exported, false); !errors.Is(err, ErrSiteKeyExists) {
+		t.Fatalf("import over existing: %v", err)
+	}
+	if _, err := ImportSiteKey(t.TempDir(), []byte("no es una clave"), false); err == nil {
+		t.Fatal("garbage imported")
+	}
+	entries, _ := os.ReadDir(second)
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".tmp-") {
+			t.Fatalf("temporary file left: %s", e.Name())
+		}
 	}
 }

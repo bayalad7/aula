@@ -116,11 +116,11 @@ func CreateIdentity(dir string, force bool) (*Identity, error) {
 	if err != nil {
 		return nil, err
 	}
-	der, err := x509.MarshalPKCS8PrivateKey(id.priv)
+	data, err := keyPEM(id)
 	if err != nil {
 		return nil, fmt.Errorf("create identity: %w", err)
 	}
-	if err := writePrivateFile(path, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})); err != nil {
+	if err := writePrivateFile(path, data); err != nil {
 		return nil, fmt.Errorf("create identity: %w", err)
 	}
 	return id, nil
@@ -139,17 +139,34 @@ func LoadIdentity(dir string) (*Identity, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load identity: %w", err)
 	}
-	block, _ := pem.Decode(data)
-	if block == nil || block.Type != "PRIVATE KEY" {
-		return nil, fmt.Errorf("load identity %s: not a PEM private key", path)
-	}
-	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	id, err := parseKeyPEM(data)
 	if err != nil {
 		return nil, fmt.Errorf("load identity %s: %w", path, err)
 	}
+	return id, nil
+}
+
+// parseKeyPEM reads an Ed25519 private key in PKCS#8 PEM.
+func parseKeyPEM(data []byte) (*Identity, error) {
+	block, _ := pem.Decode(data)
+	if block == nil || block.Type != "PRIVATE KEY" {
+		return nil, errors.New("not a PEM private key")
+	}
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
 	priv, ok := key.(ed25519.PrivateKey)
 	if !ok {
-		return nil, fmt.Errorf("load identity %s: key is %T, want Ed25519", path, key)
+		return nil, fmt.Errorf("key is %T, want Ed25519", key)
 	}
 	return &Identity{priv: priv}, nil
+}
+
+func keyPEM(id *Identity) ([]byte, error) {
+	der, err := x509.MarshalPKCS8PrivateKey(id.priv)
+	if err != nil {
+		return nil, err
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}), nil
 }

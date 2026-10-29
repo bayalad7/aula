@@ -10,6 +10,7 @@
 ; Despliegue silencioso (GPO, etapa 15):
 ;   Aula-Alumno-Setup-X.Y.Z.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CANAL=2
 ;     [/CLAVECENTRO=<ruta a aula-centro.pub | aula-ed25519:…>] [/DIRECTO=IP:47830]
+;     [/MERGETASKS="redpublica"]  (abre también el perfil Público del firewall, D-012)
 ;
 ; Formato de la configuración que escribe: docs/configuracion.md.
 
@@ -53,6 +54,11 @@ SetupLogging=yes
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
+[Tasks]
+; Off by default: the agent should not answer mDNS on untrusted networks (D-012).
+Name: "redpublica"; Description: "Permitir también en redes Públicas (solo si la red del laboratorio no puede ser Privada)"; \
+  GroupDescription: "Firewall:"; Flags: unchecked
+
 [Files]
 Source: "{#SourceDir}\aula-cliente.exe"; DestDir: "{app}"; Flags: ignoreversion
 
@@ -77,7 +83,10 @@ Filename: "{sys}\icacls.exe"; \
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Aula Cliente (mDNS)"""; Flags: runhidden
 Filename: "{sys}\netsh.exe"; \
   Parameters: "advfirewall firewall add rule name=""Aula Cliente (mDNS)"" dir=in action=allow program=""{app}\aula-cliente.exe"" protocol=UDP profile=private,domain"; \
-  Flags: runhidden; StatusMsg: "Configurando el firewall…"
+  Flags: runhidden; StatusMsg: "Configurando el firewall…"; Tasks: not redpublica
+Filename: "{sys}\netsh.exe"; \
+  Parameters: "advfirewall firewall add rule name=""Aula Cliente (mDNS)"" dir=in action=allow program=""{app}\aula-cliente.exe"" protocol=UDP profile=private,domain,public"; \
+  Flags: runhidden; StatusMsg: "Configurando el firewall…"; Tasks: redpublica
 Filename: "{app}\aula-cliente.exe"; Description: "Abrir Aula Cliente"; \
   Flags: nowait postinstall skipifsilent runasoriginaluser
 

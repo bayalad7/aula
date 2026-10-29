@@ -13,6 +13,7 @@
 ;     [/CENTRO=crear|mantener|<ruta a aula-centro.key>] [/SALIDA=<carpeta para aula-centro.pub/.key>]
 ;   Sin /CENTRO: mantiene la clave si existe; si no, la crea y deja aula-centro.pub y
 ;   aula-centro.key en /SALIDA (por defecto, junto al instalador).
+;   /MERGETASKS="redpublica" abre también el perfil Público del firewall (D-012).
 
 #ifndef AppVersion
   #define AppVersion "0.0.0-dev"
@@ -55,6 +56,9 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "Crear un acceso directo en el escritorio"; Flags: unchecked
+; Off by default: on a Public network anyone could see the console and join it as a student (D-012).
+Name: "redpublica"; Description: "Permitir también en redes Públicas (solo si la red del laboratorio no puede ser Privada: en redes ajenas cualquiera vería la consola)"; \
+  GroupDescription: "Firewall:"; Flags: unchecked
 
 [Files]
 Source: "{#SourceDir}\aula-consola.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -75,7 +79,10 @@ Filename: "{sys}\icacls.exe"; \
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Aula Consola"""; Flags: runhidden
 Filename: "{sys}\netsh.exe"; \
   Parameters: "advfirewall firewall add rule name=""Aula Consola"" dir=in action=allow program=""{app}\aula-consola.exe"" profile=private,domain"; \
-  Flags: runhidden; StatusMsg: "Configurando el firewall…"
+  Flags: runhidden; StatusMsg: "Configurando el firewall…"; Tasks: not redpublica
+Filename: "{sys}\netsh.exe"; \
+  Parameters: "advfirewall firewall add rule name=""Aula Consola"" dir=in action=allow program=""{app}\aula-consola.exe"" profile=private,domain,public"; \
+  Flags: runhidden; StatusMsg: "Configurando el firewall…"; Tasks: redpublica
 Filename: "{app}\aula-consola.exe"; Description: "Abrir Aula Consola"; \
   Flags: nowait postinstall skipifsilent runasoriginaluser
 

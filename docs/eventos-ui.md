@@ -33,9 +33,10 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
 // Status
 { "state": "connected",            // unconfigured | searching | connected | disconnected
   "teacher": "Lab 3 — Prof. Ayala",  // console_name; vacío mientras busca
-  "channel": "AULA_101",
-  "banner": "Aula — conectado a la clase de Lab 3 — Prof. Ayala (canal AULA_101)",
-  "detail": "" }                     // ayuda extra, p. ej. por qué está sin configurar
+  "channel": "1",
+  "banner": "Aula — conectado a la clase de Lab 3 — Prof. Ayala (canal 1)",
+  "detail": "",                      // ayuda extra, p. ej. por qué está sin configurar
+  "viewed": false }                  // true mientras el profesor recibe esta pantalla
 
 // Board: lista completa, la más antigua primero (máx. 20 con "append")
 { "snippets": [ { "id": "0c9a…", "exercise": "3", "title": "Factorial", "lang": "python",
@@ -66,6 +67,9 @@ navegador.
   `Prism.highlight`, que escapa el código (una prueba lo verifica).
 - La página tiene CSP `script-src 'self'`: sin scripts en línea ni de otros orígenes.
 - El distintivo (`banner`) siempre está visible, fijo arriba (ver `docs/privacidad.md`).
+- Con `viewed: true` la barra se pone roja y dice "Aula — tu pantalla está siendo vista por
+  <profesor> (canal N)". Es un aviso adicional: el principal es el distintivo nativo de Windows,
+  que se ve aunque la ventana esté minimizada (`docs/privacidad.md`, regla 6).
 
 ## Consola del profesor (`apps/teacher`)
 
@@ -82,6 +86,10 @@ agentes ──hello/heartbeat/desconexión──▶ session.Console.OnChange ─
 interfaz ──App.Emit({title, lang, content, mode})──▶ Go: historial + Broadcast(code.share)
 agentes ──code.ack / msg.ack──▶ codedist.Deliveries ──"aula:deliveries"──▶ "confirmados 2/2 ✓"
 Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aula:capture"──▶ editor (sin emitir)
+interfaz ──App.OpenScreens()──▶ screen.Wall ──screen.thumb.start──▶ agentes con screen.thumb
+agentes ──screen.thumb.frame──▶ screen.Wall (solo el start vigente) ──"aula:frame"──▶ <img> de la cuadrícula
+interfaz ──App.ViewScreen(id)──▶ nuevo start a ese agente (1280 px); ViewScreen("") vuelve a 320 px
+interfaz ──App.CloseScreens()──▶ screen.thumb.stop a todos; Go olvida los cuadros
 ```
 
 ### Eventos (Go → interfaz)
@@ -93,14 +101,15 @@ Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aul
 | `aula:deliveries` | `Deliveries` | Tras cada envío y cada acuse (`code.ack`, `msg.ack`). |
 | `aula:capture` | `Capture` | Al pulsar el atajo global o el botón Capturar. |
 | `aula:class` | `View` | Al terminar el arranque automático en el canal predeterminado. Si falló, `active` es `false` y el motivo está en `Setup().startError`. |
+| `aula:frame` | `Thumb` | Por cada cuadro recibido mientras la vista de pantallas está abierta (≤ 1 por segundo y alumno). Solo cuadros del `screen.thumb.start` vigente. |
 
 ```jsonc
 // Students: la lista del canal y los conteos que habilitan los botones
 { "students": [ { "id": "…", "hostname": "LAB3-PC07", "username": "alumno07", "os": "windows",
                   "osVersion": "…", "agentVersion": "0.1.0", "state": "connected",
-                  "capabilities": ["code.view", "msg.show"], "canCode": true, "canNotice": true,
-                  "lastCodeAck": "0c9a…", "ackedAt": "10:00:05" } ],
-  "connected": 1, "canCode": 1, "canNotice": 1 }
+                  "capabilities": ["code.view", "msg.show", "screen.thumb"], "canCode": true,
+                  "canNotice": true, "canThumb": true, "lastCodeAck": "0c9a…", "ackedAt": "10:00:05" } ],
+  "connected": 1, "canCode": 1, "canNotice": 1, "canThumb": 1 }
 
 // History: fragmentos de la sesión, numerados ("Ejercicio N")
 { "entries": [ { "snippetId": "…", "number": 1, "title": "Factorial", "lang": "python",
@@ -113,6 +122,13 @@ Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aul
 // Capture: o draft o error
 { "draft": { "content": "…", "lang": "python", "lines": 9, "source": "hotkey", "capturedAt": "…" },
   "error": "" }
+
+// Thumb (screen.Thumb): el último cuadro de un alumno; la interfaz lo pinta como
+// "data:image/jpeg;base64," + jpeg
+{ "sessionId": "…", "seq": 12, "width": 320, "height": 180,
+  "jpeg": "/9j/4AAQ…",               // JPEG en Base64
+  "detail": false,                   // true si es el alumno de la vista en detalle (1280 px)
+  "at": "2026-10-29T10:00:05-06:00" }
 ```
 
 ### Métodos enlazados (interfaz → Go)
@@ -128,6 +144,9 @@ Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aul
 | `ClearScreens()` | `Delivery` / error | `code.clear` a todos. |
 | `SendNotice(text, level)` | `Delivery` / error | `msg.show` a todos, `info` o `warning`. |
 | `CaptureClipboard()` | `Draft` / error | Igual que el atajo global; el resultado también llega como `aula:capture`. |
+| `OpenScreens()` | error | Abre la vista de pantallas (botón **Ver pantallas**): envía `screen.thumb.start` (1000 ms, calidad 50, 320 px) a cada alumno conectado con `canThumb`, y también a los que se conecten mientras siga abierta. Error si no hay clase. |
+| `CloseScreens()` | — | Cierra la vista (**Cerrar** o Esc): envía `screen.thumb.stop` a todos los que transmitían y olvida los cuadros. |
+| `ViewScreen(sessionId)` | — | Vista en detalle de un alumno (clic en su miniatura): nuevo `screen.thumb.start` con 1280 px y calidad 70 solo a él. `ViewScreen("")` lo devuelve a miniatura. |
 
 ### Reglas
 
@@ -138,3 +157,9 @@ Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aul
 - **Los acuses se cuentan por ID de sobre:** cada alumno recibe un sobre distinto y su `ref_id`
   identifica el envío. Un mismo sobre cuenta una sola vez.
 - **La interfaz no usa `innerHTML`** (lo verifica una prueba).
+- **Las pantallas solo se transmiten con la vista abierta.** La interfaz llama a
+  `CloseScreens()` al cerrarla y al cambiar de canal o de nombre; Go además detiene todo al
+  cerrar la clase (`EndClass`), y cada agente se detiene solo si se pierde la conexión.
+- **Los cuadros solo viven en memoria:** Go guarda el último de cada alumno mientras la vista
+  está abierta y la interfaz solo los tiene en sus `<img>`. Nada se escribe en disco
+  (`docs/privacidad.md`, regla 7). La CSP permite `img-src data:` para mostrarlos.

@@ -12,7 +12,7 @@
 | 07 | App profesor: lista, hotkey de captura, emisión | ✅ Completada (falta prueba en VMs) |
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ✅ **Hito 1 completado** (falta validación en laboratorio) |
 | 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
-| 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | ⏳ Pendiente |
+| 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 En curso (miniaturas; pantalla en blanco documentada y pendiente) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 
@@ -303,3 +303,32 @@
   lo recomendado sigue siendo marcar la red como Privada. Caso 08-Q en `docs/prueba-vms.md`.
 - **Pendiente:** prueba real con los instaladores de `v0.2.0-rc.2` (`docs/prueba-vms.md` §10,
   casos 08-A a 08-Q).
+
+## Etapa 09 (Módulo B): notas — en curso
+
+- **Hecho (sin commitear):**
+  - documentación: `docs/protocol.md` §5.6–5.11, reglas 6–11 de `docs/privacidad.md`, D-013 y
+    `internal/screen` en CLAUDE.md;
+  - `internal/protocol`: `screen.thumb.start/frame/stop` con validación, fixtures y pruebas;
+  - `internal/platform`: interfaces `ScreenCapture` y `ScreenIndicator`, `EncodeFrame`
+    (escalado y JPEG), captura del monitor principal en Windows (`kbinani/screenshot`), el
+    distintivo nativo "Tu pantalla está siendo vista por el profesor" y el fallback "no
+    soportado" en Linux y macOS.
+- **Pantalla en blanco (`screen.freeze`):** retirada del código a pedido del usuario; queda
+  documentada como pendiente (protocolo §5.9–5.11, privacidad reglas 9–10, D-013).
+- **Hecho después (sin commitear):**
+  - `internal/screen`: `Streamer` (agente: distintivo antes del primer cuadro, `start`
+    reemplaza parámetros, `stop` o desconexión terminan todo, error de captura reportado una
+    vez, baja la calidad si el cuadro excede 640 KiB) y `Wall` (consola: quién transmite,
+    miniatura o detalle, descarta cuadros viejos, `Close` detiene todo). Pruebas con dobles.
+  - Agente: declara `screen.thumb` solo si hay captura e indicador; la barra cambia a "Aula — tu
+    pantalla está siendo vista por …" (en rojo); al desconectarse se detiene la captura.
+  - Consola: botón **Ver pantallas** (cuadrícula en vivo; clic → vista en detalle; Esc o Cerrar
+    detienen las transmisiones), `OpenScreens`/`CloseScreens`/`ViewScreen`, evento `aula:frame`,
+    `canThumb` en las tarjetas; cambiar de canal o cerrar la clase detiene todo.
+- **Falta:**
+  - la prueba automática con 20 agentes simulados (no se pudo completar); mientras tanto, la
+    medición se hace en VMs y se proyecta a 20 (`docs/prueba-vms.md` §11.3);
+  - correr los casos 09-A a 09-L y la medición de `docs/prueba-vms.md` §11;
+  - prueba real en VMs Windows (miniaturas, distintivo visible, detener la vista detiene la
+    captura) y los commits.

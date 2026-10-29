@@ -711,3 +711,175 @@ hay dudas.
 
 Anota los resultados en la tabla de §9 (agrega las filas 08-A a 08-Q). **Para aceptar la v0.2.0**
 bastan 08-A, 08-C, 08-D, 08-E, 08-G, 08-H, 08-I y 08-J en ✅.
+
+---
+
+## 11. Etapa 09: miniaturas de pantalla (Windows)
+
+Comprueba que el profesor ve las pantallas en miniatura, que el alumno **siempre** sabe que su
+pantalla se está viendo y que cerrar la vista detiene la captura (`docs/privacidad.md`, reglas
+6–8). La pantalla en blanco (`screen.freeze`) está documentada pero **no implementada**: no hay
+casos para ella.
+
+### 11.1 Preparación
+
+La etapa 09 todavía no tiene versión publicada: compila las dos apps como en §2.1
+(`wails build` en `apps\student` y `apps\teacher`).
+
+- **Si las VMs ya tienen instalada la v0.2** (§10), reemplaza solo los ejecutables. La
+  configuración (canal y clave del centro) se conserva. En cada VM, en PowerShell **como
+  administrador**:
+
+  ```powershell
+  # Alumno: cierra Aula Cliente (icono en la barra de tareas) y reemplaza el .exe
+  Stop-Process -Name aula-cliente -ErrorAction SilentlyContinue
+  Copy-Item C:\aula-prueba\aula-cliente.exe "C:\Program Files\Aula\Cliente\aula-cliente.exe" -Force
+  # Profesor: lo mismo con la consola
+  Stop-Process -Name aula-consola -ErrorAction SilentlyContinue
+  Copy-Item C:\aula-prueba\aula-consola.exe "C:\Program Files\Aula\Consola\aula-consola.exe" -Force
+  ```
+
+  Vuelve a abrir Aula Cliente desde el menú Inicio (o cierra sesión y entra de nuevo).
+- **Sin instaladores** (portables, como en §5 y §6): abre `aula-consola.exe` en la VM del
+  profesor y `aula-cliente.exe -canal 1 -clave aula-ed25519:…` en cada VM de alumno.
+
+Necesitas la VM del profesor y **2 o 3 VMs de alumno con Windows**, todas en el canal 1 y
+conectadas (punto verde en la consola). En la tarjeta de cada alumno debe aparecer la etiqueta
+**pantalla**. Si no aparece, ese agente es de una versión anterior: reemplaza su `.exe`.
+
+### 11.2 Casos
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **09-A** Sin vista no hay captura | Con la consola abierta y la vista de pantallas **cerrada**, mira la pantalla de cada alumno. | No hay franja roja arriba. La barra de la ventana de Aula dice "conectado a la clase de …" (sin rojo). |
+| **09-B** Abrir la vista y aviso visible (**aceptación**) | En la consola pulsa **Ver pantallas** (arriba a la derecha). | En la consola: una tarjeta por alumno ("Pantallas 2 de 2"); en menos de 2 s cada una muestra la imagen de su escritorio. En **cada alumno**, antes de que aparezca su imagen: una **franja roja fija arriba al centro**, "● Tu pantalla está siendo vista por el profesor", y la barra de la ventana de Aula pasa a rojo con "Aula — tu pantalla está siendo vista por …". |
+| **09-C** El aviso no se puede esconder | En un alumno, minimiza la ventana de Aula; abre el Bloc de notas maximizado; intenta hacer clic sobre la franja. | La franja sigue visible encima de todo. El clic pasa a la ventana de abajo (la franja no roba clics ni el foco). |
+| **09-D** Miniatura en vivo | En un alumno, abre el Bloc de notas y escribe algo. | La miniatura de ese alumno cambia en 1–2 s. La franja roja también se ve en la miniatura. |
+| **09-E** Vista en detalle | Clic en la miniatura de un alumno. Espera 3 s y pulsa **Volver a la cuadrícula**. | Se abre la pantalla de ese alumno en grande; tras el primer cuadro grande el texto del Bloc de notas se lee nítido. Al volver, la cuadrícula sigue actualizándose. |
+| **09-F** Cerrar la vista detiene la captura (**aceptación**) | Pulsa **Cerrar** (o Esc dos veces si estabas en el detalle). | En cada alumno, en 1–2 s **desaparece la franja** y la barra vuelve a "conectado a la clase de …". En el Monitor de recursos del alumno (§11.3), `aula-cliente.exe` deja de enviar datos. |
+| **09-G** Alumno nuevo con la vista abierta | Abre la vista. Luego abre Aula Cliente en otra VM (o reinícialo en una). | Aparece su tarjeta y su imagen sin tocar nada; en ese alumno aparece la franja. |
+| **09-H** Se pierde la conexión | Con la vista abierta, cierra la consola (o desconecta la red de la VM del profesor). | En cada alumno la franja desaparece sola: al instante si cerraste la consola, en menos de 15 s si cortaste la red. Nadie queda con el aviso puesto. |
+| **09-I** Cambiar de canal | Con la vista abierta, cambia la consola al canal 2 y luego vuelve al 1. | Al cambiar se cierra la vista y desaparecen las franjas. De vuelta en el canal 1, la vista está cerrada hasta que pulses **Ver pantallas**. |
+| **09-J** Sesión bloqueada | Con la vista abierta, bloquea un alumno (Win+L). Desbloquéalo tras 10 s. | La miniatura se queda con la última imagen mientras está bloqueado (Windows no deja capturar la pantalla de bloqueo) y sigue actualizándose al desbloquear. |
+| **09-K** Agente sin soporte | Si tienes una VM con un agente v0.2 (o Linux), conéctala. | Su tarjeta no tiene la etiqueta **pantalla** y la vista dice "Pantallas N de M" sin contarla. Nada falla. |
+| **09-L** Nada en disco | En un alumno y en el profesor, tras la prueba, busca imágenes nuevas: `Get-ChildItem $env:LOCALAPPDATA\Aula, $env:APPDATA\Aula -Recurse -Include *.jpg,*.jpeg,*.png`. | No hay ninguna. Los logs (`aula-cliente.log`, `aula-consola.log`) solo dicen "screen stream started/stopped" y tamaños, nunca imágenes. |
+
+**Para aceptar la etapa 09** bastan 09-B, 09-D, 09-E y 09-F en ✅, más la medición de §11.3.
+
+### 11.3 Medición de rendimiento (CPU y red, proyectada a 20 alumnos)
+
+El objetivo es saber cuánto cuesta la vista de pantallas: CPU en cada alumno, CPU en el
+profesor y tráfico de red. Todavía **no hay una prueba automática con 20 agentes simulados**
+(`muchos_alumnos` no envía miniaturas), así que se mide con agentes reales en VMs y se
+**proyecta a 20**. El tráfico y la CPU del profesor crecen en proporción al número de alumnos;
+la CPU de cada alumno no depende de cuántos haya.
+
+**Qué se espera** (por diseño, `docs/decisiones.md` D-013):
+
+| Medida | Valor esperado |
+|---|---|
+| Una miniatura (320 px, calidad 50, 1 por segundo) | 10–25 KiB/s por alumno |
+| Vista en detalle (1280 px, calidad 70, 1 por segundo) | 60–200 KiB/s, solo ese alumno |
+| 20 alumnos en miniatura | 200–500 KiB/s ≈ 1,6–4 Mbit/s hacia el profesor |
+
+#### Antes de empezar
+
+- Cierra en las VMs todo lo que no sea Aula (navegador, actualizaciones de Windows en curso).
+- Anota de cada VM: vCPU, RAM, versión de Windows, y del anfitrión: CPU y si las VMs comparten
+  disco y red. En VMs la CPU sale más alta que en un equipo físico: anótalo junto al resultado.
+- En **cada alumno** deja abierto algo que cambie, por ejemplo un video en el navegador o el
+  Bloc de notas con texto, para no medir una pantalla quieta (los JPEG de una pantalla quieta y
+  lisa son más pequeños).
+
+#### Herramientas
+
+- **Administrador de tareas** (`Ctrl+Shift+Esc`) → **Más detalles**:
+  - pestaña **Rendimiento → Ethernet**: gráfica de *Enviar* y *Recibir* en Kbps de la VM;
+  - pestaña **Detalles**: columna **CPU** por proceso (clic derecho en el encabezado →
+    *Seleccionar columnas* para agregar *Tiempo de CPU* si quieres).
+- **Monitor de recursos** (`Win+R` → `resmon` → Enter):
+  - pestaña **CPU**: en *Procesos*, marca la casilla de `aula-cliente.exe` (alumno) o
+    `aula-consola.exe` (profesor). Las columnas **CPU** (instantánea) y **Promedio de CPU**
+    (último minuto) dan el valor a anotar;
+  - pestaña **Red** → *Procesos con actividad de red*: columnas **Enviar (B/s)** y **Recibir
+    (B/s)** del proceso, promediadas sobre el último minuto.
+- En el profesor, la imagen la dibuja WebView2: además de `aula-consola.exe` hay varios
+  procesos **`msedgewebview2.exe`** hijos. Súmalos a la CPU de la consola (en el Administrador
+  de tareas aparecen agrupados bajo *Aula — Consola* en la pestaña *Procesos*).
+
+**Registro automático (opcional)** con `typeperf`, que guarda una muestra por segundo en CSV.
+En PowerShell, en la VM que mides:
+
+```powershell
+# Alumno: CPU de aula-cliente y tráfico de la tarjeta de red, 120 muestras (2 min)
+typeperf "\Proceso(aula-cliente)\% de tiempo de procesador" "\Interfaz de red(*)\Bytes enviados/s" -si 1 -sc 120 -o C:\aula-prueba\alumno.csv
+
+# Profesor: CPU de aula-consola y bytes recibidos
+typeperf "\Proceso(aula-consola)\% de tiempo de procesador" "\Interfaz de red(*)\Bytes recibidos/s" -si 1 -sc 120 -o C:\aula-prueba\profesor.csv
+```
+
+- En Windows en inglés los contadores se llaman `\Process(aula-cliente)\% Processor Time`,
+  `\Network Interface(*)\Bytes Sent/sec` y `\Bytes Received/sec`.
+- El `% de tiempo de procesador` de un proceso suma todos los núcleos: **divídelo entre el
+  número de vCPU** para compararlo con el Administrador de tareas.
+- El contador de red es de toda la tarjeta, no solo de Aula: por eso se resta la línea base.
+
+#### Pasos
+
+Sea **N** el número de alumnos conectados con la etiqueta **pantalla** (2 o 3 en VMs; más si el
+anfitrión aguanta).
+
+1. **Línea base (vista cerrada), 2 minutos.** Con todos conectados y la vista de pantallas
+   cerrada, espera 2 minutos y anota de cada alumno *Promedio de CPU* y *Enviar (B/s)* de
+   `aula-cliente.exe`, y del profesor la CPU de la consola (con WebView2) y *Recibir (B/s)*.
+   Es el costo del latido (heartbeat): debe ser casi cero.
+2. **Miniaturas, 2 minutos.** Pulsa **Ver pantallas**, espera 2 minutos completos (los promedios
+   del Monitor de recursos cubren el último minuto) y anota lo mismo.
+3. **Detalle, 2 minutos.** Abre la vista en detalle de un alumno, espera 2 minutos y anota los
+   valores de **ese** alumno y del profesor.
+4. **Cerrar, 1 minuto.** Pulsa **Cerrar**. Al minuto, los valores deben volver a la línea base
+   (confirma 09-F con números).
+5. **Si puedes, repite el paso 2 con más alumnos** (por ejemplo, 2 y luego 4 VMs) para comprobar
+   que el tráfico del profesor crece en proporción.
+
+#### Cálculo y proyección a 20
+
+- **Red por alumno** = (*Recibir* del profesor con miniaturas − línea base) ÷ N. Contrástalo con
+  el *Enviar* de cada alumno: deben coincidir aproximadamente.
+- **Red con 20 alumnos** = red por alumno × 20 (+ la vista en detalle de uno, si está abierta).
+- **CPU del profesor por alumno** = (CPU consola + WebView2 con miniaturas − línea base) ÷ N;
+  **con 20** = ese valor × 20.
+- **CPU del alumno**: se toma tal cual (no depende de cuántos haya).
+
+**Referencia orientativa** para dar la medición por buena (equipo de laboratorio típico de 4
+núcleos o una VM de 2 vCPU):
+
+| Medida | Aceptable |
+|---|---|
+| CPU de `aula-cliente.exe` con miniaturas | ≤ 5 % de promedio |
+| Red proyectada a 20 alumnos (miniaturas) | ≤ 5 Mbit/s (una red de 100 Mbit/s la soporta de sobra) |
+| CPU proyectada del profesor a 20 alumnos (consola + WebView2) | ≤ 30 % |
+| Tras **Cerrar** | igual a la línea base (± 1 %, ± 1 KiB/s) |
+
+Si algo se pasa, anótalo con los datos del entorno: se ajustan el intervalo, la calidad o el
+tamaño de las miniaturas (`internal/screen`, `ThumbParams`) sin cambiar el protocolo.
+
+#### Registro
+
+| Medida | Línea base | Miniaturas | Detalle | Tras cerrar |
+|---|---|---|---|---|
+| N (alumnos con pantalla) | | | — | |
+| CPU `aula-cliente.exe` (promedio, alumno 1) | | | | |
+| CPU `aula-cliente.exe` (promedio, alumno 2) | | | | |
+| Enviar `aula-cliente.exe` (B/s, alumno 1) | | | | |
+| CPU consola + WebView2 (profesor) | | | | |
+| Recibir (B/s, profesor) | | | | |
+| **Proyección a 20:** red (Mbit/s) | — | | | — |
+| **Proyección a 20:** CPU del profesor | — | | | — |
+
+Datos del entorno: anfitrión (CPU, RAM), hipervisor, vCPU y RAM de cada VM, versión de Windows,
+resolución de pantalla de los alumnos (una pantalla más grande no cambia el tamaño de la
+miniatura, pero sí el costo de capturarla).
+
+Copia los resultados (09-A a 09-L y esta tabla) a `docs/progreso.md`, en las notas de la etapa
+09.

@@ -30,4 +30,4 @@ npm-debug.log*
 Thumbs.db
 
 # Local builds for manual tests
-dist/
+/dist/

@@ -3,6 +3,9 @@
 Las versiones se publican solas al empujar un tag `vX.Y.Z`
 (`.github/workflows/release.yml`). Esta guía es para quien mantiene el repositorio.
 
+Para probar `develop` en VMs **sin publicar**, genera los instaladores en tu equipo con
+`instaladores-locales.md`.
+
 ## 1. Cuándo y con qué número
 
 - Versionado semántico (CLAUDE.md): `z` corrige, `y` agrega funciones compatibles, `x` rompe el

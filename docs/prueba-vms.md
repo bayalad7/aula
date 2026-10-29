@@ -682,7 +682,7 @@ Ahora todo se instala como lo hará el centro de cómputo, sin copiar `.exe` sue
 **dos salas** en la misma red: la VM del profesor y la VM de alumno 1 son la sala principal
 (**canal 1**); la VM de alumno 2 es la sala alterna (**canal 2**). Usa los artefactos de una
 versión publicada (*Releases*: `Aula-Consola-Setup-*.exe`, `Aula-Alumno-Setup-*.exe`) o
-compílalos con los comandos de `docs/desarrollo/publicar.md`. Guía de uso completa:
+compílalos en tu equipo con `docs/desarrollo/instaladores-locales.md`. Guía de uso completa:
 `docs/uso-hito1.md`.
 
 Antes de empezar, en cada VM desinstala lo de las pruebas anteriores y borra
@@ -982,7 +982,8 @@ sesión, y que el alumno sigue viendo el distintivo de identidad (`docs/privacid
 - VM del profesor con la consola abierta en el canal 1, y una VM de alumno con Windows y **dos
   cuentas**: una **estándar** (el alumno) y una de administrador.
 - Instala el alumno con el `Aula-Alumno-Setup-…` de esta versión, como administrador (canal 1 y la
-  clave del centro). Si la VM tenía una versión anterior, el instalador la actualiza: quita el
+  clave del centro). Si no hay versión publicada con el servicio, genera los instaladores con
+  `docs/desarrollo/instaladores-locales.md`. Si la VM tenía una versión anterior, el instalador la actualiza: quita el
   inicio automático por usuario y deja el servicio.
 
 ### 13.2 Casos

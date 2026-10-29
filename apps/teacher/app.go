@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +20,10 @@ import (
 
 var errNoClass = errors.New("primero abre una clase")
 
+// version is the console's SemVer. Releases set it with
+// -ldflags "-X main.version=x.y.z".
+var version = "0.1.0-dev"
+
 // App is the teacher console behind the Wails window. Its exported methods
 // are the bindings the frontend calls; all state lives here.
 type App struct {
@@ -32,6 +37,10 @@ type App struct {
 	now     func() time.Time
 
 	emit func(event string, data any) // set at startup; replaced in tests
+	// saveDialog asks where to save a file and returns "" if cancelled; set at
+	// startup (Wails dialog), replaced in tests.
+	saveDialog func(defaultName string) (string, error)
+	raise      func() // bring the window forward (second launch); set at startup
 
 	mu         sync.Mutex
 	ctx        context.Context
@@ -49,10 +58,16 @@ type App struct {
 
 // NewApp builds the console. dir holds the identity and settings.
 func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform.Hotkeys, log *slog.Logger) *App {
+	port := DefaultPort
+	if s := loadSettings(dir); s.Port > 0 && s.Port <= 65535 {
+		port = s.Port
+	}
 	return &App{
-		dir: dir, port: DefaultPort, log: log, clip: clip, clipErr: clipErr, hotkeys: hotkeys,
+		dir: dir, port: port, log: log, clip: clip, clipErr: clipErr, hotkeys: hotkeys,
 		start: startLiveClass, now: time.Now, emit: func(string, any) {},
-		history: &codedist.History{}, deliveries: &codedist.Deliveries{},
+		saveDialog: func(string) (string, error) { return "", errors.New("diálogo no disponible") },
+		raise:      func() {},
+		history:    &codedist.History{}, deliveries: &codedist.Deliveries{},
 		hotkey: HotkeyStatus{Combo: platform.DefaultCaptureHotkey.String()},
 	}
 }
@@ -87,7 +102,7 @@ func (a *App) shutdown(context.Context) { a.EndClass() }
 // Setup returns what the channel selection screen shows.
 func (a *App) Setup() Setup {
 	s := loadSettings(a.dir)
-	out := Setup{RecentChannels: s.RecentChannels, ConsoleName: s.ConsoleName}
+	out := Setup{RecentChannels: s.RecentChannels, ConsoleName: s.ConsoleName, Version: version}
 	if out.RecentChannels == nil {
 		out.RecentChannels = []string{}
 	}
@@ -308,6 +323,33 @@ func (a *App) readDraft(source string) (Draft, error) {
 		Content: text, Lang: guessLang(text, prev), Source: source, CapturedAt: a.now(),
 		Lines: strings.Count(strings.TrimRight(text, "\n"), "\n") + 1,
 	}, nil
+}
+
+// SaveAgentConfig asks where to save aula-alumno.json for the open class
+// (channel and this console's public key) and writes it. It returns the path,
+// or "" if the teacher cancelled. The agent installer picks the file up from
+// next to itself.
+func (a *App) SaveAgentConfig() (string, error) {
+	a.mu.Lock()
+	info := a.info
+	active := a.class != nil
+	a.mu.Unlock()
+	if !active {
+		return "", errNoClass
+	}
+	data, err := session.AgentConfig{Channel: info.Channel, ConsolePublicKey: info.PublicKey}.Marshal()
+	if err != nil {
+		return "", err
+	}
+	path, err := a.saveDialog(session.AgentConfigFile)
+	if err != nil || path == "" {
+		return "", err
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return "", fmt.Errorf("no se pudo guardar: %w", err)
+	}
+	a.log.Info("agent config exported", "channel", info.Channel)
+	return path, nil
 }
 
 // CopyPublicKey puts the console public key on the clipboard, to paste it

@@ -19,6 +19,7 @@ const (
 type settings struct {
 	RecentChannels []string `json:"recent_channels"`
 	ConsoleName    string   `json:"console_name"`
+	Port           int      `json:"port,omitempty"` // 0 means DefaultPort
 }
 
 func loadSettings(dir string) settings {

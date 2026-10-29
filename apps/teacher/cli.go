@@ -5,9 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bayalad7/aula/internal/security"
+	"github.com/bayalad7/aula/internal/session"
 )
 
 const usage = `Uso: aula-consola [comando]
@@ -15,6 +18,9 @@ const usage = `Uso: aula-consola [comando]
 Sin comando abre la consola. Comandos:
   keygen [-dir DIR] [-force]   crea la clave de la consola y muestra la clave pública
   pubkey [-dir DIR]            muestra la clave pública para configurar alumnos
+  config-alumno -canal CANAL [-o ARCHIVO] [-directo IP:PUERTO] [-dir DIR]
+                               genera aula-alumno.json para el instalador del alumno
+  version                      muestra la versión
 `
 
 // runCLI runs a command-line subcommand and returns the process exit code.
@@ -30,6 +36,11 @@ func runCLI(args []string, stdout, stderr io.Writer) int {
 		err = keygen(args[1:], stdout)
 	case "pubkey":
 		err = pubkey(args[1:], stdout)
+	case "config-alumno":
+		err = agentConfig(args[1:], stdout)
+	case "version", "-version", "--version":
+		fmt.Fprintln(stdout, "aula-consola "+version)
+		return 0
 	case "help", "-h", "-help", "--help":
 		fmt.Fprint(stdout, usage)
 		return 0
@@ -108,4 +119,40 @@ func keyDir(flagValue string) (string, error) {
 		return flagValue, nil
 	}
 	return security.DefaultDir()
+}
+
+// agentConfig writes the agent configuration file (aula-alumno.json) for a
+// channel, with this console's public key, ready for the agent installer.
+func agentConfig(args []string, stdout io.Writer) error {
+	fs := flag.NewFlagSet("config-alumno", flag.ContinueOnError)
+	fs.SetOutput(stdout)
+	channel := fs.String("canal", "", "canal del aula, p. ej. AULA_101 (obligatorio)")
+	out := fs.String("o", session.AgentConfigFile, "archivo de salida")
+	direct := fs.String("directo", "", "IP:puerto de la consola, solo si la red bloquea mDNS")
+	dir := fs.String("dir", "", "directorio de la clave")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	d, err := keyDir(*dir)
+	if err != nil {
+		return err
+	}
+	id, err := security.LoadIdentity(d)
+	if err != nil {
+		return fmt.Errorf("%w (¿ejecutaste aula-consola keygen o abriste una clase?)", err)
+	}
+	data, err := session.AgentConfig{
+		Channel:          strings.ToUpper(strings.TrimSpace(*channel)),
+		ConsolePublicKey: security.EncodePublicKey(id.Public()),
+		Direct:           *direct,
+	}.Marshal()
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(*out, data, 0o644); err != nil {
+		return err
+	}
+	fmt.Fprintf(stdout, "Configuración de alumnos guardada en %s\n", *out)
+	fmt.Fprintln(stdout, "Cópiala junto a Aula-Alumno-Setup-*.exe antes de instalar (ver docs/uso-hito1.md).")
+	return nil
 }

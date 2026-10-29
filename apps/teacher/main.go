@@ -51,10 +51,26 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			app.emit = func(event string, data any) { runtime.EventsEmit(ctx, event, data) }
+			app.saveDialog = func(name string) (string, error) {
+				return runtime.SaveFileDialog(ctx, runtime.SaveDialogOptions{
+					Title:           "Guardar la configuración de los alumnos",
+					DefaultFilename: name,
+					Filters:         []runtime.FileFilter{{DisplayName: "Configuración de Aula (*.json)", Pattern: "*.json"}},
+				})
+			}
+			app.raise = func() {
+				runtime.WindowUnminimise(ctx)
+				runtime.WindowShow(ctx)
+			}
 			app.startup(ctx)
 		},
 		OnShutdown: app.shutdown,
 		Bind:       []any{app},
+		// One console per user: a second launch would fight for port 47830.
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               "aula-consola-3b9d7e21-console",
+			OnSecondInstanceLaunch: func(options.SecondInstanceData) { app.raise() },
+		},
 	})
 	if err != nil {
 		log.Error("wails run failed", "err", err)

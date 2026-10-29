@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"encoding/pem"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/bayalad7/aula/internal/security"
+	"github.com/bayalad7/aula/internal/session"
 )
 
 func TestKeygenPrintsPublicKeyOnly(t *testing.T) {
@@ -67,5 +69,38 @@ func TestUnknownCommand(t *testing.T) {
 	var out, errOut bytes.Buffer
 	if code := runCLI([]string{"borrar-todo"}, &out, &errOut); code != 2 || !strings.Contains(errOut.String(), "Uso:") {
 		t.Fatalf("exit %d, stderr %q", code, errOut.String())
+	}
+}
+
+func TestConfigAlumnoAndVersion(t *testing.T) {
+	dir := t.TempDir()
+	var out, errOut bytes.Buffer
+	if code := runCLI([]string{"keygen", "-dir", dir}, &out, &errOut); code != 0 {
+		t.Fatal(errOut.String())
+	}
+	file := filepath.Join(t.TempDir(), "aula-alumno.json")
+	if code := runCLI([]string{"config-alumno", "-dir", dir, "-canal", "aula_101", "-o", file}, &out, &errOut); code != 0 {
+		t.Fatalf("config-alumno exit %d: %s", code, errOut.String())
+	}
+	data, _ := os.ReadFile(file)
+	var cfg session.AgentConfig
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		t.Fatal(err)
+	}
+	id, _ := security.LoadIdentity(dir)
+	if pub, err := cfg.Validate(); err != nil || cfg.Channel != "AULA_101" || !pub.Equal(id.Public()) {
+		t.Fatalf("generated config = %+v (%v)", cfg, err)
+	}
+	if strings.Contains(string(data), "PRIVATE") {
+		t.Fatal("agent config contains private key material")
+	}
+	errOut.Reset()
+	if code := runCLI([]string{"config-alumno", "-dir", dir, "-o", file}, &out, &errOut); code != 1 {
+		t.Fatal("config-alumno without channel succeeded")
+	}
+
+	out.Reset()
+	if code := runCLI([]string{"version"}, &out, &errOut); code != 0 || out.String() != "aula-consola "+version+"\n" {
+		t.Fatalf("version = %q", out.String())
 	}
 }

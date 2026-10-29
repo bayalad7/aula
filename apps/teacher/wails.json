@@ -5,6 +5,13 @@
   "frontend:dir": "frontend",
   "frontend:install": "",
   "frontend:build": "",
+  "info": {
+    "companyName": "Aula",
+    "productName": "Aula Consola",
+    "productVersion": "0.1.0",
+    "copyright": "Aula",
+    "comments": "Consola del profesor: distribuye código a los alumnos"
+  },
   "author": {
     "name": "Benjamín Ayala",
     "email": "bayala0@ucol.mx"

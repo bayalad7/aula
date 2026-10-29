@@ -27,6 +27,7 @@ type Setup struct {
 	ConsoleName    string   `json:"consoleName"`
 	PublicKey      string   `json:"publicKey"` // "" until the first class creates the key
 	Fingerprint    string   `json:"fingerprint"`
+	Version        string   `json:"version"`
 }
 
 // ClassInfo identifies the open class.

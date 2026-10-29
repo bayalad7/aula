@@ -74,6 +74,7 @@
       $("setup-key").textContent = s.publicKey
         ? "Clave de esta consola: " + s.fingerprint
         : "La clave de esta consola se creará al abrir la primera clase.";
+      $("setup-version").textContent = "Aula Consola " + s.version;
       $("setup-channel").focus();
     });
   }
@@ -116,6 +117,12 @@
   $("copy-key").addEventListener("click", () => {
     api.CopyPublicKey().then(() => toast("Clave pública copiada. Pégala en la configuración de los alumnos."),
       (err) => toast(String(err), "error"));
+  });
+
+  $("save-agent-config").addEventListener("click", () => {
+    api.SaveAgentConfig().then((path) => {
+      if (path) toast("Guardado en " + path + ". Cópialo junto a Aula-Alumno-Setup.exe antes de instalar.");
+    }, (err) => toast(String(err), "error"));
   });
 
   // Students

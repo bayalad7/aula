@@ -301,8 +301,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `msg.show` | `msg.show` | v0 |
 | `screen.thumb` | `screen.thumb.start`, `screen.thumb.stop` | v0.3 (Windows) |
 | `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Documentada, **pendiente** (§5.9) |
-| `screen.broadcast` | `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
-| `screen.broadcast.*` | Reservada (Fase 2) |
+| `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). Linux y macOS no la declaran. |
 | `app.block` | `app.block` | Reservada |
 | `web.filter` | `web.filter` | Reservada |
 | `file.collect` | `file.collect` | Reservada |
@@ -334,6 +333,11 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `screen.thumb.start` | P → A | `screen.thumb` | `interval_ms`, `quality`, `max_width` | `screen.thumb.frame` periódicos o `error` |
 | `screen.thumb.frame` | A → P | — | `ref_id`, `seq`, `width`, `height`, `jpeg` | — |
 | `screen.thumb.stop` | P → A | `screen.thumb` | `{}` | — |
+| `screen.broadcast.start` | P → A | `screen.broadcast` | `broadcast_id`, `width`, `height`, `fps` | — (sigue `screen.broadcast.offer`) o `error` |
+| `screen.broadcast.offer` | P → A | `screen.broadcast` | `broadcast_id`, `attempt`, `sdp` | `screen.broadcast.answer` o `error` |
+| `screen.broadcast.answer` | A → P | — | `ref_id`, `broadcast_id`, `attempt`, `sdp` | — |
+| `screen.broadcast.ice` | A ↔ P | `screen.broadcast` (P → A) | `broadcast_id`, `attempt`, `candidate`, `sdp_mid`, `sdp_mline_index` | — |
+| `screen.broadcast.stop` | P → A | `screen.broadcast` | `broadcast_id` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -482,6 +486,117 @@ Payload `{}`. Quita la pantalla en blanco. Es idempotente.
 Confirma el estado en que quedó la pantalla: `true` tras `screen.freeze` y `false` tras
 `screen.unfreeze`.
 
+### 5.12 Transmisión de la pantalla del profesor (`screen.broadcast.*`)
+
+> Implementado en v0.4 (Windows), aprobado el 2026-10-29. Decisión técnica en D-014;
+> implementación en `internal/broadcast`.
+
+El profesor transmite un monitor suyo como video WebRTC a todos los agentes del canal que
+declararon `screen.broadcast`. El WebSocket autenticado lleva **solo la señalización**; el
+video va por WebRTC (SRTP sobre UDP), directo de la consola a cada alumno, dentro de la LAN.
+
+```
+Consola (P, pion)                                Agente (A, RTCPeerConnection en WebView2)
+   |-- screen.broadcast.start ---------------------->|  muestra la vista y el aviso (antes de todo)
+   |-- screen.broadcast.offer (attempt=1) ---------->|  valida el SDP (solo video, recvonly)
+   |<--------------------- screen.broadcast.answer --|
+   |<-- screen.broadcast.ice (ambos sentidos) ------>|
+   |================ SRTP: video H.264 =============>|
+   |-- screen.broadcast.stop ----------------------->|  cierra la conexión, quita vista y aviso
+```
+
+Reglas generales:
+
+- **La consola ofrece y el agente responde.** La oferta es `sendonly` con **una sola** sección
+  `m=video`. El agente rechaza (`error` `invalid_message`) una oferta con audio, canal de datos
+  (`m=application`) o más de un video: nunca envía medios ni datos propios.
+- **Sin servidores externos:** no hay STUN ni TURN; solo candidatos `host` de la LAN. La consola
+  es ICE-lite y escucha en **un solo puerto UDP, `ws_port + 1`** (47831 por defecto). La regla
+  de firewall del instalador de la consola es por programa, así que ya lo cubre.
+- **La transmisión vive dentro de la sesión.** Si el WebSocket se cierra, el agente cierra la
+  conexión WebRTC y quita la vista y el aviso. Cuando el agente reconecta (§3.5) y la
+  transmisión sigue activa, la consola le envía de nuevo `start` y `offer`.
+- **Reintento sin perder la sesión:** si la conexión WebRTC de un agente pasa a `failed`, o queda
+  `disconnected` más de 5 s, la consola la descarta y envía una oferta nueva con `attempt + 1`,
+  con retroceso 1, 2, 4… 30 s. El agente cierra la conexión anterior al recibir una oferta con un
+  `attempt` mayor y descarta `ice` y `answer` de intentos viejos.
+- Una sola transmisión a la vez por consola. Un `start` con otro `broadcast_id` reemplaza a la
+  anterior (el agente cierra la vieja).
+- **Medios** (D-014): H.264 Constrained Baseline (`profile-level-id=42e028`,
+  `packetization-mode=1`), hasta 1920 px de ancho a la resolución nativa del monitor, hasta 15
+  cuadros/s, tope de 2,5 Mbit/s (`broadcast_max_kbps`, `docs/configuracion.md`), cuadro clave cada 5 s y ante PLI/FIR
+  (como máximo uno por segundo para todos los receptores). Una pantalla que no cambia se codifica
+  una vez por segundo. Sin audio.
+
+#### 5.12.1 `screen.broadcast.start` (P → A)
+
+Avisa que empieza una transmisión. El agente **debe** mostrar la vista de transmisión y su aviso
+(`docs/privacidad.md` regla 12) **antes** de procesar la oferta.
+
+```json
+{ "broadcast_id": "7d1f…", "width": 1920, "height": 1080, "fps": 15 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `broadcast_id` | string | UUID v4 que asigna la consola a la transmisión. |
+| `width`, `height` | entero | Tamaño del video, 1–4096. Informativo: el agente ajusta la vista. |
+| `fps` | entero | Cuadros por segundo previstos, 1–30. Informativo. |
+
+Sin respuesta propia: la sigue `screen.broadcast.offer`. Si el agente no puede mostrar la vista,
+responde `error` `internal` y no procesa la oferta.
+
+#### 5.12.2 `screen.broadcast.offer` (P → A)
+
+```json
+{ "broadcast_id": "7d1f…", "attempt": 1, "sdp": "v=0\r\no=- 46117…" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `broadcast_id` | string | El del `start` vigente. Si no coincide → `error` `invalid_message`. |
+| `attempt` | entero | 1, 2, 3… por transmisión y agente; 1–1000. |
+| `sdp` | string | Oferta SDP completa, ≤ **64 KiB**. Una sola `m=video`, `a=sendonly`. |
+
+#### 5.12.3 `screen.broadcast.answer` (A → P)
+
+```json
+{ "ref_id": "<id de la offer>", "broadcast_id": "7d1f…", "attempt": 1, "sdp": "v=0\r\n…" }
+```
+
+Respuesta SDP (`recvonly`), ≤ 64 KiB. La consola descarta respuestas de un `attempt` que ya no
+es el vigente. Si el agente no puede crear la conexión, responde `error` `internal` con el
+`ref_id` de la oferta y la consola reintenta con el retroceso de §5.12.
+
+#### 5.12.4 `screen.broadcast.ice` (A ↔ P)
+
+Un candidato ICE (trickle). La consola lo envía solo a agentes con `screen.broadcast`.
+
+```json
+{ "broadcast_id": "7d1f…", "attempt": 1,
+  "candidate": "candidate:1 1 udp 2130706431 192.168.1.20 47831 typ host",
+  "sdp_mid": "0", "sdp_mline_index": 0 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `broadcast_id`, `attempt` | | Igual que en la oferta. Los de un intento viejo se descartan sin error. |
+| `candidate` | string | Línea `candidate:` sin el prefijo `a=`, ≤ 1024 caracteres. `""` = fin de candidatos. |
+| `sdp_mid` | string | ≤ 32 caracteres. |
+| `sdp_mline_index` | entero | 0–15. |
+
+Como máximo 50 candidatos por intento y sentido; los demás se descartan.
+
+#### 5.12.5 `screen.broadcast.stop` (P → A)
+
+```json
+{ "broadcast_id": "7d1f…" }
+```
+
+El agente cierra la conexión WebRTC y quita la vista y el aviso. Idempotente y sin respuesta;
+un `broadcast_id` distinto del vigente se ignora. La consola lo envía al pulsar "Detener", al
+cambiar de canal y al cerrar la clase.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -491,7 +606,6 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | Tipo | Descripción |
 |---|---|
 | `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
-| `screen.broadcast.*` | Señalización WebRTC (offer/answer/ICE) para transmitir la pantalla del profesor. |
 | `app.block` | Lista de aplicaciones que el agente no permite abrir durante la clase. |
 | `web.filter` | Lista de sitios permitidos o bloqueados durante la clase. |
 | `file.collect` | Recolectar un archivo que el alumno elige entregar. |
@@ -514,6 +628,9 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `screen.thumb.start.interval_ms` | 500–10 000 ms (≤ 2 cuadros/s) | `error` `invalid_message` |
 | `screen.thumb.frame.jpeg` | 640 KiB antes de Base64 | `error` `message_too_large`; la sesión sigue. |
 | `screen.freeze.message` (pendiente) | 300 caracteres | `error` `invalid_message` |
+| `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
+| `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
+| `screen.broadcast.*.attempt` | 1–1000 | `error` `invalid_message` |
 | `error.message` | 500 caracteres | El emisor lo trunca. |
 | `hello.capabilities` | 64 entradas | `error` `invalid_message` y cierre |
 | Versión `v` ≠ 1 | — | `error` `unsupported_version` y cierre `1008` |
@@ -540,6 +657,9 @@ emisor verifica el tamaño final de la envoltura.
   registrar `content`, `text`, `title`, nonces, firmas ni claves.
 - Los logs **no** registran el contenido de `screen.thumb.frame` (`jpeg`) ni `screen.freeze.message`;
   sí `seq`, tamaños y dimensiones. Ningún extremo escribe los cuadros en disco.
+- De `screen.broadcast.*` se registran `broadcast_id`, `attempt`, tamaños y estados de la
+  conexión WebRTC; **no** el SDP ni los candidatos (llevan direcciones de la LAN). El video de la
+  transmisión no se graba en ningún extremo.
 - `hello` revela al profesor el usuario y el equipo del alumno. Es intencional (monitoreo
   transparente) y se explica en `docs/privacidad.md`.
 
@@ -599,3 +719,4 @@ paso 3.
 | Robo de la clave privada del equipo del profesor | **No cubierto**: quien la tenga puede suplantar la consola. Protegerla con la cuenta del SO; si se filtra, generar otra y reconfigurar agentes. |
 | Agente no autorizado que se une al canal | **No cubierto en v0**: la consola no autentica agentes (§3.2). El profesor ve hostname y usuario. |
 | Saturación (DoS) en la LAN | Solo límites de tamaño y timeouts (§7). |
+| Video de transmisión falso o interceptado | El SDP (con la huella DTLS) viaja por la sesión autenticada (§3.2), así que el agente solo acepta medios de la consola legítima; el video va cifrado con DTLS-SRTP. |

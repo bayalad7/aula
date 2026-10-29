@@ -33,8 +33,10 @@ Dos aplicaciones, mismo monorepo:
   - `internal/codedist`: captura y distribución de snippets de código.
   - `internal/screen`: monitoreo de pantalla (miniaturas y pantalla en blanco) del lado del agente
     y de la consola, sobre las interfaces de `platform`.
+  - `internal/broadcast`: transmisión de la pantalla del profesor (WebRTC con pion): captura y
+    codificación por `platform`, una conexión por alumno y la señalización `screen.broadcast.*`.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

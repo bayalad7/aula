@@ -318,6 +318,122 @@ pantalla se está viendo.
 - Linux y macOS devuelven "no soportado" y no declaran las capacidades `screen.thumb` ni
   `screen.freeze`. Versión **0.3.0** (función nueva compatible).
 
+## D-014: Transmisión de la pantalla del profesor: un codificador repartido a N conexiones
+
+**Fecha:** 2026-10-29 · **Estado:** aprobada por el usuario (códec con Media Foundation, el alumno
+puede minimizar, la consola siempre excluida de la captura, UDP 47831) e implementada en v0.4.
+
+**Contexto.** El profesor transmite un monitor suyo a hasta ~40 alumnos de la LAN, y el código
+en pantalla debe leerse nítido. Video por WebRTC (`pion/webrtc`), señalización
+`screen.broadcast.*` por el WebSocket (`docs/protocol.md` §5.12).
+
+**Malla o SFU en el proceso del profesor.** Un SFU ahorra subida porque el emisor sube una vez y
+el SFU reparte; si el SFU vive **en el mismo proceso** que el emisor, la subida de la máquina
+del profesor sigue siendo N × tasa. La comparación real es entre:
+
+| | Malla clásica (un codificador por alumno) | **Un codificador, N conexiones** (lo que es un SFU dentro del proceso) |
+|---|---|---|
+| CPU de codificación | N × (1080p15 en software ≈ 20–40 % de un núcleo) → inviable desde ~4 alumnos | 1 × codificación, constante. Con codificador por hardware, casi nula |
+| CPU por alumno | toda la codificación | solo cifrar SRTP y enviar (~250 paquetes/s a 2,5 Mbit/s): fracción de % por alumno |
+| Subida del profesor | N × tasa | N × tasa (igual) |
+| Adaptación por alumno | sí | no: una sola tasa (aceptable en LAN conmutada) |
+| Cuadro clave que pide un alumno | solo a él | a todos → se limita a 1/s y hay uno periódico cada 5 s |
+
+En pion es natural: un solo `TrackLocalStaticSample` agregado a N `PeerConnection`; cada
+`WriteSample` empaqueta una vez y cifra por receptor.
+
+Estimación de subida con tope de 2,5 Mbit/s (código casi estático ≈ 0,2–0,5 Mbit/s; al
+desplazar o cambiar de ventana se llega al tope):
+
+| Alumnos | Promedio | Pico |
+|---|---|---|
+| 10 | 2–5 Mbit/s | 25 Mbit/s |
+| 20 | 4–10 Mbit/s | 50 Mbit/s |
+| 40 | 8–20 Mbit/s | 100 Mbit/s |
+
+CPU estimada del profesor antes de implementar: captura GDI de 1080p a 15 cuadros/s ≈ 15–20 % de
+un núcleo, conversión a NV12 ≈ 5 %, codificación ≈ 0–40 % (hardware o software) y reparto a 40
+alumnos ≈ 5 %. Total: menos de un núcleo. **La medición real** está en "Resultado" al final.
+
+**Umbral para cambiar de estrategia.** El reparto deja de bastar cuando la **subida pico**
+(N × tope) supera el **50 % del enlace del profesor**, o cuando su CPU medida pasa del 50 %:
+
+- Enlace de 1 Gbit/s: hasta ~200 alumnos a 2,5 Mbit/s. Para 40 sobra.
+- Enlace de 100 Mbit/s: hasta 20 alumnos a 2,5 Mbit/s. Con más, se baja el tope a
+  `50 Mbit/s / N` (40 alumnos → 1,25 Mbit/s; nunca menos de 0,8 Mbit/s, donde el texto estático
+  sigue nítido y solo el movimiento se degrada).
+- Más allá (o si la medición lo pide): un SFU **en otra máquina** del laboratorio o un árbol de
+  reenvío; fuera del alcance de esta etapa. Simulcast no hace falta en una LAN conmutada.
+
+El tope se configura en `C:\ProgramData\Aula\consola\config.json` (`broadcast_max_kbps`,
+predeterminado 2500).
+
+**Calidad para leer código.**
+- **Resolución nativa** del monitor hasta 1920 px de ancho; si es mayor, se reduce a 1920
+  conservando la proporción. Escalar 1080p a 1280 px emborrona una fuente monoespaciada de 14 px,
+  así que no se hace por defecto.
+- **15 cuadros/s** como máximo: suficiente para escribir y desplazar; la pantalla quieta cuesta
+  casi nada (cuadros P mínimos).
+- Cuadro clave cada 5 s y ante PLI/FIR, limitado a 1/s para todos.
+- En el alumno, el video se ajusta a la ventana con un botón "Tamaño real" (1:1, con
+  desplazamiento) para monitores más chicos que el del profesor. Se recomienda al profesor
+  aumentar la fuente del editor durante la transmisión.
+
+**Códec: H.264 Constrained Baseline con Media Foundation.** pion no trae codificadores. Opciones:
+- **H.264 con el codificador de Media Foundation de Windows** (MFT de hardware Intel/NVIDIA/AMD si
+  existe, si no el de software de Microsoft), llamado por COM sin cgo, dentro de
+  `internal/platform` (`*_windows.go`). Mantiene los binarios sin cgo. WebView2 lo decodifica, y
+  H.264 CB es obligatorio en WebRTC. **Riesgo:** las ediciones Windows "N" sin el Media Feature
+  Pack no tienen H.264 (ni para codificar ni en WebView2). El agente lo detecta y no declara la
+  capacidad; la consola deshabilita el botón si no hay codificador.
+- VP8 con libvpx: decodifica en cualquier WebView2, pero exige **cgo** en la consola publicada
+  (contra la regla de CLAUDE.md y con libvpx en el CI). Queda como alternativa.
+
+**Red.**
+- Sin STUN ni TURN; solo candidatos `host`.
+- La consola es **ICE-lite** y usa un único puerto UDP (`ws_port + 1`, 47831) con `UDPMux`:
+  - la regla de firewall del instalador de la consola es por programa y ya lo cubre (no hizo
+    falta una regla nueva);
+  - el alumno siempre inicia las comprobaciones, así que su firewall no ve UDP entrante no
+    solicitado. Importa porque el RTCPeerConnection del alumno corre en `msedgewebview2.exe`, no
+    en `aula-cliente.exe`.
+- WebView2 oculta las IP locales con candidatos `.local`. Con ICE-lite no importa: la consola
+  aprende la dirección del alumno de sus comprobaciones (candidato peer-reflexive).
+
+**Dónde vive cada cosa.**
+- `internal/platform`: `Displays()` (monitores), captura continua de un monitor y
+  `VideoEncoder` (Media Foundation), con fallback "no soportado".
+- `internal/broadcast` (sin APIs del SO):
+  - en la consola, el emisor: pion, el track compartido, una conexión por sesión, reintentos y
+    conteo de receptores;
+  - en el agente, la máquina de estados de la señalización: validar el SDP, intentos, mostrar
+    el aviso antes de responder.
+  - Se prueba con un doble de `PeerConnection`.
+- Alumno: el `RTCPeerConnection` corre en el JavaScript del frontend Wails y pinta el `<video>`.
+  Go solo valida y reenvía la señalización. El agente declara `screen.broadcast` solo si el
+  frontend confirma `RTCPeerConnection` y decodificador H.264 (sondeo al arrancar, antes de
+  `hello`, con un máximo de 5 s).
+
+Versión: función nueva compatible → sube `y`.
+
+**Resultado de la implementación (2026-10-29).**
+- El codificador es el **MFT de software síncrono** de Windows (`H264 Encoder MFT`), llamado por
+  COM desde un hilo del SO dedicado (MTA). Entrega Constrained Baseline nivel 4.0 (SPS
+  `profile_idc=66`, `constraint_set1`); se antepone SPS/PPS a cada IDR que no los traiga. Los
+  MFT de **hardware** (AMD/Intel/NVIDIA) son asíncronos y quedan pendientes: bajarían la CPU.
+- Medido en el equipo de desarrollo (AMD Ryzen 5 3450U, 4 núcleos y 8 hilos, 1080p, un
+  receptor WebView2 real):
+  - conversión RGBA → NV12 en Go, repartida en hilos: 3,7 ms por cuadro;
+  - codificación de software: ~9 ms por cuadro;
+  - con la pantalla cambiando en **cada** cuadro, ~130 % de un núcleo: más que lo estimado.
+- Por eso **un cuadro idéntico al anterior no se convierte ni se codifica**: se vuelve a enviar
+  una vez por segundo, o antes si alguien pide un cuadro clave. Con el patrón de prueba (cursor
+  que cambia 5 veces por segundo) la consola bajó a **25–45 % de un núcleo** y el video a
+  100–320 kbit/s por alumno. Una clase de programación es casi siempre un editor quieto.
+- La enumeración de monitores de `kbinani/screenshot` falla `checkptr` con `-race` (su callback
+  hace aritmética de punteros); se enumera con `EnumDisplayMonitors` + `GetMonitorInfoW` propios
+  y solo se usa `CaptureRect` de la biblioteca.
+
 ## D-015: Anuncio mDNS por cada interfaz (Windows con Hyper-V) y logs de las apps de ventana
 
 **Fecha:** 2026-10-29 · **Origen:** prueba de la v0.3.0-rc.1 con dos laptops en una red Wi-Fi: el

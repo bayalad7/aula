@@ -1,12 +1,14 @@
-# Contrato backend ↔ interfaz del cliente del alumno
+# Contrato backend ↔ interfaz de las apps Wails
 
-La app del alumno (`apps/student`) tiene un backend Go y una interfaz web (Wails). Se comunican
-por **eventos** (Go → interfaz) y **métodos enlazados** (interfaz → Go). La definición está en
-`apps/student/events.go`, con los nombres de evento repetidos en
-`apps/student/frontend/dist/events.js`. Una prueba (`TestEventContractMatchesFrontend`) falla si
-no coinciden.
+Cada app (`apps/student` y `apps/teacher`) tiene un backend Go y una interfaz web (Wails). Se
+comunican por **eventos** (Go → interfaz) y **métodos enlazados** (interfaz → Go). En cada app,
+la definición está en `events.go`, con los nombres de evento repetidos en
+`frontend/dist/events.js`. Una prueba (`TestEventContractMatchesFrontend`) falla si no coinciden
+o si la interfaz llama a un método que no existe.
 
-## Flujo
+## Cliente del alumno (`apps/student`)
+
+### Flujo
 
 ```
 consola ──code.share──▶ agente (session.Agent)
@@ -19,7 +21,7 @@ interfaz ──App.Copy(id)──▶ Go ──platform.Clipboard──▶ portap
 Al cargar, la interfaz **primero se suscribe** a los eventos y **después** pide el estado
 completo con `App.View()`, para no perder nada que llegue entre medio.
 
-## Eventos (Go → interfaz)
+### Eventos (Go → interfaz)
 
 | Evento | Datos | Cuándo |
 |---|---|---|
@@ -46,7 +48,7 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
 Cada evento lleva la lista **completa**, no un cambio incremental: la interfaz redibuja sin
 llevar estado propio.
 
-## Métodos enlazados (interfaz → Go)
+### Métodos enlazados (interfaz → Go)
 
 | Método | Devuelve | Uso |
 |---|---|---|
@@ -58,9 +60,80 @@ llevar estado propio.
 que se pega es exactamente lo que envió el profesor, sin depender de cómo lo dibujó el
 navegador.
 
-## Reglas de la interfaz
+### Reglas de la interfaz
 
 - Todo texto recibido se inserta con `textContent`. El único `innerHTML` es la salida de
   `Prism.highlight`, que escapa el código (una prueba lo verifica).
 - La página tiene CSP `script-src 'self'`: sin scripts en línea ni de otros orígenes.
 - El distintivo (`banner`) siempre está visible, fijo arriba (ver `docs/privacidad.md`).
+
+## Consola del profesor (`apps/teacher`)
+
+Definición en `apps/teacher/events.go`, nombres repetidos en `apps/teacher/frontend/dist/events.js`
+(misma prueba de contrato). El estado (aula abierta, alumnos, historial, confirmaciones) vive en
+Go; la interfaz solo lo dibuja.
+
+### Flujo
+
+```
+interfaz ──App.StartClass(canal, nombre)──▶ Go: abre servidor TLS, consola, registro y anuncio mDNS
+agentes ──hello/heartbeat/desconexión──▶ session.Console.OnChange ──"aula:students"──▶ interfaz
+interfaz ──App.Emit({title, lang, content, mode})──▶ Go: historial + Broadcast(code.share)
+agentes ──code.ack / msg.ack──▶ codedist.Deliveries ──"aula:deliveries"──▶ "confirmados 2/2 ✓"
+Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aula:capture"──▶ editor (sin emitir)
+```
+
+### Eventos (Go → interfaz)
+
+| Evento | Datos | Cuándo |
+|---|---|---|
+| `aula:students` | `Students` | Un agente entra, sale, se queda mudo o confirma código. |
+| `aula:history` | `History` | Tras cada emisión o reemisión. |
+| `aula:deliveries` | `Deliveries` | Tras cada envío y cada acuse (`code.ack`, `msg.ack`). |
+| `aula:capture` | `Capture` | Al pulsar el atajo global o el botón Capturar. |
+
+```jsonc
+// Students: la lista del canal y los conteos que habilitan los botones
+{ "students": [ { "id": "…", "hostname": "LAB3-PC07", "username": "alumno07", "os": "windows",
+                  "osVersion": "…", "agentVersion": "0.1.0", "state": "connected",
+                  "capabilities": ["code.view", "msg.show"], "canCode": true, "canNotice": true,
+                  "lastCodeAck": "0c9a…", "ackedAt": "10:00:05" } ],
+  "connected": 1, "canCode": 1, "canNotice": 1 }
+
+// History: fragmentos de la sesión, numerados ("Ejercicio N")
+{ "entries": [ { "snippetId": "…", "number": 1, "title": "Factorial", "lang": "python",
+                 "content": "…", "times": 2, "firstSentAt": "…", "lastSentAt": "…" } ] }
+
+// Deliveries: envíos recientes, el más nuevo primero
+{ "deliveries": [ { "id": "d3", "kind": "code", "label": "Ejercicio 1 · Factorial",
+                    "sent": 2, "acked": 2, "failed": 0, "noCapability": 1, "at": "…" } ] }
+
+// Capture: o draft o error
+{ "draft": { "content": "…", "lang": "python", "lines": 9, "source": "hotkey", "capturedAt": "…" },
+  "error": "" }
+```
+
+### Métodos enlazados (interfaz → Go)
+
+| Método | Devuelve | Uso |
+|---|---|---|
+| `Setup()` | `Setup` | Canales recientes, último nombre y huella de la clave (si ya existe). |
+| `StartClass(canal, nombre)` | `View` / error | Abre la clase. Crea la clave y el certificado la primera vez. |
+| `EndClass()` | — | Cierra la clase ("Cambiar de aula"). |
+| `View()` | `View` | Estado completo para el primer dibujo. |
+| `Emit({title, lang, content, mode})` | `Delivery` / error | `mode` = `replace` ("Emitir a todos") o `append` ("Agregar bloque"). Crea una entrada nueva en el historial. |
+| `Reemit(snippetId)` | `Delivery` / error | Reenvía un fragmento del historial con el mismo número e ID (`replace`). |
+| `ClearScreens()` | `Delivery` / error | `code.clear` a todos. |
+| `SendNotice(text, level)` | `Delivery` / error | `msg.show` a todos, `info` o `warning`. |
+| `CaptureClipboard()` | `Draft` / error | Igual que el atajo global; el resultado también llega como `aula:capture`. |
+| `CopyPublicKey()` | error | Copia `aula-ed25519:…` para configurar alumnos. |
+
+### Reglas
+
+- **Capturar nunca emite.** El atajo y el botón solo cargan el editor y proponen un lenguaje; el
+  profesor lo revisa y pulsa un botón de emisión.
+- **Los botones se deshabilitan** si ningún alumno conectado declaró la capacidad (`canCode`,
+  `canNotice`). Cada `Delivery` informa cuántos no la tienen (`noCapability`).
+- **Los acuses se cuentan por ID de sobre:** cada alumno recibe un sobre distinto y su `ref_id`
+  identifica el envío. Un mismo sobre cuenta una sola vez.
+- **La interfaz no usa `innerHTML`** (lo verifica una prueba).

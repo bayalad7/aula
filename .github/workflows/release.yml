@@ -1,0 +1,147 @@
+name: Release
+
+# Pushing a tag vX.Y.Z (or vX.Y.Z-rc.N, published as a prerelease) builds the
+# Windows apps and installers, signs checksums.txt with the release key and
+# publishes a GitHub release. Secrets: docs/desarrollo/publicar.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    name: Windows (instaladores)
+    runs-on: windows-latest
+    permissions:
+      contents: write # gh release create
+    env:
+      # Authenticode is optional: only when the certificate secret exists.
+      HAS_CODESIGN: ${{ secrets.WINDOWS_CERT_PFX != '' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.26.x'
+          check-latest: true
+
+      - name: Version from the tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::El tag $GITHUB_REF_NAME no es vX.Y.Z ni vX.Y.Z-pre"
+            exit 1
+          fi
+          {
+            echo "VERSION=$VERSION"
+            echo "NUMERIC_VERSION=${VERSION%%-*}" # Windows file versions are numeric
+            if [[ "$VERSION" == *-* ]]; then echo "PRERELEASE=true"; else echo "PRERELEASE=false"; fi
+          } >> "$GITHUB_ENV"
+          echo "Versión $VERSION"
+
+      - name: Tests
+        run: go test ./...
+
+      - name: Install the Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+
+      - name: Build the apps
+        env:
+          CGO_ENABLED: '0' # published binaries are built without cgo
+        run: |
+          mkdir -p dist/bin dist/release
+          for app in teacher student; do
+            sed -i "s/\"productVersion\": \"[^\"]*\"/\"productVersion\": \"$NUMERIC_VERSION\"/" "apps/$app/wails.json"
+            (cd "apps/$app" && wails build -clean -trimpath -ldflags "-X main.version=$VERSION")
+          done
+          cp apps/teacher/build/bin/aula-consola.exe apps/student/build/bin/aula-cliente.exe dist/bin/
+
+      - name: Check that the binaries report the version
+        run: |
+          got_console="$(dist/bin/aula-consola.exe version | tr -d '\r')"
+          got_agent="$(dist/bin/aula-cliente.exe -version | tr -d '\r')"
+          echo "$got_console / $got_agent"
+          test "$got_console" = "aula-consola $VERSION"
+          test "$got_agent" = "aula-cliente $VERSION"
+
+      - name: Authenticode certificate
+        if: env.HAS_CODESIGN == 'true'
+        env:
+          WINDOWS_CERT_PFX: ${{ secrets.WINDOWS_CERT_PFX }}
+        run: |
+          echo "$WINDOWS_CERT_PFX" | base64 -d > "$RUNNER_TEMP/codesign.pfx"
+          signtool="$(ls "/c/Program Files (x86)/Windows Kits/10/bin/"*/x64/signtool.exe | sort -V | tail -1)"
+          echo "SIGNTOOL=$signtool" >> "$GITHUB_ENV"
+
+      - name: Sign the binaries (Authenticode)
+        if: env.HAS_CODESIGN == 'true'
+        env:
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          "$SIGNTOOL" sign //f "$RUNNER_TEMP/codesign.pfx" //p "$WINDOWS_CERT_PASSWORD" \
+            //fd SHA256 //tr http://timestamp.digicert.com //td SHA256 dist/bin/*.exe
+
+      - name: Build the installers (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            choco install innosetup -y --no-progress
+            $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          }
+          Push-Location empaquetado\windows
+          foreach ($iss in 'aula-alumno.iss', 'aula-consola.iss') {
+            & $iscc /Q "/DAppVersion=$env:VERSION" "/DNumericVersion=$env:NUMERIC_VERSION" `
+              "/DSourceDir=..\..\dist\bin" "/O..\..\dist\release" $iss
+            if ($LASTEXITCODE -ne 0) { throw "ISCC $iss falló ($LASTEXITCODE)" }
+          }
+          Pop-Location
+
+      - name: Sign the installers (Authenticode)
+        if: env.HAS_CODESIGN == 'true'
+        env:
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          "$SIGNTOOL" sign //f "$RUNNER_TEMP/codesign.pfx" //p "$WINDOWS_CERT_PASSWORD" \
+            //fd SHA256 //tr http://timestamp.digicert.com //td SHA256 dist/release/*.exe
+          rm -f "$RUNNER_TEMP/codesign.pfx"
+
+      - name: Portable binaries
+        run: |
+          cp dist/bin/aula-consola.exe "dist/release/aula-consola-$VERSION-windows-amd64.exe"
+          cp dist/bin/aula-cliente.exe "dist/release/aula-cliente-$VERSION-windows-amd64.exe"
+          ls -la dist/release
+
+      - name: checksums.txt signed with the release key
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          go run ./tools/relsign sums -o dist/release/checksums.txt dist/release/*.exe
+          go run ./tools/relsign sign -in dist/release/checksums.txt -out dist/release/checksums.txt.sig
+          # Verify with the public key versioned in the repository before publishing.
+          go run ./tools/relsign verify -in dist/release/checksums.txt -sig dist/release/checksums.txt.sig \
+            -pub empaquetado/llave-releases.pub
+          cat dist/release/checksums.txt
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=(--generate-notes --title "Aula $GITHUB_REF_NAME")
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" "${flags[@]}" dist/release/*
+
+  # Etapa 13: paquetes de Linux (.deb/.rpm) y de macOS (.pkg) como jobs nuevos de
+  # este workflow; sus artefactos entrarán en el mismo checksums.txt firmado.

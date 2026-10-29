@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 
@@ -62,13 +63,23 @@ func (a *Announcer) Run(ctx context.Context) error {
 	if err := a.Announcement.validate(); err != nil {
 		return err
 	}
-	srv, err := zeroconf.Register(instanceName(a.Announcement.ConsoleName), ServiceType, Domain,
+	instance := instanceName(a.Announcement.ConsoleName)
+	srv, err := zeroconf.Register(instance, ServiceType, Domain,
 		a.Announcement.WSPort, a.Announcement.txt(), a.Interfaces)
 	if err != nil {
 		return fmt.Errorf("announce: register mDNS service: %w", err)
 	}
+	host, _ := os.Hostname() // zeroconf.Register succeeded, so this works
+	r := record{instance: instance, host: strings.Trim(host, ".") + "." + Domain,
+		port: a.Announcement.WSPort, txt: a.Announcement.txt()}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		a.announceEach(ctx, r) // see multicast.go: Windows ignores zeroconf's interface choice
+	}()
 	logger(a.Logger).Info("mdns announce started", "channel", a.Announcement.Channel, "port", a.Announcement.WSPort)
 	<-ctx.Done()
+	<-done
 	srv.Shutdown()
 	logger(a.Logger).Info("mdns announce stopped", "channel", a.Announcement.Channel)
 	return nil

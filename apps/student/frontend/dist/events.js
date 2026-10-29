@@ -5,4 +5,6 @@ window.AulaEvents = Object.freeze({
   STATUS: "aula:status",
   BOARD: "aula:board",
   NOTICES: "aula:notices",
+  BROADCAST: "aula:broadcast",
+  SIGNAL: "aula:broadcast-signal",
 });

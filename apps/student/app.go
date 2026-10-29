@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/platform"
@@ -34,13 +35,21 @@ type App struct {
 	board  *codedist.Board
 	recv   *codedist.Receiver
 	screen *screen.Streamer   // screen thumbnails; inert until enableScreen
+	viewer *broadcast.Viewer  // the teacher's screen; declared after ReportMedia
 	clip   platform.Clipboard // nil when the system has none
 	clipEr error
 	log    *slog.Logger
 
 	// UI hooks, set at startup (replaced in tests).
-	emit  func(event string, data any)
-	raise func() // bring the window to the front
+	emit     func(event string, data any)
+	raise    func()        // bring the window to the front
+	maximize func(on bool) // maximize (broadcast) or restore the window
+
+	// The frontend reports whether it can play the broadcast; start waits up
+	// to mediaWait for it (0: do not wait) before declaring the capability.
+	mediaReady chan struct{}
+	mediaOnce  sync.Once
+	mediaWait  time.Duration
 
 	// reload re-reads the configuration files; nil when the configuration
 	// came from command-line flags, which pin it. Checked every reloadEvery,
@@ -49,13 +58,14 @@ type App struct {
 	reload      func() (Config, ed25519.PublicKey, error)
 	reloadEvery time.Duration
 
-	mu      sync.Mutex
-	status  Status
-	notices []codedist.Notice
-	diag    string // why the agent is not connected (session.Agent.OnDiagnostic)
-	viewed  bool   // the console is receiving this screen (docs/privacidad.md rule 6)
-	cancel  context.CancelFunc
-	done    chan struct{}
+	mu       sync.Mutex
+	status   Status
+	notices  []codedist.Notice
+	diag     string // why the agent is not connected (session.Agent.OnDiagnostic)
+	viewed   bool   // the console is receiving this screen (docs/privacidad.md rule 6)
+	watching bool   // this screen shows the teacher's broadcast (rule 12)
+	cancel   context.CancelFunc
+	done     chan struct{}
 }
 
 // NewApp builds the agent. cfgErr is shown in the banner instead of
@@ -65,10 +75,12 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a := &App{
 		cfg: cfg, pub: pub, cfgErr: cfgErr, hello: hello,
 		board: codedist.NewBoard(0), clip: clip, clipEr: clipErr, log: log,
-		emit: func(string, any) {}, raise: func() {},
+		emit: func(string, any) {}, raise: func() {}, maximize: func(bool) {},
+		mediaReady: make(chan struct{}),
 	}
 	a.recv = &codedist.Receiver{Board: a.board, OnBoard: a.onBoard, OnNotice: a.onNotice}
 	a.screen = &screen.Streamer{Logger: log, OnViewed: a.onViewed}
+	a.viewer = &broadcast.Viewer{Logger: log, OnView: a.onBroadcastView, OnSignal: a.onBroadcastSignal}
 	if cfgErr != nil {
 		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Banner: "Aula — sin configurar", Detail: cfgErr.Error()}
 	} else {
@@ -87,6 +99,7 @@ func (a *App) start(ctx context.Context) {
 	a.cancel, a.done = cancel, make(chan struct{})
 	go func() {
 		defer close(a.done)
+		a.awaitMedia(ctx)
 		a.supervise(ctx)
 	}()
 }
@@ -177,6 +190,7 @@ func (a *App) stop() {
 		<-a.done
 	}
 	a.screen.Stop()
+	a.viewer.Stop()
 }
 
 // enableScreen lets the console see this screen in thumbnails, with the
@@ -216,8 +230,10 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 		st = statusFor(StateSearching, a.cfg.Channel, "")
 	}
 	if s != session.AgentConnected {
-		// The stream belongs to the connection: no console, no capture.
+		// The streams belong to the connection: no console, no capture and
+		// no broadcast view.
 		a.screen.Stop()
+		a.viewer.Stop()
 	}
 	a.mu.Lock()
 	if st.State != StateConnected {
@@ -262,7 +278,11 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		_, err := cl.Send(ctx, p)
 		return err
 	}
-	if reply, ok := a.screen.Handle(ctx, send, env); ok {
+	reply, ok := a.screen.Handle(ctx, send, env)
+	if !ok {
+		reply, ok = a.viewer.Handle(ctx, send, env)
+	}
+	if ok {
 		if reply != nil {
 			if err := send(ctx, reply); err != nil {
 				a.log.Debug("cannot send reply", "type", reply.MessageType(), "err", err)
@@ -302,8 +322,11 @@ func (a *App) onNotice(n codedist.Notice) {
 func (a *App) setStatus(s Status) {
 	a.mu.Lock()
 	s.Viewed = a.viewed && s.State == StateConnected
+	s.Watching = a.watching && s.State == StateConnected
 	if s.Viewed {
 		s.Banner = fmt.Sprintf("Aula — tu pantalla está siendo vista por %s (canal %s)", s.Teacher, s.Channel)
+	} else if s.Watching {
+		s.Banner = fmt.Sprintf("Aula — viendo la pantalla de %s (canal %s)", s.Teacher, s.Channel)
 	} else if s.State == StateConnected {
 		s.Banner = statusFor(s.State, s.Channel, s.Teacher).Banner
 	}
@@ -331,13 +354,15 @@ func statusFor(state, channel, teacher string) Status {
 
 // View returns the whole state, for the first render.
 func (a *App) View() View {
+	bc := a.viewer.Current() // before a.mu: the viewer calls into the app with its lock held
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	snippets := a.board.Snippets()
 	if snippets == nil {
 		snippets = []codedist.Snippet{}
 	}
-	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...)}
+	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...),
+		Broadcast: a.broadcastView(bc, a.status)}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

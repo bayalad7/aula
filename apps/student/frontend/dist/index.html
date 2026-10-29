@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ws: wss:">
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' mediastream: blob:; connect-src 'self' ws: wss:">
   <title>Aula — Cliente</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -17,6 +17,19 @@
   </header>
 
   <section id="notices" class="notices" aria-live="assertive"></section>
+
+  <!-- The teacher's screen (docs/privacidad.md rule 12): the band is fixed and
+       the connection is receive-only. -->
+  <section id="broadcast" class="broadcast" hidden aria-label="Pantalla del profesor">
+    <div class="bc-band" role="status" aria-live="polite">
+      <span id="bc-notice"></span>
+      <button type="button" id="bc-size" aria-pressed="false">Tamaño real</button>
+    </div>
+    <div id="bc-stage" class="bc-stage" data-fit="window">
+      <video id="bc-video" autoplay muted playsinline></video>
+      <p id="bc-wait" class="bc-wait">Conectando con la pantalla del profesor…</p>
+    </div>
+  </section>
 
   <main>
     <p id="empty" class="empty">Cuando el profesor comparta código, aparecerá aquí listo para copiar.</p>

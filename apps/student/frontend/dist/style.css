@@ -94,6 +94,36 @@ html, body {
 .banner[data-viewed="true"] { background: #b91c1c; color: #ffffff; border-bottom-color: #b91c1c; }
 .banner[data-viewed="true"] .dot { background: #ffffff; }
 
+/* Broadcast of the teacher's screen (docs/privacidad.md rule 12). */
+body.watching { display: flex; flex-direction: column; height: 100vh; }
+body.watching main { display: none; }
+.broadcast { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.broadcast[hidden] { display: none; }
+.bc-band {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: #1e3a8a;
+  color: #ffffff;
+  font-weight: 600;
+}
+.bc-band span { flex: 1; }
+.bc-band button { background: #ffffff; color: #1e3a8a; border-color: #ffffff; font-weight: 600; }
+.bc-stage { position: relative; flex: 1; min-height: 0; background: #000000; overflow: auto; }
+.bc-stage video { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* 1:1 pixels, with scrollbars, for screens smaller than the teacher's. */
+.bc-stage[data-fit="real"] video { width: auto; height: auto; max-width: none; object-fit: none; }
+.bc-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: #e8ebf1;
+}
+.bc-wait[hidden] { display: none; }
+
 .notices { padding: 0 1rem; }
 .notice {
   display: flex;

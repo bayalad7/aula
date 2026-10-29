@@ -49,6 +49,7 @@ func main() {
 		log.Warn("no system clipboard", "err", clipErr)
 	}
 	app := NewApp(cfg, pub, cfgErr, localHello(), clip, clipErr, log)
+	app.mediaWait = 5 * time.Second // the frontend reports its WebRTC support on load
 	capture, capErr := platform.NewScreenCapture()
 	indicator, indErr := platform.NewScreenIndicator()
 	if capErr == nil && indErr == nil {
@@ -78,6 +79,13 @@ func main() {
 				}
 			}
 			app.raise = func() { raiseWindow(ctx) }
+			app.maximize = func(on bool) {
+				if on {
+					runtime.WindowMaximise(ctx)
+				} else {
+					runtime.WindowUnmaximise(ctx)
+				}
+			}
 			app.start(ctx)
 		},
 		OnShutdown: func(context.Context) { app.stop() },

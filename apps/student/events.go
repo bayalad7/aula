@@ -7,7 +7,8 @@ import "github.com/bayalad7/aula/internal/codedist"
 // checks it.
 //
 // Backend → frontend: runtime.EventsEmit with one of the events below.
-// Frontend → backend: the bound methods of App (View, Copy, DismissNotice).
+// Frontend → backend: the bound methods of App (View, Copy, DismissNotice,
+// ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed).
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -15,6 +16,12 @@ const (
 	EventBoard = "aula:board"
 	// EventNotices carries Notices after msg.show or a dismissal.
 	EventNotices = "aula:notices"
+	// EventBroadcast carries a BroadcastView when the teacher's broadcast
+	// starts or ends: the view and its notice are shown before the video.
+	EventBroadcast = "aula:broadcast"
+	// EventSignal carries a broadcast.Signal (offer or ICE candidate) for the
+	// frontend's RTCPeerConnection.
+	EventSignal = "aula:broadcast-signal"
 )
 
 // Connection states shown in the identity banner.
@@ -28,12 +35,26 @@ const (
 // Status is the always-visible identity banner (docs/privacidad.md: the agent
 // always identifies itself).
 type Status struct {
-	State   string `json:"state"`
-	Teacher string `json:"teacher"` // console_name; empty until found
-	Channel string `json:"channel"`
-	Banner  string `json:"banner"` // ready-to-show Spanish text
-	Detail  string `json:"detail"` // extra help, e.g. why it is unconfigured
-	Viewed  bool   `json:"viewed"` // the teacher is receiving this screen
+	State    string `json:"state"`
+	Teacher  string `json:"teacher"` // console_name; empty until found
+	Channel  string `json:"channel"`
+	Banner   string `json:"banner"`   // ready-to-show Spanish text
+	Detail   string `json:"detail"`   // extra help, e.g. why it is unconfigured
+	Viewed   bool   `json:"viewed"`   // the teacher is receiving this screen
+	Watching bool   `json:"watching"` // this screen shows the teacher's broadcast
+}
+
+// BroadcastView is the broadcast of the teacher's screen as the window shows
+// it (docs/privacidad.md rule 12). Notice is the fixed band over the video.
+type BroadcastView struct {
+	Active      bool   `json:"active"`
+	BroadcastID string `json:"broadcastId"`
+	Width       int    `json:"width"`
+	Height      int    `json:"height"`
+	FPS         int    `json:"fps"`
+	Teacher     string `json:"teacher"`
+	Channel     string `json:"channel"`
+	Notice      string `json:"notice"`
 }
 
 // Board is the list of snippets, oldest first.
@@ -52,4 +73,6 @@ type View struct {
 	Status   Status             `json:"status"`
 	Snippets []codedist.Snippet `json:"snippets"`
 	Notices  []codedist.Notice  `json:"notices"`
+	// Broadcast is the teacher's broadcast in force, if any.
+	Broadcast BroadcastView `json:"broadcast"`
 }

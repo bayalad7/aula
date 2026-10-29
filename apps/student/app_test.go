@@ -217,13 +217,13 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{EventStatus, EventBoard, EventNotices} {
+	for _, name := range []string{EventStatus, EventBoard, EventNotices, EventBroadcast, EventSignal} {
 		if !strings.Contains(string(js), `"`+name+`"`) {
 			t.Errorf("events.js does not define %q", name)
 		}
 	}
 	main, _ := os.ReadFile(filepath.Join("frontend", "dist", "main.js"))
-	for _, method := range []string{"View", "Copy", "DismissNotice"} {
+	for _, method := range []string{"View", "Copy", "DismissNotice", "ReportMedia", "BroadcastAnswer", "BroadcastCandidate", "BroadcastFailed"} {
 		if !strings.Contains(string(main), "api."+method+"(") {
 			t.Errorf("main.js does not call App.%s", method)
 		}

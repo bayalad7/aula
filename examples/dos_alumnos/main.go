@@ -79,18 +79,18 @@ func main() {
 
 // startTeacher runs Announcer + Server (TLS) + Registry + Console until ctx
 // ends, with the identity and certificate kept in dir.
-func startTeacher(ctx context.Context, wg *sync.WaitGroup, channel string, port int, name, dir string) (*session.Registry, *security.Identity, error) {
+func startTeacher(ctx context.Context, wg *sync.WaitGroup, channel string, port int, name, dir string) (*session.Registry, *security.Identity, *session.Console, error) {
 	id, err := security.LoadIdentity(dir)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w (crea la clave con: aula-consola keygen)", err)
+		return nil, nil, nil, fmt.Errorf("%w (crea la clave con: aula-consola keygen)", err)
 	}
 	cert, err := security.LoadOrCreateCertificate(dir)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 	if err != nil {
-		return nil, nil, fmt.Errorf("escuchar en el puerto %d: %w", port, err)
+		return nil, nil, nil, fmt.Errorf("escuchar en el puerto %d: %w", port, err)
 	}
 	reg := session.NewRegistry(0)
 	srv := transport.NewServer(transport.Options{TLS: security.ServerTLS(cert)})
@@ -105,7 +105,7 @@ func startTeacher(ctx context.Context, wg *sync.WaitGroup, channel string, port 
 	fmt.Printf("Consola %q en el canal %s, puerto %d (TLS). Ctrl+C para salir.\n", name, channel, port)
 	fmt.Printf("Clave pública para los alumnos: %s\n", security.EncodePublicKey(id.Public()))
 	fmt.Printf("Huella: %s\n", security.KeyFingerprint(id.Public()))
-	return reg, id, nil
+	return reg, id, console, nil
 }
 
 func runTeacher(ctx context.Context, channel string, port int, name, dir string) error {
@@ -123,10 +123,12 @@ func runTeacher(ctx context.Context, channel string, port int, name, dir string)
 		fmt.Printf("No había clave: se creó una nueva en %s\n", dir)
 	}
 	var wg sync.WaitGroup
-	reg, _, err := startTeacher(ctx, &wg, channel, port, name, dir)
+	reg, _, console, err := startTeacher(ctx, &wg, channel, port, name, dir)
 	if err != nil {
 		return err
 	}
+	fmt.Println("Escribe \"ayuda\" para ver cómo enviar código a los alumnos.")
+	go commands(ctx, console, os.Stdin)
 	printRegistry(ctx, reg, channel)
 	wg.Wait()
 	return nil
@@ -164,7 +166,7 @@ func runAll(ctx context.Context, channel string, port int, name string, leaveAft
 		return err
 	}
 	var wg sync.WaitGroup
-	reg, id, err := startTeacher(ctx, &wg, channel, port, name, dir)
+	reg, id, _, err := startTeacher(ctx, &wg, channel, port, name, dir)
 	if err != nil {
 		return err
 	}
@@ -235,7 +237,7 @@ func printRegistry(ctx context.Context, reg *session.Registry, channel string) {
 			list := reg.List(channel)
 			fmt.Fprintf(&b, "Registro %s: %d equipo(s)\n", channel, len(list))
 			for _, s := range list {
-				fmt.Fprintf(&b, "  %-14s %-12s %-8s %-13s %s\n", s.Hostname, s.Username, s.OS, s.State, s.RemoteAddr)
+				fmt.Fprintf(&b, "  %-14s %-12s %-8s %-13s %-22s %s\n", s.Hostname, s.Username, s.OS, s.State, s.RemoteAddr, ackLabel(s))
 			}
 			if out := b.String(); out != last {
 				fmt.Printf("[%s] %s", now(), out)

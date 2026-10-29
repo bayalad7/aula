@@ -39,6 +39,11 @@ sobre ambos; sirven para pruebas y afectan solo a esa ejecución.
 
 Sin configuración válida, la ventana muestra **"Aula — sin configurar"** con el motivo.
 
+El agente **relee estos archivos cada 3 segundos**: si el instalador (o un administrador) deja o
+cambia `config.json` mientras está abierto, se reconecta con la configuración nueva sin
+reiniciar. Cuando se arranca con argumentos (`-canal`, `-clave`, `-config`…) no relee nada:
+esos argumentos fijan la configuración.
+
 ### Generarlo desde la consola
 
 - **En la ventana:** abre la clase y pulsa **Configuración de alumnos**. Se guarda

@@ -245,5 +245,18 @@
     (0/15 → 15/15, 15 reconexiones) y segunda emisión.
 - **Guías:** `docs/uso-hito1.md` (uso en clase e instalación) y `docs/prueba-vms.md` §10 (casos
   08-A a 08-K con los instaladores). Decisión D-010.
+- **Release verificado:** el tag `v0.1.0-rc.1` publicó la prerelease con los dos instaladores,
+  los dos portables, `checksums.txt` y `checksums.txt.sig`. Descargada desde GitHub: la firma
+  verifica con la llave embebida (también con
+  `go run github.com/bayalad7/aula/tools/relsign@v0.1.0-rc.1 verify`), los 4 SHA-256 coinciden,
+  los binarios reportan `0.1.0-rc.1` y un `checksums.txt` alterado se rechaza.
 - **Pendiente:** validación en laboratorio o VMs con 2–3 equipos (08-C, 08-F y 08-G) y la
   prueba en VMs de las etapas 04, 06 y 07.
+- **Prueba real (29/10/2026):** consola instalada con `Aula-Consola-Setup-0.1.0-rc.1.exe` en el
+  equipo del profesor y agente con `Aula-Alumno-Setup-0.1.0-rc.1.exe` en otra laptop. El alumno
+  aparece (agente `0.1.0-rc.1`) y el Ejercicio 1 se confirma 1/1. **Defecto encontrado:** hubo que
+  reiniciar la laptop para que el agente leyera `C:\ProgramData\Aula\alumno\config.json`, porque
+  el agente solo leía la configuración al arrancar y, si ya estaba abierto (o la instancia única
+  traía al frente uno viejo), seguía sin configurar. **Corregido:** el agente relee la
+  configuración cada 3 s y se reconecta solo si cambia (`TestConfigWrittenWhileRunningIsPickedUp`,
+  con consola real). Sale en la próxima versión (`v0.1.0-rc.2`).

@@ -154,7 +154,7 @@ IDLE, VS Code o el Bloc de notas.
 
 | Síntoma | Qué hacer |
 |---|---|
-| El alumno dice "Aula — sin configurar" | Falta `aula-alumno.json`: ponlo junto al instalador y reinstala (§3). |
+| El alumno dice "Aula — sin configurar" | Falta `aula-alumno.json`: ponlo junto al instalador y reinstala (§3). No hace falta reiniciar el equipo ni cerrar Aula Cliente: en unos segundos lee la configuración nueva y se conecta (desde la versión 0.1.0-rc.2). |
 | El alumno se queda en "buscando la clase del canal…" | ¿La clase está abierta con **ese** canal? ¿Misma red y perfil Privado/Dominio? Si la red bloquea mDNS, usa `-directo` (§7). |
 | El alumno dice "sin conexión… reintentando" | La consola se cerró o cambió de aula; vuelve en cuanto la abras. |
 | En la consola no aparece un alumno que sí dice "buscando" | La clave de su configuración no es la de esta consola (otra consola u otro usuario de Windows). Genera de nuevo la configuración (§3.1) y reinstala. |

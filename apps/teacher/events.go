@@ -22,6 +22,9 @@ const (
 	EventClass = "aula:class"
 	// EventCapture carries a Capture after the hotkey or the button.
 	EventCapture = "aula:capture"
+	// EventFrame carries a screen.Thumb for every screen thumbnail received
+	// while the screens view is open. Frames only live in memory.
+	EventFrame = "aula:frame"
 )
 
 // Setup is what the channel selection screen needs.
@@ -58,6 +61,7 @@ type Student struct {
 	Capabilities []string `json:"capabilities"`
 	CanCode      bool     `json:"canCode"`
 	CanNotice    bool     `json:"canNotice"`
+	CanThumb     bool     `json:"canThumb"`    // screen.thumb (Windows agents)
 	LastCodeAck  string   `json:"lastCodeAck"` // snippet_id; "" after a clear
 	AckedAt      string   `json:"ackedAt"`     // "" if nothing acknowledged yet
 }
@@ -68,6 +72,7 @@ type Students struct {
 	Connected int       `json:"connected"`
 	CanCode   int       `json:"canCode"`   // connected agents with code.view
 	CanNotice int       `json:"canNotice"` // connected agents with msg.show
+	CanThumb  int       `json:"canThumb"`  // connected agents with screen.thumb
 }
 
 // History is the numbered list of snippets of the session.

@@ -24,14 +24,17 @@ const DefaultPort = 47830
 // liveClass implements it; tests use a double.
 type classroom interface {
 	Broadcast(ctx context.Context, p protocol.Payload) (sent map[string]string, failed map[string]error)
+	// Send delivers p to one session and returns the envelope ID.
+	Send(ctx context.Context, sessionID string, p protocol.Payload) (string, error)
 	Sessions() []session.Session
 	Stop()
 }
 
 // classHooks are called from the console goroutine.
 type classHooks struct {
-	onAck    func(refID string) // a code.ack or msg.ack arrived
-	onChange func()             // the registry changed
+	onAck    func(refID string)                                  // a code.ack or msg.ack arrived
+	onChange func()                                              // the registry changed
+	onFrame  func(sessionID string, f protocol.ScreenThumbFrame) // a screen thumbnail arrived
 }
 
 type classConfig struct {
@@ -87,6 +90,10 @@ func (l *liveClass) Broadcast(ctx context.Context, p protocol.Payload) (map[stri
 	return l.console.Broadcast(ctx, p)
 }
 
+func (l *liveClass) Send(ctx context.Context, sessionID string, p protocol.Payload) (string, error) {
+	return l.console.Send(ctx, sessionID, p)
+}
+
 func (l *liveClass) Sessions() []session.Session { return l.reg.List(l.channel) }
 
 func (l *liveClass) Stop() {
@@ -119,12 +126,16 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 	console := &session.Console{
 		Channel: cfg.Channel, Registry: reg, Identity: id, CertSHA256: cert.SHA256, Logger: log,
 		OnChange: hooks.onChange,
-		OnMessage: func(_ context.Context, _ *transport.Conn, env protocol.Envelope) {
+		OnMessage: func(_ context.Context, conn *transport.Conn, env protocol.Envelope) {
 			switch p := env.Payload.(type) {
 			case protocol.CodeAck:
 				hooks.onAck(p.RefID)
 			case protocol.MsgAck:
 				hooks.onAck(p.RefID)
+			case protocol.ScreenThumbFrame:
+				if hooks.onFrame != nil {
+					hooks.onFrame(conn.ID(), p)
+				}
 			}
 		},
 	}

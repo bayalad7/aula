@@ -13,6 +13,7 @@ import (
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
 )
@@ -53,6 +54,7 @@ type App struct {
 	deliveries *codedist.Deliveries
 	lastLang   string
 	hotkey     HotkeyStatus
+	wall       *screen.Wall // screens view: who streams and their last frame
 
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
 	// with respect to acks, so a fast agent's ack is never counted as unknown.
@@ -69,6 +71,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 		start: startLiveClass, now: time.Now, emit: func(string, any) {}, raise: func() {},
 		history: &codedist.History{}, deliveries: &codedist.Deliveries{},
 		hotkey: HotkeyStatus{Combo: platform.DefaultCaptureHotkey.String()},
+		wall:   screen.NewWall(),
 	}
 }
 
@@ -160,7 +163,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		ctx = context.Background()
 	}
 	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
-		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange}, a.log)
+		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -186,6 +189,7 @@ func (a *App) EndClass() {
 	a.class = nil
 	a.mu.Unlock()
 	if class != nil {
+		a.sendScreen(class, a.wall.Close()) // agents also stop when the connection closes
 		class.Stop()
 	}
 }
@@ -309,6 +313,65 @@ func (a *App) broadcast(kind, label string, p protocol.Payload) (codedist.Delive
 	return d, nil
 }
 
+// --- Screens view (docs/protocol.md §5.6) -----------------------------------------
+
+// OpenScreens opens the screens view: every connected student whose agent
+// supports it starts sending thumbnails, with its "screen viewed" indicator.
+func (a *App) OpenScreens() error {
+	if a.currentClass() == nil {
+		return errNoClass
+	}
+	a.wall.Open()
+	a.log.Info("screens view opened")
+	a.syncScreens()
+	return nil
+}
+
+// CloseScreens closes the view: every stream stops and the frames are dropped.
+func (a *App) CloseScreens() {
+	if class := a.currentClass(); class != nil {
+		a.sendScreen(class, a.wall.Close())
+	} else {
+		a.wall.Close()
+	}
+	a.log.Info("screens view closed")
+}
+
+// ViewScreen shows one student in detail (larger frames); "" goes back to
+// the grid of thumbnails.
+func (a *App) ViewScreen(sessionID string) {
+	a.wall.SetDetail(sessionID)
+	a.syncScreens()
+}
+
+// syncScreens starts the streams the open view needs: new students, and the
+// change between thumbnail and detail.
+func (a *App) syncScreens() {
+	class := a.currentClass()
+	if class == nil || !a.wall.IsOpen() {
+		return
+	}
+	a.sendScreen(class, a.wall.Plan(class.Sessions()))
+}
+
+func (a *App) sendScreen(class classroom, cmds []screen.Command) {
+	if len(cmds) == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	for _, c := range cmds {
+		envID, err := class.Send(ctx, c.SessionID, c.Payload)
+		if err != nil {
+			a.log.Debug("screen command not sent", "type", c.Payload.MessageType(), "err", err)
+			continue
+		}
+		if start, ok := c.Payload.(protocol.ScreenThumbStart); ok {
+			a.wall.Started(c.SessionID, envID, start)
+		}
+	}
+}
+
 // --- Capture (hotkey and button) --------------------------------------------------
 
 // CaptureClipboard is the on-screen equivalent of the capture hotkey.
@@ -372,6 +435,14 @@ func (a *App) onChange() {
 		return
 	}
 	a.emit(EventStudents, studentsOf(class.Sessions()))
+	a.syncScreens()
+}
+
+// onFrame forwards a thumbnail of the stream in force to the screens view.
+func (a *App) onFrame(sessionID string, f protocol.ScreenThumbFrame) {
+	if t, ok := a.wall.Frame(sessionID, f); ok {
+		a.emit(EventFrame, t)
+	}
 }
 
 // --- Helpers ------------------------------------------------------------------------
@@ -403,6 +474,7 @@ func studentsOf(list []session.Session) Students {
 			ID: s.ID, Hostname: s.Hostname, Username: s.Username, OS: string(s.OS), OSVersion: s.OSVersion,
 			AgentVersion: s.AgentVersion, State: "disconnected",
 			CanCode: s.Can(protocol.CapCodeView), CanNotice: s.Can(protocol.CapMsgShow),
+			CanThumb:    s.Can(protocol.CapScreenThumb),
 			LastCodeAck: s.LastCodeAck,
 		}
 		for _, c := range s.Capabilities {
@@ -419,6 +491,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanNotice {
 				out.CanNotice++
+			}
+			if st.CanThumb {
+				out.CanThumb++
 			}
 		}
 		out.Students = append(out.Students, st)

@@ -48,6 +48,7 @@
         <span id="key-label" class="muted">Clave del centro:</span>
         <code id="class-fingerprint"></code>
       </div>
+      <button type="button" id="screens-open" title="Ver las pantallas de los alumnos en miniatura">Ver pantallas</button>
     </header>
     <p id="key-warning" class="key-warning" hidden>
       Este equipo no tiene la <strong>clave del centro</strong>: la consola usa una clave personal y los
@@ -105,7 +106,36 @@
     </button>
     <p id="hotkey-warning" class="hotkey-warning" hidden></p>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <!-- 5. Screens view: thumbnails stream only while it is open (docs/privacidad.md). -->
+    <section id="screens" class="screens" hidden aria-label="Pantallas de los alumnos">
+      <header class="screens-head">
+        <h2>Pantallas <span id="screens-count" class="count"></span></h2>
+        <p class="muted">Mientras esta vista esté abierta, cada alumno ve el aviso
+          «Tu pantalla está siendo vista por el profesor».</p>
+        <button type="button" id="screens-close">Cerrar</button>
+      </header>
+      <p id="screens-empty" class="muted">Ningún alumno conectado puede compartir su pantalla (por ahora, solo Windows).</p>
+      <ul id="screens-grid" class="screens-grid"></ul>
+      <div id="screen-detail" class="screen-detail" hidden>
+        <header class="screens-head">
+          <h2 id="detail-host"></h2>
+          <button type="button" id="detail-back">Volver a la cuadrícula</button>
+        </header>
+        <img id="detail-img" alt="Pantalla del alumno">
+      </div>
+    </section>
   </section>
+
+  <template id="tile-template">
+    <li class="tile">
+      <button type="button" class="tile-view" title="Ver en detalle">
+        <img alt="">
+        <span class="tile-wait muted">Esperando imagen…</span>
+      </button>
+      <div class="tile-name"></div>
+    </li>
+  </template>
 
   <template id="student-template">
     <li class="student">

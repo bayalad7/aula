@@ -27,7 +27,31 @@ type fakeClass struct {
 	sessions []session.Session
 	sent     []protocol.Payload
 	envIDs   []string // of the last broadcast
+	direct   []directSend
 	stopped  bool
+}
+
+// directSend is a message sent to one session (screen thumbnails).
+type directSend struct {
+	sessionID, envID string
+	p                protocol.Payload
+}
+
+func (f *fakeClass) Send(_ context.Context, sessionID string, p protocol.Payload) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	id := protocol.NewID()
+	f.direct = append(f.direct, directSend{sessionID: sessionID, envID: id, p: p})
+	return id, nil
+}
+
+// takeDirect returns and forgets the messages sent to single sessions.
+func (f *fakeClass) takeDirect() []directSend {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	d := f.direct
+	f.direct = nil
+	return d
 }
 
 func (f *fakeClass) Broadcast(_ context.Context, p protocol.Payload) (map[string]string, map[string]error) {
@@ -356,13 +380,14 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{EventStudents, EventHistory, EventDeliveries, EventCapture, EventClass} {
+	for _, name := range []string{EventStudents, EventHistory, EventDeliveries, EventCapture, EventClass, EventFrame} {
 		if !strings.Contains(string(js), `"`+name+`"`) {
 			t.Errorf("events.js does not define %q", name)
 		}
 	}
 	main, _ := os.ReadFile(filepath.Join("frontend", "dist", "main.js"))
-	for _, m := range []string{"Setup", "StartClass", "View", "Emit", "Reemit", "ClearScreens", "SendNotice", "CaptureClipboard"} {
+	for _, m := range []string{"Setup", "StartClass", "View", "Emit", "Reemit", "ClearScreens", "SendNotice", "CaptureClipboard",
+		"OpenScreens", "CloseScreens", "ViewScreen"} {
 		if !strings.Contains(string(main), "api."+m+"(") {
 			t.Errorf("main.js does not call App.%s", m)
 		}

@@ -14,7 +14,7 @@
     ["html", "HTML"], ["css", "CSS"], ["shell", "Shell"], ["json", "JSON"], ["rust", "Rust"],
     ["kotlin", "Kotlin"], ["plaintext", "Texto"],
   ];
-  const CAP_NAMES = { "code.view": "código", "msg.show": "avisos" };
+  const CAP_NAMES = { "code.view": "código", "msg.show": "avisos", "screen.thumb": "pantalla" };
 
   let editor = null;          // Monaco instance
   let students = { connected: 0, canCode: 0, canNotice: 0, students: [] };
@@ -79,6 +79,7 @@
   }
 
   function open(channel, name, onError) {
+    closeScreens(); // a new class starts with the view closed
     api.StartClass(String(channel), name).then(showConsole, onError);
   }
 
@@ -160,6 +161,7 @@
       return li;
     }));
     updateActions();
+    renderTiles();
   }
 
   // Actions are enabled only when someone can receive them.
@@ -278,7 +280,97 @@
   langSelect.replaceChildren(...LANGS.map(([id, name]) => Object.assign(document.createElement("option"), { value: id, textContent: name })));
   langSelect.addEventListener("change", () => setLang(langSelect.value));
 
+  // --- Screens view -------------------------------------------------------------------
+  // Thumbnails stream only while this view is open: OpenScreens sends
+  // screen.thumb.start and CloseScreens screen.thumb.stop. Frames only live
+  // here, in the <img> elements.
+  let screensOpen = false;
+  let detailId = "";
+  const tiles = new Map(); // session ID → <li>
+
+  function openScreens() {
+    api.OpenScreens().then(() => {
+      screensOpen = true;
+      $("screens").hidden = false;
+      renderTiles();
+    }, (err) => toast(String(err), "error"));
+  }
+
+  function closeScreens() {
+    if (!screensOpen) return;
+    screensOpen = false;
+    detailId = "";
+    $("screens").hidden = true;
+    $("screen-detail").hidden = true;
+    $("detail-img").removeAttribute("src");
+    tiles.clear();
+    $("screens-grid").replaceChildren();
+    api.CloseScreens();
+  }
+
+  function renderTiles() {
+    if (!screensOpen) return;
+    const list = students.students.filter((s) => s.state === "connected" && s.canThumb);
+    const tpl = $("tile-template").content.firstElementChild;
+    const keep = new Set(list.map((s) => s.id));
+    for (const id of tiles.keys()) if (!keep.has(id)) tiles.delete(id);
+    $("screens-grid").replaceChildren(...list.map((s) => {
+      let li = tiles.get(s.id);
+      if (!li) {
+        li = tpl.cloneNode(true);
+        li.querySelector(".tile-view").addEventListener("click", () => showDetail(s.id));
+        tiles.set(s.id, li);
+      }
+      li.querySelector(".tile-name").textContent = s.hostname + (s.username ? " · " + s.username : "");
+      li.querySelector("img").alt = "Pantalla de " + s.hostname;
+      return li;
+    }));
+    $("screens-count").textContent = list.length + " de " + students.connected;
+    $("screens-empty").hidden = list.length > 0;
+    if (detailId && !keep.has(detailId)) hideDetail();
+  }
+
+  function showDetail(id) {
+    const s = students.students.find((x) => x.id === id);
+    const li = tiles.get(id);
+    if (!s || !li) return;
+    detailId = id;
+    $("detail-host").textContent = s.hostname + (s.username ? " · " + s.username : "");
+    const img = li.querySelector("img");
+    if (img.src) $("detail-img").src = img.src; // until the first large frame arrives
+    $("screen-detail").hidden = false;
+    api.ViewScreen(id);
+  }
+
+  function hideDetail() {
+    if (!detailId) return;
+    detailId = "";
+    $("screen-detail").hidden = true;
+    $("detail-img").removeAttribute("src");
+    api.ViewScreen("");
+  }
+
+  function onFrame(t) {
+    if (!screensOpen) return;
+    const src = "data:image/jpeg;base64," + t.jpeg;
+    if (t.sessionId === detailId) $("detail-img").src = src;
+    const li = tiles.get(t.sessionId);
+    if (li) {
+      li.querySelector("img").src = src;
+      li.querySelector(".tile-wait").hidden = true;
+    }
+  }
+
+  $("screens-open").addEventListener("click", openScreens);
+  $("screens-close").addEventListener("click", closeScreens);
+  $("detail-back").addEventListener("click", hideDetail);
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !screensOpen) return;
+    if (detailId) hideDetail(); else closeScreens();
+  });
+
   rt.EventsOn(ev.STUDENTS, renderStudents);
+  rt.EventsOn(ev.FRAME, onFrame);
   rt.EventsOn(ev.HISTORY, (h) => renderHistory(h.entries));
   rt.EventsOn(ev.DELIVERIES, (d) => renderDeliveries(d.deliveries));
   rt.EventsOn(ev.CAPTURE, onCapture);

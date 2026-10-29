@@ -49,6 +49,13 @@ func main() {
 		log.Warn("no system clipboard", "err", clipErr)
 	}
 	app := NewApp(cfg, pub, cfgErr, localHello(), clip, clipErr, log)
+	capture, capErr := platform.NewScreenCapture()
+	indicator, indErr := platform.NewScreenIndicator()
+	if capErr == nil && indErr == nil {
+		app.enableScreen(capture, indicator)
+	} else {
+		log.Info("screen thumbnails not available", "capture", capErr, "indicator", indErr)
+	}
 	if len(os.Args) == 1 {
 		// Configured by files (installer): follow their changes. Flags pin it.
 		app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }

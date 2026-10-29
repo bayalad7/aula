@@ -33,6 +33,7 @@ type Status struct {
 	Channel string `json:"channel"`
 	Banner  string `json:"banner"` // ready-to-show Spanish text
 	Detail  string `json:"detail"` // extra help, e.g. why it is unconfigured
+	Viewed  bool   `json:"viewed"` // the teacher is receiving this screen
 }
 
 // Board is the list of snippets, oldest first.

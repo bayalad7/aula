@@ -16,6 +16,7 @@ import (
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/session"
 	"github.com/bayalad7/aula/internal/transport"
 )
@@ -32,6 +33,7 @@ type App struct {
 	hello  protocol.HelloInfo
 	board  *codedist.Board
 	recv   *codedist.Receiver
+	screen *screen.Streamer   // screen thumbnails; inert until enableScreen
 	clip   platform.Clipboard // nil when the system has none
 	clipEr error
 	log    *slog.Logger
@@ -51,6 +53,7 @@ type App struct {
 	status  Status
 	notices []codedist.Notice
 	diag    string // why the agent is not connected (session.Agent.OnDiagnostic)
+	viewed  bool   // the console is receiving this screen (docs/privacidad.md rule 6)
 	cancel  context.CancelFunc
 	done    chan struct{}
 }
@@ -65,6 +68,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 		emit: func(string, any) {}, raise: func() {},
 	}
 	a.recv = &codedist.Receiver{Board: a.board, OnBoard: a.onBoard, OnNotice: a.onNotice}
+	a.screen = &screen.Streamer{Logger: log, OnViewed: a.onViewed}
 	if cfgErr != nil {
 		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Banner: "Aula — sin configurar", Detail: cfgErr.Error()}
 	} else {
@@ -172,6 +176,15 @@ func (a *App) stop() {
 		a.cancel()
 		<-a.done
 	}
+	a.screen.Stop()
+}
+
+// enableScreen lets the console see this screen in thumbnails, with the
+// always-visible indicator, and declares screen.thumb in hello. Call it
+// before start; without both pieces the agent does not declare it.
+func (a *App) enableScreen(c platform.ScreenCapture, i platform.ScreenIndicator) {
+	a.screen.Capture, a.screen.Indicator = c, i
+	a.hello.Capabilities = append(slices.Clone(a.hello.Capabilities), a.screen.Capabilities()...)
 }
 
 func (a *App) source() session.ConsoleSource {
@@ -202,10 +215,23 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 	default:
 		st = statusFor(StateSearching, a.cfg.Channel, "")
 	}
+	if s != session.AgentConnected {
+		// The stream belongs to the connection: no console, no capture.
+		a.screen.Stop()
+	}
 	a.mu.Lock()
 	if st.State != StateConnected {
 		st.Detail = a.diag
 	}
+	a.mu.Unlock()
+	a.setStatus(st)
+}
+
+// onViewed changes the banner while the console receives this screen.
+func (a *App) onViewed(viewed bool) {
+	a.mu.Lock()
+	a.viewed = viewed
+	st := a.status
 	a.mu.Unlock()
 	a.setStatus(st)
 }
@@ -232,6 +258,18 @@ func (a *App) onDiagnostic(msg string) {
 
 func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.Envelope) {
 	a.log.Debug("message from console", "type", env.Type)
+	send := func(ctx context.Context, p protocol.Payload) error {
+		_, err := cl.Send(ctx, p)
+		return err
+	}
+	if reply, ok := a.screen.Handle(ctx, send, env); ok {
+		if reply != nil {
+			if err := send(ctx, reply); err != nil {
+				a.log.Debug("cannot send reply", "type", reply.MessageType(), "err", err)
+			}
+		}
+		return
+	}
 	if reply := a.recv.Handle(env); reply != nil {
 		if _, err := cl.Send(ctx, reply); err != nil {
 			a.log.Debug("cannot send reply", "type", reply.MessageType(), "err", err)
@@ -263,6 +301,12 @@ func (a *App) onNotice(n codedist.Notice) {
 
 func (a *App) setStatus(s Status) {
 	a.mu.Lock()
+	s.Viewed = a.viewed && s.State == StateConnected
+	if s.Viewed {
+		s.Banner = fmt.Sprintf("Aula — tu pantalla está siendo vista por %s (canal %s)", s.Teacher, s.Channel)
+	} else if s.State == StateConnected {
+		s.Banner = statusFor(s.State, s.Channel, s.Teacher).Banner
+	}
 	a.status = s
 	a.mu.Unlock()
 	a.emit(EventStatus, s)

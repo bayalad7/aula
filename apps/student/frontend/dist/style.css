@@ -90,6 +90,9 @@ html, body {
   font-size: 0.9em;
 }
 .banner .detail:empty { display: none; }
+/* The teacher is receiving this screen (docs/privacidad.md rule 6). */
+.banner[data-viewed="true"] { background: #b91c1c; color: #ffffff; border-bottom-color: #b91c1c; }
+.banner[data-viewed="true"] .dot { background: #ffffff; }
 
 .notices { padding: 0 1rem; }
 .notice {

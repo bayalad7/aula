@@ -29,6 +29,7 @@
 
   function renderStatus(s) {
     banner.dataset.state = s.state;
+    banner.dataset.viewed = s.viewed ? "true" : "false";
     bannerText.textContent = s.banner;
     bannerDetail.textContent = s.detail || "";
   }

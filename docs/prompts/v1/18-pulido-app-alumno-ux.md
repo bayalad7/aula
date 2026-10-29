@@ -41,13 +41,13 @@ segundos, sin perder lo que estaba escribiendo en su editor.
   equipos modestos.
 
 # FASE 1 — Análisis (no escribas código del frontend en esta fase)
-1. Recorre la app del alumno en todos sus estados y captura cada uno (docs/ux/alumno/antes/):
+1. Recorre la app del alumno en todos sus estados y captura cada uno (docs/ux/v1/alumno/antes):
    sin conexión / buscando clase, conectado en reposo, recibiendo un snippet, con varios snippets,
    con un aviso (info y warning), con la pantalla siendo vista, con pantalla en blanco (freeze),
    recibiendo la transmisión del profesor, y siendo controlado remotamente (si esas funciones
    existen).
 2. Recorre y anota la fricción de estos momentos:
-   a) el equipo arranca → la app se conecta sola al canal → el alumno entiende a qué clase está
+   a) el equipo arranca → la app se conecta sola al canal → el alumno entiende a qué canal está
       conectado
    b) el profesor emite código → aparece el overlay → el alumno copia y pega en su editor
    c) el profesor manda un aviso → el alumno lo ve sin que le tape el trabajo
@@ -59,7 +59,7 @@ segundos, sin perder lo que estaba escribiendo en su editor.
    reconectando) son claros?
 5. Punto clave a evaluar: ¿el overlay de código roba el foco del teclado y le interrumpe lo que
    escribe? Documenta el comportamiento actual y propón cómo notificar sin arrebatar el foco.
-6. Entrega docs/ux/ANALISIS-ALUMNO.md con hallazgos priorizados (cada uno con captura, heurística,
+6. Entrega docs/ux/v1/alumno/ANALISIS-ALUMNO.md con hallazgos priorizados (cada uno con captura, heurística,
    impacto y propuesta), flujos actuales vs propuestos, y la lista de cambios en entregas pequeñas.
    Espera mi aprobación antes de seguir.
 
@@ -83,15 +83,15 @@ Evalúa e implementa lo que corresponda:
      al frente de forma agresiva). Esto es criterio de aceptación, no opcional.
 2. **Avisos (msg.show):** toast legible, info y warning con color + icono + texto, que no tape el
    área de trabajo y se pueda cerrar; responde msg.ack.
-3. **Estado de conexión:** indicador no intrusivo (barra pequeña o icono) que diga "Conectado a la
-   clase de <profesor> · canal <X>" o "Buscando clase…/Reconectando…", sin molestar en reposo.
+3. **Estado de conexión:** indicador no intrusivo (barra pequeña o icono) que diga "Conectado al
+   canal <X> · Profesor <profesor>" o "Buscando clase…/Reconectando…", sin molestar en reposo.
 4. **Banda de transparencia permanente:** mientras el profesor ve, congela, transmite o controla,
    una banda clara e imposible de ocultar explica qué ocurre en lenguaje sencillo ("Tu pantalla la
    está viendo el profesor", "Pantalla en pausa por el profesor", "El profesor está controlando tu
    equipo"). Al terminar, desaparece sola.
 5. **Pantalla en blanco (freeze):** overlay a pantalla completa que explica por qué y que no parece
    un cuelgue del equipo.
-6. **Pantalla de "sin clase":** cuando no hay profesor en el canal, un estado tranquilo que no
+6. **Pantalla de "sin conexión":** cuando no hay profesor en el canal, un estado tranquilo que no
    alarma y que indica que la app está lista y esperando.
 
 # FASE 4 — Accesibilidad, rendimiento e intrusión
@@ -113,7 +113,7 @@ Evalúa e implementa lo que corresponda:
    correspondiente está activa.
 3. Prueba de que un snippet nuevo no arrebata el foco del editor del alumno.
 4. Prueba del portapapeles con un fragmento multilínea con sangría.
-5. Capturas "después" en docs/ux/alumno/despues/ y un informe docs/ux/RESULTADOS-ALUMNO.md
+5. Capturas "después" en docs/ux/v1/alumno/despues/ y un informe docs/ux/v1/alumno/RESULTADOS-ALUMNO.md
    (antes/después por estado, hallazgos resueltos, cifras de CPU/RAM).
 6. `go build` sin Node, `go test -race ./...` en los tres sistemas, binario autocontenido y tamaño
    agregado reportado. Actualiza docs/progreso.md y docs/privacidad.md si cambió algún texto de

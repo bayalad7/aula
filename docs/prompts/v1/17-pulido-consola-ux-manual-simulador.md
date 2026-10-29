@@ -21,15 +21,13 @@ de aula. Cuatro metas:
 3. Mostrar dentro de la consola los diagramas de arquitectura y protocolo de docs/diagramas/.
 4. Permitir probar el sistema de principio a fin SIN un laboratorio físico: un modo de "aula
    simulada" con alumnos simulados.
-NO se agregan funciones nuevas de aula (las de Fase 2/3 que no existan se quedan para sus prompts).
+NO se agregan funciones nuevas de aula.
 
 # Para quién diseñamos
-1. Profesor no muy técnico: quiere "crear su aula y mandar código" y entender qué pasa cuando algo
-   no conecta.
-2. Área de TI / instalador: configura la consola y genera los agentes; necesita hacerlo rápido.
-3. (Alumno: solo como receptor; su overlay comparte el sistema de diseño, pero no es el foco.)
-Meta medible: un profesor no técnico, sin ayuda, pasa de "recién instalado" a "canal creado +
-primer código emitido + un alumno simulado recibiéndolo" en menos de 5 minutos.
+1. Profesor no muy técnico: entender qué pasa cuando algo no conecta.
+2. (Alumno: solo como receptor; su overlay comparte el sistema de diseño, pero no es el foco.)
+Meta medible: un profesor no técnico, sin ayuda, pasa de "recién instalado" a "primer código
+emitido + un alumno simulado recibiéndolo" en menos de 5 minutos.
 
 # Restricciones (no las rompas)
 - Mantén la arquitectura de Wails: frontend (HTML/CSS/JS) embebido con go:embed, sin CDNs externos,
@@ -53,14 +51,12 @@ primer código emitido + un alumno simulado recibiéndolo" en menos de 5 minutos
 # FASE 1 — Análisis (no escribas código de la consola en esta fase)
 1. Recorre la consola real con datos de demostración (un canal, 2 alumnos simulados, historial de
    snippets, un trabajo/acuse fallido). Captura cada pantalla y estado (vacío, con datos, error,
-   cargando). Guarda las capturas en docs/ux/antes/.
+   cargando). Guarda las capturas en docs/ux/v1/profesor/antes.
 2. Recorre estos flujos clave, cuenta pasos y clics, y anota cada fricción:
-   a) primer arranque → crear perfil/claves (teacher keygen) → crear o elegir canal
-   b) generar la configuración de un agente (con clave pública y canal) para instalarlo
-   c) emitir código a todos → ver acuses → reemitir un snippet del historial
-   d) ver la lista de alumnos y entender quién está conectado y quién no
-   e) entender por qué un alumno no aparece / no conecta y qué hacer
-   f) (si existen) ver miniaturas, transmitir pantalla, recoger código
+   a) ver la lista de alumnos y entender quién está conectado y quién no
+   b) entender por qué un alumno no aparece / no conecta y qué hacer
+   c) ver miniaturas, transmitir pantalla, recoger código
+   d) emitir código a todos → ver acuses → reemitir un snippet del historial
 3. Evaluación heurística (10 heurísticas de Nielsen) y revisión de accesibilidad WCAG 2.1 AA
    (contraste, foco visible, navegación por teclado, etiquetas, ARIA) sobre la capa de frontend.
 4. Revisa los textos: mensajes de error (¿dicen qué pasó y qué hacer?), etiquetas técnicas sin
@@ -72,7 +68,7 @@ primer código emitido + un alumno simulado recibiéndolo" en menos de 5 minutos
    autenticación, descubrimiento por canal, diagnóstico de conexión).
 6. Revisa qué hay para probar sin laboratorio (ejemplos de agentes simulados, el registro de
    sesiones) y qué se reutiliza para el modo de aula simulada de la Fase 6.
-7. Entrega docs/ux/ANALISIS-CONSOLA.md con: hallazgos priorizados (crítico/alto/medio/bajo) cada
+7. Entrega docs/ux/v1/profesor/ANALISIS-CONSOLA.md con: hallazgos priorizados (crítico/alto/medio/bajo) cada
    uno con captura, heurística, impacto y propuesta; flujos actuales vs propuestos; arquitectura de
    navegación (flowchart Mermaid) incluyendo Ayuda y Aula simulada; el inventario de diagramas; la
    evaluación de cómo mostrar diagramas (Fase 5) con tu recomendación; el plan de reutilización del
@@ -95,23 +91,20 @@ Muéstrame un prototipo de 3 pantallas clave con el sistema aplicado antes de re
 
 # FASE 3 — Mejoras de UX/UI (aplica lo aprobado en la Fase 1)
 Evalúa e implementa lo que corresponda:
-1. Asistente de primer uso (se puede saltar y retomar): crear perfil/claves → crear canal →
-   generar la configuración del primer agente (con botón copiar) → "¿Ya tienes alumnos?" (todavía
-   no: crear un aula simulada con 2 alumnos de la Fase 6) → emitir el primer código y verlo llegar.
-   Al final, una lista de verificación persistente en Inicio ("3 de 5 pasos").
-2. Inicio: estado de un vistazo (canal actual, alumnos conectados/desconectados, reales vs
+1. Inicio: estado de un vistazo (canal actual, alumnos conectados/desconectados, reales vs
    simulados, vencimiento del certificado) con acciones directas desde cada tarjeta.
-3. Lista de alumnos: estado con color + icono + texto (nunca solo color), separando claramente los
-   simulados; detalle por alumno con sus capacidades.
-4. Panel de código: editor con lenguaje y título, emitir/agregar/limpiar, historial reemitible,
+2. Lista de alumnos: Nombre de usuario, Nombre del estudiante, Nombre de la máquina,
+   Último sitio web, Canal, Versión, Estado con color + icono + texto (nunca solo color),
+   separando claramente los simulados; detalle por alumno con sus capacidades.
+3. Panel de código: editor con lenguaje y título, emitir/agregar/limpiar, historial reemitible,
    conteo de acuses recibidos.
-5. Mensajes: reescribe TODOS los errores y avisos con la fórmula "qué pasó + por qué + qué hacer".
+4. Mensajes: reescribe TODOS los errores y avisos con la fórmula "qué pasó + por qué + qué hacer".
    Mapea cada código de error del protocolo a un mensaje amable y a la sección del manual.
-6. Formularios: validación en línea, sin perder datos al fallar, confirmación de acciones
+5. Formularios: validación en línea, sin perder datos al fallar, confirmación de acciones
    destructivas indicando qué se pierde.
-7. Navegación: Inicio · Alumnos · Código · (Pantalla/Transmitir/Recoger si existen) · Aula simulada
-   · Recursos · Ajustes · Ayuda. Ruta actual visible; atajos de teclado básicos.
-8. Rendimiento percibido: estados de carga, sin saltos de diseño.
+6. Navegación: Inicio · Alumnos · (Pantalla/Transmitir) · Recoger · Código ·
+   Recursos · Ajustes · Ayuda. Ruta actual visible; atajos de teclado básicos.
+7. Rendimiento percibido: estados de carga, sin saltos de diseño.
 
 # FASE 4 — Manual de usuario dentro de la consola
 1. Sección "Ayuda", disponible sin internet:
@@ -194,7 +187,7 @@ Objetivo: que el profesor pruebe Aula de principio a fin SIN equipos de alumno r
 3. Pruebas de la aula simulada: un alumno simulado recibe y acusa como uno real; las fallas
    simuladas se reportan con los estados esperados; los simulados no persisten ni se cuentan como
    reales; el comprobador de conexión coincide con el diagnóstico real.
-4. Capturas "después" en docs/ux/despues/ y un informe docs/ux/RESULTADOS.md: antes/después por
+4. Capturas "después" en docs/ux/v1/profesor/despues/ y un informe docs/ux/v1/profesor/RESULTADOS.md: antes/después por
    pantalla, pasos y clics por flujo (antes vs después), hallazgos resueltos y pendientes.
 5. Prueba de "usuario nuevo": sigue el manual desde una instalación limpia y SIN alumnos reales
    (solo aula simulada) y reporta cualquier paso confuso.

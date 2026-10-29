@@ -8,19 +8,20 @@ const (
 	CapCodeView    Capability = "code.view"
 	CapMsgShow     Capability = "msg.show"
 	CapScreenThumb Capability = "screen.thumb" // Windows (docs/protocol.md §5.6)
+	// CapScreenBroadcast receives the teacher's screen (§5.12). Windows.
+	CapScreenBroadcast Capability = "screen.broadcast"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
 const (
-	CapScreenFreeze    Capability = "screen.freeze" // documented, pending (§6)
-	CapScreenBroadcast Capability = "screen.broadcast"
-	CapAppBlock        Capability = "app.block"
-	CapWebFilter       Capability = "web.filter"
-	CapFileCollect     Capability = "file.collect"
-	CapCodeCollect     Capability = "code.collect"
-	CapPower           Capability = "power"
-	CapRemote          Capability = "remote"
-	CapPoll            Capability = "poll"
+	CapScreenFreeze Capability = "screen.freeze" // documented, pending (§6)
+	CapAppBlock     Capability = "app.block"
+	CapWebFilter    Capability = "web.filter"
+	CapFileCollect  Capability = "file.collect"
+	CapCodeCollect  Capability = "code.collect"
+	CapPower        Capability = "power"
+	CapRemote       Capability = "remote"
+	CapPoll         Capability = "poll"
 )
 
 // requiredCapability lists the capability an agent must declare before the
@@ -32,6 +33,11 @@ var requiredCapability = map[Type]Capability{
 
 	TypeScreenThumbStart: CapScreenThumb,
 	TypeScreenThumbStop:  CapScreenThumb,
+
+	TypeScreenBroadcastStart: CapScreenBroadcast,
+	TypeScreenBroadcastOffer: CapScreenBroadcast,
+	TypeScreenBroadcastICE:   CapScreenBroadcast, // only when sent P → A
+	TypeScreenBroadcastStop:  CapScreenBroadcast,
 }
 
 // RequiredCapability reports the capability needed to receive a message of

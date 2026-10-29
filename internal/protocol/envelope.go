@@ -35,6 +35,12 @@ const (
 	TypeScreenThumbStart Type = "screen.thumb.start"
 	TypeScreenThumbFrame Type = "screen.thumb.frame"
 	TypeScreenThumbStop  Type = "screen.thumb.stop"
+	// Broadcast of the teacher's screen (docs/protocol.md §5.12).
+	TypeScreenBroadcastStart  Type = "screen.broadcast.start"
+	TypeScreenBroadcastOffer  Type = "screen.broadcast.offer"
+	TypeScreenBroadcastAnswer Type = "screen.broadcast.answer"
+	TypeScreenBroadcastICE    Type = "screen.broadcast.ice"
+	TypeScreenBroadcastStop   Type = "screen.broadcast.stop"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -208,6 +214,12 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeScreenThumbStart: decodeAs[ScreenThumbStart],
 	TypeScreenThumbFrame: decodeAs[ScreenThumbFrame],
 	TypeScreenThumbStop:  decodeAs[ScreenThumbStop],
+
+	TypeScreenBroadcastStart:  decodeAs[ScreenBroadcastStart],
+	TypeScreenBroadcastOffer:  decodeAs[ScreenBroadcastOffer],
+	TypeScreenBroadcastAnswer: decodeAs[ScreenBroadcastAnswer],
+	TypeScreenBroadcastICE:    decodeAs[ScreenBroadcastICE],
+	TypeScreenBroadcastStop:   decodeAs[ScreenBroadcastStop],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

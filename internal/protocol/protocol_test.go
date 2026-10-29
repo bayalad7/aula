@@ -46,8 +46,15 @@ func samplePayloads() []Payload {
 		ScreenThumbStart{IntervalMS: 1000, Quality: 50, MaxWidth: 320},
 		ScreenThumbFrame{RefID: testRefID, Seq: 1, Width: 320, Height: 180, JPEG: []byte{0xff, 0xd8, 0xff, 0xd9}},
 		ScreenThumbStop{},
+		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1920, Height: 1080, FPS: 15},
+		ScreenBroadcastOffer{BroadcastID: testRefID, Attempt: 1, SDP: testSDP},
+		ScreenBroadcastAnswer{RefID: testSnippetID, BroadcastID: testRefID, Attempt: 1, SDP: testSDP},
+		ScreenBroadcastICE{BroadcastID: testRefID, Attempt: 1, Candidate: "candidate:1 1 udp 2130706431 192.168.1.20 47831 typ host", SDPMid: "0"},
+		ScreenBroadcastStop{BroadcastID: testRefID},
 	}
 }
+
+const testSDP = "v=0\r\no=- 1 2 IN IP4 0.0.0.0\r\ns=-\r\nt=0 0\r\nm=video 9 UDP/TLS/RTP/SAVPF 102\r\na=sendonly\r\n"
 
 func TestRoundTripEveryType(t *testing.T) {
 	covered := map[Type]bool{}
@@ -263,6 +270,17 @@ func TestPayloadValidation(t *testing.T) {
 		{"thumb.frame seq", ScreenThumbFrame{RefID: testRefID, Seq: 0, Width: 1, Height: 1, JPEG: []byte{1}}},
 		{"thumb.frame empty", ScreenThumbFrame{RefID: testRefID, Seq: 1, Width: 1, Height: 1}},
 		{"thumb.frame size", ScreenThumbFrame{RefID: testRefID, Seq: 1, Width: 0, Height: 1, JPEG: []byte{1}}},
+		{"broadcast.start id", ScreenBroadcastStart{BroadcastID: "x", Width: 1920, Height: 1080, FPS: 15}},
+		{"broadcast.start size", ScreenBroadcastStart{BroadcastID: testRefID, Width: 5000, Height: 1080, FPS: 15}},
+		{"broadcast.start fps", ScreenBroadcastStart{BroadcastID: testRefID, Width: 1920, Height: 1080, FPS: 0}},
+		{"broadcast.offer attempt", ScreenBroadcastOffer{BroadcastID: testRefID, Attempt: MaxBroadcastAttempt + 1, SDP: testSDP}},
+		{"broadcast.offer not sdp", ScreenBroadcastOffer{BroadcastID: testRefID, Attempt: 1, SDP: "hola"}},
+		{"broadcast.answer ref", ScreenBroadcastAnswer{RefID: "", BroadcastID: testRefID, Attempt: 1, SDP: testSDP}},
+		{"broadcast.ice prefix", ScreenBroadcastICE{BroadcastID: testRefID, Attempt: 1, Candidate: "a=candidate:1"}},
+		{"broadcast.ice long", ScreenBroadcastICE{BroadcastID: testRefID, Attempt: 1, Candidate: "candidate:" + strings.Repeat("1", MaxICECandidate)}},
+		{"broadcast.ice mid", ScreenBroadcastICE{BroadcastID: testRefID, Attempt: 1, SDPMid: strings.Repeat("m", MaxSDPMid+1)}},
+		{"broadcast.ice index", ScreenBroadcastICE{BroadcastID: testRefID, Attempt: 1, SDPMLineIndex: MaxSDPMLineIndex + 1}},
+		{"broadcast.stop id", ScreenBroadcastStop{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -300,13 +318,17 @@ func TestRequiredCapability(t *testing.T) {
 	}
 	for typ, want := range map[Type]Capability{
 		TypeScreenThumbStart: CapScreenThumb, TypeScreenThumbStop: CapScreenThumb,
+		TypeScreenBroadcastStart: CapScreenBroadcast, TypeScreenBroadcastOffer: CapScreenBroadcast,
+		TypeScreenBroadcastICE: CapScreenBroadcast, TypeScreenBroadcastStop: CapScreenBroadcast,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	if _, ok := RequiredCapability(TypeScreenThumbFrame); ok {
-		t.Error("screen.thumb.frame goes to the console and must not require a capability")
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer} {
+		if _, ok := RequiredCapability(typ); ok {
+			t.Errorf("%s goes to the console and must not require a capability", typ)
+		}
 	}
 	if _, ok := RequiredCapability(TypeHeartbeat); ok {
 		t.Fatal("heartbeat must not require a capability")
@@ -367,5 +389,16 @@ func TestFrameJPEGLimit(t *testing.T) {
 	big.JPEG = big.JPEG[:MaxFrameJPEG]
 	if _, err := Encode(New(big)); err != nil {
 		t.Fatalf("Encode of a %d-byte frame: %v", MaxFrameJPEG, err)
+	}
+}
+
+func TestSDPLimit(t *testing.T) {
+	big := ScreenBroadcastOffer{BroadcastID: testRefID, Attempt: 1, SDP: "v=0" + strings.Repeat("x", MaxSDP)}
+	if err := big.Validate(); !errors.Is(err, ErrMessageTooLarge) {
+		t.Fatalf("Validate = %v, want ErrMessageTooLarge", err)
+	}
+	big.SDP = big.SDP[:MaxSDP]
+	if _, err := Encode(New(big)); err != nil {
+		t.Fatalf("Encode of a %d-byte SDP: %v", MaxSDP, err)
 	}
 }

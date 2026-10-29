@@ -32,7 +32,9 @@ func nrptRules(t *testing.T) string {
 	defer cancel()
 	exe := filepath.Join(windowsDir(), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	out, err := exec.CommandContext(ctx, exe, "-NoProfile", "-Command",
-		"Get-DnsClientNrptRule | ForEach-Object { $_.Namespace + '|' + ($_.NameServers -join ',') + '|' + $_.Comment }").CombinedOutput()
+		// Namespace and NameServers are arrays: join them, or PowerShell prints
+		// every piece on its own line.
+		"Get-DnsClientNrptRule | ForEach-Object { ($_.Namespace -join ',') + '|' + ($_.NameServers -join ',') + '|' + $_.Comment }").CombinedOutput()
 	if err != nil {
 		t.Fatalf("Get-DnsClientNrptRule: %v %s", err, out)
 	}

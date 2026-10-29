@@ -41,6 +41,18 @@ func nrptRules(t *testing.T) string {
 	return string(out)
 }
 
+// nrptDiagnostics is what Windows shows of the NRPT, for a failure message.
+func nrptDiagnostics(t *testing.T) string {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	exe := filepath.Join(windowsDir(), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	out, _ := exec.CommandContext(ctx, exe, "-NoProfile", "-Command",
+		`'--- rules'; Get-DnsClientNrptRule | Format-List *; '--- policy'; Get-DnsClientNrptPolicy | Format-List *; `+
+			`'--- registry'; reg query HKLM\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters\DnsPolicyConfig /s`).CombinedOutput()
+	return string(out)
+}
+
 // The NRPT rule is added, tagged, and removed without leaving anything.
 func TestAdminNRPTApplyAndClear(t *testing.T) {
 	requireAdmin(t)
@@ -51,7 +63,7 @@ func TestAdminNRPTApplyAndClear(t *testing.T) {
 		t.Fatal(err)
 	}
 	if rules := nrptRules(t); !strings.Contains(rules, "127.0.0.1|"+nrptComment) {
-		t.Fatalf("rule not found:\n%s", rules)
+		t.Fatalf("rule not found:\n%s\n%s", rules, nrptDiagnostics(t))
 	}
 	// A second Apply (a crash before the journal was written) is also
 	// cleared by Clear, which goes by the tag.

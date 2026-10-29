@@ -52,7 +52,8 @@ El agente:
   (A/AAAA). **Siempre conecta el alumno al profesor, nunca al revés.**
 - TLS 1.3 como mínimo. El certificado de la consola es autofirmado: el agente **no** valida
   contra autoridades certificadoras, sino que compara la huella SHA-256 del certificado recibido con
-  `cert_fingerprint`. Si no coinciden, cierra la conexión sin enviar nada.
+  `cert_fingerprint`. Si no coinciden, cierra la conexión sin enviar nada. Modelo completo y
+  conexión directa sin mDNS en §10.
 - Cada mensaje del protocolo viaja en **un** mensaje WebSocket de texto (UTF-8), con exactamente
   una envoltura JSON (§2). Los mensajes binarios están reservados y en v0 se rechazan.
 - Códigos de cierre WebSocket usados: `1000` normal, `1002` error de protocolo,
@@ -435,3 +436,53 @@ emisor verifica el tamaño final de la envoltura.
   registrar `content`, `text`, `title`, nonces, firmas ni claves.
 - `hello` revela al profesor el usuario y el equipo del alumno. Es intencional (monitoreo
   transparente) y se explica en `docs/privacidad.md`.
+
+## 10. Seguridad y modelo de confianza
+
+### 10.1 Identidades y claves
+
+| Clave | Quién la tiene | Para qué |
+|---|---|---|
+| **Identidad de la consola** (Ed25519) | Privada: solo el equipo del profesor. Pública: la configuración de cada agente. | Firmar `auth.proof`. Es lo que identifica a la consola. |
+| **Certificado TLS** (ECDSA P-256, autofirmado) | Equipo del profesor; se genera al primer arranque y se persiste. | Cifrar la conexión. Su huella SHA-256 viaja en el TXT `cert_fingerprint`. |
+
+- La pareja Ed25519 se crea con `aula-consola keygen`, que muestra la clave pública en el
+  formato `aula-ed25519:<32 bytes en Base64>` (para copiarla al configurar agentes) y una huella
+  corta `XXXX-XXXX-XXXX-XXXX` para verificarla de palabra.
+- La clave privada vive en el directorio de configuración del usuario del profesor
+  (`%AppData%\Aula\consola\` en Windows), en PEM PKCS#8, con acceso solo para el dueño (ACL en
+  Windows, `0600` en Linux/macOS). Nunca se registra en logs, nunca viaja por la red y nunca se
+  incluye en el binario del agente.
+- El certificado TLS y la identidad son independientes: regenerar el certificado no obliga a
+  reconfigurar agentes; regenerar la identidad sí (`keygen` exige `-force` para sobrescribirla).
+
+### 10.2 Qué comprueba el agente
+
+1. **Canal** (mDNS): solo intenta consolas que anuncian su `channel` (§1.3).
+2. **Fijación del certificado** (TLS): el certificado presentado debe tener exactamente la huella
+   `cert_fingerprint` anunciada; si no, cierra antes de enviar nada. No se usan autoridades
+   certificadoras.
+3. **Firma** (`auth.proof`, §3.2): la consola firma `"aula-auth-v1" ‖ nonce ‖ channel ‖ huella`
+   con su clave privada; el agente la verifica con la clave pública configurada. La huella que
+   entra en la verificación es la del certificado que **el agente vio** en esta conexión.
+4. Hasta enviar `auth.ok`, el agente no procesa ningún otro mensaje: cualquier cosa distinta de
+   `auth.proof` o `error` → `error` `unauthorized` y cierre `1008`. Un fallo de firma se registra
+   (sin la firma ni el nonce) y la instancia queda como no confiable 5 minutos.
+
+**Conexión directa sin mDNS** (`-directo host:puerto`): no hay huella anunciada que fijar, así que
+el agente acepta el certificado presentado y usa *su* huella en la verificación de la firma. Un
+intermediario que presente su propio certificado no puede producir una firma válida para esa
+huella sin la clave privada de la consola, de modo que la suplantación se sigue detectando en el
+paso 3.
+
+### 10.3 Qué protege y qué no (v0)
+
+| Amenaza | Protección |
+|---|---|
+| Consola falsa que anuncia el canal | Falla la firma (paso 3); el agente no revela hostname ni usuario porque `hello` va después de `auth.ok`. |
+| Intermediario en la red (MITM) | Fijación del certificado y firma ligada a la huella vista por el agente. |
+| Lectura del tráfico (código, mensajes) | TLS 1.3. |
+| Repetición de una prueba antigua | Nonce aleatorio de 32 bytes por conexión. |
+| Robo de la clave privada del equipo del profesor | **No cubierto**: quien la tenga puede suplantar la consola. Protegerla con la cuenta del SO; si se filtra, generar otra y reconfigurar agentes. |
+| Agente no autorizado que se une al canal | **No cubierto en v0**: la consola no autentica agentes (§3.2). El profesor ve hostname y usuario. |
+| Saturación (DoS) en la LAN | Solo límites de tamaño y timeouts (§7). |

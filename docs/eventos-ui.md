@@ -76,7 +76,8 @@ Go; la interfaz solo lo dibuja.
 ### Flujo
 
 ```
-interfaz ──App.StartClass(canal, nombre)──▶ Go: abre servidor TLS, consola, registro y anuncio mDNS
+Go (al arrancar, canal predeterminado) ──"aula:class"──▶ interfaz: clase abierta o error de arranque
+interfaz ──App.StartClass(canal, nombre)──▶ Go: cierra la clase actual y abre la del canal pedido
 agentes ──hello/heartbeat/desconexión──▶ session.Console.OnChange ──"aula:students"──▶ interfaz
 interfaz ──App.Emit({title, lang, content, mode})──▶ Go: historial + Broadcast(code.share)
 agentes ──code.ack / msg.ack──▶ codedist.Deliveries ──"aula:deliveries"──▶ "confirmados 2/2 ✓"
@@ -91,6 +92,7 @@ Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aul
 | `aula:history` | `History` | Tras cada emisión o reemisión. |
 | `aula:deliveries` | `Deliveries` | Tras cada envío y cada acuse (`code.ack`, `msg.ack`). |
 | `aula:capture` | `Capture` | Al pulsar el atajo global o el botón Capturar. |
+| `aula:class` | `View` | Al terminar el arranque automático en el canal predeterminado. Si falló, `active` es `false` y el motivo está en `Setup().startError`. |
 
 ```jsonc
 // Students: la lista del canal y los conteos que habilitan los botones
@@ -117,16 +119,15 @@ Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aul
 
 | Método | Devuelve | Uso |
 |---|---|---|
-| `Setup()` | `Setup` | Canales recientes, último nombre y huella de la clave (si ya existe). |
-| `StartClass(canal, nombre)` | `View` / error | Abre la clase. Crea la clave y el certificado la primera vez. |
-| `EndClass()` | — | Cierra la clase ("Cambiar de aula"). |
+| `Setup()` | `Setup` | Canal predeterminado (`defaultChannel`), canales recientes, nombre, huella, origen de la clave (`keySource`: `centro` o `personal`) y `startError` si el arranque automático falló. |
+| `StartClass(canal, nombre)` | `View` / error | Abre la clase en el canal (número 1–16000); si ya había una abierta, la cierra antes (selector "Canal … Cambiar" y "Guardar" del nombre). Usa la clave del centro o, si no hay, la personal. |
+| `EndClass()` | — | Cierra la clase. La interfaz no lo llama directamente. |
 | `View()` | `View` | Estado completo para el primer dibujo. |
 | `Emit({title, lang, content, mode})` | `Delivery` / error | `mode` = `replace` ("Emitir a todos") o `append` ("Agregar bloque"). Crea una entrada nueva en el historial. |
 | `Reemit(snippetId)` | `Delivery` / error | Reenvía un fragmento del historial con el mismo número e ID (`replace`). |
 | `ClearScreens()` | `Delivery` / error | `code.clear` a todos. |
 | `SendNotice(text, level)` | `Delivery` / error | `msg.show` a todos, `info` o `warning`. |
 | `CaptureClipboard()` | `Draft` / error | Igual que el atajo global; el resultado también llega como `aula:capture`. |
-| `CopyPublicKey()` | error | Copia `aula-ed25519:…` para configurar alumnos. |
 
 ### Reglas
 

@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-10-28 (etapa 08 — **Hito 1 completado**).
+Última actualización: 2026-10-29 (v0.2.0: canales tipo LanSchool y clave del centro).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -11,6 +11,7 @@
 | 06 | App estudiante: overlay con Prism (D-008) y botón Copiar | ✅ Completada (falta prueba en VM) |
 | 07 | App profesor: lista, hotkey de captura, emisión | ✅ Completada (falta prueba en VMs) |
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ✅ **Hito 1 completado** (falta validación en laboratorio) |
+| 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | ⏳ Pendiente |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
@@ -260,3 +261,39 @@
   traía al frente uno viejo), seguía sin configurar. **Corregido:** el agente relee la
   configuración cada 3 s y se reconecta solo si cambia (`TestConfigWrittenWhileRunningIsPickedUp`,
   con consola real). Sale en la próxima versión (`v0.1.0-rc.2`).
+
+## v0.2.0: canales tipo LanSchool y clave del centro (D-011)
+
+- **Motivo:** en la prueba real el modelo por maestro (cada consola con su clave y un
+  `aula-alumno.json` para sus alumnos) no era práctico. El usuario espera el de LanSchool: cada
+  computadora de alumno con su canal fijo y la consola con un canal predeterminado que el maestro
+  puede cambiar.
+- **Canales:** números del 1 al 16000 (`protocol.ValidChannel`, `ParseChannel`). Cambio
+  incompatible: por eso es 0.2.0.
+- **Clave del centro:** una sola Ed25519 por centro, en `C:\ProgramData\Aula\centro\clave-centro.pem`
+  (Administradores/SYSTEM control total, Usuarios lectura; `platform.RestrictMachineSecret`).
+  `aula-consola centro crear|importar|exportar|publica`. Sin ella, la consola usa la clave
+  personal y lo advierte en la barra superior.
+- **Consola:** arranca sola en su canal predeterminado (`C:\ProgramData\Aula\consola\config.json`,
+  `default_channel` y `port`; si no existe, el último canal o el 1). Selector **Canal … Cambiar**
+  y nombre editable en la barra superior. Se quitaron "Configuración de alumnos", "Copiar clave",
+  "Cambiar de aula" y el subcomando `config-alumno`.
+- **Instaladores:** la consola pide canal y crea o importa la clave del centro (deja
+  `aula-centro.pub` y `aula-centro.key`); el alumno pide su canal y toma la clave de
+  `aula-centro.pub` junto al setup o de `/CLAVECENTRO=`. Cambiar de sala: reinstalar con
+  `/CANAL=N` (el agente lo toma en segundos).
+- **Diagnóstico** (el "buscando la clase" de la rc.2 no decía por qué):
+  - el agente muestra el motivo bajo la barra: ninguna consola del canal, clave que no es la del
+    centro, certificado distinto o dirección inalcanzable;
+  - logs a archivo con rotación de 1 MiB: `%LOCALAPPDATA%\Aula\alumno\aula-cliente.log` y
+    `…\consola\aula-consola.log`;
+  - `aula-cliente diagnostico`: configuración usada, consolas vistas por mDNS e intento de
+    conexión.
+  - La causa exacta de la rc.2 no se confirmó (no había logs). Las candidatas son la red en
+    perfil Público o un firewall que bloquea mDNS, o una clave o canal que no coinciden con la
+    consola abierta. La v0.2.0 la dirá en pantalla.
+- **Pruebas nuevas:** dos salas con la misma clave del centro (`TestTwoRoomsShareTheSiteKey`),
+  motivos del diagnóstico (`TestDiagnostic*`), arranque en el canal predeterminado, comandos
+  `centro`, ACL de máquina y log con rotación.
+- **Pendiente:** prueba real con los instaladores de `v0.2.0-rc.1` (`docs/prueba-vms.md` §10,
+  casos 08-A a 08-P).

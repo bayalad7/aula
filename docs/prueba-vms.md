@@ -146,11 +146,11 @@ Debes ver:
 
 ```
 No había clave: se creó una nueva en C:\Users\...\AppData\Roaming\Aula\consola     ← solo la 1.ª vez
-Consola "Consola de ejemplo" en el canal AULA_101, puerto 47830 (TLS). Ctrl+C para salir.
+Consola "Consola de ejemplo" en el canal 1, puerto 47830 (TLS). Ctrl+C para salir.
 Clave pública para los alumnos: aula-ed25519:I5rPjgu2TFt5s5eDGz7sJst4FfG9v+bZIOwFmYuFvf0=
 Huella: 7E65-1323-287C-FE59
 Escribe "ayuda" para ver cómo enviar código a los alumnos.
-[10:00:00] Registro AULA_101: 0 equipo(s)
+[10:00:00] Registro 1: 0 equipo(s)
 ```
 
 **Copia la clave pública completa** (desde `aula-ed25519:` hasta el `=` final), por ejemplo en
@@ -190,8 +190,8 @@ $clave = "aula-ed25519:...la clave del profesor..."
 
 | Dónde | Esperado (en menos de 5 s) |
 |---|---|
-| Alumno | `PC-ALUMNO: buscando consola en AULA_101` y luego `PC-ALUMNO: conectado (Consola de ejemplo)` |
-| Profesor | `Registro AULA_101: 1 equipo(s)` con una línea `PC-ALUMNO  <usuario>  windows  conectado  <IP>:<puerto>` |
+| Alumno | `PC-ALUMNO: buscando consola en 1` y luego `PC-ALUMNO: conectado (Consola de ejemplo)` |
+| Profesor | `Registro 1: 1 equipo(s)` con una línea `PC-ALUMNO  <usuario>  windows  conectado  <IP>:<puerto>` |
 
 El nombre del equipo y el usuario son los reales de la VM del alumno.
 
@@ -227,13 +227,13 @@ Con el alumno conectado, en el profesor pulsa `Ctrl+C` y vuelve a lanzar
 Cierra el alumno y lánzalo con otro canal:
 
 ```powershell
-.\dos_alumnos.exe -rol alumno -clave $clave -canal AULA_102
+.\dos_alumnos.exe -rol alumno -clave $clave -canal 2
 ```
 
-- **Alumno:** se queda en `buscando consola en AULA_102` y **nunca** se conecta.
+- **Alumno:** se queda en `buscando consola en 2` y **nunca** se conecta.
 - **Profesor:** no aparece ningún equipo nuevo.
 
-Con dos VMs de alumno puedes probar a la vez una en `AULA_101` (aparece) y otra en `AULA_102`
+Con dos VMs de alumno puedes probar a la vez una en `1` (aparece) y otra en `2`
 (no aparece).
 
 ### 04-F Clave equivocada (seguridad)
@@ -286,21 +286,21 @@ Haz doble clic en `aula-cliente.exe`, sin argumentos.
 En PowerShell, en `C:\aula-prueba\` de la VM del alumno:
 
 ```powershell
-.\aula-cliente.exe -canal AULA_101 -clave $clave
+.\aula-cliente.exe -canal 1 -clave $clave
 ```
 
 Si mDNS no funcionó en 04-A, agrega `-directo <IP del profesor>:47830`.
 
 | Dónde | Esperado |
 |---|---|
-| Alumno (ventana) | Barra superior con punto verde: **"Aula — conectado a la clase de Consola de ejemplo (canal AULA_101)"**. El mismo texto aparece en el título de la ventana y en la barra de tareas. En el centro: "Cuando el profesor comparta código, aparecerá aquí listo para copiar." |
+| Alumno (ventana) | Barra superior con punto verde: **"Aula — conectado a la clase de Consola de ejemplo (canal 1)"**. El mismo texto aparece en el título de la ventana y en la barra de tareas. En el centro: "Cuando el profesor comparta código, aparecerá aquí listo para copiar." |
 | Profesor | El equipo aparece `conectado` en el registro. |
 
 > Para no escribir los argumentos cada vez, crea `%AppData%\Aula\alumno\config.json` en la VM
 > del alumno (pega la ruta en la barra del Explorador):
 >
 > ```json
-> { "channel": "AULA_101", "console_public_key": "aula-ed25519:..." }
+> { "channel": "1", "console_public_key": "aula-ed25519:..." }
 > ```
 >
 > Con ese archivo basta con doble clic en `aula-cliente.exe`.
@@ -410,11 +410,12 @@ Cierra la ventana de Aula con la **X**.
 ### 06-J Clave equivocada en la app real
 
 ```powershell
-.\aula-cliente.exe -canal AULA_101 -clave aula-ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+.\aula-cliente.exe -canal 1 -clave aula-ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 ```
 
-- **Alumno:** la barra dice **"Aula — buscando la clase del canal AULA_101"** y nunca pasa a
-  conectado.
+- **Alumno:** la barra dice **"Aula — buscando la clase del canal 1"** y nunca pasa a
+  conectado. En unos segundos aparece debajo el motivo: **"Se encontró la consola «…», pero su
+  clave no es la de este centro"**.
 - **Profesor:** no aparece en el registro; si le envías `codigo …`, dice `enviado a 0 equipo(s)`.
 
 ---
@@ -422,7 +423,7 @@ Cierra la ventana de Aula con la **X**.
 ## 6. Etapa 07: la consola del profesor
 
 Aquí el profesor es la **app real** `aula-consola.exe` y los alumnos son `aula-cliente.exe` en
-**dos** VMs, ya configurados como en 06-B (canal `AULA_101` y la clave del profesor).
+**dos** VMs, ya configurados como en 06-B (canal `1` y la clave del profesor).
 
 Antes de empezar, en la VM del profesor **cierra `dos_alumnos.exe`** (`Ctrl+C`). Las dos usan
 el puerto 47830 y no pueden correr a la vez. En las VMs de alumno, cierra cualquier
@@ -430,20 +431,19 @@ el puerto 47830 y no pueden correr a la vez. En las VMs de alumno, cierra cualqu
 
 ### 6.1 Abrir la consola
 
-**07-A Abrir el aula.** En la VM del profesor, haz doble clic en `aula-consola.exe`.
+**07-A La consola arranca en su canal.** En la VM del profesor, haz doble clic en
+`aula-consola.exe`. Si Windows pregunta por el firewall, permite **Redes privadas** (§2.5).
 
-1. Se abre la ventana **maximizada** con la pantalla "Aula — Consola". En **Canal** escribe
-   `AULA_101`; también puedes pulsar el botón `AULA_101` de abajo. Las letras se pasan solas a
-   mayúsculas y los espacios a `_`.
-2. En **Nombre que verán los alumnos** escribe, por ejemplo, `Prof. Ayala — Programación I`.
-3. Pulsa **Abrir clase**. Si Windows pregunta por el firewall, permite **Redes privadas**
-   (§2.5).
+La consola **no pide canal**: arranca directo en el predeterminado. Sin instalador no hay
+configuración de máquina, así que usa el último canal abierto o, la primera vez, el `1`.
 
 | Esperado |
 |---|
-| Barra superior: **"Canal AULA_101"**, tu nombre, "Clave para los alumnos: XXXX-XXXX-XXXX-XXXX" y los botones **Copiar clave** y **Cambiar de aula**. |
-| La huella es **la misma** que imprimía `dos_alumnos.exe` en §3.1 (misma clave). Si es otra (por ejemplo, porque abriste la consola con otro usuario de Windows: la clave se guarda por usuario), pulsa **Copiar clave** y actualiza la configuración de los alumnos (06-B). |
+| Barra superior: **Canal [ 1 ] Cambiar**, **Tu nombre** (tu nombre de Windows) con **Guardar**, y la huella **"Clave personal: XXXX-XXXX-XXXX-XXXX"**. |
+| Debajo, una franja amarilla: este equipo no tiene la clave del centro. Con los portables es lo **esperado**: la consola usa la clave personal del usuario, la misma que imprimía `dos_alumnos.exe` en §3.1. Si la huella es otra (por ejemplo, porque abriste la consola con otro usuario de Windows), ejecuta `.\aula-consola.exe pubkey` y actualiza la clave de los alumnos (06-B). |
 | Izquierda: "Alumnos 0 conectados" y "Esperando alumnos en este canal…". Centro: editor vacío y los botones de emisión **deshabilitados**, con el motivo "No hay alumnos conectados." Abajo a la derecha: el botón azul **Capturar portapapeles · Ctrl+Alt+Shift+C**. |
+
+Cambia el nombre a, por ejemplo, `Prof. Ayala — Programación I` y pulsa **Guardar**.
 
 Si encima del botón azul aparece un recuadro amarillo, el atajo global no se pudo registrar
 (normalmente porque otra aplicación ya usa la combinación). Anótalo; el botón funciona igual.
@@ -554,16 +554,16 @@ en el editor, sin emitir.
 
 Vuelve a abrir los dos alumnos antes del siguiente caso.
 
-**07-J Cambiar de aula.**
+**07-J Cambiar de canal.**
 
-1. Pulsa **Cambiar de aula** y confirma. Vuelves a la pantalla de selección, con `AULA_101` como
-   canal reciente.
-2. Abre `AULA_102`.
+1. En la barra superior escribe `2` en **Canal** y pulsa **Cambiar**.
+2. Escribe `0` y pulsa **Cambiar**; después `16001`.
 
 | Esperado |
 |---|
-| Los alumnos (configurados en `AULA_101`) muestran "Aula — sin conexión…" y luego "buscando la clase del canal AULA_101". **No** aparecen en `AULA_102`. El historial de la nueva clase empieza vacío. |
-| Vuelve a `AULA_101` (**Cambiar de aula**): los alumnos reconectan solos en menos de 30 s. |
+| Con `2`: los alumnos (configurados en el canal `1`) desaparecen de la lista y muestran "Aula — sin conexión…" y luego "buscando la clase del canal 1", con el motivo "No se encontró ninguna consola del canal 1…". El historial empieza vacío. |
+| Con `0` y `16001`: "el canal debe ser un número del 1 al 16000" y la clase sigue en el canal 2. |
+| Vuelve a `1`: los alumnos reconectan solos en menos de 30 s. Cierra y abre la consola: arranca en el `1` (último canal abierto). |
 
 ---
 
@@ -583,14 +583,20 @@ Vuelve a abrir los dos alumnos antes del siguiente caso.
 El lenguaje se deduce de la extensión: `.py`, `.go`, `.js`, `.ts`, `.java`, `.c`, `.cpp`, `.cs`,
 `.sql`, `.html`, `.css`, `.sh`, `.json`, `.rs`, `.kt`. Cualquier otra se muestra sin colores.
 
-**Opciones** de `dos_alumnos.exe`: `-canal AULA_101`, `-puerto 47830`,
+**Opciones** de `dos_alumnos.exe`: `-canal 1`, `-puerto 47830`,
 `-nombre "Consola de ejemplo"`, `-v` (logs detallados). Las de `aula-cliente.exe` son `-canal`,
 `-clave`, `-directo IP:puerto` y `-config archivo.json`.
 
 **Consola real** (`aula-consola.exe`, etapa 07): se usa con la ventana y no tiene opciones de
-arranque; siempre escucha en el puerto 47830. Desde una terminal acepta dos subcomandos:
-`aula-consola.exe pubkey` (muestra la clave pública) y `aula-consola.exe keygen` (la crea si no
-existe). El atajo de captura es **Ctrl+Alt+Shift+C**.
+arranque; arranca en su canal predeterminado y escucha en el puerto 47830 (los dos se cambian en
+`C:\ProgramData\Aula\consola\config.json`). Desde una terminal acepta: `pubkey` (muestra la
+clave que usa: la del centro o la personal), `keygen` (crea la personal si no existe),
+`centro crear|importar|exportar|publica` (clave del centro, como administrador; ver
+`docs/configuracion.md`) y `version`. El atajo de captura es **Ctrl+Alt+Shift+C**.
+
+**Agente real** (`aula-cliente.exe`): además de las opciones de arriba, `aula-cliente.exe
+diagnostico` imprime la configuración usada, las consolas del canal que ve y un intento de
+conexión.
 
 ---
 
@@ -610,10 +616,12 @@ existe). El atajo de captura es **Ctrl+Alt+Shift+C**.
 | La consola dice "confirmados 1/2" y no sube | Uno de los alumnos no confirma: mira qué tarjeta no tiene "✓ código recibido" y si ese alumno vio el código. Si es `dos_alumnos.exe -rol alumno`, usa una versión compilada después del 28/10/2026 (antes no confirmaba). |
 | El atajo `Ctrl+Alt+Shift+C` no hace nada | Mira el recuadro amarillo sobre el botón Capturar (otra aplicación usa la combinación). En una VM, el hipervisor puede quedarse las teclas (nota de 07-F): usa el Ctrl izquierdo o el botón. |
 | Los botones de emisión están grises | Lee el motivo junto a ellos: no hay alumnos conectados, ninguno recibe código o el editor está vacío. |
-| Los alumnos no se conectan a la consola real pero sí a `dos_alumnos` | Compara la huella de la barra superior (07-A) con la de los alumnos; si cambió, pulsa **Copiar clave** y actualiza su configuración. |
+| Los alumnos no se conectan a la consola real pero sí a `dos_alumnos` | La ventana del alumno dice el motivo bajo "buscando…". Si es "su clave no es la de este centro", compara la huella de la barra superior (07-A) con la clave de los alumnos (`aula-consola pubkey`). |
 
 Para ver logs detallados, agrega `-v` en `dos_alumnos.exe`. `aula-cliente.exe` es una app de
-ventana y no muestra logs en la terminal.
+ventana: su log queda en `%LOCALAPPDATA%\Aula\alumno\aula-cliente.log`, y
+`.\aula-cliente.exe diagnostico` imprime la configuración, las consolas que ve y un intento de
+conexión.
 
 ---
 
@@ -649,7 +657,7 @@ Copia esta tabla en un issue o al final de `docs/progreso.md` y complétala:
 | 07-G Botón flotante y portapapeles vacío | | |
 | 07-H Limpiar y avisos (2/2) | | |
 | 07-I Sin alumnos: botones deshabilitados | | |
-| 07-J Cambiar de aula | | |
+| 07-J Cambiar de canal | | |
 
 Datos del entorno: hipervisor y modo de red, versión de Windows de cada VM, si se usó
 `-directo`.
@@ -668,30 +676,37 @@ Cualquier ❌ va a "Pendientes conocidos" de `docs/progreso.md` con el caso y la
 
 ---
 
-## 10. Hito 1 (etapa 08): con los instaladores
+## 10. Con los instaladores: dos salas (v0.2.0)
 
-Ahora todo se instala como lo hará el laboratorio, sin copiar `.exe` sueltos. Usa los artefactos
-de una versión publicada (*Releases*: `Aula-Consola-Setup-*.exe`, `Aula-Alumno-Setup-*.exe`) o
+Ahora todo se instala como lo hará el centro de cómputo, sin copiar `.exe` sueltos, y se simulan
+**dos salas** en la misma red: la VM del profesor y la VM de alumno 1 son la sala principal
+(**canal 1**); la VM de alumno 2 es la sala alterna (**canal 2**). Usa los artefactos de una
+versión publicada (*Releases*: `Aula-Consola-Setup-*.exe`, `Aula-Alumno-Setup-*.exe`) o
 compílalos con los comandos de `docs/desarrollo/publicar.md`. Guía de uso completa:
 `docs/uso-hito1.md`.
 
-Antes de empezar, en cada VM, desinstala lo de las pruebas anteriores si quieres partir de cero y
-borra `%AppData%\Aula\alumno\config.json` de los alumnos: la configuración de máquina gana, pero
-así no hay dudas.
+Antes de empezar, en cada VM desinstala lo de las pruebas anteriores y borra
+`%AppData%\Aula\alumno\config.json` de los alumnos: la configuración de máquina gana, pero así no
+hay dudas.
 
 | Caso | Pasos | Esperado |
 |---|---|---|
-| **08-A** Consola instalada | En la VM del profesor, ejecuta `Aula-Consola-Setup-*.exe`. Abre **Aula Consola** desde el menú Inicio y abre la clase `AULA_101`. | No aparece ningún aviso del firewall (lo creó el instalador: `Get-NetFirewallRule -DisplayName "Aula Consola"`). La pantalla de inicio muestra la versión. |
-| **08-B** Generar la configuración | Pulsa **Configuración de alumnos** y guarda `aula-alumno.json` en la carpeta compartida, junto a `Aula-Alumno-Setup-*.exe`. | El archivo tiene `channel: AULA_101` y la clave `aula-ed25519:…` de la consola. |
-| **08-C** Instalación con asistente | En la VM de alumno 1, ejecuta el setup desde esa carpeta. | Termina sin avisos y abre Aula Cliente, que dice "conectado a la clase de …". Existe `C:\ProgramData\Aula\alumno\config.json`. |
-| **08-D** Instalación silenciosa | En la VM de alumno 2, PowerShell **como administrador**: `.\Aula-Alumno-Setup-X.Y.Z.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART`. Cierra sesión y vuelve a entrar. | No aparece ninguna ventana durante la instalación. Al iniciar sesión, Aula Cliente se abre solo y se conecta. |
-| **08-E** Configuración protegida | En una VM de alumno, con un usuario **sin** permisos de administrador, intenta editar `C:\ProgramData\Aula\alumno\config.json` con el Bloc de notas. | Windows no deja guardar ("Acceso denegado"). Abrirlo sí se puede. |
-| **08-F** De punta a punta (**aceptación**) | Emite `prueba_sangria.py` (§6.3) a los 2–3 alumnos. En cada uno, copia y pega en el Bloc de notas o IDLE. | "confirmados N/N ✓" y el código pegado idéntico (como en 06-D). |
-| **08-G** Reiniciar la consola (**aceptación**) | Cierra Aula Consola, ábrela de nuevo y abre `AULA_101`. Repite reiniciando la VM del profesor. | Los alumnos pasan a "sin conexión… reintentando" y vuelven a "conectado" solos, en menos de 30 s. No se toca nada en los alumnos. |
-| **08-H** Una sola instancia | En un alumno, abre Aula Cliente otra vez desde el menú Inicio. | No se abre una segunda ventana: la existente pasa al frente. La consola sigue mostrando una sola tarjeta. |
-| **08-I** Actualizar | Instala de nuevo el mismo setup (o uno más nuevo) **sin** `aula-alumno.json` junto a él. | El agente se cierra, se reemplaza y sigue configurado (la configuración de máquina se conserva). |
-| **08-J** Desinstalar | *Configuración → Aplicaciones → Aula Cliente → Desinstalar*. | Se quitan el programa, el arranque automático y la regla de firewall (`Get-NetFirewallRule -DisplayName "Aula Cliente (mDNS)"` ya no la encuentra). |
-| **08-K** Carga (opcional) | En una VM de alumno: `go run ./examples/muchos_alumnos -n 12 -config aula-alumno.json` (o su `.exe`). Emite código y reinicia la consola. | "conectados 12/12", la consola cuenta 12 (más los alumnos reales), confirmados N/N y, tras el reinicio, "reconexiones 12". |
+| **08-A** Primera consola | En la VM del profesor ejecuta `Aula-Consola-Setup-*.exe`: canal predeterminado `1`, **Crear una clave nueva**, carpeta de salida = la carpeta compartida. Abre **Aula Consola** desde el menú Inicio. | En la carpeta compartida quedan `aula-centro.pub` y `aula-centro.key`. La consola abre **directo en el canal 1**, sin pantalla de selección, y la barra dice **"Clave del centro: XXXX-…"** (sin franja amarilla). No aparece aviso del firewall (`Get-NetFirewallRule -DisplayName "Aula Consola"`). |
+| **08-B** Clave del centro protegida | PowerShell en la VM del profesor: `icacls C:\ProgramData\Aula\centro\clave-centro.pem` y, en `C:\Program Files\Aula\Consola`, `.\aula-consola.exe pubkey`. | Administradores y SYSTEM con `(F)`, Usuarios con `(R)` o `(RX)`. `pubkey` imprime lo mismo que `aula-centro.pub`. |
+| **08-C** Alumno con asistente (sala 1) | Copia `Aula-Alumno-Setup-*.exe` a la carpeta compartida (junto a `aula-centro.pub`) y ejecútalo en la VM de alumno 1. | La página **"Canal y clave del centro"** trae canal `1` y la clave ya llena. Al terminar, Aula Cliente dice "conectado a la clase de … (canal 1)" y aparece en la consola. |
+| **08-D** Alumno silencioso (sala 2) | En la VM de alumno 2, PowerShell **como administrador**: `.\Aula-Alumno-Setup-X.Y.Z.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CANAL=2 /CLAVECENTRO=\\<carpeta>\aula-centro.pub`. Cierra sesión y vuelve a entrar. | Sin ventanas durante la instalación. Al iniciar sesión, Aula Cliente se abre solo y dice "buscando la clase del canal 2" con el motivo "No se encontró ninguna consola del canal 2…". **No** aparece en la consola (canal 1). |
+| **08-E** El maestro cambia de canal | En la consola, **Canal** `2` → **Cambiar**. Luego vuelve a `1`. | En el 2 aparece solo el alumno 2 y en el 1 solo el alumno 1; cada uno reconecta solo en menos de 30 s. |
+| **08-F** Configuración protegida | En una VM de alumno, con un usuario **sin** permisos de administrador, intenta editar `C:\ProgramData\Aula\alumno\config.json` con el Bloc de notas. | Windows no deja guardar ("Acceso denegado"). Abrirlo sí se puede. |
+| **08-G** Mover un equipo de sala | En la VM de alumno 2, como administrador: `.\Aula-Alumno-Setup-X.Y.Z.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CANAL=1` (sin `/CLAVECENTRO`). **No** reinicies. | En menos de 10 s el alumno 2 pasa al canal 1 y aparece en la consola junto al alumno 1. `config.json` conserva la clave. |
+| **08-H** De punta a punta (**aceptación**) | Emite `prueba_sangria.py` (§6.3) a los alumnos. En cada uno, copia y pega en el Bloc de notas o IDLE. | "confirmados N/N ✓" y el código pegado idéntico (como en 06-D). |
+| **08-I** Reiniciar la consola (**aceptación**) | Cierra Aula Consola y ábrela de nuevo. Repite reiniciando la VM del profesor. | Arranca sola en el canal 1. Los alumnos pasan a "sin conexión… reintentando" y vuelven a "conectado" solos, en menos de 30 s, sin tocar nada en ellos. |
+| **08-J** Consola ajena (seguridad) | Cierra la consola instalada. En una VM sin la clave del centro, abre la consola **portable** `aula-consola.exe`; arranca en el canal 1. | La portable muestra la franja amarilla "Clave personal". Los alumnos **no** se conectan a ella y muestran "Se encontró la consola «…», pero su clave no es la de este centro". |
+| **08-K** Segunda consola | En otra VM, instala la consola con canal predeterminado `2` e **Importar la clave del centro** (`aula-centro.key`). | Abre en el canal 2 con la **misma huella** que la primera consola, y el alumno de la sala 2 se conecta a ella. |
+| **08-L** Diagnóstico | En un alumno: `& "C:\Program Files\Aula\Cliente\aula-cliente.exe" diagnostico`. Repite con la red marcada como **Pública** (como administrador, `Set-NetConnectionProfile -InterfaceAlias <red> -NetworkCategory Public`; después vuelve a `Private`). | Con red Privada: imprime la configuración y su ruta, la consola del canal y el intento de conexión correcto. Con Pública: no ve ninguna consola, y la ventana muestra el mismo motivo. |
+| **08-M** Una sola instancia | En un alumno, abre Aula Cliente otra vez desde el menú Inicio. | No se abre una segunda ventana: la existente pasa al frente. La consola sigue mostrando una sola tarjeta. |
+| **08-N** Actualizar | Instala de nuevo el mismo setup (o uno más nuevo) **sin** `aula-centro.pub` junto a él y sin `/CANAL`. | El agente se cierra, se reemplaza y sigue con su canal y su clave. |
+| **08-O** Desinstalar | *Configuración → Aplicaciones → Aula Cliente → Desinstalar*. | Se quitan el programa, el arranque automático y la regla de firewall (`Get-NetFirewallRule -DisplayName "Aula Cliente (mDNS)"` ya no la encuentra). |
+| **08-P** Carga (opcional) | En una VM de alumno: `go run ./examples/muchos_alumnos -n 12 -config C:\ProgramData\Aula\alumno\config.json` (o su `.exe`). Emite código y reinicia la consola. | "conectados 12/12", la consola cuenta 12 (más los alumnos reales), confirmados N/N y, tras el reinicio, "reconexiones 12". |
 
-Anota los resultados en la tabla de §9 (agrega las filas 08-A a 08-K). **Para cerrar el Hito 1**
-bastan 08-C, 08-F y 08-G en ✅ con 2–3 alumnos.
+Anota los resultados en la tabla de §9 (agrega las filas 08-A a 08-P). **Para aceptar la v0.2.0**
+bastan 08-A, 08-C, 08-D, 08-E, 08-G, 08-H, 08-I y 08-J en ✅.

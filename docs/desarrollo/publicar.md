@@ -37,8 +37,8 @@ Artefactos de cada versión:
 
 | Archivo | Qué es |
 |---|---|
-| `Aula-Alumno-Setup-X.Y.Z.exe` | Instalador del agente (admite `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART` y `/CONFIG=`). |
-| `Aula-Consola-Setup-X.Y.Z.exe` | Instalador de la consola. |
+| `Aula-Alumno-Setup-X.Y.Z.exe` | Instalador del agente (admite `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART`, `/CANAL=`, `/CLAVECENTRO=` y `/DIRECTO=`). |
+| `Aula-Consola-Setup-X.Y.Z.exe` | Instalador de la consola (pide canal predeterminado y crea o importa la clave del centro; silencioso: `/CANAL=`, `/CENTRO=` (`crear`, `mantener` o la ruta de `aula-centro.key`), `/SALIDA=`). |
 | `aula-cliente-X.Y.Z-windows-amd64.exe`, `aula-consola-X.Y.Z-windows-amd64.exe` | Portables. |
 | `checksums.txt`, `checksums.txt.sig` | SHA-256 y su firma Ed25519. |
 

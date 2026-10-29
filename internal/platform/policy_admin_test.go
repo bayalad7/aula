@@ -33,8 +33,9 @@ func nrptRules(t *testing.T) string {
 	exe := filepath.Join(windowsDir(), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	out, err := exec.CommandContext(ctx, exe, "-NoProfile", "-Command",
 		// Namespace and NameServers are arrays: join them, or PowerShell prints
-		// every piece on its own line.
-		"Get-DnsClientNrptRule | ForEach-Object { ($_.Namespace -join ',') + '|' + ($_.NameServers -join ',') + '|' + $_.Comment }").CombinedOutput()
+		// every piece on its own line. Out-String: with stdout redirected,
+		// Windows PowerShell 5.1 prints nothing otherwise.
+		"Get-DnsClientNrptRule | ForEach-Object { ($_.Namespace -join ',') + '|' + ($_.NameServers -join ',') + '|' + $_.Comment } | Out-String -Width 400").CombinedOutput()
 	if err != nil {
 		t.Fatalf("Get-DnsClientNrptRule: %v %s", err, out)
 	}
@@ -48,7 +49,7 @@ func nrptDiagnostics(t *testing.T) string {
 	defer cancel()
 	exe := filepath.Join(windowsDir(), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
 	out, _ := exec.CommandContext(ctx, exe, "-NoProfile", "-Command",
-		`'--- rules'; Get-DnsClientNrptRule | Format-List *; '--- policy'; Get-DnsClientNrptPolicy | Format-List *; `+
+		`'--- rules'; Get-DnsClientNrptRule | Format-List * | Out-String -Width 200; '--- policy'; Get-DnsClientNrptPolicy | Format-List * | Out-String -Width 200; `+
 			`'--- registry'; reg query HKLM\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters\DnsPolicyConfig /s`).CombinedOutput()
 	return string(out)
 }

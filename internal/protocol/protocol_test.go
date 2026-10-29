@@ -43,6 +43,9 @@ func samplePayloads() []Payload {
 		CodeClear{},
 		MsgShow{Text: "Guarden su trabajo.", Level: LevelWarning},
 		MsgAck{RefID: testRefID},
+		ScreenThumbStart{IntervalMS: 1000, Quality: 50, MaxWidth: 320},
+		ScreenThumbFrame{RefID: testRefID, Seq: 1, Width: 320, Height: 180, JPEG: []byte{0xff, 0xd8, 0xff, 0xd9}},
+		ScreenThumbStop{},
 	}
 }
 
@@ -253,6 +256,13 @@ func TestPayloadValidation(t *testing.T) {
 		{"auth.proof short signature", AuthProof{RefID: testRefID, Signature: []byte{1}}},
 		{"error bad code", ErrorPayload{Code: "Bad Code"}},
 		{"code.ack bad ref", CodeAck{RefID: "x"}},
+		{"thumb.start too fast", ScreenThumbStart{IntervalMS: MinThumbInterval - 1, Quality: 50, MaxWidth: 320}},
+		{"thumb.start slow", ScreenThumbStart{IntervalMS: MaxThumbInterval + 1, Quality: 50, MaxWidth: 320}},
+		{"thumb.start quality", ScreenThumbStart{IntervalMS: 1000, Quality: 100, MaxWidth: 320}},
+		{"thumb.start width", ScreenThumbStart{IntervalMS: 1000, Quality: 50, MaxWidth: 4000}},
+		{"thumb.frame seq", ScreenThumbFrame{RefID: testRefID, Seq: 0, Width: 1, Height: 1, JPEG: []byte{1}}},
+		{"thumb.frame empty", ScreenThumbFrame{RefID: testRefID, Seq: 1, Width: 1, Height: 1}},
+		{"thumb.frame size", ScreenThumbFrame{RefID: testRefID, Seq: 1, Width: 0, Height: 1, JPEG: []byte{1}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -287,6 +297,16 @@ func TestNewID(t *testing.T) {
 func TestRequiredCapability(t *testing.T) {
 	if c, ok := RequiredCapability(TypeCodeShare); !ok || c != CapCodeView {
 		t.Fatalf("code.share requires %q, %v", c, ok)
+	}
+	for typ, want := range map[Type]Capability{
+		TypeScreenThumbStart: CapScreenThumb, TypeScreenThumbStop: CapScreenThumb,
+	} {
+		if c, ok := RequiredCapability(typ); !ok || c != want {
+			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
+		}
+	}
+	if _, ok := RequiredCapability(TypeScreenThumbFrame); ok {
+		t.Error("screen.thumb.frame goes to the console and must not require a capability")
 	}
 	if _, ok := RequiredCapability(TypeHeartbeat); ok {
 		t.Fatal("heartbeat must not require a capability")
@@ -336,4 +356,16 @@ func FuzzDecode(f *testing.F) {
 			t.Fatalf("Encode after successful Decode: %v", err)
 		}
 	})
+}
+
+func TestFrameJPEGLimit(t *testing.T) {
+	big := ScreenThumbFrame{RefID: testRefID, Seq: 1, Width: 1, Height: 1, JPEG: make([]byte, MaxFrameJPEG+1)}
+	if err := big.Validate(); !errors.Is(err, ErrMessageTooLarge) {
+		t.Fatalf("Validate = %v, want ErrMessageTooLarge", err)
+	}
+	// The largest frame still fits in one envelope once Base64-encoded.
+	big.JPEG = big.JPEG[:MaxFrameJPEG]
+	if _, err := Encode(New(big)); err != nil {
+		t.Fatalf("Encode of a %d-byte frame: %v", MaxFrameJPEG, err)
+	}
 }

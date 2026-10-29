@@ -3,16 +3,16 @@ package protocol
 // Capability is a feature an agent declares in hello (docs/protocol.md §4).
 type Capability string
 
-// Capabilities implemented in v0.
+// Implemented capabilities.
 const (
-	CapCodeView Capability = "code.view"
-	CapMsgShow  Capability = "msg.show"
+	CapCodeView    Capability = "code.view"
+	CapMsgShow     Capability = "msg.show"
+	CapScreenThumb Capability = "screen.thumb" // Windows (docs/protocol.md §5.6)
 )
 
-// Capabilities reserved for future phases. No v0 message requires them.
+// Capabilities reserved for future phases. No message requires them yet.
 const (
-	CapScreenThumb     Capability = "screen.thumb"
-	CapScreenFreeze    Capability = "screen.freeze"
+	CapScreenFreeze    Capability = "screen.freeze" // documented, pending (§6)
 	CapScreenBroadcast Capability = "screen.broadcast"
 	CapAppBlock        Capability = "app.block"
 	CapWebFilter       Capability = "web.filter"
@@ -29,6 +29,9 @@ var requiredCapability = map[Type]Capability{
 	TypeCodeShare: CapCodeView,
 	TypeCodeClear: CapCodeView,
 	TypeMsgShow:   CapMsgShow,
+
+	TypeScreenThumbStart: CapScreenThumb,
+	TypeScreenThumbStop:  CapScreenThumb,
 }
 
 // RequiredCapability reports the capability needed to receive a message of

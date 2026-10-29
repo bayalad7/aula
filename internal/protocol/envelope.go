@@ -31,6 +31,10 @@ const (
 	TypeCodeClear     Type = "code.clear"
 	TypeMsgShow       Type = "msg.show"
 	TypeMsgAck        Type = "msg.ack"
+	// Screen thumbnails (docs/protocol.md §5.6–5.8).
+	TypeScreenThumbStart Type = "screen.thumb.start"
+	TypeScreenThumbFrame Type = "screen.thumb.frame"
+	TypeScreenThumbStop  Type = "screen.thumb.stop"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -190,17 +194,20 @@ func isValidTypeName(t Type) bool {
 
 // decoders maps each v0 type to the function that decodes its payload.
 var decoders = map[Type]func(json.RawMessage) (Payload, error){
-	TypeAuthChallenge: decodeAs[AuthChallenge],
-	TypeAuthProof:     decodeAs[AuthProof],
-	TypeAuthOK:        decodeAs[AuthOK],
-	TypeHello:         decodeAs[HelloInfo],
-	TypeHeartbeat:     decodeAs[Heartbeat],
-	TypeError:         decodeAs[ErrorPayload],
-	TypeCodeShare:     decodeAs[CodeShare],
-	TypeCodeAck:       decodeAs[CodeAck],
-	TypeCodeClear:     decodeAs[CodeClear],
-	TypeMsgShow:       decodeAs[MsgShow],
-	TypeMsgAck:        decodeAs[MsgAck],
+	TypeAuthChallenge:    decodeAs[AuthChallenge],
+	TypeAuthProof:        decodeAs[AuthProof],
+	TypeAuthOK:           decodeAs[AuthOK],
+	TypeHello:            decodeAs[HelloInfo],
+	TypeHeartbeat:        decodeAs[Heartbeat],
+	TypeError:            decodeAs[ErrorPayload],
+	TypeCodeShare:        decodeAs[CodeShare],
+	TypeCodeAck:          decodeAs[CodeAck],
+	TypeCodeClear:        decodeAs[CodeClear],
+	TypeMsgShow:          decodeAs[MsgShow],
+	TypeMsgAck:           decodeAs[MsgAck],
+	TypeScreenThumbStart: decodeAs[ScreenThumbStart],
+	TypeScreenThumbFrame: decodeAs[ScreenThumbFrame],
+	TypeScreenThumbStop:  decodeAs[ScreenThumbStop],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

@@ -302,8 +302,8 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `screen.thumb` | `screen.thumb.start`, `screen.thumb.stop` | v0.3 (Windows) |
 | `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Documentada, **pendiente** (§5.9) |
 | `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). Linux y macOS no la declaran. |
-| `app.block` | `app.block` | Reservada |
-| `web.filter` | `web.filter` | Reservada |
+| `app.block` | `app.block.set`, `app.block.clear` | v0.4 (§5.13). Windows, solo con el agente como servicio y su ayudante (D-016). |
+| `web.filter` | `web.filter.set`, `web.filter.clear` | v0.4 (§5.14). Windows, solo con el agente como servicio y su ayudante. |
 | `file.collect` | `file.collect` | Reservada |
 | `code.collect` | `code.collect` | Reservada |
 | `power` | `power.*` | Reservada |
@@ -338,6 +338,12 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `screen.broadcast.answer` | A → P | — | `ref_id`, `broadcast_id`, `attempt`, `sdp` | — |
 | `screen.broadcast.ice` | A ↔ P | `screen.broadcast` (P → A) | `broadcast_id`, `attempt`, `candidate`, `sdp_mid`, `sdp_mline_index` | — |
 | `screen.broadcast.stop` | P → A | `screen.broadcast` | `broadcast_id` | — |
+| `app.block.set` | P → A | `app.block` | `policy_id`, `mode`, `apps` | `app.block.ack` o `error` |
+| `app.block.clear` | P → A | `app.block` | `{}` | `app.block.ack` |
+| `app.block.ack` | A → P | — | `ref_id`, `policy_id`, `active` | — |
+| `web.filter.set` | P → A | `web.filter` | `policy_id`, `mode`, `domains` | `web.filter.ack` o `error` |
+| `web.filter.clear` | P → A | `web.filter` | `{}` | `web.filter.ack` |
+| `web.filter.ack` | A → P | — | `ref_id`, `policy_id`, `active` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -597,6 +603,76 @@ El agente cierra la conexión WebRTC y quita la vista y el aviso. Idempotente y 
 un `broadcast_id` distinto del vigente se ignora. La consola lo envía al pulsar "Detener", al
 cambiar de canal y al cerrar la clase.
 
+### 5.13 Bloqueo de aplicaciones (`app.block.*`)
+
+> Implementado en v0.4 (Windows), aprobado el 2026-10-29. Decisión técnica en D-017;
+> implementación en `internal/policy`; avisos en `docs/privacidad.md` reglas 20–25.
+
+Reglas comunes a §5.13 y §5.14:
+
+- **Una política por tipo**, de la clase: un `set` nuevo reemplaza la anterior del mismo tipo.
+- **Vive con la sesión.** El agente la quita sola con `*.clear`, al cerrarse la conexión con la
+  consola, al irse el ayudante (cierre de sesión) o al detenerse el servicio. Si el agente se
+  cae, la quita al volver a arrancar (D-017). Cuando el alumno se reconecta, **la consola le
+  vuelve a enviar** la política vigente de la clase.
+- **Aviso antes de aplicar.** El agente muestra el aviso de restricciones activas
+  (`docs/privacidad.md` regla 20) y después aplica la política.
+- La consola puede enviarla a todo el canal o a alumnos concretos: es el mismo mensaje enviado a
+  cada sesión.
+
+**`app.block.set` (P → A)**
+
+```json
+{ "policy_id": "3f1c…", "mode": "deny", "apps": ["steam", "Discord.exe", "chrome"] }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `policy_id` | string | UUID v4 de la consola. |
+| `mode` | string | `deny`: se cierran las apps de la lista. `allow`: solo pueden correr las de la lista (más las protegidas, abajo). |
+| `apps` | string[] | Nombres de proceso, 1–100, sin duplicados (sin distinguir mayúsculas). Cada uno `^[A-Za-z0-9 ._+-]{1,64}$`, sin ruta. `.exe` es opcional: `chrome` y `chrome.exe` son lo mismo. |
+
+- Solo afecta a procesos de la **sesión del alumno**, nunca a los del sistema ni de otras
+  sesiones.
+- **Protegidos** (nunca se cierran, aunque estén en la lista o falten en `allow`): el propio
+  agente y su WebView2, los procesos del sistema (`%SystemRoot%`) y el shell (`explorer.exe`).
+- Una app bloqueada que ya está abierta **se cierra**. Una que se abre después se cierra en
+  menos de 1 s; el alumno ve el aviso de cuál y por qué (regla 22).
+
+**`app.block.clear` (P → A)**: payload `{}`. Quita la política de apps; es idempotente.
+
+**`app.block.ack` (A → P)**
+
+```json
+{ "ref_id": "<id del set o del clear>", "policy_id": "3f1c…", "active": true }
+```
+
+`active` dice si quedó una política aplicada; `policy_id` va vacío tras `clear`. Si no se pudo
+aplicar, el agente responde `error` `internal`, no deja nada a medias y no envía el `ack`.
+
+### 5.14 Filtro web (`web.filter.*`)
+
+**`web.filter.set` (P → A)**
+
+```json
+{ "policy_id": "8a2e…", "mode": "allow", "domains": ["python.org", "docs.python.org", "w3schools.com"] }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `policy_id` | string | UUID v4 de la consola. |
+| `mode` | string | `deny`: se bloquean estos dominios. `allow`: solo se permiten estos. |
+| `domains` | string[] | 1–500 nombres de dominio, sin esquema, ruta ni puerto, en minúsculas o con mayúsculas (se comparan sin distinguir), ≤ 253 caracteres cada uno, etiquetas válidas (punycode para acentos). **Cada dominio incluye sus subdominios**: `python.org` cubre `docs.python.org`. |
+
+- El filtro actúa **por nombre** (DNS, D-017): un dominio bloqueado no se resuelve y el
+  navegador muestra que no encontró el sitio. No mira rutas ni contenido, ni descifra HTTPS.
+- En `allow`, los sitios que dependen de otros dominios (fuentes, CDN) pueden verse a medias: hay
+  que agregar esos dominios a la lista.
+
+**`web.filter.clear` (P → A)**: payload `{}`. Quita el filtro y restablece el equipo; idempotente.
+
+**`web.filter.ack` (A → P)**: igual que `app.block.ack`.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -606,8 +682,6 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | Tipo | Descripción |
 |---|---|
 | `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
-| `app.block` | Lista de aplicaciones que el agente no permite abrir durante la clase. |
-| `web.filter` | Lista de sitios permitidos o bloqueados durante la clase. |
 | `file.collect` | Recolectar un archivo que el alumno elige entregar. |
 | `code.collect` | Recolectar el código que el alumno entrega desde el overlay. |
 | `power.*` | Apagar, reiniciar o cerrar sesión de equipos (con aviso previo). |
@@ -631,6 +705,8 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
 | `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
 | `screen.broadcast.*.attempt` | 1–1000 | `error` `invalid_message` |
+| `app.block.set.apps` | 1–100 nombres de ≤ 64 caracteres | `error` `invalid_message` |
+| `web.filter.set.domains` | 1–500 dominios de ≤ 253 caracteres | `error` `invalid_message` |
 | `error.message` | 500 caracteres | El emisor lo trunca. |
 | `hello.capabilities` | 64 entradas | `error` `invalid_message` y cierre |
 | Versión `v` ≠ 1 | — | `error` `unsupported_version` y cierre `1008` |

@@ -116,8 +116,41 @@ Reglas para `screen.broadcast.*` (`docs/protocol.md` §5.12), aprobadas el 2026-
     función nueva: cada una que use esos privilegios (`power.*`, `app.block`, `web.filter`,
     `remote.*`) se documentará aquí, con su aviso visible, antes de implementarse.
 
+## Bloqueo de aplicaciones y filtro web (v0.4, Windows)
+
+Reglas para `app.block.*` y `web.filter.*` (`docs/protocol.md` §5.13–5.14), aprobadas el
+2026-10-29.
+
+20. **El alumno sabe que hay restricciones, y de qué tipo.** Al llegar una política, y **antes**
+    de aplicarla, la ventana de Aula pasa al frente con un aviso fijo debajo del distintivo:
+
+    > **🔒 Restricciones de la clase activas: aplicaciones bloqueadas · sitios web filtrados**
+
+    Solo aparece el tipo que esté activo. Con el modo de lista blanca dice "solo se permiten
+    algunas aplicaciones" o "solo se permiten algunos sitios". La barra de la ventana agrega
+    "· restricciones activas".
+21. **La lista se puede consultar, sin abrumar.** Un botón "Ver detalles" muestra las apps y los
+    dominios. Si son más de 15, muestra los 15 primeros y "y N más".
+22. **Cerrar una app no es silencioso.** Cuando Aula cierra una app bloqueada, el alumno ve
+    "Aula cerró «steam.exe»: está bloqueada durante la clase". El aviso se agrupa: uno por app
+    cada 30 s.
+23. **No se vigila la navegación.** El filtro decide por nombre de dominio y no guarda ni envía a
+    la consola qué sitios intentó abrir el alumno, ni cuántos. La consola solo sabe si la
+    política está aplicada (`active`). Los logs registran altas y bajas de políticas, nunca
+    dominios consultados.
+24. **Todo se restablece solo.** Las restricciones se quitan con "Quitar restricciones", al
+    perder la conexión con la consola, al cerrar la clase, al cerrar sesión y al detener el
+    servicio. Si el agente se cae o el equipo se apaga a mitad de clase, el agente las quita al
+    volver a arrancar, antes de conectarse (D-017). No hay filtrado permanente ni oculto, y no
+    quedan entradas en `hosts`, DNS ni proxy.
+25. **Lo que no se puede garantizar** se le dice al profesor en la consola:
+    - un alumno con permisos de administrador puede detener el agente;
+    - renombrar un ejecutable evita el bloqueo por nombre;
+    - entrar a un sitio por su dirección IP evita el filtro por nombre;
+    - Ctrl+Alt+Supr no se bloquea.
+
 ## Pendiente para etapas futuras
 
 - Guardar una captura por petición explícita del profesor, y Linux y macOS (incluida la
-  recepción de la transmisión): sus textos de aviso se agregarán aquí antes de implementarlos,
-  con las mismas reglas 6–16.
+  recepción de la transmisión y las restricciones): sus textos de aviso se agregarán aquí antes
+  de implementarlos, con las mismas reglas 6–25.

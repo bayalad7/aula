@@ -39,8 +39,10 @@ Dos aplicaciones, mismo monorepo:
     codificación por `platform`, una conexión por alumno y la señalización `screen.broadcast.*`.
   - `internal/agentsvc`: el agente como servicio: supervisor del ayudante en la sesión del alumno,
     canal local servicio ↔ ayudante y *proxies* de portapapeles, captura y distintivo.
+  - `internal/policy`: restricciones de la clase (bloqueo de apps y filtro web por DNS local),
+    su diario para deshacerlas siempre, y la parte de la consola (quién tiene qué).
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

@@ -508,3 +508,104 @@ futuras (`power.*`, `app.block`, `web.filter`, `remote.*`) los necesitan.
 - **Pruebas:** la lógica (supervisor, canal, *proxies*, `hello` según el ayudante) con dobles y una
   consola real. El ciclo de un servicio real solo en el job de CI `servicio`, con otro nombre
   (`AulaAgentePrueba`) y un paso que siempre lo borra.
+
+## D-017: Bloqueo de apps por cierre de procesos y filtro web por DNS local
+
+**Fecha:** 2026-10-29 · **Estado:** aprobada e implementada en v0.4 (Windows, agente como servicio).
+
+**Contexto.** Durante la clase, el profesor quiere impedir apps (juegos, chats) y sitios, o
+permitir solo algunos. Debe revertirse siempre, incluso si el agente se cae, y el alumno debe
+saberlo. Requiere el agente como servicio (D-016): editar la configuración DNS del sistema y las
+directivas de los navegadores necesita SYSTEM.
+
+**Filtro web: DNS local vs. proxy local.**
+
+| | **DNS local** (recomendado) | Proxy local |
+|---|---|---|
+| Cómo | El servicio responde DNS en `127.0.0.1:53`; Windows le envía todas las consultas con una regla **NRPT** "`.`" (todo el espacio de nombres). Responde `NXDOMAIN` a lo bloqueado y reenvía lo demás a los DNS que tenía el equipo. | El servicio escucha HTTP en `127.0.0.1` y se configura como proxy del sistema; filtra por `Host` y por el nombre del `CONNECT` de HTTPS. |
+| HTTPS | Cubierto: bloquea el nombre antes de conectar, sin descifrar. | Cubierto por nombre del `CONNECT`, sin descifrar. |
+| Apps que ignoran el proxy del sistema (Firefox con su configuración, juegos, apps de escritorio, `curl`) | **Cubiertas**: todas resuelven con el DNS del sistema. | **No cubiertas**: se conectan directo. |
+| DNS sobre HTTPS del navegador | Lo saltaría. Mientras el filtro está activo, se apaga con las directivas de máquina de Chrome, Edge y Firefox (`DnsOverHttpsMode=off`, `DNSOverHTTPS\Enabled=0`). Se responde `NXDOMAIN` al dominio canario `use-application-dns.net` y a los servidores DoH conocidos. Al quitar el filtro se restauran los valores exactos que había. | No le afecta, pero las apps que ignoran el proxy siguen pasando. |
+| Lista blanca | Sí, con la salvedad de los dominios auxiliares (CDN, fuentes). | Sí. |
+| Complejidad | Media: un resolvedor pequeño (`miekg/dns`, ya en el módulo), una clave NRPT y las directivas DoH. | Alta: proxy HTTP/CONNECT, configuración por usuario (WinINET está en HKCU), PAC, apps que se rompen con proxy. |
+| Reversibilidad | Alta: una clave de registro NRPT y unos valores de directiva, anotados en un diario antes de tocarlos. No cambia los adaptadores, así que funciona igual con DHCP, IP fija o cambio de Wi-Fi. | Media: proxy por usuario; si el agente cae, el navegador queda apuntando a un proxy muerto (sin internet). |
+
+**Recomendación: DNS local con NRPT.** Se descartan dos alternativas:
+- **El archivo `hosts`:** solo sirve para lista negra, no cubre subdominios y es el clásico residuo
+  que queda tras una caída.
+- **Cambiar el DNS de cada adaptador:** hay que restaurar IP fija o DHCP por adaptador y se pierde
+  si cambia la red.
+
+**Bloqueo de apps: cierre de procesos por sondeo.**
+- El servicio revisa cada 500 ms los procesos de la sesión del alumno y cierra los que la
+  política prohíbe.
+- No escribe nada en el sistema, así que no hay nada que revertir: al quitar la política o al
+  caerse el agente, simplemente deja de cerrar.
+- Se descartan IFEO (`Debugger`), AppLocker y las directivas de restricción de software: son
+  persistentes y dejarían el equipo alterado si el agente no las limpia.
+- Costo: una app bloqueada puede verse abrir un instante antes de cerrarse.
+
+**Lo que no se puede impedir del todo** (se le explica al profesor en la consola):
+- un alumno **administrador** puede detener el servicio o borrar la regla NRPT;
+- renombrar `juego.exe` evita el bloqueo por nombre;
+- visitar un sitio por su IP, o un DoH con IP fija que el navegador traiga de fábrica, evita el
+  filtro por nombre;
+- una VPN o un proxy externo evita el filtro, salvo que sus apps estén bloqueadas o que se use
+  lista blanca;
+- Ctrl+Alt+Supr, otro sistema operativo o el celular del alumno quedan fuera de alcance.
+
+**Revertir siempre.**
+- **Diario:** antes de tocar el sistema, el servicio escribe
+  `C:\ProgramData\Aula\alumno\politica-activa.json`. Anota qué creó (GUID de la regla NRPT) y
+  el valor previo de cada directiva DoH (o "no existía"). Al quitar la política deshace cada
+  cambio y borra el diario.
+- **Al arrancar**, antes de conectarse, si encuentra un diario lo deshace. Cubre caída (el
+  administrador de servicios lo reinicia en 5 s), apagado y reinicio.
+- **Al desinstalar**, `servicio desinstalar` deshace el diario antes de borrar el servicio.
+- Tras aplicar o quitar se vacía la caché DNS (`DnsFlushResolverCache`).
+
+**Dónde vive cada cosa.**
+- `internal/platform`:
+  - `ProcessControl`: listar los procesos de una sesión con nombre y ruta, y terminarlos;
+  - `DNSRedirect`: crear y borrar la regla NRPT, vaciar la caché y leer los DNS del equipo;
+  - `BrowserDoH`: leer, escribir y restaurar las directivas DoH;
+  - fallback "no soportado" en Linux y macOS.
+- `internal/policy`, sin APIs del SO:
+  - listas, modos, validación y coincidencia (`.exe` opcional; dominio y sus subdominios);
+  - el aplicador de apps (sondeo y lista de protegidos);
+  - el resolvedor DNS (filtra y reenvía) con `miekg/dns`;
+  - el diario y su restauración;
+  - el estado por sesión.
+- Consola:
+  - panel **Restricciones** con apps y dominios, modo, aplicar a todo el canal o a los alumnos
+    marcados, estado por alumno (`active`) y **Quitar restricciones**;
+  - plantillas iniciales (juegos y redes sociales; solo documentación de programación);
+  - reenvía la política vigente a quien se reconecta.
+
+**Permisos del SO** (servicio LocalSystem, D-016):
+- escribir `HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient\DnsPolicyConfig` (NRPT) y
+  `HKLM\SOFTWARE\Policies\{Google\Chrome, Microsoft\Edge, Mozilla\Firefox}`;
+- escuchar en el puerto 53 de loopback;
+- terminar procesos de la sesión del alumno.
+
+Sin reglas de firewall nuevas: el resolvedor solo escucha en loopback.
+
+Versión: función nueva compatible → sube `y`.
+
+**Resultado de la implementación (D-017).**
+- La regla NRPT se crea y borra con los cmdlets `Add-DnsClientNrptRule` y
+  `Remove-DnsClientNrptRule`, que avisan al cliente DNS. Escribir el registro a mano no lo
+  hace.
+- La regla lleva el comentario `aula-filtro-web`: la limpieza borra **todas** las reglas con
+  ese comentario. Así cubre también una caída entre crear la regla y escribir el diario.
+- El resolvedor solo escucha en `127.0.0.1` (UDP y TCP).
+- Con lista blanca siempre deja pasar lo que Windows necesita:
+  - búsquedas inversas, nombres de una sola etiqueta y los sufijos DNS del equipo (el dominio
+    de la escuela);
+  - la comprobación de conectividad de Windows.
+- Lo leído por el resolvedor (política y DNS de origen) se toma sin el candado del `Manager`:
+  al quitar el filtro, el `Manager` cierra el resolvedor con el candado tomado y esperaría a las
+  consultas en curso.
+- Las partes que requieren administrador (NRPT, directivas y la prueba de punta a punta que
+  resuelve por el resolvedor del sistema) corren en el job de CI `servicio`. Un paso final
+  borra cualquier regla de Aula que haya quedado.

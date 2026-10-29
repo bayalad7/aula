@@ -15,7 +15,7 @@
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 En curso (miniaturas; pantalla en blanco documentada y pendiente) |
 | 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
-| 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado (falta CI en GitHub y prueba en VM, `docs/prueba-vms.md` §14) |
+| 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 
@@ -576,8 +576,19 @@
   - directivas DoH restauradas exactas, con una directiva previa de la escuela que sobrevive;
   - **punta a punta por el resolvedor del sistema**: con el filtro, `youtube.com` no resuelve y
     `github.com` sí; al quitarlo, todo como antes.
+- **CI en GitHub (29/10/2026):** pasaron las tres pruebas con administrador:
+  - regla NRPT sin residuos;
+  - directivas DoH restauradas exactas;
+  - de punta a punta por el resolvedor del sistema: `youtube.com` bloqueado, `github.com` resuelve
+    y ninguna regla de Aula al quitarlo.
+
+  En el camino se corrigieron tres cosas de las pruebas, no del filtro:
+  - una carrera en la prueba del resolvedor;
+  - la lectura de reglas desde Go (necesita `Out-String`);
+  - correr las pruebas de administrador de un paquete a la vez.
+
+  Detalles en D-017.
 - **Falta:**
-  - correr el job en GitHub;
   - la prueba en VM de `docs/prueba-vms.md` §14, en especial RB-H (equipo idéntico), RB-J (caída)
     y RB-K (apagado);
   - probar la interfaz de la consola con clics;

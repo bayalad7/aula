@@ -2,8 +2,10 @@ package session
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/bayalad7/aula/internal/protocol"
@@ -28,6 +30,70 @@ type Console struct {
 	// and heartbeat (acks, errors…). It runs on the Run goroutine: keep it short.
 	OnMessage func(ctx context.Context, conn *transport.Conn, env protocol.Envelope)
 	Logger    *slog.Logger
+
+	mu    sync.Mutex
+	conns map[string]*transport.Conn // established sessions, by ID
+}
+
+// Errors returned by Send.
+var (
+	ErrUnknownSession        = errors.New("no established session with that ID")
+	ErrUnsupportedCapability = errors.New("agent does not declare the capability this message needs")
+)
+
+// Send delivers p to one established session and returns the envelope ID, so
+// the caller can match the ack. Messages that need a capability the agent did
+// not declare are refused (docs/protocol.md §4). It is safe to call from any
+// goroutine.
+func (c *Console) Send(ctx context.Context, sessionID string, p protocol.Payload) (string, error) {
+	s, ok := c.Registry.Get(sessionID)
+	if !ok || s.State != StateConnected {
+		return "", fmt.Errorf("send %s to %s: %w", p.MessageType(), sessionID, ErrUnknownSession)
+	}
+	if capab, need := protocol.RequiredCapability(p.MessageType()); need && !s.Can(capab) {
+		return "", fmt.Errorf("send %s to %s: %w (%s)", p.MessageType(), s.Hostname, ErrUnsupportedCapability, capab)
+	}
+	c.mu.Lock()
+	conn := c.conns[sessionID]
+	c.mu.Unlock()
+	if conn == nil {
+		return "", fmt.Errorf("send %s to %s: %w", p.MessageType(), sessionID, ErrUnknownSession)
+	}
+	return conn.Send(ctx, p)
+}
+
+// Broadcast sends p to every connected session of the channel that supports
+// it. It returns the IDs reached and the errors of the others, keyed by
+// session ID; sessions lacking the capability are reported with
+// ErrUnsupportedCapability.
+func (c *Console) Broadcast(ctx context.Context, p protocol.Payload) (sent []string, failed map[string]error) {
+	failed = map[string]error{}
+	for _, s := range c.Registry.List(c.Channel) {
+		if s.State != StateConnected {
+			continue
+		}
+		if _, err := c.Send(ctx, s.ID, p); err != nil {
+			failed[s.ID] = err
+			continue
+		}
+		sent = append(sent, s.ID)
+	}
+	return sent, failed
+}
+
+func (c *Console) track(conn *transport.Conn) {
+	c.mu.Lock()
+	if c.conns == nil {
+		c.conns = map[string]*transport.Conn{}
+	}
+	c.conns[conn.ID()] = conn
+	c.mu.Unlock()
+}
+
+func (c *Console) untrack(conn *transport.Conn) {
+	c.mu.Lock()
+	delete(c.conns, conn.ID())
+	c.mu.Unlock()
 }
 
 // handshake phases of a connection on the console side.
@@ -82,6 +148,7 @@ func (c *Console) Run(ctx context.Context, events <-chan transport.Event) error 
 				pending[ev.Conn] = &pendingConn{since: time.Now()}
 			case transport.EventDisconnect:
 				delete(pending, ev.Conn)
+				c.untrack(ev.Conn)
 				if c.Registry.Disconnect(ev.Conn.ID()) {
 					log.Info("agent disconnected", "conn", ev.Conn.ID())
 				}
@@ -144,6 +211,7 @@ func (c *Console) handshake(ctx context.Context, log *slog.Logger, p *pendingCon
 			break
 		}
 		s := c.Registry.Connect(ev.Conn.ID(), c.Channel, ev.Conn.RemoteAddr(), pl)
+		c.track(ev.Conn)
 		ev.Conn.StartHeartbeat()
 		log.Info("agent joined", "conn", s.ID, "hostname", s.Hostname, "os", s.OS, "version", s.AgentVersion)
 		return true
@@ -167,6 +235,12 @@ func (c *Console) route(ctx context.Context, log *slog.Logger, ev transport.Even
 	c.Registry.Touch(ev.Conn.ID())
 	switch ev.Envelope.Type {
 	case protocol.TypeHeartbeat:
+	case protocol.TypeCodeAck:
+		ack := ev.Envelope.Payload.(protocol.CodeAck)
+		c.Registry.RecordCodeAck(ev.Conn.ID(), ack.SnippetID)
+		if c.OnMessage != nil {
+			c.OnMessage(ctx, ev.Conn, ev.Envelope)
+		}
 	case protocol.TypeHello, protocol.TypeAuthChallenge, protocol.TypeAuthOK:
 		c.sendError(ctx, log, ev, protocol.CodeInvalidMessage, "session already established")
 	default:

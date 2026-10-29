@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -18,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
@@ -49,10 +51,11 @@ func newKeys(t *testing.T) keys {
 }
 
 type teacher struct {
-	reg  *Registry
-	addr *net.TCPAddr
-	keys keys
-	stop func()
+	reg     *Registry
+	console *Console
+	addr    *net.TCPAddr
+	keys    keys
+	stop    func()
 }
 
 func connOpts() transport.Options {
@@ -88,7 +91,7 @@ func startTeacher(t *testing.T, addr string, k keys, log *slog.Logger) *teacher 
 	var once sync.Once
 	stop := func() { once.Do(func() { cancel(); wg.Wait() }) }
 	t.Cleanup(stop)
-	return &teacher{reg: reg, addr: ln.Addr().(*net.TCPAddr), keys: k, stop: stop}
+	return &teacher{reg: reg, console: console, addr: ln.Addr().(*net.TCPAddr), keys: k, stop: stop}
 }
 
 // source announces tc as mDNS would, with its real certificate fingerprint.
@@ -108,6 +111,7 @@ type agentOpts struct {
 	log       *slog.Logger
 	onMessage func(context.Context, *transport.Client, protocol.Envelope)
 	onState   func(AgentState, discovery.Console)
+	caps      []protocol.Capability // nil: code.view and msg.show
 }
 
 func startAgent(t *testing.T, host string, src ConsoleSource, o agentOpts) context.CancelFunc {
@@ -120,7 +124,7 @@ func startAgent(t *testing.T, host string, src ConsoleSource, o agentOpts) conte
 		Channel:          testChannel,
 		ConsolePublicKey: o.pub,
 		HandshakeTimeout: time.Second,
-		Hello:            hello(host),
+		Hello:            helloWith(host, o.caps),
 		Source:           src,
 		Backoff:          Backoff{Base: 20 * time.Millisecond, Max: 100 * time.Millisecond},
 		Conn:             connOpts(),
@@ -638,5 +642,72 @@ func secretEncodings(priv ed25519.PrivateKey) map[string]string {
 		"key hex":         hex.EncodeToString(priv[:32]),
 		"PEM body":        pemBody[:40],
 		"seed bytes":      fmt.Sprint([]byte(seed))[:60],
+	}
+}
+
+// --- Code distribution ---------------------------------------------------------
+
+func helloWith(host string, caps []protocol.Capability) protocol.HelloInfo {
+	h := hello(host)
+	if caps != nil {
+		h.Capabilities = caps
+	}
+	return h
+}
+
+// receiverAgent answers like the student app: codedist.Receiver applies the
+// message and its reply (the ack) is sent back.
+func receiverAgent(board *codedist.Board) func(context.Context, *transport.Client, protocol.Envelope) {
+	r := &codedist.Receiver{Board: board}
+	return func(ctx context.Context, cl *transport.Client, env protocol.Envelope) {
+		if reply := r.Handle(env); reply != nil {
+			_, _ = cl.Send(ctx, reply)
+		}
+	}
+}
+
+func TestCodeShareIsAckedAndRecorded(t *testing.T) {
+	tc := startTeacher(t, "127.0.0.1:0", newKeys(t), quiet)
+	board := codedist.NewBoard(0)
+	startAgent(t, "PC30", tc.source(), agentOpts{pub: tc.keys.id.Public(), onMessage: receiverAgent(board)})
+	list := waitFor(t, tc.reg, "PC30 connected", func(l []Session) bool { return states(l)["PC30"] == StateConnected })
+	id := list[0].ID
+
+	share := protocol.CodeShare{
+		SnippetID: protocol.NewID(), Exercise: "3", Title: "Factorial", Lang: "python",
+		Content: "def f(n):\n    return 1 if n <= 1 else n * f(n - 1)\n", Mode: protocol.ModeReplace,
+	}
+	if _, err := tc.console.Send(context.Background(), id, share); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, tc.reg, "code.ack recorded", func(l []Session) bool {
+		return len(l) == 1 && l[0].LastCodeAck == share.SnippetID && !l[0].LastCodeAckAt.IsZero()
+	})
+	got, ok := board.Get(share.SnippetID)
+	if !ok || got.Content != share.Content || got.Exercise != "3" {
+		t.Fatalf("agent board = %+v", board.Snippets())
+	}
+
+	// code.clear is acked with an empty snippet_id.
+	sent, failed := tc.console.Broadcast(context.Background(), protocol.CodeClear{})
+	if len(sent) != 1 || len(failed) != 0 {
+		t.Fatalf("Broadcast: sent %v, failed %v", sent, failed)
+	}
+	waitFor(t, tc.reg, "clear acked", func(l []Session) bool { return l[0].LastCodeAck == "" })
+	if len(board.Snippets()) != 0 {
+		t.Fatal("board not cleared")
+	}
+}
+
+func TestSendRefusesMissingCapability(t *testing.T) {
+	tc := startTeacher(t, "127.0.0.1:0", newKeys(t), quiet)
+	startAgent(t, "PC31", tc.source(), agentOpts{pub: tc.keys.id.Public(), caps: []protocol.Capability{protocol.CapMsgShow}})
+	list := waitFor(t, tc.reg, "PC31 connected", func(l []Session) bool { return states(l)["PC31"] == StateConnected })
+	share := protocol.CodeShare{SnippetID: protocol.NewID(), Lang: "go", Content: "x", Mode: protocol.ModeReplace}
+	if _, err := tc.console.Send(context.Background(), list[0].ID, share); !errors.Is(err, ErrUnsupportedCapability) {
+		t.Fatalf("Send = %v, want ErrUnsupportedCapability", err)
+	}
+	if _, err := tc.console.Send(context.Background(), "no-such-session", protocol.CodeClear{}); !errors.Is(err, ErrUnknownSession) {
+		t.Fatalf("Send to unknown = %v", err)
 	}
 }

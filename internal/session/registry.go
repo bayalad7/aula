@@ -47,6 +47,10 @@ type Session struct {
 	ConnectedAt  time.Time
 	LastSeen     time.Time
 	State        State
+	// LastCodeAck is the snippet_id of the last code.ack ("" after code.clear);
+	// LastCodeAckAt is zero until the agent acknowledges something.
+	LastCodeAck   string
+	LastCodeAckAt time.Time
 }
 
 // Can reports whether the agent declared capability c.
@@ -111,6 +115,18 @@ func (r *Registry) Touch(id string) bool {
 		return false
 	}
 	s.LastSeen = r.now()
+	return true
+}
+
+// RecordCodeAck notes that the agent showed snippetID ("" for code.clear).
+func (r *Registry) RecordCodeAck(id, snippetID string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	s, ok := r.sessions[id]
+	if !ok {
+		return false
+	}
+	s.LastCodeAck, s.LastCodeAckAt = snippetID, r.now()
 	return true
 }
 

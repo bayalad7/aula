@@ -37,6 +37,10 @@ func (a *App) awaitMedia(ctx context.Context) {
 // ReportMedia is called by the frontend on load: whether it has
 // RTCPeerConnection and an H.264 decoder.
 func (a *App) ReportMedia(webrtc, h264 bool) {
+	if a.onMedia != nil { // helper: it tells the service
+		a.onMedia(webrtc, h264)
+		return
+	}
 	a.mediaOnce.Do(func() {
 		a.viewer.Supported = webrtc && h264
 		a.log.Info("frontend media support", "webrtc", webrtc, "h264", h264)
@@ -74,6 +78,9 @@ func (a *App) onBroadcastSignal(s broadcast.Signal) { a.emit(EventSignal, s) }
 
 // BroadcastAnswer sends the frontend's SDP answer.
 func (a *App) BroadcastAnswer(broadcastID string, attempt int, sdp string) error {
+	if a.remote != nil {
+		return a.forward("BroadcastAnswer", nil, broadcastID, attempt, sdp)
+	}
 	if err := a.viewer.Answer(broadcastID, attempt, sdp); err != nil {
 		a.log.Info("broadcast answer not sent", "err", err)
 		return err
@@ -83,12 +90,18 @@ func (a *App) BroadcastAnswer(broadcastID string, attempt int, sdp string) error
 
 // BroadcastCandidate sends one of the frontend's ICE candidates.
 func (a *App) BroadcastCandidate(broadcastID string, attempt int, candidate, mid string, mline int) error {
+	if a.remote != nil {
+		return a.forward("BroadcastCandidate", nil, broadcastID, attempt, candidate, mid, mline)
+	}
 	return a.viewer.LocalCandidate(broadcastID, attempt, candidate, mid, mline)
 }
 
 // BroadcastFailed tells the console the frontend could not open the video
 // connection for this offer; it will send a new one.
 func (a *App) BroadcastFailed(broadcastID string, attempt int) error {
+	if a.remote != nil {
+		return a.forward("BroadcastFailed", nil, broadcastID, attempt)
+	}
 	a.log.Info("broadcast connection failed in the frontend", "attempt", attempt)
 	return a.viewer.Failed(broadcastID, attempt)
 }

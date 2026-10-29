@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
@@ -51,6 +52,17 @@ type App struct {
 	mediaOnce  sync.Once
 	mediaWait  time.Duration
 
+	// Service mode (D-016): helloFor gives the hello of each connection (the
+	// session's user and what its helper can do), and a value on restart
+	// reconnects with a new hello; beforeRestart runs with the agent stopped.
+	helloFor      func() protocol.HelloInfo
+	beforeRestart func()
+	restart       chan struct{}
+	// Helper mode: the window's bindings go to the agent in the service, and
+	// ReportMedia goes to onMedia.
+	remote  *agentsvc.Link
+	onMedia func(webrtc, h264 bool)
+
 	// reload re-reads the configuration files; nil when the configuration
 	// came from command-line flags, which pin it. Checked every reloadEvery,
 	// so a config.json written by the installer while the agent runs is
@@ -76,7 +88,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 		cfg: cfg, pub: pub, cfgErr: cfgErr, hello: hello,
 		board: codedist.NewBoard(0), clip: clip, clipEr: clipErr, log: log,
 		emit: func(string, any) {}, raise: func() {}, maximize: func(bool) {},
-		mediaReady: make(chan struct{}),
+		mediaReady: make(chan struct{}), restart: make(chan struct{}, 1),
 	}
 	a.recv = &codedist.Receiver{Board: a.board, OnBoard: a.onBoard, OnNotice: a.onNotice}
 	a.screen = &screen.Streamer{Logger: log, OnViewed: a.onViewed}
@@ -110,21 +122,28 @@ func (a *App) start(ctx context.Context) {
 func (a *App) supervise(ctx context.Context) {
 	stopAgent := a.runAgent(ctx)
 	defer func() { stopAgent() }()
-	if a.reload == nil {
-		<-ctx.Done()
-		return
+	var tick <-chan time.Time
+	if a.reload != nil {
+		every := a.reloadEvery
+		if every <= 0 {
+			every = DefaultReloadEvery
+		}
+		t := time.NewTicker(every)
+		defer t.Stop()
+		tick = t.C
 	}
-	every := a.reloadEvery
-	if every <= 0 {
-		every = DefaultReloadEvery
-	}
-	t := time.NewTicker(every)
-	defer t.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-t.C:
+		case <-a.restart:
+			a.log.Info("helper changed, reconnecting with a new hello")
+			stopAgent()
+			if a.beforeRestart != nil {
+				a.beforeRestart()
+			}
+			stopAgent = a.runAgent(ctx)
+		case <-tick:
 			cfg, pub, err := a.reload()
 			if cfg == a.cfg && errText(err) == errText(a.cfgErr) {
 				continue
@@ -154,7 +173,7 @@ func (a *App) runAgent(ctx context.Context) (stop func()) {
 	agent := &session.Agent{
 		Channel:          a.cfg.Channel,
 		ConsolePublicKey: a.pub,
-		Hello:            a.hello,
+		Hello:            a.currentHello(),
 		Source:           a.source(),
 		OnMessage:        a.onMessage,
 		OnState:          a.onState,
@@ -175,6 +194,37 @@ func (a *App) runAgent(ctx context.Context) (stop func()) {
 		cancel()
 		<-done
 	}
+}
+
+// currentHello is the hello of the next connection.
+func (a *App) currentHello() protocol.HelloInfo {
+	if a.helloFor != nil {
+		return a.helloFor()
+	}
+	return a.hello
+}
+
+// requestRestart asks supervise to reconnect with a new hello.
+func (a *App) requestRestart() {
+	select {
+	case a.restart <- struct{}{}:
+	default: // one pending is enough
+	}
+}
+
+// forward sends a binding of the helper's window to the agent in the
+// service and decodes its result into out (if not nil).
+func (a *App) forward(method string, out any, args ...any) error {
+	b, err := agentsvc.NewBinding(method, args...)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := a.remote.Call(ctx, agentsvc.CallBinding, b, out); err != nil {
+		return errors.New(err.Error()) // the agent's own (Spanish) message
+	}
+	return nil
 }
 
 func errText(err error) string {
@@ -354,6 +404,13 @@ func statusFor(state, channel, teacher string) Status {
 
 // View returns the whole state, for the first render.
 func (a *App) View() View {
+	if a.remote != nil {
+		var v View
+		if err := a.forward("View", &v); err != nil {
+			a.log.Warn("view from the service", "err", err)
+		}
+		return v
+	}
 	bc := a.viewer.Current() // before a.mu: the viewer calls into the app with its lock held
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -369,6 +426,9 @@ func (a *App) View() View {
 // copy of the snippet, not from the page, so what is pasted is exactly what
 // the teacher sent (indentation and line breaks included).
 func (a *App) Copy(snippetID string) error {
+	if a.remote != nil {
+		return a.forward("Copy", nil, snippetID)
+	}
 	s, ok := a.board.Get(snippetID)
 	if !ok {
 		return errors.New("ese fragmento ya no está en pantalla")
@@ -388,6 +448,10 @@ func (a *App) Copy(snippetID string) error {
 
 // DismissNotice hides a notice.
 func (a *App) DismissNotice(id string) {
+	if a.remote != nil {
+		_ = a.forward("DismissNotice", nil, id)
+		return
+	}
 	a.mu.Lock()
 	a.notices = slices.DeleteFunc(a.notices, func(n codedist.Notice) bool { return n.ID == id })
 	list := slices.Clone(a.notices)

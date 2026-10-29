@@ -18,6 +18,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
+	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/platform"
 )
 
@@ -34,10 +35,24 @@ func main() {
 		fmt.Println("aula-cliente " + version)
 		return
 	}
+	if len(os.Args) >= 2 && os.Args[1] == "servicio" {
+		platform.AttachParentConsole()
+		os.Exit(runServiceCLI(os.Args[2:], os.Stdout, os.Stderr))
+	}
 	log := openLog()
 	if len(os.Args) == 2 && os.Args[1] == "diagnostico" {
 		platform.AttachParentConsole()
 		os.Exit(runDiagnose(os.Stdout, log))
+	}
+	if len(os.Args) == 3 && os.Args[1] == agentsvc.HelperFlag {
+		os.Exit(runHelper(os.Args[2], log))
+	}
+	if len(os.Args) == 1 && serviceRunning() {
+		// The agent runs as a service and its helper owns the window: bring
+		// it forward instead of starting a second agent.
+		log.Info("agent service running; raising its window")
+		runLauncher(log)
+		return
 	}
 	log.Info("aula-cliente starting", "version", version)
 	cfg, pub, cfgErr := loadConfig(os.Args[1:])
@@ -61,8 +76,25 @@ func main() {
 		// Configured by files (installer): follow their changes. Flags pin it.
 		app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }
 	}
+	if err := runWindow(app, func(ctx context.Context) {
+		app.emit = func(event string, data any) {
+			runtime.EventsEmit(ctx, event, data)
+			if s, ok := data.(Status); ok {
+				runtime.WindowSetTitle(ctx, s.Banner) // visible in the taskbar too
+			}
+		}
+		app.start(ctx)
+	}, func() { app.stop() }); err != nil {
+		log.Error("wails run failed", "err", err)
+		os.Exit(1)
+	}
+}
 
-	err := wails.Run(&options.App{
+// runWindow runs the Wails window of app (the standalone agent or the
+// helper). onStartup runs once the window exists; raise and maximize are
+// wired here for both.
+func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func()) error {
+	return wails.Run(&options.App{
 		Title:     "Aula — Cliente",
 		Width:     900,
 		Height:    700,
@@ -72,12 +104,6 @@ func main() {
 			Assets: assets,
 		},
 		OnStartup: func(ctx context.Context) {
-			app.emit = func(event string, data any) {
-				runtime.EventsEmit(ctx, event, data)
-				if s, ok := data.(Status); ok {
-					runtime.WindowSetTitle(ctx, s.Banner) // visible in the taskbar too
-				}
-			}
 			app.raise = func() { raiseWindow(ctx) }
 			app.maximize = func(on bool) {
 				if on {
@@ -86,18 +112,33 @@ func main() {
 					runtime.WindowUnmaximise(ctx)
 				}
 			}
-			app.start(ctx)
+			onStartup(ctx)
 		},
-		OnShutdown: func(context.Context) { app.stop() },
+		OnShutdown: func(context.Context) { onShutdown() },
 		Bind:       []any{app},
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId:               singleInstanceID,
 			OnSecondInstanceLaunch: func(options.SecondInstanceData) { app.raise() },
 		},
 	})
+}
+
+// runLauncher hands over to the window that already holds the single
+// instance lock (the helper), which comes forward; if there is none (the
+// service is starting it again) it just exits, hidden.
+func runLauncher(log *slog.Logger) {
+	err := wails.Run(&options.App{
+		Title:       "Aula — Cliente",
+		StartHidden: true,
+		AssetServer: &assetserver.Options{Assets: assets},
+		OnStartup:   func(ctx context.Context) { runtime.Quit(ctx) },
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               singleInstanceID,
+			OnSecondInstanceLaunch: func(options.SecondInstanceData) {},
+		},
+	})
 	if err != nil {
 		log.Error("wails run failed", "err", err)
-		os.Exit(1)
 	}
 }
 

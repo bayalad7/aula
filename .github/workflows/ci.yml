@@ -54,3 +54,38 @@ jobs:
         env:
           CGO_ENABLED: '1'
         run: go test -race ./...
+
+  # Installs a real Windows service (AulaAgentePrueba, never AulaAgente) and runs
+  # its lifecycle: install, status, start, crash and automatic restart, stop,
+  # uninstall (D-016). The runner is an administrator; the last step deletes the
+  # service even if the test fails, so it never stays installed.
+  servicio:
+    name: Servicio de Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.26.x'
+          check-latest: true
+
+      - name: Ciclo del servicio
+        env:
+          AULA_SERVICE_TEST: '1'
+        run: go test -tags servicetest -run TestServiceLifecycle -v ./apps/student/
+
+      - name: Desinstalar el servicio de prueba
+        if: always()
+        shell: pwsh
+        run: |
+          sc.exe stop AulaAgentePrueba | Out-Null
+          sc.exe delete AulaAgentePrueba | Out-Null
+          if (Get-Service AulaAgentePrueba -ErrorAction SilentlyContinue) {
+            Start-Sleep -Seconds 5
+            if (Get-Service AulaAgentePrueba -ErrorAction SilentlyContinue) { throw "AulaAgentePrueba sigue instalado" }
+          }
+          exit 0

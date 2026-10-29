@@ -83,7 +83,9 @@ jobs:
       - name: Restricciones de la clase (NRPT, directivas y resolvedor)
         env:
           AULA_ADMIN_TEST: '1'
-        run: go test -tags admintest -run Admin -v ./internal/platform/ ./internal/policy/
+        # -p 1: both packages touch the same NRPT; in parallel they would see
+        # each other's rule.
+        run: go test -p 1 -tags admintest -run Admin -v ./internal/platform/ ./internal/policy/
 
       - name: Quitar las reglas NRPT de prueba
         if: always()

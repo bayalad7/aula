@@ -40,6 +40,48 @@ func restrictToOwner(path string) error {
 		nil, nil, acl, nil)
 }
 
+func restrictMachineSecret(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	inherit := uint32(windows.NO_INHERITANCE)
+	if info.IsDir() {
+		inherit = windows.SUB_CONTAINERS_AND_OBJECTS_INHERIT
+	}
+	var entries []windows.EXPLICIT_ACCESS
+	for _, g := range []struct {
+		sid    windows.WELL_KNOWN_SID_TYPE
+		access windows.ACCESS_MASK
+	}{
+		{windows.WinBuiltinAdministratorsSid, windows.GENERIC_ALL},
+		{windows.WinLocalSystemSid, windows.GENERIC_ALL},
+		{windows.WinBuiltinUsersSid, windows.GENERIC_READ | windows.GENERIC_EXECUTE},
+	} {
+		sid, err := windows.CreateWellKnownSid(g.sid)
+		if err != nil {
+			return err
+		}
+		entries = append(entries, windows.EXPLICIT_ACCESS{
+			AccessPermissions: g.access,
+			AccessMode:        windows.GRANT_ACCESS,
+			Inheritance:       inherit,
+			Trustee: windows.TRUSTEE{
+				TrusteeForm:  windows.TRUSTEE_IS_SID,
+				TrusteeType:  windows.TRUSTEE_IS_WELL_KNOWN_GROUP,
+				TrusteeValue: windows.TrusteeValueFromSID(sid),
+			},
+		})
+	}
+	acl, err := windows.ACLFromEntries(entries, nil)
+	if err != nil {
+		return err
+	}
+	return windows.SetNamedSecurityInfo(path, windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION,
+		nil, nil, acl, nil)
+}
+
 var procAttachConsole = windows.NewLazySystemDLL("kernel32.dll").NewProc("AttachConsole")
 
 const attachParentProcess = ^uint32(0) // ATTACH_PARENT_PROCESS

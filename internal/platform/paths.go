@@ -28,3 +28,25 @@ func MachineConfigDir() string {
 func AgentMachineConfigPath() string {
 	return filepath.Join(MachineConfigDir(), "Aula", "alumno", "config.json")
 }
+
+// SiteKeyDir holds the site key (clave del centro) on teacher machines, e.g.
+// C:\ProgramData\Aula\centro. Installers create it; see RestrictMachineSecret.
+func SiteKeyDir() string {
+	return filepath.Join(MachineConfigDir(), "Aula", "centro")
+}
+
+// ConsoleMachineConfigPath is the console settings the installer writes
+// (default channel, port), e.g. C:\ProgramData\Aula\consola\config.json.
+func ConsoleMachineConfigPath() string {
+	return filepath.Join(MachineConfigDir(), "Aula", "consola", "config.json")
+}
+
+// LogDir is where an app writes its log file: %LOCALAPPDATA%\Aula\<app> on
+// Windows, the user cache directory elsewhere.
+func LogDir(app string) (string, error) {
+	base, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(base, "Aula", app), nil
+}

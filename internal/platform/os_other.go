@@ -20,3 +20,15 @@ func attachParentConsole() bool { return true }
 
 // nativeNewlines keeps \n, the line ending on Linux and macOS.
 func nativeNewlines(s string) string { return s }
+
+func restrictMachineSecret(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	mode := os.FileMode(0o640)
+	if info.IsDir() {
+		mode = 0o750
+	}
+	return os.Chmod(path, mode)
+}

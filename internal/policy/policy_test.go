@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -158,7 +159,7 @@ func TestWebPolicyBlocks(t *testing.T) {
 }
 
 // fakeUpstream is a DNS server that answers every A query with 192.0.2.7.
-func fakeUpstream(t *testing.T) (port int, queries *[]string) {
+func fakeUpstream(t *testing.T) (port int, queries func() []string) {
 	t.Helper()
 	var mu sync.Mutex
 	var seen []string
@@ -184,7 +185,7 @@ func fakeUpstream(t *testing.T) (port int, queries *[]string) {
 	go udp.ActivateAndServe()
 	go tcp.ActivateAndServe()
 	t.Cleanup(func() { _ = udp.Shutdown(); _ = tcp.Shutdown() })
-	return port, &seen
+	return port, func() []string { mu.Lock(); defer mu.Unlock(); return slices.Clone(seen) }
 }
 
 func query(t *testing.T, network, addr, name string) *dns.Msg {
@@ -206,9 +207,13 @@ func query(t *testing.T, network, addr, name string) *dns.Msg {
 func TestResolverFiltersAndForwards(t *testing.T) {
 	port, seen := fakeUpstream(t)
 	pol := NewWebPolicy(protocol.WebFilterSet{PolicyID: pid1, Mode: protocol.PolicyDeny, Domains: []string{"youtube.com"}})
+	// The servers are read by the resolver's goroutines: switch them
+	// atomically, never by reassigning the field while it serves.
+	var upstreams atomic.Pointer[platform.DNSConfig]
+	upstreams.Store(&platform.DNSConfig{Servers: []string{"127.0.0.1"}})
 	r := &Resolver{Addr: "127.0.0.1:0", UpstreamPort: port,
 		Policy:    func() *WebPolicy { return pol },
-		Upstreams: func() platform.DNSConfig { return platform.DNSConfig{Servers: []string{"127.0.0.1"}} }}
+		Upstreams: func() platform.DNSConfig { return *upstreams.Load() }}
 	if err := r.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -225,11 +230,11 @@ func TestResolverFiltersAndForwards(t *testing.T) {
 			t.Fatalf("forwarded over %s: %v", network, m)
 		}
 	}
-	if slices.Contains(*seen, "www.youtube.com.") {
+	if slices.Contains(seen(), "www.youtube.com.") {
 		t.Fatal("a blocked name reached the upstream server")
 	}
 	// Without upstream servers the answer is a failure, not a hang.
-	r.Upstreams = func() platform.DNSConfig { return platform.DNSConfig{} }
+	upstreams.Store(&platform.DNSConfig{})
 	if m := query(t, "udp", r.LocalAddr(), "python.org"); m.Rcode != dns.RcodeServerFailure {
 		t.Fatalf("no upstream: rcode %d", m.Rcode)
 	}

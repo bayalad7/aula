@@ -609,3 +609,10 @@ Versión: función nueva compatible → sube `y`.
 - Las partes que requieren administrador (NRPT, directivas y la prueba de punta a punta que
   resuelve por el resolvedor del sistema) corren en el job de CI `servicio`. Un paso final
   borra cualquier regla de Aula que haya quedado.
+- **Comprobado en el CI** (runner con DNS `168.63.129.16`):
+  - con la regla y el resolvedor, `youtube.com` no resuelve y `github.com` sí;
+  - con la regla y **nada escuchando** en `127.0.0.1`, Windows resuelve igual por los DNS del
+    adaptador. Si el agente se cae a mitad de clase, el alumno no se queda sin internet: el filtro
+    se suspende hasta que el servicio reinicia (5 s) y lo restaura o vuelve a recibirlo.
+- Al leer las reglas desde Go con la salida redirigida, Windows PowerShell 5.1 solo imprime si el
+  resultado pasa por `Out-String`.

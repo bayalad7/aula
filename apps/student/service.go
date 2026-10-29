@@ -12,11 +12,13 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/platform"
+	"github.com/bayalad7/aula/internal/policy"
 	"github.com/bayalad7/aula/internal/protocol"
 )
 
@@ -82,6 +84,13 @@ func runServiceCLI(args []string, out, errOut io.Writer) int {
 		if st, err := ctl.Status(); err == nil && st.State != platform.ServiceNotInstalled {
 			if err := ctl.Stop(ctx); err != nil {
 				return fail("no se pudo detener el servicio", err)
+			}
+		}
+		// A web filter left by a crash is undone before the service goes
+		// (docs/privacidad.md rule 24).
+		if m := restoreOnlyManager(); m != nil {
+			if err := m.Restore(); err != nil {
+				fmt.Fprintf(errOut, "aviso: no se pudo deshacer del todo un filtro web anterior: %v\n", err)
 			}
 		}
 		if err := ctl.Uninstall(); err != nil {
@@ -178,6 +187,18 @@ func runService(ctx context.Context, sessionChanged <-chan struct{}) error {
 		log.Warn("agent not configured", "err", cfgErr)
 	}
 	sa := newServiceAgent(cfg, pub, cfgErr, log)
+	sa.policy = newPolicyManager(exe, sa, log)
+	// A web filter left by a crash or a power cut is undone before
+	// connecting (D-017).
+	if err := sa.policy.Restore(); err != nil {
+		log.Warn("restrictions of a previous run not fully restored", "err", err)
+	}
+	if sa.policy.Apps != nil {
+		go sa.policy.Apps.Run(ctx)
+	}
+	sa.app.extra = sa.policy.Handle
+	sa.app.onLeave = func() { _ = sa.policy.Clear("disconnected") }
+	defer func() { _ = sa.policy.Clear("service stopping") }()
 	sa.app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }
 	sa.app.start(ctx)
 	defer sa.app.stop()
@@ -193,11 +214,54 @@ func runService(ctx context.Context, sessionChanged <-chan struct{}) error {
 	return err
 }
 
+// newPolicyManager builds the class restrictions with the pieces this OS has;
+// without them the agent does not declare the capabilities.
+func newPolicyManager(exe string, sa *serviceAgent, log *slog.Logger) *policy.Manager {
+	m := &policy.Manager{
+		Journal:  policyJournal(),
+		OnChange: sa.app.setRestrictions,
+		Logger:   log,
+	}
+	if procs, err := platform.NewProcessControl(); err == nil {
+		m.Apps = &policy.AppEnforcer{
+			Procs: procs,
+			Protect: policy.Protection{SystemRoot: os.Getenv("SystemRoot"),
+				Keep: []string{filepath.Base(exe), "msedgewebview2", "explorer"}},
+			Session:  sa.session,
+			OnClosed: sa.app.appClosed,
+			Logger:   log,
+		}
+	}
+	dnsR, derr := platform.NewDNSRedirect()
+	doh, berr := platform.NewBrowserDoH()
+	if derr == nil && berr == nil {
+		m.DNS, m.DoH = dnsR, doh
+	}
+	return m
+}
+
+// policyJournal is C:\ProgramData\Aula\alumno\politica-activa.json.
+func policyJournal() policy.Journal {
+	return policy.Journal{Path: filepath.Join(filepath.Dir(platform.AgentMachineConfigPath()), policy.JournalName)}
+}
+
+// restoreOnlyManager can only undo a web filter (uninstall); nil where the OS
+// has none.
+func restoreOnlyManager() *policy.Manager {
+	dnsR, derr := platform.NewDNSRedirect()
+	doh, berr := platform.NewBrowserDoH()
+	if derr != nil || berr != nil {
+		return nil
+	}
+	return &policy.Manager{DNS: dnsR, DoH: doh, Journal: policyJournal()}
+}
+
 // serviceAgent is the App of the service plus the state of its helper.
 type serviceAgent struct {
 	app    *App
 	helper *agentsvc.Current
 	base   protocol.HelloInfo
+	policy *policy.Manager // the class restrictions
 
 	mu    sync.Mutex
 	sess  platform.Session
@@ -246,7 +310,18 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	if sa.ready.Broadcast {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenBroadcast)
 	}
+	if sa.policy != nil {
+		// Only with a helper: it shows the notice (docs/privacidad.md rule 20).
+		h.Capabilities = append(h.Capabilities, sa.policy.Capabilities()...)
+	}
 	return h
+}
+
+// session is the student's session while a helper is ready in it.
+func (sa *serviceAgent) session() (uint32, bool) {
+	sa.mu.Lock()
+	defer sa.mu.Unlock()
+	return sa.sess.ID, sa.ready != nil
 }
 
 // apply runs with the agent stopped, before it reconnects.
@@ -296,6 +371,9 @@ func (sa *serviceAgent) serve(ctx context.Context, s platform.Session, conn net.
 		// end, and the agent reconnects without capabilities.
 		sa.app.screen.Stop()
 		sa.app.viewer.Stop()
+		if sa.policy != nil {
+			_ = sa.policy.Clear("helper gone")
+		}
 		sa.app.requestRestart()
 	}
 }

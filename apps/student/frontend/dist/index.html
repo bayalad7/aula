@@ -16,6 +16,16 @@
     <span id="banner-detail" class="detail"></span>
   </header>
 
+  <!-- Class restrictions (docs/privacidad.md rules 20-22). -->
+  <section id="restrictions" class="restrictions" role="status" aria-live="polite" hidden>
+    <div class="restr-head">
+      <span id="restr-text"></span>
+      <button type="button" id="restr-toggle" aria-expanded="false">Ver detalles</button>
+    </div>
+    <div id="restr-details" class="restr-details" hidden></div>
+  </section>
+  <p id="app-closed" class="app-closed" role="alert" hidden></p>
+
   <section id="notices" class="notices" aria-live="assertive"></section>
 
   <!-- The teacher's screen (docs/privacidad.md rule 12): the band is fixed and

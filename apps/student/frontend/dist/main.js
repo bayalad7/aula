@@ -183,7 +183,60 @@
     $("bc-size").setAttribute("aria-pressed", String(real));
   });
 
+  // --- Class restrictions (docs/privacidad.md rules 20-22) ------------------------
+  // The teacher's policy is shown before it is applied; the details list the
+  // first items and how many there are.
+  const restr = $("restrictions");
+  const restrDetails = $("restr-details");
+  const restrToggle = $("restr-toggle");
+
+  function restrPart(s, deny, allow) {
+    if (!s) return "";
+    return s.mode === "allow" ? allow : deny;
+  }
+
+  function restrList(label, s) {
+    if (!s) return null;
+    const p = document.createElement("p");
+    const more = s.total > s.items.length ? " y " + (s.total - s.items.length) + " más" : "";
+    p.textContent = label + (s.mode === "allow" ? " (solo estas): " : ": ") + s.items.join(", ") + more;
+    return p;
+  }
+
+  function renderRestrictions(r) {
+    const parts = [
+      restrPart(r.apps, "aplicaciones bloqueadas", "solo se permiten algunas aplicaciones"),
+      restrPart(r.web, "sitios web filtrados", "solo se permiten algunos sitios"),
+    ].filter(Boolean);
+    restr.hidden = parts.length === 0;
+    $("restr-text").textContent = parts.length ? "🔒 Restricciones de la clase activas: " + parts.join(" · ") : "";
+    restrDetails.replaceChildren(...[restrList("Aplicaciones", r.apps), restrList("Sitios", r.web)].filter(Boolean));
+    if (parts.length === 0) {
+      restrDetails.hidden = true;
+      restrToggle.setAttribute("aria-expanded", "false");
+      restrToggle.textContent = "Ver detalles";
+    }
+  }
+
+  restrToggle.addEventListener("click", () => {
+    const open = restrDetails.hidden;
+    restrDetails.hidden = !open;
+    restrToggle.setAttribute("aria-expanded", String(open));
+    restrToggle.textContent = open ? "Ocultar detalles" : "Ver detalles";
+  });
+
+  let closedTimer = 0;
+  function onAppClosed(c) {
+    const p = $("app-closed");
+    p.textContent = "Aula cerró «" + c.app + "»: está bloqueada durante la clase.";
+    p.hidden = false;
+    clearTimeout(closedTimer);
+    closedTimer = setTimeout(() => { p.hidden = true; }, 8000);
+  }
+
   // Subscribe first, then fetch the full state, so nothing is missed.
+  rt.EventsOn(ev.RESTRICTIONS, renderRestrictions);
+  rt.EventsOn(ev.APP_CLOSED, onAppClosed);
   rt.EventsOn(ev.BROADCAST, renderBroadcast);
   rt.EventsOn(ev.SIGNAL, onSignal);
   rt.EventsOn(ev.STATUS, renderStatus);
@@ -194,6 +247,7 @@
     renderBoard(v.snippets);
     renderNotices(v.notices);
     renderBroadcast(v.broadcast);
+    renderRestrictions(v.restrictions);
   });
   probeMedia();
 })();

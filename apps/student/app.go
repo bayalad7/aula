@@ -17,6 +17,7 @@ import (
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/platform"
+	"github.com/bayalad7/aula/internal/policy"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/session"
@@ -62,6 +63,11 @@ type App struct {
 	// ReportMedia goes to onMedia.
 	remote  *agentsvc.Link
 	onMedia func(webrtc, h264 bool)
+	// Service mode: extra handles messages before the others (the class
+	// restrictions) and onLeave runs when the connection with the console
+	// ends (they end with it, docs/privacidad.md rule 24).
+	extra   func(env protocol.Envelope) (protocol.Payload, bool)
+	onLeave func()
 
 	// reload re-reads the configuration files; nil when the configuration
 	// came from command-line flags, which pin it. Checked every reloadEvery,
@@ -73,9 +79,10 @@ type App struct {
 	mu       sync.Mutex
 	status   Status
 	notices  []codedist.Notice
-	diag     string // why the agent is not connected (session.Agent.OnDiagnostic)
-	viewed   bool   // the console is receiving this screen (docs/privacidad.md rule 6)
-	watching bool   // this screen shows the teacher's broadcast (rule 12)
+	diag     string       // why the agent is not connected (session.Agent.OnDiagnostic)
+	viewed   bool         // the console is receiving this screen (docs/privacidad.md rule 6)
+	restrict policy.State // class restrictions in force (rules 20-21)
+	watching bool         // this screen shows the teacher's broadcast (rule 12)
 	cancel   context.CancelFunc
 	done     chan struct{}
 }
@@ -281,9 +288,12 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 	}
 	if s != session.AgentConnected {
 		// The streams belong to the connection: no console, no capture and
-		// no broadcast view.
+		// no broadcast view, and no restrictions.
 		a.screen.Stop()
 		a.viewer.Stop()
+		if a.onLeave != nil {
+			a.onLeave()
+		}
 	}
 	a.mu.Lock()
 	if st.State != StateConnected {
@@ -328,7 +338,14 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		_, err := cl.Send(ctx, p)
 		return err
 	}
-	reply, ok := a.screen.Handle(ctx, send, env)
+	var reply protocol.Payload
+	ok := false
+	if a.extra != nil {
+		reply, ok = a.extra(env)
+	}
+	if !ok {
+		reply, ok = a.screen.Handle(ctx, send, env)
+	}
 	if !ok {
 		reply, ok = a.viewer.Handle(ctx, send, env)
 	}
@@ -373,12 +390,16 @@ func (a *App) setStatus(s Status) {
 	a.mu.Lock()
 	s.Viewed = a.viewed && s.State == StateConnected
 	s.Watching = a.watching && s.State == StateConnected
+	s.Restricted = a.restrict.Active() && s.State == StateConnected
 	if s.Viewed {
 		s.Banner = fmt.Sprintf("Aula — tu pantalla está siendo vista por %s (canal %s)", s.Teacher, s.Channel)
 	} else if s.Watching {
 		s.Banner = fmt.Sprintf("Aula — viendo la pantalla de %s (canal %s)", s.Teacher, s.Channel)
 	} else if s.State == StateConnected {
 		s.Banner = statusFor(s.State, s.Channel, s.Teacher).Banner
+	}
+	if s.Restricted {
+		s.Banner += " · restricciones activas"
 	}
 	a.status = s
 	a.mu.Unlock()
@@ -419,7 +440,7 @@ func (a *App) View() View {
 		snippets = []codedist.Snippet{}
 	}
 	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...),
-		Broadcast: a.broadcastView(bc, a.status)}
+		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go
@@ -457,4 +478,24 @@ func (a *App) DismissNotice(id string) {
 	list := slices.Clone(a.notices)
 	a.mu.Unlock()
 	a.emit(EventNotices, Notices{Notices: list})
+}
+
+// setRestrictions shows the class restrictions (docs/privacidad.md rules
+// 20-21): the window comes forward when they start, and the banner says so.
+func (a *App) setRestrictions(r policy.State) {
+	a.mu.Lock()
+	was := a.restrict.Active()
+	a.restrict = r
+	st := a.status
+	a.mu.Unlock()
+	a.setStatus(st)
+	a.emit(EventRestrictions, r)
+	if r.Active() && !was {
+		a.raise()
+	}
+}
+
+// appClosed tells the student which app was closed and why (rule 22).
+func (a *App) appClosed(name string) {
+	a.emit(EventAppClosed, AppClosed{App: name})
 }

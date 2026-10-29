@@ -1,6 +1,9 @@
 package main
 
-import "github.com/bayalad7/aula/internal/codedist"
+import (
+	"github.com/bayalad7/aula/internal/codedist"
+	"github.com/bayalad7/aula/internal/policy"
+)
 
 // UI contract between this Go backend and frontend/dist (documented in
 // docs/eventos-ui.md). Event names must match frontend/dist/events.js; a test
@@ -22,7 +25,17 @@ const (
 	// EventSignal carries a broadcast.Signal (offer or ICE candidate) for the
 	// frontend's RTCPeerConnection.
 	EventSignal = "aula:broadcast-signal"
+	// EventRestrictions carries a policy.State when the class restrictions
+	// start, change or end (docs/privacidad.md rules 20-21).
+	EventRestrictions = "aula:restrictions"
+	// EventAppClosed carries an AppClosed when a blocked app is closed.
+	EventAppClosed = "aula:app-closed"
 )
+
+// AppClosed names the app the agent closed (docs/privacidad.md rule 22).
+type AppClosed struct {
+	App string `json:"app"`
+}
 
 // Connection states shown in the identity banner.
 const (
@@ -42,6 +55,8 @@ type Status struct {
 	Detail   string `json:"detail"`   // extra help, e.g. why it is unconfigured
 	Viewed   bool   `json:"viewed"`   // the teacher is receiving this screen
 	Watching bool   `json:"watching"` // this screen shows the teacher's broadcast
+	// Restricted is set while class restrictions are on.
+	Restricted bool `json:"restricted"`
 }
 
 // BroadcastView is the broadcast of the teacher's screen as the window shows
@@ -75,4 +90,6 @@ type View struct {
 	Notices  []codedist.Notice  `json:"notices"`
 	// Broadcast is the teacher's broadcast in force, if any.
 	Broadcast BroadcastView `json:"broadcast"`
+	// Restrictions are the class restrictions in force.
+	Restrictions policy.State `json:"restrictions"`
 }

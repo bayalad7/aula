@@ -124,6 +124,17 @@ body.watching main { display: none; }
 }
 .bc-wait[hidden] { display: none; }
 
+/* Class restrictions (docs/privacidad.md rules 20-22). */
+.restrictions { margin: 0; padding: 0.55rem 1rem; background: var(--warn-bg); color: var(--warn-fg); border-bottom: 1px solid var(--border); }
+.restrictions[hidden] { display: none; }
+.restr-head { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; }
+.restr-head span { flex: 1; }
+.restr-details { margin-top: 0.4rem; font-size: 0.9rem; }
+.restr-details[hidden] { display: none; }
+.restr-details p { margin: 0.2rem 0; overflow-wrap: anywhere; }
+.app-closed { margin: 0.75rem 1rem 0; padding: 0.6rem 1rem; border-radius: 8px; background: var(--warn-bg); color: var(--warn-fg); }
+.app-closed[hidden] { display: none; }
+
 .notices { padding: 0 1rem; }
 .notice {
   display: flex;

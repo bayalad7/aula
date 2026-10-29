@@ -18,6 +18,7 @@ import (
 
 	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/platform"
+	"github.com/bayalad7/aula/internal/policy"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
@@ -264,5 +265,96 @@ func TestServiceCommands(t *testing.T) {
 	st := describeStatus("AulaAgente", platform.ServiceStatus{State: platform.ServiceRunning, PID: 42, Auto: true, RestartOnFailure: true})
 	if st != "Servicio AulaAgente: en ejecución (PID 42); arranca con el equipo; se reinicia si falla" {
 		t.Fatalf("describe %q", st)
+	}
+}
+
+type fakeProcs struct {
+	mu     sync.Mutex
+	procs  []platform.ProcessInfo
+	killed []string
+}
+
+func (f *fakeProcs) List(uint32) ([]platform.ProcessInfo, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return slices.Clone(f.procs), nil
+}
+
+func (f *fakeProcs) Kill(pid int) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for i, p := range f.procs {
+		if p.PID == pid {
+			f.killed = append(f.killed, p.Name)
+			f.procs = slices.Delete(f.procs, i, i+1)
+		}
+	}
+	return nil
+}
+
+// The class restrictions reach the agent in the service only with a helper,
+// the student is told before anything is closed, and they end with the
+// helper.
+func TestServiceAgentAppliesAndEndsRestrictions(t *testing.T) {
+	c := startLiveConsole(t)
+	cfg := Config{Channel: "1", ConsolePublicKey: c.key, Direct: c.addr}
+	pub, _ := cfg.Validate()
+	sa := newServiceAgent(cfg, pub, nil, quiet)
+	fp := &fakeProcs{procs: []platform.ProcessInfo{{PID: 7, Name: "steam.exe", Path: `C:\Games\steam.exe`}}}
+	sa.policy = &policy.Manager{OnChange: sa.app.setRestrictions,
+		Apps: &policy.AppEnforcer{Procs: fp, Session: sa.session, OnClosed: sa.app.appClosed}}
+	sa.app.extra = sa.policy.Handle
+	sa.app.onLeave = func() { _ = sa.policy.Clear("disconnected") }
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	sa.app.start(ctx)
+	defer sa.app.stop()
+
+	s := c.waitAgent(t, "agent without helper", func(session.Session) bool { return true })
+	if s.Can(protocol.CapAppBlock) {
+		t.Fatal("app.block declared without a helper to show the notice")
+	}
+	svcEnd, helperEnd := net.Pipe()
+	served := make(chan struct{})
+	go func() {
+		defer close(served)
+		sa.serve(ctx, platform.Session{ID: 1, User: "ana", SID: "S-1-5-21-1-1001"}, svcEnd)
+	}()
+	h := newFakeHelper(t, helperEnd)
+	_ = h.link.Notify(agentsvc.EventReady, agentsvc.Ready{Capture: true, Clipboard: true})
+	s = c.waitAgent(t, "agent with app.block", func(s session.Session) bool { return s.Can(protocol.CapAppBlock) })
+	if s.Can(protocol.CapWebFilter) {
+		t.Fatal("web.filter declared without its platform pieces")
+	}
+
+	set := protocol.AppBlockSet{PolicyID: protocol.NewID(), Mode: protocol.PolicyDeny, Apps: []string{"steam"}}
+	if _, err := c.console.Send(ctx, s.ID, set); err != nil {
+		t.Fatal(err)
+	}
+	var v View
+	deadline := time.Now().Add(5 * time.Second)
+	for (v.Restrictions.Apps == nil || !v.Status.Restricted) && time.Now().Before(deadline) {
+		_ = h.binding(t, &v, "View")
+		time.Sleep(20 * time.Millisecond)
+	}
+	if v.Restrictions.Apps == nil || v.Restrictions.Apps.Items[0] != "steam" || !strings.HasSuffix(v.Status.Banner, "· restricciones activas") {
+		t.Fatalf("student's view %+v", v)
+	}
+	sa.policy.Apps.Enforce()
+	fp.mu.Lock()
+	killed := slices.Clone(fp.killed)
+	fp.mu.Unlock()
+	if !slices.Equal(killed, []string{"steam.exe"}) {
+		t.Fatalf("closed %v", killed)
+	}
+
+	// The helper goes: the restrictions end with it.
+	h.link.Close()
+	<-served
+	if st := sa.policy.State(); st.Active() {
+		t.Fatalf("restrictions left after the helper left: %+v", st)
+	}
+	if v := sa.app.View(); v.Restrictions.Active() || v.Status.Restricted {
+		t.Fatalf("notice left: %+v", v.Restrictions)
 	}
 }

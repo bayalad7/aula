@@ -317,3 +317,35 @@ pantalla se está viendo.
   miniaturas, la vista en detalle y el indicador.
 - Linux y macOS devuelven "no soportado" y no declaran las capacidades `screen.thumb` ni
   `screen.freeze`. Versión **0.3.0** (función nueva compatible).
+
+## D-015: Anuncio mDNS por cada interfaz (Windows con Hyper-V) y logs de las apps de ventana
+
+**Fecha:** 2026-10-29 · **Origen:** prueba de la v0.3.0-rc.1 con dos laptops en una red Wi-Fi: el
+alumno se quedó en "buscando la clase del canal 1". Corregido en v0.3.0-rc.2.
+
+**Causa (confirmada el 2026-10-29 con las dos laptops de la prueba).**
+- `grandcat/zeroconf` elige la interfaz de salida de cada paquete multicast con
+  `ipv4.ControlMessage.IfIndex`. En Windows, `golang.org/x/net/ipv4` **ignora** ese campo
+  (`ctlOpts` vacío): todo sale por la interfaz multicast predeterminada del sistema, la de
+  métrica más baja.
+- El equipo del profesor tiene ahora **Hyper-V** (para las VMs de prueba). Su adaptador
+  `vEthernet (Default Switch)` tiene métrica 15, menor que la Ethernet o el Wi-Fi. El anuncio y
+  las respuestas de la consola salían solo hacia el switch virtual, y los alumnos de la red real
+  nunca la veían.
+- En la prueba de la v0.2 todavía no había Hyper-V. Con los binarios publicados de la v0.3, en
+  un solo equipo, el alumno sí se conecta: el paquete le llega por ese mismo switch.
+
+**Decisión.**
+- La consola, además de `zeroconf`, envía su anuncio (PTR + SRV + TXT + A/AAAA, con el mismo
+  nombre de instancia, host y direcciones) **por cada interfaz**, eligiéndola con
+  `IP_MULTICAST_IF`, que Windows sí respeta. Lo repite cada 5 s y manda la despedida (TTL 0) al
+  cerrar (`internal/discovery/multicast.go`).
+- Los alumnos ya instalados no cambian: el cliente de `zeroconf` acepta cualquier respuesta que
+  traiga esos registros juntos. Una prueba lo verifica con el `Browser` real y sin el servidor
+  de `zeroconf`.
+- Se descartó cambiar de biblioteca mDNS: es un cambio mayor para una corrección de patch.
+
+**Logs vacíos.** Las dos apps escribían con `io.MultiWriter(os.Stderr, archivo)`. En una app de
+ventana stderr no es válido, `MultiWriter` se detiene en el primer error y **el archivo nunca
+recibía nada**: `aula-cliente.log` y `aula-consola.log` estaban vacíos en las instalaciones
+reales. Ahora el archivo va primero.

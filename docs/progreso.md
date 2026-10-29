@@ -332,3 +332,22 @@
   - correr los casos 09-A a 09-L y la medición de `docs/prueba-vms.md` §11;
   - prueba real en VMs Windows (miniaturas, distintivo visible, detener la vista detiene la
     captura) y los commits.
+
+## v0.3.0-rc.2: el alumno no encontraba la consola (D-015)
+
+- **Síntoma** (29/10/2026), con dos laptops en la red Wi-Fi de casa: tras actualizar el alumno a
+  la v0.3.0-rc.1 (redes Públicas permitidas en las dos instalaciones), se quedó en "buscando la
+  clase del canal 1". Con la v0.2 funcionaba.
+- **Descartado:** entre v0.2.0-rc.2 y v0.3.0-rc.1 no cambiaron `discovery`, `session`,
+  `transport` ni los instaladores. Con los binarios publicados, consola y alumno en este equipo
+  se conectan por mDNS en 1 s. La regla de firewall de la consola incluye el perfil Público.
+- **Causa (confirmada):** Hyper-V en el equipo del profesor. `zeroconf` no puede elegir la interfaz
+  de salida en Windows y el anuncio salía solo por `vEthernet (Default Switch)`, que tiene la
+  métrica más baja (15).
+- **Corregido en v0.3.0-rc.2:**
+  - anuncio mDNS por cada interfaz con `IP_MULTICAST_IF`; los alumnos instalados no necesitan
+    actualizarse, basta la consola nueva;
+  - los logs de las apps de ventana estaban vacíos (stderr inválido en `io.MultiWriter`).
+- **Confirmado** con las dos laptops de la prueba (Wi-Fi de casa, consola en la que tiene
+  Hyper-V): el alumno v0.3.0-rc.1 sin cambios se conectó con la consola corregida, o subiendo la
+  métrica de `vEthernet (Default Switch)`.

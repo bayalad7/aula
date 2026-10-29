@@ -78,6 +78,20 @@ jobs:
           AULA_SERVICE_TEST: '1'
         run: go test -tags servicetest -run TestServiceLifecycle -v ./apps/student/
 
+      # The class restrictions change the machine (NRPT rule, browser
+      # policies): only here, as administrator, and undone below.
+      - name: Restricciones de la clase (NRPT, directivas y resolvedor)
+        env:
+          AULA_ADMIN_TEST: '1'
+        run: go test -tags admintest -run Admin -v ./internal/platform/ ./internal/policy/
+
+      - name: Quitar las reglas NRPT de prueba
+        if: always()
+        shell: pwsh
+        run: |
+          Get-DnsClientNrptRule | Where-Object { $_.Comment -eq 'aula-filtro-web' } | ForEach-Object { Remove-DnsClientNrptRule -Name $_.Name -Force }
+          if (Get-DnsClientNrptRule | Where-Object { $_.Comment -eq 'aula-filtro-web' }) { throw "quedaron reglas NRPT de Aula" }
+
       - name: Desinstalar el servicio de prueba
         if: always()
         shell: pwsh

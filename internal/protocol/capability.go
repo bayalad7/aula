@@ -10,13 +10,15 @@ const (
 	CapScreenThumb Capability = "screen.thumb" // Windows (docs/protocol.md §5.6)
 	// CapScreenBroadcast receives the teacher's screen (§5.12). Windows.
 	CapScreenBroadcast Capability = "screen.broadcast"
+	// CapAppBlock and CapWebFilter apply the class restrictions (§5.13–5.14).
+	// Windows, with the agent running as a service.
+	CapAppBlock  Capability = "app.block"
+	CapWebFilter Capability = "web.filter"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
 const (
 	CapScreenFreeze Capability = "screen.freeze" // documented, pending (§6)
-	CapAppBlock     Capability = "app.block"
-	CapWebFilter    Capability = "web.filter"
 	CapFileCollect  Capability = "file.collect"
 	CapCodeCollect  Capability = "code.collect"
 	CapPower        Capability = "power"
@@ -38,6 +40,11 @@ var requiredCapability = map[Type]Capability{
 	TypeScreenBroadcastOffer: CapScreenBroadcast,
 	TypeScreenBroadcastICE:   CapScreenBroadcast, // only when sent P → A
 	TypeScreenBroadcastStop:  CapScreenBroadcast,
+
+	TypeAppBlockSet:    CapAppBlock,
+	TypeAppBlockClear:  CapAppBlock,
+	TypeWebFilterSet:   CapWebFilter,
+	TypeWebFilterClear: CapWebFilter,
 }
 
 // RequiredCapability reports the capability needed to receive a message of

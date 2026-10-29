@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -51,6 +52,12 @@ func samplePayloads() []Payload {
 		ScreenBroadcastAnswer{RefID: testSnippetID, BroadcastID: testRefID, Attempt: 1, SDP: testSDP},
 		ScreenBroadcastICE{BroadcastID: testRefID, Attempt: 1, Candidate: "candidate:1 1 udp 2130706431 192.168.1.20 47831 typ host", SDPMid: "0"},
 		ScreenBroadcastStop{BroadcastID: testRefID},
+		AppBlockSet{PolicyID: testRefID, Mode: PolicyDeny, Apps: []string{"steam", "Discord.exe"}},
+		AppBlockClear{},
+		AppBlockAck{RefID: testSnippetID, PolicyID: testRefID, Active: true},
+		WebFilterSet{PolicyID: testRefID, Mode: PolicyAllow, Domains: []string{"python.org", "xn--espaol-zwa.org"}},
+		WebFilterClear{},
+		WebFilterAck{RefID: testSnippetID},
 	}
 }
 
@@ -281,6 +288,20 @@ func TestPayloadValidation(t *testing.T) {
 		{"broadcast.ice mid", ScreenBroadcastICE{BroadcastID: testRefID, Attempt: 1, SDPMid: strings.Repeat("m", MaxSDPMid+1)}},
 		{"broadcast.ice index", ScreenBroadcastICE{BroadcastID: testRefID, Attempt: 1, SDPMLineIndex: MaxSDPMLineIndex + 1}},
 		{"broadcast.stop id", ScreenBroadcastStop{}},
+		{"app.block no apps", AppBlockSet{PolicyID: testRefID, Mode: PolicyDeny}},
+		{"app.block mode", AppBlockSet{PolicyID: testRefID, Mode: "block", Apps: []string{"steam"}}},
+		{"app.block path", AppBlockSet{PolicyID: testRefID, Mode: PolicyDeny, Apps: []string{`C:\juegos\juego.exe`}}},
+		{"app.block long", AppBlockSet{PolicyID: testRefID, Mode: PolicyDeny, Apps: []string{strings.Repeat("a", MaxAppName+1)}}},
+		{"app.block dup", AppBlockSet{PolicyID: testRefID, Mode: PolicyDeny, Apps: []string{"chrome", "Chrome.exe"}}},
+		{"app.block too many", AppBlockSet{PolicyID: testRefID, Mode: PolicyDeny, Apps: manyApps(MaxBlockedApps + 1)}},
+		{"web.filter url", WebFilterSet{PolicyID: testRefID, Mode: PolicyDeny, Domains: []string{"https://x.com/a"}}},
+		{"web.filter port", WebFilterSet{PolicyID: testRefID, Mode: PolicyDeny, Domains: []string{"x.com:443"}}},
+		{"web.filter single label", WebFilterSet{PolicyID: testRefID, Mode: PolicyDeny, Domains: []string{"localhost"}}},
+		{"web.filter accents", WebFilterSet{PolicyID: testRefID, Mode: PolicyDeny, Domains: []string{"español.org"}}},
+		{"web.filter dup", WebFilterSet{PolicyID: testRefID, Mode: PolicyDeny, Domains: []string{"x.com", "X.COM."}}},
+		{"web.filter id", WebFilterSet{Mode: PolicyDeny, Domains: []string{"x.com"}}},
+		{"ack active without policy", AppBlockAck{RefID: testRefID, Active: true}},
+		{"ack inactive with policy", WebFilterAck{RefID: testRefID, PolicyID: testRefID}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -320,12 +341,14 @@ func TestRequiredCapability(t *testing.T) {
 		TypeScreenThumbStart: CapScreenThumb, TypeScreenThumbStop: CapScreenThumb,
 		TypeScreenBroadcastStart: CapScreenBroadcast, TypeScreenBroadcastOffer: CapScreenBroadcast,
 		TypeScreenBroadcastICE: CapScreenBroadcast, TypeScreenBroadcastStop: CapScreenBroadcast,
+		TypeAppBlockSet: CapAppBlock, TypeAppBlockClear: CapAppBlock,
+		TypeWebFilterSet: CapWebFilter, TypeWebFilterClear: CapWebFilter,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}
@@ -400,5 +423,31 @@ func TestSDPLimit(t *testing.T) {
 	big.SDP = big.SDP[:MaxSDP]
 	if _, err := Encode(New(big)); err != nil {
 		t.Fatalf("Encode of a %d-byte SDP: %v", MaxSDP, err)
+	}
+}
+
+func manyApps(n int) []string {
+	out := make([]string, n)
+	for i := range out {
+		out[i] = "app" + strconv.Itoa(i)
+	}
+	return out
+}
+
+func TestPolicyKeys(t *testing.T) {
+	for in, want := range map[string]string{"Chrome.EXE": "chrome", " steam ": "steam", "a.exe.exe": "a.exe"} {
+		if got := AppKey(in); got != want {
+			t.Errorf("AppKey(%q) = %q, want %q", in, got, want)
+		}
+	}
+	for _, ok := range []string{"python.org", "Docs.Python.org.", "a-b.c-d.io", "xn--espaol-zwa.org"} {
+		if !ValidDomain(ok) {
+			t.Errorf("ValidDomain(%q) = false", ok)
+		}
+	}
+	for _, bad := range []string{"", "org", "-a.com", "a-.com", "a..com", "a_b.com", "*.x.com", strings.Repeat("a", 64) + ".com"} {
+		if ValidDomain(bad) {
+			t.Errorf("ValidDomain(%q) = true", bad)
+		}
 	}
 }

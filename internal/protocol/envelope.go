@@ -41,6 +41,13 @@ const (
 	TypeScreenBroadcastAnswer Type = "screen.broadcast.answer"
 	TypeScreenBroadcastICE    Type = "screen.broadcast.ice"
 	TypeScreenBroadcastStop   Type = "screen.broadcast.stop"
+	// Class restrictions (docs/protocol.md §5.13–5.14).
+	TypeAppBlockSet    Type = "app.block.set"
+	TypeAppBlockClear  Type = "app.block.clear"
+	TypeAppBlockAck    Type = "app.block.ack"
+	TypeWebFilterSet   Type = "web.filter.set"
+	TypeWebFilterClear Type = "web.filter.clear"
+	TypeWebFilterAck   Type = "web.filter.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -220,6 +227,13 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeScreenBroadcastAnswer: decodeAs[ScreenBroadcastAnswer],
 	TypeScreenBroadcastICE:    decodeAs[ScreenBroadcastICE],
 	TypeScreenBroadcastStop:   decodeAs[ScreenBroadcastStop],
+
+	TypeAppBlockSet:    decodeAs[AppBlockSet],
+	TypeAppBlockClear:  decodeAs[AppBlockClear],
+	TypeAppBlockAck:    decodeAs[AppBlockAck],
+	TypeWebFilterSet:   decodeAs[WebFilterSet],
+	TypeWebFilterClear: decodeAs[WebFilterClear],
+	TypeWebFilterAck:   decodeAs[WebFilterAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

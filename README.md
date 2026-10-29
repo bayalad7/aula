@@ -39,6 +39,20 @@ cd apps/student && wails build   # -> apps/student/build/bin/aula-cliente(.exe)
 
 En Linux: `wails build -tags webkit2_41`.
 
+## Configurar el cliente del alumno
+
+El cliente necesita el canal y la clave pública de la consola. Puedes pasarlos como argumentos
+(`aula-cliente -canal AULA_101 -clave aula-ed25519:… [-directo IP:47830]`) o guardarlos en
+`%AppData%\Aula\alumno\config.json`:
+
+```json
+{ "channel": "AULA_101", "console_public_key": "aula-ed25519:..." }
+```
+
+Con `wails dev`: `wails dev -appargs "-canal AULA_101 -clave aula-ed25519:..."`. Sin
+configuración, la ventana muestra "Aula — sin configurar" y cómo arreglarlo. El contrato entre
+el backend y la interfaz está en `docs/eventos-ui.md`.
+
 ## Clave de la consola
 
 Cada consola tiene una clave Ed25519 que la identifica ante los alumnos (ver

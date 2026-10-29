@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-10-28 (etapa 05).
+Última actualización: 2026-10-28 (etapa 06).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -8,7 +8,7 @@
 | 03 | Especificación del protocolo (`docs/protocol.md`, paquete `protocol`) | ✅ Completada |
 | 04 | Descubrimiento mDNS con canales + servidor/cliente WebSocket | ✅ Completada (falta prueba en VMs) |
 | 05 | Seguridad: TLS y autenticación Ed25519 | ✅ Completada |
-| 06 | App estudiante: overlay con Monaco y botón Copiar | ⏳ Pendiente |
+| 06 | App estudiante: overlay con Prism (D-008) y botón Copiar | ✅ Completada (falta prueba en VM) |
 | 07 | App profesor: lista, hotkey de captura, emisión | ⏳ Pendiente |
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ⏳ Pendiente |
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | ⏳ Pendiente |
@@ -135,3 +135,39 @@
   entrada (el usuario, control total) en el archivo de la clave.
 - Pendiente: la configuración persistente del agente (dónde se guarda la clave pública al
   instalar) llega con la app del alumno (etapa 06) y los instaladores (etapa 08).
+
+## Etapa 06: notas
+
+- `apps/student`: el agente real dentro de la ventana Wails. Configuración en
+  `%AppData%\Aula\alumno\config.json` (`channel`, `console_public_key`, `direct` opcional) o con
+  `-canal`, `-clave`, `-directo`; sin configuración muestra "Aula — sin configurar" y la
+  explicación.
+- Al llegar `code.share` la ventana se trae al frente y muestra título, ejercicio, lenguaje y el
+  código resaltado con Prism.js (no Monaco: D-008), con el botón "Copiar al portapapeles".
+  `replace` sustituye, `append` agrega (máx. 20, se descartan los más antiguos; un reenvío con el
+  mismo `snippet_id` se actualiza en su lugar). `code.clear` limpia. `msg.show` aparece como aviso
+  info/advertencia con "Entendido". Todos responden su `ack`.
+- Distintivo siempre visible: "Aula — conectado a la clase de <profesor> (canal <X>)", también en
+  el título de la ventana. Reglas en `docs/privacidad.md` (nuevo).
+- Contrato de eventos en `apps/student/events.go` y `docs/eventos-ui.md`: eventos `aula:status`,
+  `aula:board`, `aula:notices` y métodos `View`, `Copy`, `DismissNotice`.
+- `internal/codedist`: `Board` y `Receiver` (lógica sin SO ni red). `internal/platform`:
+  `Clipboard` con `golang.design/x/clipboard` v0.11 (CRLF en Windows).
+- `session.Console`: `Send` (comprueba la capacidad del agente) y `Broadcast`; el registro guarda
+  el último `code.ack` de cada sesión (`LastCodeAck`).
+- Ejemplo `dos_alumnos -rol profesor`: comandos `codigo`, `agregar`, `limpiar`, `aviso`, `alerta`
+  para emitir mientras llega la consola Wails (etapa 07). El registro muestra "código xxxx ✓"
+  cuando el alumno confirma.
+- Pruebas: integración consola → agente con `code.ack` registrado y `code.clear`; `Send` rechaza
+  sin capacidad; portapapeles real con Python con sangría, tabuladores, línea vacía y espacios
+  finales (se salta sin portapapeles; `AULA_REQUIRE_CLIPBOARD=1` lo exige); app del alumno con
+  portapapeles falso (copia exacta, eventos, distintivo, avisos, configuración); contrato
+  `events.js` ↔ Go; la interfaz solo usa `innerHTML` con Prism.
+- Verificado en este equipo con `aula-cliente.exe` real: el profesor envió un `.py`, la ventana
+  lo mostró resaltado con el aviso. Un clic en el botón copió el archivo idéntico (10 líneas,
+  sangría intacta, CRLF), y el registro del profesor mostró el `code.ack`. El alumno reconectó
+  solo al reiniciar la consola.
+- Corregido: la regla `dist/` del `.gitignore` (etapa 05) ignoraba también `frontend/dist`; ahora
+  es `/dist/`.
+- Pendiente de la etapa: en una VM, emitir desde la consola y pegar en el editor del alumno
+  (pasos en `docs/prueba-vms.md` §7).

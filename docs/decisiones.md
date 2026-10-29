@@ -138,3 +138,28 @@ instancia: solo reemplaza una consola si cambian sus direcciones.
 - **`aula-consola keygen` en una app de ventana.** `wails build` produce un ejecutable sin
   consola; `platform.AttachParentConsole` lo conecta a la terminal que lo lanzó para que los
   subcomandos impriman.
+
+## D-008: Visualización de código con Prism.js y portapapeles nativo
+
+**Fecha:** 2026-10-28 · **Etapa:** 06
+
+**Editor: Prism.js en lugar de Monaco.** Monaco pesa unos 13 MB solo en `min/vs`, necesita
+*web workers* y un cargador AMD, y el frontend no tiene bundler (D-002). En el overlay el código
+es de solo lectura, así que Monaco no aporta nada a cambio de ese peso. Prism.js 1.30.0 está
+incluido en `apps/student/frontend/dist/vendor/prism/` (unos 80 KB con 16 lenguajes, licencia MIT
+incluida), sin CDN, porque los laboratorios pueden no tener internet. Los colores son propios
+(claro y oscuro) en lugar de un tema de Prism. Si más adelante el alumno edita código (entregas,
+etapa 14), se reevalúa Monaco.
+
+**Portapapeles desde Go** (`golang.design/x/clipboard` v0.11, vía `platform.Clipboard`), no
+`navigator.clipboard`: la API del navegador exige contexto seguro y gesto del usuario. La v0.11 no
+necesita cgo en Linux (X11/Wayland en Go puro), y donde no hay portapapeles `Init` devuelve
+`ErrUnavailable`, que se traduce a `platform.ErrNotSupported`.
+- En Windows el texto se copia con CRLF, el formato de texto del portapapeles. Algunos editores
+  juntan las líneas si reciben solo LF.
+- `App.Copy` recibe el ID del fragmento y copia el texto guardado en Go, no lo que muestra la
+  página.
+
+**Eventos de Wails con el estado completo** (no cambios incrementales), con el contrato en
+`apps/student/events.go` y `docs/eventos-ui.md`. Redibujar una lista de a lo sumo 20 fragmentos
+es barato y evita que la interfaz y Go se desincronicen.

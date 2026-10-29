@@ -108,3 +108,26 @@ un retroceso de hasta 30 s.
 
 Anota el resultado en `docs/progreso.md` (fila de la etapa 04) y quita
 "(falta prueba en VMs)" si salió bien.
+
+## 7. Etapa 06: código de punta a punta
+
+Además de `dos_alumnos.exe`, copia a la VM del alumno la app real `aula-cliente.exe`
+(`cd apps/student && wails build`; queda en `apps/student/build/bin/`).
+
+1. **Profesor:** `.\dos_alumnos.exe -rol profesor`. Copia la clave pública que imprime.
+2. **Alumno:** abre una terminal en la carpeta del `.exe` y ejecuta
+   `.\aula-cliente.exe -canal AULA_101 -clave aula-ed25519:...` (agrega
+   `-directo <IP del profesor>:47830` si mDNS no funciona). Arriba debe decir
+   "Aula — conectado a la clase de Consola de ejemplo (canal AULA_101)".
+3. **Profesor:** escribe en su terminal `codigo C:\ruta\a\un_archivo.py Ejercicio 1`
+   (también `agregar`, `limpiar`, `aviso <texto>`, `alerta <texto>`; `ayuda` los lista).
+4. **Alumno:** la ventana pasa al frente con el código resaltado. Pulsa **Copiar al
+   portapapeles** y pega en su editor (IDLE, VS Code, Bloc de notas). La sangría y los saltos de
+   línea deben quedar idénticos; en Python, el programa debe correr sin `IndentationError`.
+5. **Profesor:** en el registro aparece `código xxxxxxxx ✓` junto al equipo del alumno.
+
+Para no escribir los argumentos cada vez, crea `%AppData%\Aula\alumno\config.json`:
+
+```json
+{ "channel": "AULA_101", "console_public_key": "aula-ed25519:..." }
+```

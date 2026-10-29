@@ -3,14 +3,64 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ws: wss:">
   <title>Aula — Cliente</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Identity banner: always visible (docs/privacidad.md). -->
+  <header id="banner" class="banner" data-state="searching" role="status" aria-live="polite">
+    <span class="dot" aria-hidden="true"></span>
+    <span id="banner-text">Aula — iniciando…</span>
+    <span id="banner-detail" class="detail"></span>
+  </header>
+
+  <section id="notices" class="notices" aria-live="assertive"></section>
+
   <main>
-    <h1>Aula — Cliente</h1>
-    <p>Cliente del alumno</p>
+    <p id="empty" class="empty">Cuando el profesor comparta código, aparecerá aquí listo para copiar.</p>
+    <ol id="snippets" class="snippets"></ol>
   </main>
+
+  <template id="snippet-template">
+    <li class="snippet">
+      <div class="snippet-head">
+        <span class="exercise"></span>
+        <h2 class="title"></h2>
+        <span class="lang"></span>
+        <button type="button" class="copy">Copiar al portapapeles</button>
+      </div>
+      <pre class="code"><code></code></pre>
+    </li>
+  </template>
+
+  <template id="notice-template">
+    <div class="notice" role="alert">
+      <p class="notice-text"></p>
+      <button type="button" class="dismiss">Entendido</button>
+    </div>
+  </template>
+
+  <script src="events.js"></script>
+  <script src="vendor/prism/prism-config.js"></script>
+  <script src="vendor/prism/prism-core.min.js"></script>
+  <script src="vendor/prism/prism-markup.min.js"></script>
+  <script src="vendor/prism/prism-css.min.js"></script>
+  <script src="vendor/prism/prism-clike.min.js"></script>
+  <script src="vendor/prism/prism-javascript.min.js"></script>
+  <script src="vendor/prism/prism-typescript.min.js"></script>
+  <script src="vendor/prism/prism-c.min.js"></script>
+  <script src="vendor/prism/prism-cpp.min.js"></script>
+  <script src="vendor/prism/prism-csharp.min.js"></script>
+  <script src="vendor/prism/prism-java.min.js"></script>
+  <script src="vendor/prism/prism-python.min.js"></script>
+  <script src="vendor/prism/prism-go.min.js"></script>
+  <script src="vendor/prism/prism-sql.min.js"></script>
+  <script src="vendor/prism/prism-bash.min.js"></script>
+  <script src="vendor/prism/prism-json.min.js"></script>
+  <script src="vendor/prism/prism-rust.min.js"></script>
+  <script src="vendor/prism/prism-kotlin.min.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

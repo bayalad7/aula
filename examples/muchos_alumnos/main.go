@@ -4,8 +4,8 @@
 // and acknowledges it. Every few seconds it prints how many are connected and
 // what they have on screen.
 //
-//	muchos_alumnos -n 12 -config aula-alumno.json
-//	muchos_alumnos -n 12 -canal AULA_101 -clave aula-ed25519:… -directo 192.168.1.10:47830
+//	muchos_alumnos -n 12 -config C:\ProgramData\Aula\alumno\config.json
+//	muchos_alumnos -n 12 -canal 1 -clave aula-ed25519:… -directo 192.168.1.10:47830
 package main
 
 import (
@@ -41,7 +41,7 @@ type student struct {
 
 func main() {
 	n := flag.Int("n", 12, "número de alumnos simulados")
-	cfgPath := flag.String("config", "", "aula-alumno.json generado por la consola")
+	cfgPath := flag.String("config", "", "config.json del agente (el de la máquina o uno de prueba)")
 	channel := flag.String("canal", "", "canal (si no usas -config)")
 	key := flag.String("clave", "", "clave pública de la consola (si no usas -config)")
 	direct := flag.String("directo", "", "IP:puerto de la consola, sin mDNS")

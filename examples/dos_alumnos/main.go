@@ -36,7 +36,7 @@ const agentVersion = "0.1.0"
 
 func main() {
 	rol := flag.String("rol", "todo", "todo | profesor | alumno")
-	canal := flag.String("canal", "AULA_101", "canal del aula")
+	canal := flag.String("canal", "1", "canal del aula")
 	puerto := flag.Int("puerto", 47830, "puerto WebSocket de la consola")
 	nombre := flag.String("nombre", "Consola de ejemplo", "nombre visible de la consola")
 	dir := flag.String("dir", "", "profesor: directorio de la clave y el certificado (por defecto, el de aula-consola keygen)")

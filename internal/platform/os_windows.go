@@ -59,3 +59,7 @@ func attachParentConsole() bool {
 	os.Stdout, os.Stderr = out, out
 	return true
 }
+
+// nativeNewlines converts text to CRLF, the line ending of Windows text on the
+// clipboard (CF_UNICODETEXT); editors that expect it would otherwise join lines.
+func nativeNewlines(s string) string { return toCRLF(s) }

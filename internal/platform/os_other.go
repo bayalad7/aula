@@ -17,3 +17,6 @@ func restrictToOwner(path string) error {
 }
 
 func attachParentConsole() bool { return true }
+
+// nativeNewlines keeps \n, the line ending on Linux and macOS.
+func nativeNewlines(s string) string { return s }

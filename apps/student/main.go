@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"embed"
 	"fmt"
 	"log/slog"
@@ -42,6 +43,10 @@ func main() {
 		log.Warn("no system clipboard", "err", clipErr)
 	}
 	app := NewApp(cfg, pub, cfgErr, localHello(), clip, clipErr, log)
+	if len(os.Args) == 1 {
+		// Configured by files (installer): follow their changes. Flags pin it.
+		app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }
+	}
 
 	err := wails.Run(&options.App{
 		Title:     "Aula — Cliente",

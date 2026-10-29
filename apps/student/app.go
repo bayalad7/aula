@@ -40,6 +40,13 @@ type App struct {
 	emit  func(event string, data any)
 	raise func() // bring the window to the front
 
+	// reload re-reads the configuration files; nil when the configuration
+	// came from command-line flags, which pin it. Checked every reloadEvery,
+	// so a config.json written by the installer while the agent runs is
+	// picked up without restarting it.
+	reload      func() (Config, ed25519.PublicKey, error)
+	reloadEvery time.Duration
+
 	mu      sync.Mutex
 	status  Status
 	notices []codedist.Notice
@@ -65,14 +72,63 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	return a
 }
 
-// start runs the agent until stop is called. Without a valid configuration
-// it only shows the banner.
+// DefaultReloadEvery is how often the agent re-reads its configuration.
+const DefaultReloadEvery = 3 * time.Second
+
+// start runs the agent until stop is called. Without a valid configuration it
+// only shows the banner, and keeps checking the configuration files.
 func (a *App) start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	a.cancel, a.done = cancel, make(chan struct{})
-	if a.cfgErr != nil {
-		close(a.done)
+	go func() {
+		defer close(a.done)
+		a.supervise(ctx)
+	}()
+}
+
+// supervise keeps one agent running with the current configuration and
+// replaces it when the configuration changes. The old agent is fully stopped
+// before a.cfg is touched, so the agent goroutine never sees it change.
+func (a *App) supervise(ctx context.Context) {
+	stopAgent := a.runAgent(ctx)
+	defer func() { stopAgent() }()
+	if a.reload == nil {
+		<-ctx.Done()
 		return
+	}
+	every := a.reloadEvery
+	if every <= 0 {
+		every = DefaultReloadEvery
+	}
+	t := time.NewTicker(every)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			cfg, pub, err := a.reload()
+			if cfg == a.cfg && errText(err) == errText(a.cfgErr) {
+				continue
+			}
+			a.log.Info("configuration changed, restarting the agent", "channel", cfg.Channel, "valid", err == nil)
+			stopAgent()
+			a.cfg, a.pub, a.cfgErr = cfg, pub, err
+			if err != nil {
+				a.setStatus(Status{State: StateUnconfigured, Channel: cfg.Channel, Banner: "Aula — sin configurar", Detail: err.Error()})
+			} else {
+				a.setStatus(statusFor(StateSearching, cfg.Channel, ""))
+			}
+			stopAgent = a.runAgent(ctx)
+		}
+	}
+}
+
+// runAgent starts an agent for the current configuration, if valid, and
+// returns a function that stops it and waits for it to finish.
+func (a *App) runAgent(ctx context.Context) (stop func()) {
+	if a.cfgErr != nil {
+		return func() {}
 	}
 	agent := &session.Agent{
 		Channel:          a.cfg.Channel,
@@ -83,13 +139,27 @@ func (a *App) start(ctx context.Context) {
 		OnState:          a.onState,
 		Logger:           a.log,
 	}
+	actx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
+	channel := a.cfg.Channel
 	go func() {
-		defer close(a.done)
-		if err := agent.Run(ctx); err != nil {
+		defer close(done)
+		if err := agent.Run(actx); err != nil {
 			a.log.Error("agent stopped", "err", err)
-			a.setStatus(Status{State: StateUnconfigured, Channel: a.cfg.Channel, Banner: "Aula — sin configurar", Detail: err.Error()})
+			a.setStatus(Status{State: StateUnconfigured, Channel: channel, Banner: "Aula — sin configurar", Detail: err.Error()})
 		}
 	}()
+	return func() {
+		cancel()
+		<-done
+	}
+}
+
+func errText(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }
 
 func (a *App) stop() {

@@ -2,12 +2,15 @@ package session
 
 import (
 	"context"
+	"crypto/ed25519"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/transport"
 )
 
@@ -60,13 +63,22 @@ func (s AgentState) String() string {
 // console trigger a new discovery (docs/protocol.md §3.5).
 const failuresBeforeRediscover = 3
 
-// Agent runs the student side: find a console, connect, send hello and
-// heartbeats, and reconnect with backoff when the session drops.
+// untrustedFor is how long a console that failed authentication is skipped
+// (docs/protocol.md §1.3).
+const untrustedFor = 5 * time.Minute
+
+// Agent runs the student side: find a console, connect over TLS, authenticate
+// it, send hello and heartbeats, and reconnect with backoff when the session
+// drops.
 type Agent struct {
-	Hello   protocol.HelloInfo
-	Source  ConsoleSource
-	Backoff Backoff
-	Conn    transport.Options
+	Channel string
+	// ConsolePublicKey is the only console key this agent obeys.
+	ConsolePublicKey ed25519.PublicKey
+	HandshakeTimeout time.Duration // 0 means DefaultHelloTimeout
+	Hello            protocol.HelloInfo
+	Source           ConsoleSource
+	Backoff          Backoff
+	Conn             transport.Options
 	// OnMessage receives every message from the console except heartbeat. It
 	// runs on the agent goroutine: keep it short.
 	OnMessage func(ctx context.Context, c *transport.Client, env protocol.Envelope)
@@ -83,17 +95,24 @@ func (a *Agent) Run(ctx context.Context) error {
 	if a.Source == nil {
 		return fmt.Errorf("agent: nil console source")
 	}
+	if !protocol.ValidChannel(a.Channel) {
+		return fmt.Errorf("agent: invalid channel %q", a.Channel)
+	}
+	if len(a.ConsolePublicKey) != ed25519.PublicKeySize {
+		return fmt.Errorf("agent: console public key is required")
+	}
 	log := a.Logger
 	if log == nil {
 		log = slog.Default()
 	}
 
 	var (
-		known    []discovery.Console
-		updates  <-chan discovery.Console
-		stop     context.CancelFunc = func() {}
-		failures int
-		next     int
+		known     []discovery.Console
+		updates   <-chan discovery.Console
+		stop      context.CancelFunc = func() {}
+		failures  int
+		next      int
+		untrusted = map[string]time.Time{} // instance → until
 	)
 	defer func() { stop() }()
 	rediscover := func() error {
@@ -132,10 +151,21 @@ func (a *Agent) Run(ctx context.Context) error {
 			}
 		}
 
-		target := known[next%len(known)]
-		established := a.session(ctx, log, target)
+		target, ok := pick(known, next, untrusted, time.Now())
+		if !ok { // every known console failed authentication recently
+			failures++
+			if !sleep(ctx, a.Backoff.Delay(failures)) {
+				return nil
+			}
+			known, updates = drain(known, updates)
+			continue
+		}
+		established, authFailed := a.session(ctx, log, target)
 		if ctx.Err() != nil {
 			return nil
+		}
+		if authFailed {
+			untrusted[target.Instance] = time.Now().Add(untrustedFor)
 		}
 		if established {
 			failures = 0
@@ -155,28 +185,50 @@ func (a *Agent) Run(ctx context.Context) error {
 	}
 }
 
-// session connects to target and serves the session until it ends. It reports
-// whether the session was established (hello sent).
-func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.Console) bool {
-	var cl *transport.Client
+// session connects to target, authenticates it and serves the session until
+// it ends. It reports whether the session was established (hello sent) and
+// whether the console failed authentication.
+func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.Console) (established, authFailed bool) {
+	var (
+		cl      *transport.Client
+		certSHA [32]byte
+	)
 	for _, hp := range target.HostPorts() {
-		url := "ws://" + hp + transport.Path
-		c, err := transport.Dial(ctx, url, a.Conn)
+		url := "wss://" + hp + transport.Path
+		var seen [32]byte
+		tlsConf, err := security.ClientTLS(target.CertFingerprint, &seen)
 		if err != nil {
+			log.Warn("bad console fingerprint", "console", target.Name, "err", err)
+			return false, true
+		}
+		opts := a.Conn
+		opts.TLS = tlsConf
+		c, err := transport.Dial(ctx, url, opts)
+		if err != nil {
+			if errors.Is(err, security.ErrFingerprintMismatch) {
+				log.Warn("console certificate does not match its announcement", "console", target.Name, "url", url)
+				return false, true
+			}
 			log.Debug("dial failed", "url", url, "err", err)
 			continue
 		}
-		cl = c
+		cl, certSHA = c, seen
 		break
 	}
 	if cl == nil {
-		return false
+		return false, false
+	}
+	if err := a.authenticate(ctx, cl, certSHA); err != nil {
+		log.Warn("console rejected", "console", target.Name, "addr", cl.RemoteAddr(), "reason", err)
+		cl.Close(transport.ClosePolicyViolation, "authentication failed")
+		<-cl.Done()
+		return false, errors.Is(err, errBadProof)
 	}
 	if _, err := cl.Send(ctx, a.Hello); err != nil {
 		log.Warn("cannot send hello", "err", err)
 		cl.Close(transport.CloseNormal, "")
 		<-cl.Done()
-		return false
+		return false, false
 	}
 	cl.StartHeartbeat()
 	a.state(AgentConnected, target)
@@ -193,7 +245,70 @@ func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.
 	<-cl.Done()
 	a.state(AgentDisconnected, target)
 	log.Info("disconnected from console", "console", target.Name)
-	return true
+	return true, false
+}
+
+var (
+	errBadProof        = errors.New("auth.proof signature does not verify with the configured key")
+	errUnexpected      = errors.New("message before authentication")
+	errHandshakeClosed = errors.New("connection closed during authentication")
+	errHandshakeTime   = errors.New("authentication timeout")
+)
+
+// authenticate runs auth.challenge → auth.proof → auth.ok (docs/protocol.md
+// §3.2). Until it succeeds, no other message is processed: anything but the
+// matching auth.proof is answered with unauthorized and ends the attempt.
+func (a *Agent) authenticate(ctx context.Context, cl *transport.Client, certSHA [32]byte) error {
+	timeout := a.HandshakeTimeout
+	if timeout <= 0 {
+		timeout = DefaultHelloTimeout
+	}
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	nonce := security.NewNonce()
+	challengeID, err := cl.Send(ctx, protocol.AuthChallenge{Nonce: nonce})
+	if err != nil {
+		return fmt.Errorf("send auth.challenge: %w", err)
+	}
+	select {
+	case env, ok := <-cl.Incoming():
+		if !ok {
+			return errHandshakeClosed
+		}
+		proof, isProof := env.Payload.(protocol.AuthProof)
+		if !isProof || proof.RefID != challengeID {
+			if env.Type != protocol.TypeError {
+				_, _ = cl.Send(ctx, protocol.NewError(env.ID, protocol.CodeUnauthorized, "authentication required"))
+			}
+			return fmt.Errorf("%w: %s", errUnexpected, env.Type)
+		}
+		if !security.VerifyProof(a.ConsolePublicKey, nonce, a.Channel, certSHA, proof.Signature) {
+			_, _ = cl.Send(ctx, protocol.NewError(env.ID, protocol.CodeUnauthorized, "invalid signature"))
+			return errBadProof
+		}
+		if _, err := cl.Send(ctx, protocol.AuthOK{RefID: env.ID}); err != nil {
+			return fmt.Errorf("send auth.ok: %w", err)
+		}
+		return nil
+	case <-timer.C:
+		return errHandshakeTime
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// pick returns the next console to try, skipping those that failed
+// authentication recently.
+func pick(known []discovery.Console, next int, untrusted map[string]time.Time, now time.Time) (discovery.Console, bool) {
+	for i := range known {
+		c := known[(next+i)%len(known)]
+		if until, bad := untrusted[c.Instance]; bad && now.Before(until) {
+			continue
+		}
+		return c, true
+	}
+	return discovery.Console{}, false
 }
 
 func (a *Agent) state(s AgentState, c discovery.Console) {

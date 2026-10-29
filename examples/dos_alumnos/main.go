@@ -144,6 +144,7 @@ func runStudent(ctx context.Context, channel, direct string, consoleKey ed25519.
 		ConsolePublicKey: consoleKey,
 		Hello:            hello,
 		Source:           src,
+		OnMessage:        studentMessages(hello.Hostname),
 		OnState: func(s session.AgentState, c discovery.Console) {
 			if c.Name != "" {
 				fmt.Printf("[%s] %s: %s (%s)\n", now(), hello.Hostname, s, c.Name)

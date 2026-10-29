@@ -10,8 +10,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/session"
+	"github.com/bayalad7/aula/internal/transport"
 )
 
 const commandHelp = `Comandos:
@@ -152,5 +154,29 @@ func ackLabel(s session.Session) string {
 		return "pantalla limpia ✓"
 	default:
 		return "código " + s.LastCodeAck[:8] + " ✓"
+	}
+}
+
+// studentMessages makes the console student behave like the real app for the
+// protocol: it applies code and notices with codedist.Receiver, answers the
+// acks, and prints a summary instead of drawing a window.
+func studentMessages(host string) func(context.Context, *transport.Client, protocol.Envelope) {
+	recv := &codedist.Receiver{
+		Board: codedist.NewBoard(0),
+		OnBoard: func(snippets []codedist.Snippet) {
+			if len(snippets) == 0 {
+				fmt.Printf("[%s] %s: pantalla limpia\n", now(), host)
+				return
+			}
+			s := snippets[len(snippets)-1]
+			fmt.Printf("[%s] %s: código recibido: ejercicio %s %q (%s, %d líneas); en pantalla: %d\n", now(), host,
+				s.Exercise, s.Title, s.Lang, strings.Count(strings.TrimRight(s.Content, "\n"), "\n")+1, len(snippets))
+		},
+		OnNotice: func(n codedist.Notice) { fmt.Printf("[%s] %s: aviso (%s): %s\n", now(), host, n.Level, n.Text) },
+	}
+	return func(ctx context.Context, cl *transport.Client, env protocol.Envelope) {
+		if reply := recv.Handle(env); reply != nil {
+			_, _ = cl.Send(ctx, reply)
+		}
 	}
 }

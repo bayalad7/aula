@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/coder/websocket"
 
@@ -15,14 +16,21 @@ type Client struct {
 	in chan protocol.Envelope
 }
 
-// Dial connects to a console at url ("ws://host:port/ws"). The handshake is
-// bounded by Options.DialTimeout; the connection lives until ctx is canceled
-// or Close is called.
+// Dial connects to a console at url ("wss://host:port/ws" with Options.TLS).
+// The handshake is bounded by Options.DialTimeout; the connection lives until
+// ctx is canceled or Close is called.
 func Dial(ctx context.Context, url string, opts Options) (*Client, error) {
 	opts = opts.withDefaults()
 	dctx, cancel := context.WithTimeout(ctx, opts.DialTimeout)
 	defer cancel()
-	ws, _, err := websocket.Dial(dctx, url, nil)
+	var dopts *websocket.DialOptions
+	if opts.TLS != nil {
+		// A dedicated transport: no proxy, no HTTP/2, our TLS settings only.
+		dopts = &websocket.DialOptions{HTTPClient: &http.Client{
+			Transport: &http.Transport{TLSClientConfig: opts.TLS},
+		}}
+	}
+	ws, _, err := websocket.Dial(dctx, url, dopts)
 	if err != nil {
 		return nil, fmt.Errorf("dial %s: %w", url, err)
 	}

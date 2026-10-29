@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -79,6 +80,9 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) error {
 	s.mu.Lock()
 	s.ctx = ctx
 	s.mu.Unlock()
+	if s.opts.TLS != nil {
+		ln = tls.NewListener(ln, s.opts.TLS)
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(Path, s.handle)
@@ -90,7 +94,7 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) error {
 
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
-	s.opts.Logger.Info("websocket server listening", "addr", ln.Addr().String())
+	s.opts.Logger.Info("websocket server listening", "addr", ln.Addr().String(), "tls", s.opts.TLS != nil)
 
 	var err error
 	select {

@@ -1,18 +1,22 @@
 package transport
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"io"
 	"log/slog"
 	"net"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/coder/websocket"
 
 	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/security"
 )
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -313,5 +317,132 @@ func TestDialFailure(t *testing.T) {
 	_, err = Dial(context.Background(), "ws://"+addr+Path, Options{DialTimeout: time.Second, Logger: quiet})
 	if err == nil || !strings.Contains(err.Error(), "dial") {
 		t.Fatalf("Dial to closed port: %v", err)
+	}
+}
+
+// recordingListener keeps a copy of every byte the server receives and sends,
+// as a network capture would.
+type recordingListener struct {
+	net.Listener
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (l *recordingListener) Accept() (net.Conn, error) {
+	c, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return &recordingConn{Conn: c, l: l}, nil
+}
+
+func (l *recordingListener) bytes() []byte {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return bytes.Clone(l.buf.Bytes())
+}
+
+type recordingConn struct {
+	net.Conn
+	l *recordingListener
+}
+
+func (c *recordingConn) Read(p []byte) (int, error) {
+	n, err := c.Conn.Read(p)
+	c.l.mu.Lock()
+	c.l.buf.Write(p[:n])
+	c.l.mu.Unlock()
+	return n, err
+}
+
+func (c *recordingConn) Write(p []byte) (int, error) {
+	c.l.mu.Lock()
+	c.l.buf.Write(p)
+	c.l.mu.Unlock()
+	return c.Conn.Write(p)
+}
+
+// sendMarker runs a server on a recording listener, sends a message containing
+// marker in each direction and returns the raw bytes seen on the wire. Client
+// frames are masked by WebSocket itself (RFC 6455 §5.3), so only the
+// server-to-client copy can show the text when TLS is off.
+func sendMarker(t *testing.T, serverTLS, clientTLS *tls.Config, scheme, marker string) []byte {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := &recordingListener{Listener: ln}
+	ctx, cancel := context.WithCancel(context.Background())
+	opts := testOptions()
+	opts.TLS = serverTLS
+	srv := NewServer(opts)
+	served := make(chan struct{})
+	go func() { defer close(served); _ = srv.Serve(ctx, rec) }()
+	defer func() {
+		cancel()
+		go func() {
+			for range srv.Events() {
+			}
+		}()
+		<-served
+	}()
+
+	copts := testOptions()
+	copts.TLS = clientTLS
+	cl, err := Dial(context.Background(), scheme+"://"+ln.Addr().String()+Path, copts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cl.Close(CloseNormal, "")
+	conn := nextEvent(t, srv, EventConnect).Conn
+	msg := protocol.MsgShow{Text: marker, Level: protocol.LevelInfo}
+	if _, err := cl.Send(context.Background(), msg); err != nil {
+		t.Fatal(err)
+	}
+	if ev := nextEvent(t, srv, EventMessage); ev.Envelope.Payload.(protocol.MsgShow).Text != marker {
+		t.Fatal("message altered in transit")
+	}
+	if _, err := conn.Send(context.Background(), msg); err != nil {
+		t.Fatal(err)
+	}
+	if env := recv(t, cl); env.Payload.(protocol.MsgShow).Text != marker {
+		t.Fatal("message altered in transit")
+	}
+	return rec.bytes()
+}
+
+// TestTrafficIsEncrypted is how stage 05 checks that the WebSocket really goes
+// over TLS: the bytes on the wire start with a TLS handshake record and do not
+// contain the message text, while the same check on plain ws:// does find it.
+func TestTrafficIsEncrypted(t *testing.T) {
+	cert, err := security.LoadOrCreateCertificate(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	const marker = "TEXTO-SECRETO-DEL-PROFESOR-42"
+	var seen [32]byte
+	clientTLS, err := security.ClientTLS(cert.Fingerprint(), &seen)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wire := sendMarker(t, security.ServerTLS(cert), clientTLS, "wss", marker)
+	if len(wire) < 3 || wire[0] != 0x16 || wire[1] != 0x03 {
+		t.Fatalf("wire does not start with a TLS handshake record: % x", wire[:min(len(wire), 8)])
+	}
+	for _, plain := range []string{marker, "msg.show", "Upgrade: websocket", "GET /ws"} {
+		if bytes.Contains(wire, []byte(plain)) {
+			t.Fatalf("%q visible on the wire", plain)
+		}
+	}
+	if seen != cert.SHA256 {
+		t.Fatal("client did not pin the server certificate")
+	}
+
+	// Control: the same capture without TLS shows the text, so the check above
+	// would catch plaintext.
+	if plain := sendMarker(t, nil, nil, "ws", marker); !bytes.Contains(plain, []byte(marker)) {
+		t.Fatal("control capture without TLS does not contain the marker; the test proves nothing")
 	}
 }

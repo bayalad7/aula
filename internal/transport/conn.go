@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -50,6 +51,10 @@ type Options struct {
 	DialTimeout       time.Duration
 	SendQueue         int
 	Logger            *slog.Logger
+	// TLS is the server configuration (Server) or the client configuration
+	// (Dial, with a wss:// URL). Nil means plain WebSocket, used only by tests
+	// of this package.
+	TLS *tls.Config
 }
 
 func (o Options) withDefaults() Options {

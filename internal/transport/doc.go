@@ -7,5 +7,6 @@
 // answered with a protocol error message, and a connection that receives
 // nothing for the idle timeout is closed (docs/protocol.md §3.4).
 //
-// TLS is added in stage 05; until then URLs use ws://.
+// Agents and console always use TLS (Options.TLS, built by package security);
+// plain ws:// is only used by this package's own tests.
 package transport

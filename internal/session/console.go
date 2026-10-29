@@ -29,7 +29,11 @@ type Console struct {
 	// OnMessage receives every message of an established session except hello
 	// and heartbeat (acks, errors…). It runs on the Run goroutine: keep it short.
 	OnMessage func(ctx context.Context, conn *transport.Conn, env protocol.Envelope)
-	Logger    *slog.Logger
+	// OnChange is called after the registry changes (an agent joins, leaves,
+	// goes silent or acknowledges code), to refresh a UI. It runs on the Run
+	// goroutine: keep it short.
+	OnChange func()
+	Logger   *slog.Logger
 
 	mu    sync.Mutex
 	conns map[string]*transport.Conn // established sessions, by ID
@@ -63,20 +67,21 @@ func (c *Console) Send(ctx context.Context, sessionID string, p protocol.Payload
 }
 
 // Broadcast sends p to every connected session of the channel that supports
-// it. It returns the IDs reached and the errors of the others, keyed by
-// session ID; sessions lacking the capability are reported with
-// ErrUnsupportedCapability.
-func (c *Console) Broadcast(ctx context.Context, p protocol.Payload) (sent []string, failed map[string]error) {
-	failed = map[string]error{}
+// it. sent maps each session reached to the ID of the envelope it got (acks
+// reference it); failed holds the errors of the others, with
+// ErrUnsupportedCapability for sessions lacking the capability.
+func (c *Console) Broadcast(ctx context.Context, p protocol.Payload) (sent map[string]string, failed map[string]error) {
+	sent, failed = map[string]string{}, map[string]error{}
 	for _, s := range c.Registry.List(c.Channel) {
 		if s.State != StateConnected {
 			continue
 		}
-		if _, err := c.Send(ctx, s.ID, p); err != nil {
+		envID, err := c.Send(ctx, s.ID, p)
+		if err != nil {
 			failed[s.ID] = err
 			continue
 		}
-		sent = append(sent, s.ID)
+		sent[s.ID] = envID
 	}
 	return sent, failed
 }
@@ -151,6 +156,7 @@ func (c *Console) Run(ctx context.Context, events <-chan transport.Event) error 
 				c.untrack(ev.Conn)
 				if c.Registry.Disconnect(ev.Conn.ID()) {
 					log.Info("agent disconnected", "conn", ev.Conn.ID())
+					c.changed()
 				}
 			case transport.EventMessage:
 				if p, ok := pending[ev.Conn]; ok {
@@ -172,6 +178,7 @@ func (c *Console) Run(ctx context.Context, events <-chan transport.Event) error 
 			}
 			for _, id := range c.Registry.Sweep() {
 				log.Info("agent silent, marked disconnected", "conn", id)
+				c.changed()
 			}
 		}
 	}
@@ -214,6 +221,7 @@ func (c *Console) handshake(ctx context.Context, log *slog.Logger, p *pendingCon
 		c.track(ev.Conn)
 		ev.Conn.StartHeartbeat()
 		log.Info("agent joined", "conn", s.ID, "hostname", s.Hostname, "os", s.OS, "version", s.AgentVersion)
+		c.changed()
 		return true
 	}
 
@@ -238,6 +246,7 @@ func (c *Console) route(ctx context.Context, log *slog.Logger, ev transport.Even
 	case protocol.TypeCodeAck:
 		ack := ev.Envelope.Payload.(protocol.CodeAck)
 		c.Registry.RecordCodeAck(ev.Conn.ID(), ack.SnippetID)
+		c.changed()
 		if c.OnMessage != nil {
 			c.OnMessage(ctx, ev.Conn, ev.Envelope)
 		}
@@ -256,5 +265,11 @@ func (c *Console) sendError(ctx context.Context, log *slog.Logger, ev transport.
 	}
 	if _, err := ev.Conn.Send(ctx, protocol.NewError(ev.Envelope.ID, code, msg)); err != nil {
 		log.Debug("cannot send error", "conn", ev.Conn.ID(), "err", err)
+	}
+}
+
+func (c *Console) changed() {
+	if c.OnChange != nil {
+		c.OnChange()
 	}
 }

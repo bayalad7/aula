@@ -39,6 +39,17 @@ cd apps/student && wails build   # -> apps/student/build/bin/aula-cliente(.exe)
 
 En Linux: `wails build -tags webkit2_41`.
 
+## Instalar (Hito 1, Windows)
+
+Descarga de *Releases* `Aula-Consola-Setup-X.Y.Z.exe` (profesor) y `Aula-Alumno-Setup-X.Y.Z.exe`
+(alumnos). La consola genera `aula-alumno.json` (botón **Configuración de alumnos**), que se pone
+junto al instalador del alumno. Para muchos equipos:
+`Aula-Alumno-Setup-X.Y.Z.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CONFIG=ruta\aula-alumno.json`.
+
+- Guía de uso completa: `docs/uso-hito1.md`.
+- Configuración y firewall: `docs/configuracion.md`.
+- Cómo se publica una versión (tags `vX.Y.Z`, firma de `checksums.txt`): `docs/desarrollo/publicar.md`.
+
 ## Usar la consola del profesor
 
 1. Abre `aula-consola`, elige el canal del aula (p. ej. `AULA_101`) y el nombre que verán los

@@ -198,3 +198,34 @@ recibe eventos con el estado completo. `session.Console.OnChange` avisa cuando c
 **Pruebas sin tocar el escritorio.** La prueba de pulsación real del atajo (`SendInput`) solo corre
 con `AULA_HOTKEY_TEST=1`. Las pruebas de la interfaz se hacen con dobles y con la red real
 (`TestLiveClassTwoAgentsAck`), no simulando clics.
+
+## D-010: Configuración, instaladores y firma de versiones (Hito 1)
+
+**Fecha:** 2026-10-28 · **Etapa:** 08
+
+- **Configuración del agente de máquina primero.** El instalador escribe
+  `C:\ProgramData\Aula\alumno\config.json` y la protege con `icacls` (sin herencia: lectura para
+  Usuarios, control total para Administradores y SYSTEM). El agente la prefiere sobre la del
+  usuario (`%AppData%`). Si fuera al revés, un alumno podría dejar un archivo propio y conectar el
+  agente que arranca con su sesión a otra consola. El formato vive en un solo lugar
+  (`session.AgentConfig`): la consola lo genera y el agente lo lee. Formato en
+  `docs/configuracion.md`.
+- **La consola genera `aula-alumno.json`** (botón o `aula-consola config-alumno`). El instalador
+  lo toma de junto al setup o de `/CONFIG=`, así nadie edita JSON a mano en 30 equipos.
+- **Inno Setup**, como en otros proyectos del autor. Instalación por máquina (`admin`, Program
+  Files), arranque al iniciar sesión con la clave `Run` de HKLM (el servicio llega en la Fase 2) e
+  instalación silenciosa para GPO. Las reglas de firewall son **por programa** y solo para los
+  perfiles Privado y Dominio. `CloseApplications` cierra el agente al actualizar.
+- **Instancia única** (`SingleInstanceLock` de Wails) en ambas apps: el arranque automático más
+  un arranque manual no crean dos agentes, y una segunda consola no pelea por el puerto.
+- **Firma de versiones con Ed25519 propia** (`tools/relsign`, paquete `empaquetado`) en lugar de
+  GPG o cosign: es la misma primitiva que ya usa el protocolo, no requiere herramientas externas
+  para verificar y el paquete `empaquetado` **embebe** la llave pública para la auto-actualización
+  (etapa 15). La firma lleva la etiqueta `aula-checksums-v1`. La llave privada se generó con
+  `relsign keygen` directo a `gh secret set` y no existe en disco.
+- **Versión inyectada por `-ldflags -X main.version`** y verificada en el workflow ejecutando los
+  binarios. Los metadatos del `.exe` usan la parte numérica (`0.1.0` de `0.1.0-rc.1`), porque
+  Windows no admite sufijos ahí.
+- **Robustez:** `TestTwelveAgentsAndConsoleRestart` (red real, 12 agentes, reinicio de la consola
+  en el mismo puerto) y el ejemplo `examples/muchos_alumnos`, que en este equipo sostuvo 15
+  agentes y su reconexión.

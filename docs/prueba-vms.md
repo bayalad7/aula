@@ -665,3 +665,33 @@ Datos del entorno: hipervisor y modo de red, versión de Windows de cada VM, si 
 
 Cualquier ❌ va a "Pendientes conocidos" de `docs/progreso.md` con el caso y las notas.
 
+
+---
+
+## 10. Hito 1 (etapa 08): con los instaladores
+
+Ahora todo se instala como lo hará el laboratorio, sin copiar `.exe` sueltos. Usa los artefactos
+de una versión publicada (*Releases*: `Aula-Consola-Setup-*.exe`, `Aula-Alumno-Setup-*.exe`) o
+compílalos con los comandos de `docs/desarrollo/publicar.md`. Guía de uso completa:
+`docs/uso-hito1.md`.
+
+Antes de empezar, en cada VM, desinstala lo de las pruebas anteriores si quieres partir de cero y
+borra `%AppData%\Aula\alumno\config.json` de los alumnos: la configuración de máquina gana, pero
+así no hay dudas.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **08-A** Consola instalada | En la VM del profesor, ejecuta `Aula-Consola-Setup-*.exe`. Abre **Aula Consola** desde el menú Inicio y abre la clase `AULA_101`. | No aparece ningún aviso del firewall (lo creó el instalador: `Get-NetFirewallRule -DisplayName "Aula Consola"`). La pantalla de inicio muestra la versión. |
+| **08-B** Generar la configuración | Pulsa **Configuración de alumnos** y guarda `aula-alumno.json` en la carpeta compartida, junto a `Aula-Alumno-Setup-*.exe`. | El archivo tiene `channel: AULA_101` y la clave `aula-ed25519:…` de la consola. |
+| **08-C** Instalación con asistente | En la VM de alumno 1, ejecuta el setup desde esa carpeta. | Termina sin avisos y abre Aula Cliente, que dice "conectado a la clase de …". Existe `C:\ProgramData\Aula\alumno\config.json`. |
+| **08-D** Instalación silenciosa | En la VM de alumno 2, PowerShell **como administrador**: `.\Aula-Alumno-Setup-X.Y.Z.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART`. Cierra sesión y vuelve a entrar. | No aparece ninguna ventana durante la instalación. Al iniciar sesión, Aula Cliente se abre solo y se conecta. |
+| **08-E** Configuración protegida | En una VM de alumno, con un usuario **sin** permisos de administrador, intenta editar `C:\ProgramData\Aula\alumno\config.json` con el Bloc de notas. | Windows no deja guardar ("Acceso denegado"). Abrirlo sí se puede. |
+| **08-F** De punta a punta (**aceptación**) | Emite `prueba_sangria.py` (§6.3) a los 2–3 alumnos. En cada uno, copia y pega en el Bloc de notas o IDLE. | "confirmados N/N ✓" y el código pegado idéntico (como en 06-D). |
+| **08-G** Reiniciar la consola (**aceptación**) | Cierra Aula Consola, ábrela de nuevo y abre `AULA_101`. Repite reiniciando la VM del profesor. | Los alumnos pasan a "sin conexión… reintentando" y vuelven a "conectado" solos, en menos de 30 s. No se toca nada en los alumnos. |
+| **08-H** Una sola instancia | En un alumno, abre Aula Cliente otra vez desde el menú Inicio. | No se abre una segunda ventana: la existente pasa al frente. La consola sigue mostrando una sola tarjeta. |
+| **08-I** Actualizar | Instala de nuevo el mismo setup (o uno más nuevo) **sin** `aula-alumno.json` junto a él. | El agente se cierra, se reemplaza y sigue configurado (la configuración de máquina se conserva). |
+| **08-J** Desinstalar | *Configuración → Aplicaciones → Aula Cliente → Desinstalar*. | Se quitan el programa, el arranque automático y la regla de firewall (`Get-NetFirewallRule -DisplayName "Aula Cliente (mDNS)"` ya no la encuentra). |
+| **08-K** Carga (opcional) | En una VM de alumno: `go run ./examples/muchos_alumnos -n 12 -config aula-alumno.json` (o su `.exe`). Emite código y reinicia la consola. | "conectados 12/12", la consola cuenta 12 (más los alumnos reales), confirmados N/N y, tras el reinicio, "reconexiones 12". |
+
+Anota los resultados en la tabla de §9 (agrega las filas 08-A a 08-K). **Para cerrar el Hito 1**
+bastan 08-C, 08-F y 08-G en ✅ con 2–3 alumnos.

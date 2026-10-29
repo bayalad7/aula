@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-10-28 (etapa 07).
+Última actualización: 2026-10-28 (etapa 08 — **Hito 1 completado**).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -10,7 +10,7 @@
 | 05 | Seguridad: TLS y autenticación Ed25519 | ✅ Completada |
 | 06 | App estudiante: overlay con Prism (D-008) y botón Copiar | ✅ Completada (falta prueba en VM) |
 | 07 | App profesor: lista, hotkey de captura, emisión | ✅ Completada (falta prueba en VMs) |
-| 08 | Hito 1: distribución de código de punta a punta + instaladores | ⏳ Pendiente |
+| 08 | Hito 1: distribución de código de punta a punta + instaladores | ✅ **Hito 1 completado** (falta validación en laboratorio) |
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | ⏳ Pendiente |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
@@ -210,3 +210,40 @@
   verlo en pantalla.
 - Pendiente de la etapa: en VMs, dos alumnos confirman (2/2) y el atajo captura desde otra
   aplicación (pasos en `docs/prueba-vms.md` §6, casos 07-A a 07-J).
+
+## Etapa 08 (Hito 1): notas
+
+- **Configuración** (`docs/configuracion.md`):
+  - agente: `session.AgentConfig` (`channel`, `console_public_key`, `direct` opcional);
+  - precedencia: argumentos > `C:\ProgramData\Aula\alumno\config.json` (máquina, protegida) >
+    `%AppData%` (usuario);
+  - consola: `%AppData%\Aula\consola\consola.json` (`recent_channels`, `console_name`, `port`).
+- **Configuración de alumnos generada por la consola:** botón **Configuración de alumnos** o
+  `aula-consola config-alumno -canal … [-directo …]`.
+- **Instaladores Inno Setup** (`empaquetado/windows/`):
+  - agente por máquina, con arranque al iniciar sesión (HKLM `Run`);
+  - toma `aula-alumno.json` de junto al setup o de `/CONFIG=`;
+  - protege la configuración con `icacls`, crea la regla de firewall y admite
+    `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART`;
+  - consola con instalador (accesos directos y regla de firewall) y portable.
+  - Compilan en local con Inno Setup 6.7.3.
+- **Versiones:**
+  - `aula-consola version` y `aula-cliente -version` (`-ldflags -X main.version`);
+  - metadatos del `.exe` en `wails.json`;
+  - instancia única en ambas apps.
+- **Workflow de release** (`.github/workflows/release.yml`, solo Windows):
+  - tag `v*` → pruebas → apps → comprobación de versión → Authenticode opcional → instaladores
+    → `checksums.txt` firmado con Ed25519 y verificado con `empaquetado/llave-releases.pub` →
+    `gh release create` (prerelease si hay guion);
+  - secretos en `docs/desarrollo/publicar.md`; `RELEASE_SIGNING_KEY` ya está creado (la privada
+    no existe en disco);
+  - `.deb`/`.rpm`/`.pkg` quedan para la etapa 13.
+- **Robustez:**
+  - `TestTwelveAgentsAndConsoleRestart`: 12 agentes reales, 12/12 acuses, reinicio de la consola
+    y vuelven solos;
+  - `examples/muchos_alumnos -n N`: probado aquí con 15 agentes, emisión, reinicio del profesor
+    (0/15 → 15/15, 15 reconexiones) y segunda emisión.
+- **Guías:** `docs/uso-hito1.md` (uso en clase e instalación) y `docs/prueba-vms.md` §10 (casos
+  08-A a 08-K con los instaladores). Decisión D-010.
+- **Pendiente:** validación en laboratorio o VMs con 2–3 equipos (08-C, 08-F y 08-G) y la
+  prueba en VMs de las etapas 04, 06 y 07.

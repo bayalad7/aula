@@ -13,7 +13,7 @@
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ✅ **Hito 1 completado** (falta validación en laboratorio) |
 | 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
 | 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 En curso (miniaturas; pantalla en blanco documentada y pendiente) |
-| 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada (falta prueba en VMs, `docs/prueba-vms.md` §12) |
+| 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
@@ -497,3 +497,19 @@
   - la prueba en VM de `docs/prueba-vms.md` §13: arranque con el equipo sin sesión, ayudante en
     la sesión estándar, relanzar, cambio de usuario;
   - Linux (systemd) y macOS (launchd).
+
+## Prueba en el centro de cómputo de la escuela con 0.4.0-dev (29/10/2026)
+
+- **Entorno:** red local del centro de cómputo; la laptop del profesor como consola; instaladores
+  locales `0.4.0-dev` (`docs/desarrollo/instaladores-locales.md`, commit `c422f35`).
+- **Resultado** (reportado por el usuario):
+  - el alumno se instaló bien en **4 equipos**, con el agente como servicio;
+  - la vista de pantallas mostró las **miniaturas** y la **vista en detalle**;
+  - la **transmisión de la pantalla del profesor** se vio correctamente en los 4.
+- **Queda por probar del agente como servicio** (`docs/prueba-vms.md` §13):
+  - reiniciar sin iniciar sesión (SV-B);
+  - cerrar la ventana a la fuerza (SV-E);
+  - cambiar de usuario (SV-H);
+  - que un alumno estándar no pueda detenerlo (SV-F).
+- **Queda medir** CPU y subida del profesor al transmitir (§12.3).
+

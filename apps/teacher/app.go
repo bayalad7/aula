@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -27,25 +26,29 @@ var version = "0.1.0-dev"
 // App is the teacher console behind the Wails window. Its exported methods
 // are the bindings the frontend calls; all state lives here.
 type App struct {
-	dir     string // identity, certificate and settings
-	port    int
-	log     *slog.Logger
-	clip    platform.Clipboard // nil when the system has none
-	clipErr error
-	hotkeys platform.Hotkeys
-	start   startClassFunc
-	now     func() time.Time
+	dir        string // user settings, certificate and the personal identity
+	siteKeyDir string // the site key (clave del centro), platform.SiteKeyDir()
+	port       int
+	// defaultChannel and defaultName open the class on start when autoStart
+	// is set (the real app; tests open classes themselves).
+	defaultChannel string
+	defaultName    string
+	autoStart      bool
+	log            *slog.Logger
+	clip           platform.Clipboard // nil when the system has none
+	clipErr        error
+	hotkeys        platform.Hotkeys
+	start          startClassFunc
+	now            func() time.Time
 
-	emit func(event string, data any) // set at startup; replaced in tests
-	// saveDialog asks where to save a file and returns "" if cancelled; set at
-	// startup (Wails dialog), replaced in tests.
-	saveDialog func(defaultName string) (string, error)
-	raise      func() // bring the window forward (second launch); set at startup
+	emit  func(event string, data any) // set at startup; replaced in tests
+	raise func()                       // bring the window forward (second launch); set at startup
 
 	mu         sync.Mutex
 	ctx        context.Context
 	class      classroom
 	info       ClassInfo
+	startErr   string // why the automatic start failed, shown on the setup screen
 	history    *codedist.History
 	deliveries *codedist.Deliveries
 	lastLang   string
@@ -58,16 +61,13 @@ type App struct {
 
 // NewApp builds the console. dir holds the identity and settings.
 func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform.Hotkeys, log *slog.Logger) *App {
-	port := DefaultPort
-	if s := loadSettings(dir); s.Port > 0 && s.Port <= 65535 {
-		port = s.Port
-	}
+	m, s := loadMachineConfig(), loadSettings(dir)
 	return &App{
-		dir: dir, port: port, log: log, clip: clip, clipErr: clipErr, hotkeys: hotkeys,
-		start: startLiveClass, now: time.Now, emit: func(string, any) {},
-		saveDialog: func(string) (string, error) { return "", errors.New("diálogo no disponible") },
-		raise:      func() {},
-		history:    &codedist.History{}, deliveries: &codedist.Deliveries{},
+		dir: dir, siteKeyDir: siteKeyDir(), port: serverPort(m, s),
+		defaultChannel: defaultChannel(m, s), defaultName: s.ConsoleName,
+		log: log, clip: clip, clipErr: clipErr, hotkeys: hotkeys,
+		start: startLiveClass, now: time.Now, emit: func(string, any) {}, raise: func() {},
+		history: &codedist.History{}, deliveries: &codedist.Deliveries{},
 		hotkey: HotkeyStatus{Combo: platform.DefaultCaptureHotkey.String()},
 	}
 }
@@ -93,6 +93,24 @@ func (a *App) startup(ctx context.Context) {
 	if err != nil {
 		a.log.Warn("capture hotkey unavailable", "err", err)
 	}
+	if a.autoStart {
+		// Like LanSchool: open on the default channel right away.
+		go a.startDefault()
+	}
+}
+
+// startDefault opens the class on the default channel. A failure (port in
+// use, no key…) is shown on the setup screen, where the teacher can retry.
+func (a *App) startDefault() {
+	if _, err := a.StartClass(a.defaultChannel, a.defaultName); err != nil {
+		a.log.Warn("automatic start failed", "channel", a.defaultChannel, "err", err)
+		a.mu.Lock()
+		a.startErr = err.Error()
+		a.mu.Unlock()
+		a.emit(EventClass, a.View())
+		return
+	}
+	a.emit(EventClass, a.View())
 }
 
 func (a *App) shutdown(context.Context) { a.EndClass() }
@@ -102,26 +120,36 @@ func (a *App) shutdown(context.Context) { a.EndClass() }
 // Setup returns what the channel selection screen shows.
 func (a *App) Setup() Setup {
 	s := loadSettings(a.dir)
-	out := Setup{RecentChannels: s.RecentChannels, ConsoleName: s.ConsoleName, Version: version}
+	name := s.ConsoleName
+	if name == "" {
+		name = a.defaultName
+	}
+	a.mu.Lock()
+	startErr := a.startErr
+	a.mu.Unlock()
+	out := Setup{RecentChannels: s.RecentChannels, ConsoleName: name, Version: version,
+		DefaultChannel: a.defaultChannel, StartError: startErr}
 	if out.RecentChannels == nil {
 		out.RecentChannels = []string{}
 	}
-	if id, err := security.LoadIdentity(a.dir); err == nil {
+	if id, source, err := consoleKey(a.siteKeyDir, a.dir, false); err == nil {
 		out.PublicKey = security.EncodePublicKey(id.Public())
 		out.Fingerprint = security.KeyFingerprint(id.Public())
+		out.KeySource = source
 	}
 	return out
 }
 
-// StartClass opens a class on channel, announced as consoleName.
+// StartClass opens a class on channel (a number from 1 to 16000), announced
+// as consoleName. It also changes channel: the open class is closed first.
 func (a *App) StartClass(channel, consoleName string) (View, error) {
-	channel = strings.ToUpper(strings.TrimSpace(channel))
-	consoleName = strings.TrimSpace(consoleName)
-	if !protocol.ValidChannel(channel) {
-		return View{}, fmt.Errorf("canal %q inválido: usa de 1 a 32 mayúsculas, dígitos o _ (p. ej. AULA_101)", channel)
+	channel, err := protocol.ParseChannel(channel)
+	if err != nil {
+		return View{}, err
 	}
+	consoleName = strings.TrimSpace(consoleName)
 	if consoleName == "" || len(consoleName) > 63 {
-		return View{}, errors.New("escribe un nombre para la clase (hasta 63 caracteres)")
+		return View{}, errors.New("escribe tu nombre como lo verán los alumnos (hasta 63 caracteres)")
 	}
 	a.EndClass()
 
@@ -131,13 +159,13 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir, Port: a.port},
-		classHooks{onAck: a.onAck, onChange: a.onChange}, a.log)
+	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
+		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange}, a.log)
 	if err != nil {
 		return View{}, err
 	}
 	a.mu.Lock()
-	a.class, a.info = class, info
+	a.class, a.info, a.startErr = class, info, ""
 	a.history, a.deliveries = &codedist.History{}, &codedist.Deliveries{}
 	a.mu.Unlock()
 
@@ -323,53 +351,6 @@ func (a *App) readDraft(source string) (Draft, error) {
 		Content: text, Lang: guessLang(text, prev), Source: source, CapturedAt: a.now(),
 		Lines: strings.Count(strings.TrimRight(text, "\n"), "\n") + 1,
 	}, nil
-}
-
-// SaveAgentConfig asks where to save aula-alumno.json for the open class
-// (channel and this console's public key) and writes it. It returns the path,
-// or "" if the teacher cancelled. The agent installer picks the file up from
-// next to itself.
-func (a *App) SaveAgentConfig() (string, error) {
-	a.mu.Lock()
-	info := a.info
-	active := a.class != nil
-	a.mu.Unlock()
-	if !active {
-		return "", errNoClass
-	}
-	data, err := session.AgentConfig{Channel: info.Channel, ConsolePublicKey: info.PublicKey}.Marshal()
-	if err != nil {
-		return "", err
-	}
-	path, err := a.saveDialog(session.AgentConfigFile)
-	if err != nil || path == "" {
-		return "", err
-	}
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return "", fmt.Errorf("no se pudo guardar: %w", err)
-	}
-	a.log.Info("agent config exported", "channel", info.Channel)
-	return path, nil
-}
-
-// CopyPublicKey puts the console public key on the clipboard, to paste it
-// into the agents' configuration.
-func (a *App) CopyPublicKey() error {
-	a.mu.Lock()
-	key := a.info.PublicKey
-	a.mu.Unlock()
-	if key == "" {
-		key = a.Setup().PublicKey
-	}
-	if key == "" {
-		return errors.New("la clave se crea al abrir la primera clase")
-	}
-	if a.clip == nil {
-		return fmt.Errorf("el portapapeles no está disponible: %v", a.clipErr)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	return a.clip.WriteText(ctx, key)
 }
 
 // --- Console callbacks (console goroutine) ------------------------------------------

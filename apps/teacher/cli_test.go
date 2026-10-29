@@ -6,15 +6,14 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"encoding/pem"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/security"
-	"github.com/bayalad7/aula/internal/session"
 )
 
 func TestKeygenPrintsPublicKeyOnly(t *testing.T) {
@@ -72,35 +71,73 @@ func TestUnknownCommand(t *testing.T) {
 	}
 }
 
-func TestConfigAlumnoAndVersion(t *testing.T) {
-	dir := t.TempDir()
+func TestVersion(t *testing.T) {
 	var out, errOut bytes.Buffer
-	if code := runCLI([]string{"keygen", "-dir", dir}, &out, &errOut); code != 0 {
-		t.Fatal(errOut.String())
-	}
-	file := filepath.Join(t.TempDir(), "aula-alumno.json")
-	if code := runCLI([]string{"config-alumno", "-dir", dir, "-canal", "aula_101", "-o", file}, &out, &errOut); code != 0 {
-		t.Fatalf("config-alumno exit %d: %s", code, errOut.String())
-	}
-	data, _ := os.ReadFile(file)
-	var cfg session.AgentConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		t.Fatal(err)
-	}
-	id, _ := security.LoadIdentity(dir)
-	if pub, err := cfg.Validate(); err != nil || cfg.Channel != "AULA_101" || !pub.Equal(id.Public()) {
-		t.Fatalf("generated config = %+v (%v)", cfg, err)
-	}
-	if strings.Contains(string(data), "PRIVATE") {
-		t.Fatal("agent config contains private key material")
-	}
-	errOut.Reset()
-	if code := runCLI([]string{"config-alumno", "-dir", dir, "-o", file}, &out, &errOut); code != 1 {
-		t.Fatal("config-alumno without channel succeeded")
-	}
-
-	out.Reset()
 	if code := runCLI([]string{"version"}, &out, &errOut); code != 0 || out.String() != "aula-consola "+version+"\n" {
 		t.Fatalf("version = %q", out.String())
+	}
+}
+
+// The site key cycle an administrator runs: create on the first console,
+// publish the public key for the students, export, import on a second console.
+func TestCentroCommands(t *testing.T) {
+	first, second, files := t.TempDir(), t.TempDir(), t.TempDir()
+	t.Cleanup(func() { unprotect(first, second) })
+	run := func(dir string, args ...string) (string, int) {
+		t.Helper()
+		t.Setenv("AULA_SITE_KEY_DIR", dir)
+		var out, errOut bytes.Buffer
+		code := runCLI(append([]string{"centro"}, args...), &out, &errOut)
+		return out.String() + errOut.String(), code
+	}
+
+	if out, code := run(first, "crear"); code != 0 || !strings.Contains(out, "Clave del centro creada") {
+		t.Fatalf("crear: %d %s", code, out)
+	}
+	if out, code := run(first, "crear"); code != 1 || !strings.Contains(out, "ya tiene clave del centro") {
+		t.Fatalf("second crear: %d %s", code, out)
+	}
+	pubFile := filepath.Join(files, "aula-centro.pub")
+	if out, code := run(first, "publica", "-o", pubFile); code != 0 {
+		t.Fatalf("publica: %d %s", code, out)
+	}
+	pubData, _ := os.ReadFile(pubFile)
+	pub, err := security.ParsePublicKey(string(pubData))
+	if err != nil {
+		t.Fatalf("aula-centro.pub: %v", err)
+	}
+	if strings.Contains(string(pubData), "PRIVATE") {
+		t.Fatal("aula-centro.pub contains the private key")
+	}
+	keyFile := filepath.Join(files, "aula-centro.key")
+	if out, code := run(first, "exportar", keyFile); code != 0 || !strings.Contains(out, "SECRETA") {
+		t.Fatalf("exportar: %d %s", code, out)
+	}
+	if out, code := run(second, "importar", keyFile); code != 0 {
+		t.Fatalf("importar: %d %s", code, out)
+	}
+	imported, err := security.LoadSiteKey(second)
+	if err != nil || !imported.Public().Equal(pub) {
+		t.Fatalf("imported key differs: %v", err)
+	}
+	if out, code := run(second, "borrar"); code != 1 || !strings.Contains(out, "acción desconocida") {
+		t.Fatalf("unknown action: %d %s", code, out)
+	}
+
+	// pubkey reports that the console uses the site key.
+	t.Setenv("AULA_SITE_KEY_DIR", second)
+	var out, errOut bytes.Buffer
+	if code := runCLI([]string{"pubkey", "-dir", t.TempDir()}, &out, &errOut); code != 0 ||
+		!strings.Contains(out.String(), "clave del centro") || !strings.Contains(out.String(), security.EncodePublicKey(pub)) {
+		t.Fatalf("pubkey: %d %s %s", code, out.String(), errOut.String())
+	}
+}
+
+// unprotect gives the test back access to site key directories (read-only for
+// non-administrators by design) so TempDir can delete them.
+func unprotect(dirs ...string) {
+	for _, d := range dirs {
+		_ = platform.RestrictToOwner(d)
+		_ = platform.RestrictToOwner(filepath.Join(d, security.SiteKeyFile))
 	}
 }

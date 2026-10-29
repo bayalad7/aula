@@ -5,10 +5,13 @@ import (
 	"crypto/ed25519"
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/bayalad7/aula/internal/codedist"
+	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
@@ -23,7 +26,7 @@ func TestLiveClassTwoAgentsAck(t *testing.T) {
 	app := NewApp(t.TempDir(), nil, nil, &fakeHotkeys{}, quiet)
 	app.port = 0 // any free port
 	app.emit = rec.emit
-	view, err := app.StartClass("AULA_TEST", "Prueba")
+	view, err := app.StartClass("7", "Prueba")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,10 +43,10 @@ func TestLiveClassTwoAgentsAck(t *testing.T) {
 		recv := &codedist.Receiver{Board: board}
 		ctx, cancel := context.WithCancel(context.Background())
 		agent := &session.Agent{
-			Channel: "AULA_TEST", ConsolePublicKey: pub,
+			Channel: "7", ConsolePublicKey: pub,
 			Hello: protocol.HelloInfo{Hostname: host, OS: protocol.OSWindows, AgentVersion: "0.1.0",
 				Capabilities: []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow}},
-			Source:  session.StaticSource{{Instance: "x", Channel: "AULA_TEST", Addrs: []net.IP{net.IPv4(127, 0, 0, 1)}, Port: view.Class.Port}},
+			Source:  session.StaticSource{{Instance: "x", Channel: "7", Addrs: []net.IP{net.IPv4(127, 0, 0, 1)}, Port: view.Class.Port}},
 			Backoff: session.Backoff{Base: 20 * time.Millisecond, Max: 100 * time.Millisecond},
 			Logger:  quiet,
 			OnMessage: func(ctx context.Context, cl *transport.Client, env protocol.Envelope) {
@@ -103,6 +106,18 @@ func waitUntil(t *testing.T, what string, cond func() bool) {
 // each answering like the real app. It returns how many code.share each got.
 func startAgents(t *testing.T, n, port int, pub ed25519.PublicKey) []*codedist.Board {
 	t.Helper()
+	return startAgentsOn(t, n, "7", "SIM", session.StaticSource{localConsole(port, "7")}, pub)
+}
+
+// localConsole describes a console on loopback for a StaticSource.
+func localConsole(port int, channel string) discovery.Console {
+	return discovery.Console{Instance: "c" + strconv.Itoa(port), Channel: channel, Name: "Canal " + channel,
+		Addrs: []net.IP{net.IPv4(127, 0, 0, 1)}, Port: port}
+}
+
+// startAgentsOn launches n agents of channel that know the given consoles.
+func startAgentsOn(t *testing.T, n int, channel, prefix string, src session.StaticSource, pub ed25519.PublicKey) []*codedist.Board {
+	t.Helper()
 	boards := make([]*codedist.Board, n)
 	for i := range n {
 		board := codedist.NewBoard(0)
@@ -110,10 +125,10 @@ func startAgents(t *testing.T, n, port int, pub ed25519.PublicKey) []*codedist.B
 		recv := &codedist.Receiver{Board: board}
 		ctx, cancel := context.WithCancel(context.Background())
 		agent := &session.Agent{
-			Channel: "AULA_TEST", ConsolePublicKey: pub,
-			Hello: protocol.HelloInfo{Hostname: fmt.Sprintf("SIM-%02d", i+1), OS: protocol.OSWindows, AgentVersion: "0.1.0",
+			Channel: channel, ConsolePublicKey: pub,
+			Hello: protocol.HelloInfo{Hostname: fmt.Sprintf("%s-%02d", prefix, i+1), OS: protocol.OSWindows, AgentVersion: "0.1.0",
 				Capabilities: []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow}},
-			Source:  session.StaticSource{{Instance: "x", Channel: "AULA_TEST", Addrs: []net.IP{net.IPv4(127, 0, 0, 1)}, Port: port}},
+			Source:  src,
 			Backoff: session.Backoff{Base: 50 * time.Millisecond, Max: 300 * time.Millisecond},
 			Logger:  quiet,
 			OnMessage: func(ctx context.Context, cl *transport.Client, env protocol.Envelope) {
@@ -136,7 +151,7 @@ func TestTwelveAgentsAndConsoleRestart(t *testing.T) {
 	dir := t.TempDir()
 	app := NewApp(dir, nil, nil, &fakeHotkeys{}, quiet)
 	app.port = 0
-	view, err := app.StartClass("AULA_TEST", "Prueba de carga")
+	view, err := app.StartClass("7", "Prueba de carga")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +180,7 @@ func TestTwelveAgentsAndConsoleRestart(t *testing.T) {
 	// Restart the console: same directory (same key and certificate), same port.
 	app.EndClass()
 	app.port = port
-	if _, err := app.StartClass("AULA_TEST", "Prueba de carga"); err != nil {
+	if _, err := app.StartClass("7", "Prueba de carga"); err != nil {
 		t.Fatal(err)
 	}
 	defer app.EndClass()
@@ -175,6 +190,56 @@ func TestTwelveAgentsAndConsoleRestart(t *testing.T) {
 	for i, b := range boards {
 		if got := b.Snippets(); len(got) != 1 || got[0].Title != "después del reinicio" {
 			t.Fatalf("agent %d board = %+v", i+1, got)
+		}
+	}
+}
+
+// Two rooms on the same network, as in a LanSchool setup: the main room on
+// channel 1 and the alternate room on channel 2, both consoles signing with
+// the same site key. Students of channel 1 are told about both consoles (the
+// channel-2 one first) and must still end up only in the channel-1 console:
+// the proof is bound to the channel, so the other console's does not verify.
+func TestTwoRoomsShareTheSiteKey(t *testing.T) {
+	site := t.TempDir()
+	t.Cleanup(func() { unprotect(site) })
+	if _, err := security.CreateSiteKey(site, false); err != nil {
+		t.Fatal(err)
+	}
+	open := func(channel, name string) (*App, View) {
+		t.Helper()
+		app := NewApp(t.TempDir(), nil, nil, &fakeHotkeys{}, quiet)
+		app.siteKeyDir, app.port = site, 0
+		view, err := app.StartClass(channel, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if view.Class.KeySource != keyCentre {
+			t.Fatalf("console %s uses key %q, want the site key", channel, view.Class.KeySource)
+		}
+		t.Cleanup(app.EndClass)
+		return app, view
+	}
+	main, mainView := open("1", "Sala principal")
+	alt, altView := open("2", "Sala alterna")
+	if mainView.Class.PublicKey != altView.Class.PublicKey {
+		t.Fatal("the two consoles do not share the site key")
+	}
+	pub, _ := security.ParsePublicKey(mainView.Class.PublicKey)
+
+	both := session.StaticSource{localConsole(altView.Class.Port, "2"), localConsole(mainView.Class.Port, "1")}
+	startAgentsOn(t, 3, "1", "PRINCIPAL", both, pub)
+	startAgentsOn(t, 2, "2", "ALTERNA", session.StaticSource{localConsole(mainView.Class.Port, "1"), localConsole(altView.Class.Port, "2")}, pub)
+
+	waitUntil(t, "3 in the main room", func() bool { return main.View().Students.Connected == 3 })
+	waitUntil(t, "2 in the alternate room", func() bool { return alt.View().Students.Connected == 2 })
+	for _, s := range main.View().Students.Students {
+		if !strings.HasPrefix(s.Hostname, "PRINCIPAL-") {
+			t.Fatalf("%s showed up in the main room", s.Hostname)
+		}
+	}
+	for _, s := range alt.View().Students.Students {
+		if !strings.HasPrefix(s.Hostname, "ALTERNA-") {
+			t.Fatalf("%s showed up in the alternate room", s.Hostname)
 		}
 	}
 }

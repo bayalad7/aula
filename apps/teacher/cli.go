@@ -1,26 +1,31 @@
 package main
 
 import (
+	"crypto/ed25519"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/security"
-	"github.com/bayalad7/aula/internal/session"
 )
 
 const usage = `Uso: aula-consola [comando]
 
 Sin comando abre la consola. Comandos:
-  keygen [-dir DIR] [-force]   crea la clave de la consola y muestra la clave pública
-  pubkey [-dir DIR]            muestra la clave pública para configurar alumnos
-  config-alumno -canal CANAL [-o ARCHIVO] [-directo IP:PUERTO] [-dir DIR]
-                               genera aula-alumno.json para el instalador del alumno
-  version                      muestra la versión
+
+  Clave del centro (una por centro de cómputo; requiere administrador):
+  centro crear [-force]               la crea en este equipo (primera consola del centro)
+  centro importar ARCHIVO [-force]    instala aula-centro.key exportada de otra consola
+  centro exportar ARCHIVO             guarda la clave privada para otras consolas (secreta)
+  centro publica [-o ARCHIVO]         guarda la clave pública (aula-centro.pub) para los alumnos
+
+  pubkey                              muestra la clave pública que usa esta consola
+  keygen [-dir DIR] [-force]          crea una clave personal (equipos sin clave del centro)
+  version                             muestra la versión
 `
 
 // runCLI runs a command-line subcommand and returns the process exit code.
@@ -36,8 +41,8 @@ func runCLI(args []string, stdout, stderr io.Writer) int {
 		err = keygen(args[1:], stdout)
 	case "pubkey":
 		err = pubkey(args[1:], stdout)
-	case "config-alumno":
-		err = agentConfig(args[1:], stdout)
+	case "centro":
+		err = centre(args[1:], stdout)
 	case "version", "-version", "--version":
 		fmt.Fprintln(stdout, "aula-consola "+version)
 		return 0
@@ -98,9 +103,14 @@ func pubkey(args []string, stdout io.Writer) error {
 	if err != nil {
 		return err
 	}
-	id, err := security.LoadIdentity(d)
+	id, source, err := consoleKey(siteKeyDir(), d, false)
 	if err != nil {
-		return fmt.Errorf("%w (¿ejecutaste aula-consola keygen?)", err)
+		return fmt.Errorf("%w (crea la clave del centro con: aula-consola centro crear)", err)
+	}
+	if source == keyCentre {
+		fmt.Fprintln(stdout, "Esta consola usa la clave del centro.")
+	} else {
+		fmt.Fprintln(stdout, "Este equipo no tiene clave del centro: la consola usa una clave personal.")
 	}
 	printPublic(stdout, id)
 	return nil
@@ -121,38 +131,118 @@ func keyDir(flagValue string) (string, error) {
 	return security.DefaultDir()
 }
 
-// agentConfig writes the agent configuration file (aula-alumno.json) for a
-// channel, with this console's public key, ready for the agent installer.
-func agentConfig(args []string, stdout io.Writer) error {
-	fs := flag.NewFlagSet("config-alumno", flag.ContinueOnError)
+// siteKeyDir is where "centro" works: platform.SiteKeyDir(), or
+// AULA_SITE_KEY_DIR for tests.
+func siteKeyDir() string {
+	if d := os.Getenv("AULA_SITE_KEY_DIR"); d != "" {
+		return d
+	}
+	return platform.SiteKeyDir()
+}
+
+// centre manages the site key (clave del centro), docs/protocol.md §10.1.
+func centre(args []string, stdout io.Writer) error {
+	if len(args) == 0 {
+		return errors.New("falta la acción: crear, importar, exportar o publica")
+	}
+	fs := flag.NewFlagSet("centro "+args[0], flag.ContinueOnError)
 	fs.SetOutput(stdout)
-	channel := fs.String("canal", "", "canal del aula, p. ej. AULA_101 (obligatorio)")
-	out := fs.String("o", session.AgentConfigFile, "archivo de salida")
-	direct := fs.String("directo", "", "IP:puerto de la consola, solo si la red bloquea mDNS")
-	dir := fs.String("dir", "", "directorio de la clave")
-	if err := fs.Parse(args); err != nil {
+	force := fs.Bool("force", false, "reemplazar la clave existente (habrá que reinstalar consolas y alumnos)")
+	out := fs.String("o", "", "archivo de salida")
+	// Flags may follow the file name: parse what comes after the first
+	// positional argument too.
+	rest := args[1:]
+	var positional []string
+	for len(rest) > 0 {
+		if err := fs.Parse(rest); err != nil {
+			return err
+		}
+		if fs.NArg() == 0 {
+			break
+		}
+		positional = append(positional, fs.Arg(0))
+		rest = fs.Args()[1:]
+	}
+	dir := siteKeyDir()
+	admin := func(err error) error {
+		if errors.Is(err, os.ErrPermission) {
+			return fmt.Errorf("%w: ejecuta la terminal como administrador", err)
+		}
 		return err
 	}
-	d, err := keyDir(*dir)
-	if err != nil {
-		return err
+
+	switch args[0] {
+	case "crear":
+		id, err := security.CreateSiteKey(dir, *force)
+		if errors.Is(err, security.ErrSiteKeyExists) {
+			return fmt.Errorf("este equipo ya tiene clave del centro (%s); usa -force solo si quieres reemplazarla y reinstalar todo", security.KeyFingerprint(mustPublic(dir)))
+		}
+		if err != nil {
+			return admin(err)
+		}
+		fmt.Fprintf(stdout, "Clave del centro creada en %s\n", filepath.Join(dir, security.SiteKeyFile))
+		fmt.Fprintf(stdout, "Huella: %s\n", security.KeyFingerprint(id.Public()))
+		fmt.Fprintln(stdout, "Siguiente paso: aula-consola centro publica -o aula-centro.pub (para instalar los alumnos).")
+		return nil
+	case "importar":
+		if len(positional) != 1 {
+			return errors.New("uso: aula-consola centro importar aula-centro.key")
+		}
+		data, err := os.ReadFile(positional[0])
+		if err != nil {
+			return err
+		}
+		id, err := security.ImportSiteKey(dir, data, *force)
+		if errors.Is(err, security.ErrSiteKeyExists) {
+			return fmt.Errorf("este equipo ya tiene clave del centro; usa -force para reemplazarla")
+		}
+		if err != nil {
+			return admin(err)
+		}
+		fmt.Fprintf(stdout, "Clave del centro instalada. Huella: %s\n", security.KeyFingerprint(id.Public()))
+		return nil
+	case "exportar":
+		if len(positional) != 1 {
+			return errors.New("uso: aula-consola centro exportar aula-centro.key")
+		}
+		id, err := security.LoadSiteKey(dir)
+		if err != nil {
+			return fmt.Errorf("%w (crea la clave con: aula-consola centro crear)", err)
+		}
+		data, err := security.ExportSiteKeyPEM(id)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(positional[0], data, 0o600); err != nil {
+			return err
+		}
+		fmt.Fprintf(stdout, "Clave del centro exportada a %s.\n", positional[0])
+		fmt.Fprintln(stdout, "Es SECRETA: quien la tenga controla a todos los alumnos del centro. Úsala solo para instalar otras consolas y bórrala después.")
+		return nil
+	case "publica":
+		id, err := security.LoadSiteKey(dir)
+		if err != nil {
+			return fmt.Errorf("%w (crea la clave con: aula-consola centro crear)", err)
+		}
+		line := security.EncodePublicKey(id.Public()) + "\n"
+		if *out == "" {
+			_, err = io.WriteString(stdout, line)
+			return err
+		}
+		if err := os.WriteFile(*out, []byte(line), 0o644); err != nil {
+			return err
+		}
+		fmt.Fprintf(stdout, "Clave pública del centro guardada en %s (huella %s).\n", *out, security.KeyFingerprint(id.Public()))
+		fmt.Fprintln(stdout, "Ponla junto a Aula-Alumno-Setup-*.exe para instalar los equipos de los alumnos.")
+		return nil
+	default:
+		return fmt.Errorf("acción desconocida %q: crear, importar, exportar o publica", args[0])
 	}
-	id, err := security.LoadIdentity(d)
-	if err != nil {
-		return fmt.Errorf("%w (¿ejecutaste aula-consola keygen o abriste una clase?)", err)
+}
+
+func mustPublic(dir string) ed25519.PublicKey {
+	if id, err := security.LoadSiteKey(dir); err == nil {
+		return id.Public()
 	}
-	data, err := session.AgentConfig{
-		Channel:          strings.ToUpper(strings.TrimSpace(*channel)),
-		ConsolePublicKey: security.EncodePublicKey(id.Public()),
-		Direct:           *direct,
-	}.Marshal()
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(*out, data, 0o644); err != nil {
-		return err
-	}
-	fmt.Fprintf(stdout, "Configuración de alumnos guardada en %s\n", *out)
-	fmt.Fprintln(stdout, "Cópiala junto a Aula-Alumno-Setup-*.exe antes de instalar (ver docs/uso-hito1.md).")
 	return nil
 }

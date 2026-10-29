@@ -5,8 +5,11 @@ package main
 import (
 	"context"
 	"embed"
+	"io"
 	"log/slog"
 	"os"
+	"os/user"
+	"strings"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -26,7 +29,8 @@ func main() {
 		platform.AttachParentConsole()
 		os.Exit(runCLI(os.Args[1:], os.Stdout, os.Stderr))
 	}
-	log := slog.Default()
+	log := openLog()
+	log.Info("aula-consola starting", "version", version)
 	dir, err := consoleDir()
 	if err != nil {
 		log.Error("no config dir", "err", err)
@@ -37,6 +41,10 @@ func main() {
 		log.Warn("no system clipboard", "err", clipErr)
 	}
 	app := NewApp(dir, clip, clipErr, platform.SystemHotkeys(), log)
+	app.autoStart = true
+	if app.defaultName == "" {
+		app.defaultName = userDisplayName()
+	}
 
 	err = wails.Run(&options.App{
 		Title:     "Aula — Consola",
@@ -51,13 +59,6 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			app.emit = func(event string, data any) { runtime.EventsEmit(ctx, event, data) }
-			app.saveDialog = func(name string) (string, error) {
-				return runtime.SaveFileDialog(ctx, runtime.SaveDialogOptions{
-					Title:           "Guardar la configuración de los alumnos",
-					DefaultFilename: name,
-					Filters:         []runtime.FileFilter{{DisplayName: "Configuración de Aula (*.json)", Pattern: "*.json"}},
-				})
-			}
 			app.raise = func() {
 				runtime.WindowUnminimise(ctx)
 				runtime.WindowShow(ctx)
@@ -85,4 +86,35 @@ func consoleDir() (string, error) {
 		return d, nil
 	}
 	return security.DefaultDir()
+}
+
+// openLog logs to %LOCALAPPDATA%\Aula\consola\aula-consola.log as well as
+// stderr. Nothing secret or private is logged.
+func openLog() *slog.Logger {
+	f, _, err := platform.OpenLogFile("consola", "aula-consola.log")
+	if err != nil {
+		return slog.Default()
+	}
+	return slog.New(slog.NewTextHandler(io.MultiWriter(os.Stderr, f), &slog.HandlerOptions{Level: slog.LevelInfo}))
+}
+
+// userDisplayName is the default name students see: the Windows display name
+// of the user ("Benjamín Ayala"), else the account name, else the machine.
+func userDisplayName() string {
+	if u, err := user.Current(); err == nil {
+		if n := strings.TrimSpace(u.Name); n != "" && len(n) <= 63 {
+			return n
+		}
+		name := u.Username
+		if i := strings.LastIndexAny(name, `\/`); i >= 0 {
+			name = name[i+1:]
+		}
+		if name != "" && len(name) <= 63 {
+			return name
+		}
+	}
+	if h, err := os.Hostname(); err == nil && h != "" {
+		return h
+	}
+	return "Profesor"
 }

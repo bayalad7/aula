@@ -12,21 +12,21 @@
 </head>
 <body>
   <!-- 1. Channel selection -->
+  <!-- Shown only while the console starts, or if the automatic start on the
+       default channel failed (port in use…). -->
   <section id="setup" class="setup" hidden>
     <form id="setup-form" class="setup-card">
       <h1>Aula — Consola</h1>
-      <p class="muted">Elige el aula de esta clase. Los alumnos configurados con el mismo canal se conectarán solos.</p>
+      <p id="setup-intro" class="muted">Abriendo el canal predeterminado…</p>
+      <p id="setup-error" class="error" role="alert"></p>
       <label>Canal
-        <input id="setup-channel" list="setup-recent" required maxlength="32" autocomplete="off"
-               placeholder="AULA_101" spellcheck="false">
-        <datalist id="setup-recent"></datalist>
+        <input id="setup-channel" type="number" min="1" max="16000" step="1" required inputmode="numeric">
       </label>
       <div id="setup-chips" class="chips"></div>
-      <label>Nombre que verán los alumnos
-        <input id="setup-name" required maxlength="63" placeholder="Prof. Ayala — Programación I">
+      <label>Tu nombre (lo ven los alumnos)
+        <input id="setup-name" required maxlength="63" placeholder="Prof. Ayala">
       </label>
-      <p id="setup-error" class="error" role="alert"></p>
-      <button type="submit" class="primary">Abrir clase</button>
+      <button type="submit" class="primary">Abrir</button>
       <p id="setup-key" class="key muted"></p>
       <p id="setup-version" class="key muted"></p>
     </form>
@@ -35,18 +35,25 @@
   <!-- 2–4. Console -->
   <section id="console" class="console" hidden>
     <header class="topbar">
-      <div class="class-id">
-        <strong id="class-channel"></strong>
-        <span id="class-name" class="muted"></span>
-      </div>
+      <form id="channel-form" class="channel-form" title="Cambia el canal: verás a los alumnos de ese canal">
+        <label for="channel-input"><strong>Canal</strong></label>
+        <input id="channel-input" type="number" min="1" max="16000" step="1" required inputmode="numeric">
+        <button type="submit" id="channel-change">Cambiar</button>
+      </form>
+      <form id="name-form" class="name-form" title="Nombre que ven los alumnos">
+        <input id="name-input" maxlength="63" required aria-label="Tu nombre">
+        <button type="submit" id="name-save">Guardar</button>
+      </form>
       <div class="class-key">
-        <span class="muted">Clave para los alumnos:</span>
+        <span id="key-label" class="muted">Clave del centro:</span>
         <code id="class-fingerprint"></code>
-        <button type="button" id="copy-key">Copiar clave</button>
-        <button type="button" id="save-agent-config" title="Genera aula-alumno.json con este canal y la clave, para el instalador del alumno">Configuración de alumnos</button>
       </div>
-      <button type="button" id="end-class">Cambiar de aula</button>
     </header>
+    <p id="key-warning" class="key-warning" hidden>
+      Este equipo no tiene la <strong>clave del centro</strong>: la consola usa una clave personal y los
+      alumnos instalados con la clave del centro no la reconocerán. Instálala con
+      <code>aula-consola centro importar</code> (ver la guía de uso).
+    </p>
 
     <div class="layout">
       <aside class="students">

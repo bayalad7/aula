@@ -37,8 +37,39 @@ type classHooks struct {
 type classConfig struct {
 	Channel     string
 	ConsoleName string
-	Dir         string // identity and certificate
+	Dir         string // certificate and the personal identity
+	SiteKeyDir  string // the site key, when this machine has one
 	Port        int
+}
+
+// Key sources reported in ClassInfo.KeySource.
+const (
+	keyCentre   = "centro"
+	keyPersonal = "personal"
+)
+
+// consoleKey returns the key the console signs with: the site key (clave del
+// centro) when this machine has one, which is how a centre is deployed;
+// otherwise the user's personal identity, created on first use if create is
+// set (development, and machines installed before the site key existed).
+func consoleKey(siteDir, userDir string, create bool) (*security.Identity, string, error) {
+	if siteDir != "" {
+		id, err := security.LoadSiteKey(siteDir)
+		if err == nil {
+			return id, keyCentre, nil
+		}
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, "", fmt.Errorf("clave del centro: %w", err)
+		}
+	}
+	id, err := security.LoadIdentity(userDir)
+	if errors.Is(err, fs.ErrNotExist) && create {
+		id, err = security.CreateIdentity(userDir, false)
+	}
+	if err != nil {
+		return nil, "", fmt.Errorf("clave de la consola: %w", err)
+	}
+	return id, keyPersonal, nil
 }
 
 type startClassFunc func(ctx context.Context, cfg classConfig, hooks classHooks, log *slog.Logger) (classroom, ClassInfo, error)
@@ -63,16 +94,15 @@ func (l *liveClass) Stop() {
 	l.wg.Wait()
 }
 
-// startLiveClass opens a class: it loads (or creates on first use) the
-// console identity and certificate, listens on cfg.Port and announces the
-// channel over mDNS.
+// startLiveClass opens a class: it loads the console key (consoleKey) and the
+// certificate, listens on cfg.Port and announces the channel over mDNS.
 func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log *slog.Logger) (classroom, ClassInfo, error) {
-	id, err := security.LoadIdentity(cfg.Dir)
-	if errors.Is(err, fs.ErrNotExist) {
-		id, err = security.CreateIdentity(cfg.Dir, false)
-	}
+	id, source, err := consoleKey(cfg.SiteKeyDir, cfg.Dir, true)
 	if err != nil {
-		return nil, ClassInfo{}, fmt.Errorf("clave de la consola: %w", err)
+		return nil, ClassInfo{}, err
+	}
+	if source == keyPersonal {
+		log.Warn("no site key on this machine, using a personal key", "site_key_dir", cfg.SiteKeyDir)
 	}
 	cert, err := security.LoadOrCreateCertificate(cfg.Dir)
 	if err != nil {
@@ -129,6 +159,7 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 		ConsoleName: cfg.ConsoleName,
 		PublicKey:   security.EncodePublicKey(id.Public()),
 		Fingerprint: security.KeyFingerprint(id.Public()),
+		KeySource:   source,
 		Port:        port,
 	}, nil
 }

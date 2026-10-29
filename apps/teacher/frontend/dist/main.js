@@ -15,7 +15,6 @@
     ["kotlin", "Kotlin"], ["plaintext", "Texto"],
   ];
   const CAP_NAMES = { "code.view": "código", "msg.show": "avisos" };
-  const PRESETS = ["AULA_101", "AULA_102", "CURSO_PYTHON_A"];
 
   let editor = null;          // Monaco instance
   let students = { connected: 0, canCode: 0, canNotice: 0, students: [] };
@@ -51,54 +50,58 @@
   }
 
   // --- Setup screen -------------------------------------------------------------------
+  // Normally invisible: the console opens on its default channel by itself
+  // (like LanSchool). It shows while starting and when that start failed.
   function showSetup() {
     $("console").hidden = true;
     $("setup").hidden = false;
     api.Setup().then((s) => {
-      const recent = s.recentChannels.length ? s.recentChannels : [];
-      const all = [...recent, ...PRESETS.filter((p) => !recent.includes(p))];
-      const list = $("setup-recent");
-      list.replaceChildren(...all.map((c) => Object.assign(document.createElement("option"), { value: c })));
-      const chips = $("setup-chips");
-      chips.replaceChildren(...all.slice(0, 6).map((c) => {
+      $("setup-intro").textContent = s.startError
+        ? "No se pudo abrir el canal " + s.defaultChannel + ". Corrige el problema y vuelve a intentarlo."
+        : "Abriendo el canal " + s.defaultChannel + "…";
+      $("setup-error").textContent = s.startError || "";
+      $("setup-channel").value = s.defaultChannel;
+      $("setup-name").value = s.consoleName || "";
+      $("setup-chips").replaceChildren(...s.recentChannels.slice(0, 6).map((c) => {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "chip";
         b.tabIndex = -1; // mouse shortcut; Tab goes straight from channel to name
-        b.textContent = c;
+        b.textContent = "Canal " + c;
         b.addEventListener("click", () => { $("setup-channel").value = c; });
         return b;
       }));
-      if (recent[0]) $("setup-channel").value = recent[0];
-      if (s.consoleName) $("setup-name").value = s.consoleName;
       $("setup-key").textContent = s.publicKey
-        ? "Clave de esta consola: " + s.fingerprint
-        : "La clave de esta consola se creará al abrir la primera clase.";
+        ? (s.keySource === "centro" ? "Clave del centro: " : "Clave personal (sin clave del centro): ") + s.fingerprint
+        : "Este equipo aún no tiene clave del centro.";
       $("setup-version").textContent = "Aula Consola " + s.version;
-      $("setup-channel").focus();
     });
   }
 
-  $("setup-channel").addEventListener("input", (e) => {
-    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_");
-  });
+  function open(channel, name, onError) {
+    api.StartClass(String(channel), name).then(showConsole, onError);
+  }
 
   $("setup-form").addEventListener("submit", (e) => {
     e.preventDefault();
     $("setup-error").textContent = "";
-    api.StartClass($("setup-channel").value, $("setup-name").value).then(showConsole, (err) => {
-      $("setup-error").textContent = String(err);
-    });
+    open($("setup-channel").value, $("setup-name").value, (err) => { $("setup-error").textContent = String(err); });
   });
 
   // --- Console --------------------------------------------------------------------------
+  let current = { channel: "", name: "" };
+
   function showConsole(view) {
     $("setup").hidden = true;
     $("console").hidden = false;
-    $("class-channel").textContent = "Canal " + view.class.channel;
-    $("class-name").textContent = view.class.consoleName;
+    current = { channel: view.class.channel, name: view.class.consoleName };
+    $("channel-input").value = view.class.channel;
+    $("name-input").value = view.class.consoleName;
     $("class-fingerprint").textContent = view.class.fingerprint;
     $("class-fingerprint").title = view.class.publicKey;
+    const personal = view.class.keySource !== "centro";
+    $("key-label").textContent = personal ? "Clave personal:" : "Clave del centro:";
+    $("key-warning").hidden = !personal;
     $("capture-combo").textContent = view.hotkey.combo;
     const warn = $("hotkey-warning");
     warn.hidden = view.hotkey.active;
@@ -109,20 +112,26 @@
     if (!editor) initEditor();
   }
 
-  $("end-class").addEventListener("click", () => {
-    if (!window.confirm("¿Cerrar esta clase? Los alumnos verán que la consola se desconectó.")) return;
-    api.EndClass().then(showSetup);
+  // Change channel: you now see (and teach) the students of that channel.
+  $("channel-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const ch = $("channel-input").value;
+    if (String(ch) === current.channel) return;
+    open(ch, current.name, (err) => {
+      toast(String(err), "error");
+      $("channel-input").value = current.channel;
+    });
   });
 
-  $("copy-key").addEventListener("click", () => {
-    api.CopyPublicKey().then(() => toast("Clave pública copiada. Pégala en la configuración de los alumnos."),
-      (err) => toast(String(err), "error"));
-  });
-
-  $("save-agent-config").addEventListener("click", () => {
-    api.SaveAgentConfig().then((path) => {
-      if (path) toast("Guardado en " + path + ". Cópialo junto a Aula-Alumno-Setup.exe antes de instalar.");
-    }, (err) => toast(String(err), "error"));
+  // Rename: students see the new name when they reconnect (a few seconds).
+  $("name-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = $("name-input").value.trim();
+    if (name === current.name) return;
+    open(current.channel, name, (err) => {
+      toast(String(err), "error");
+      $("name-input").value = current.name;
+    });
   });
 
   // Students
@@ -273,5 +282,6 @@
   rt.EventsOn(ev.HISTORY, (h) => renderHistory(h.entries));
   rt.EventsOn(ev.DELIVERIES, (d) => renderDeliveries(d.deliveries));
   rt.EventsOn(ev.CAPTURE, onCapture);
+  rt.EventsOn(ev.CLASS, (v) => (v.active ? showConsole(v) : showSetup()));
   api.View().then((v) => (v.active ? showConsole(v) : showSetup()));
 })();

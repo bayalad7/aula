@@ -207,3 +207,16 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   .layout { grid-template-columns: 15rem minmax(0, 1fr); }
   .side { grid-column: 1 / -1; }
 }
+
+/* Channel switcher and name (top bar) */
+.channel-form, .name-form { display: flex; align-items: center; gap: 0.4rem; }
+#channel-input { width: 6.5rem; font-family: Consolas, "Cascadia Mono", monospace; font-size: 1.05rem; font-weight: 600; }
+#name-input { width: 16rem; }
+#setup-channel { width: 8rem; }
+.key-warning {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-size: 0.9rem;
+}

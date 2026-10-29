@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
-	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
 )
 
@@ -128,7 +126,7 @@ func newHarness(t *testing.T, sessions ...session.Session) *harness {
 		return h.class, ClassInfo{Channel: cfg.Channel, ConsoleName: cfg.ConsoleName, PublicKey: "aula-ed25519:x", Port: cfg.Port}, nil
 	}
 	h.app.startup(context.Background())
-	if _, err := h.app.StartClass("aula_101", "Prof. Ayala"); err != nil {
+	if _, err := h.app.StartClass(" 01 ", "Prof. Ayala"); err != nil {
 		t.Fatal(err)
 	}
 	return h
@@ -320,13 +318,13 @@ func TestStudentsViewAndChannelRules(t *testing.T) {
 	if s.Connected != 2 || s.CanCode != 1 || s.CanNotice != 2 || s.Students[1].CanCode || s.Students[1].AckedAt != "10:00:05" {
 		t.Fatalf("students = %+v", s)
 	}
-	if v := h.app.View(); v.Class.Channel != "AULA_101" { // normalized to upper case
+	if v := h.app.View(); v.Class.Channel != "1" { // normalized to the canonical number
 		t.Fatalf("channel = %q", v.Class.Channel)
 	}
-	if _, err := h.app.StartClass("aula 101", "x"); err == nil {
+	if _, err := h.app.StartClass("aula 1", "x"); err == nil {
 		t.Fatal("invalid channel accepted")
 	}
-	if got := h.app.Setup().RecentChannels; len(got) != 1 || got[0] != "AULA_101" {
+	if got := h.app.Setup().RecentChannels; len(got) != 1 || got[0] != "1" {
 		t.Fatalf("recent channels = %v", got)
 	}
 }
@@ -358,13 +356,13 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{EventStudents, EventHistory, EventDeliveries, EventCapture} {
+	for _, name := range []string{EventStudents, EventHistory, EventDeliveries, EventCapture, EventClass} {
 		if !strings.Contains(string(js), `"`+name+`"`) {
 			t.Errorf("events.js does not define %q", name)
 		}
 	}
 	main, _ := os.ReadFile(filepath.Join("frontend", "dist", "main.js"))
-	for _, m := range []string{"Setup", "StartClass", "EndClass", "View", "Emit", "Reemit", "ClearScreens", "SendNotice", "CaptureClipboard", "CopyPublicKey", "SaveAgentConfig"} {
+	for _, m := range []string{"Setup", "StartClass", "View", "Emit", "Reemit", "ClearScreens", "SendNotice", "CaptureClipboard"} {
 		if !strings.Contains(string(main), "api."+m+"(") {
 			t.Errorf("main.js does not call App.%s", m)
 		}
@@ -379,36 +377,6 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	}
 }
 
-func TestSaveAgentConfig(t *testing.T) {
-	h := newHarness(t)
-	out := filepath.Join(t.TempDir(), "aula-alumno.json")
-	var asked string
-	h.app.saveDialog = func(name string) (string, error) { asked = name; return out, nil }
-	h.app.info.PublicKey = security.EncodePublicKey(mustIdentity(t).Public())
-	path, err := h.app.SaveAgentConfig()
-	if err != nil || path != out || asked != session.AgentConfigFile {
-		t.Fatalf("SaveAgentConfig = %q, %v (dialog default %q)", path, err, asked)
-	}
-	data, _ := os.ReadFile(out)
-	var cfg session.AgentConfig
-	if err := json.Unmarshal(data, &cfg); err != nil || cfg.Channel != "AULA_101" {
-		t.Fatalf("config file = %s (%v)", data, err)
-	}
-	if _, err := cfg.Validate(); err != nil {
-		t.Fatalf("exported config is not valid for the agent: %v", err)
-	}
-
-	// Cancelled dialog: nothing written, no error.
-	h.app.saveDialog = func(string) (string, error) { return "", nil }
-	if path, err := h.app.SaveAgentConfig(); path != "" || err != nil {
-		t.Fatalf("cancelled = %q, %v", path, err)
-	}
-	h.app.EndClass()
-	if _, err := h.app.SaveAgentConfig(); !errors.Is(err, errNoClass) {
-		t.Fatalf("without class = %v", err)
-	}
-}
-
 func TestPortFromSettings(t *testing.T) {
 	dir := t.TempDir()
 	if err := saveSettings(dir, settings{Port: 48000}); err != nil {
@@ -420,13 +388,4 @@ func TestPortFromSettings(t *testing.T) {
 	if a := NewApp(t.TempDir(), nil, nil, &fakeHotkeys{}, quiet); a.port != DefaultPort {
 		t.Fatalf("default port = %d", a.port)
 	}
-}
-
-func mustIdentity(t *testing.T) *security.Identity {
-	t.Helper()
-	id, err := security.GenerateIdentity()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return id
 }

@@ -17,6 +17,9 @@ const (
 	EventHistory = "aula:history"
 	// EventDeliveries carries Deliveries when something is sent or acked.
 	EventDeliveries = "aula:deliveries"
+	// EventClass carries a View when the automatic start on the default
+	// channel finishes (or fails).
+	EventClass = "aula:class"
 	// EventCapture carries a Capture after the hotkey or the button.
 	EventCapture = "aula:capture"
 )
@@ -28,6 +31,9 @@ type Setup struct {
 	PublicKey      string   `json:"publicKey"` // "" until the first class creates the key
 	Fingerprint    string   `json:"fingerprint"`
 	Version        string   `json:"version"`
+	DefaultChannel string   `json:"defaultChannel"`
+	StartError     string   `json:"startError"` // why the automatic start failed
+	KeySource      string   `json:"keySource"`  // "centro" or "personal"
 }
 
 // ClassInfo identifies the open class.
@@ -36,6 +42,7 @@ type ClassInfo struct {
 	ConsoleName string `json:"consoleName"`
 	PublicKey   string `json:"publicKey"` // aula-ed25519:… to configure agents
 	Fingerprint string `json:"fingerprint"`
+	KeySource   string `json:"keySource"` // "centro" (site key) or "personal" (no site key on this machine)
 	Port        int    `json:"port"`
 }
 

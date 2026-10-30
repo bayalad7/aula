@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-10-29 (energía: apagar, reiniciar y cerrar sesión).
+Última actualización: 2026-10-29 (diagramas iniciales de `docs/v1/diagramas/` y su validador).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -19,6 +19,7 @@
 | 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado; apagado con cuenta y posponer probado en el laboratorio (faltan los demás casos de `docs/prueba-vms.md` §15) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
+| 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 15 diagramas (falta el 10, aula simulada) |
 
 ## Etapa 02: notas
 
@@ -666,3 +667,43 @@
   - la prueba en VM de `docs/prueba-vms.md` §15 (PW-A a PW-I; aceptación con PW-A, PW-B y PW-D);
   - probar la interfaz de las dos apps con clics;
   - Linux y macOS (cuando se indique).
+
+## Etapa 17: diagramas iniciales — notas
+
+- **Hechos** en `docs/v1/diagramas/`, cada uno con front-matter, bloque Mermaid sin
+  `htmlLabels`, «Lo que no es obvio» y «Fuentes en el código»:
+  - 01 contexto, 02 componentes (dependencias reales de `go list`), 03 descubrimiento por canal,
+    04 autenticación y fijado de certificado, 05 ciclo de sesión, 06 emisión de código,
+    07 acuses (la recolección `code.collect`/`file.collect` sigue reservada y solo se menciona),
+    08 miniaturas (pantalla en blanco pendiente, solo se menciona), 09 avisos al alumno,
+    11 modelo de datos (qué persiste y qué solo vive en memoria), 12 «Mi alumno no conecta»
+    (con los mensajes reales de `Agent.diagnose`);
+  - **nuevos, fuera del índice original:** 13 agente como servicio, 14 transmisión WebRTC,
+    15 restricciones (apps y filtro web, con su diario), 16 energía (máquina de estados).
+- **Pendiente:** 10 «Aula simulada y simulación de fallas», porque el modo simulado no existe
+  todavía (etapa 18); en el README figura como «(pendiente)», sin enlace.
+- **README:** se corrigió la tabla (la fila separadora tenía 5 columnas), se agregaron 13–16, las
+  cuatro `classDef` exactas, los colores `rgb(...)` para `box`/`rect` de `sequenceDiagram`
+  (no admite `classDef`), `erDiagram` sin color, la forma de `enlaces` (`nodo=destino`) y un
+  ejemplo de front-matter con valores válidos.
+- **Validador** (`docs/doc.go`, `docs/diagramas_test.go`, solo biblioteca estándar):
+  - parser estricto del subconjunto YAML del README;
+  - campos contra lo real: `pantallas` = `id` de `<section>` de
+    `apps/teacher/frontend/dist/index.html`; `secciones_manual` y destinos de `enlaces` =
+    documentos de `docs/` existentes, con ancla de GitHub si la hay;
+  - título = encabezado `#` = fila del README (con el mismo tipo y la misma audiencia);
+  - un solo bloque `mermaid` con `init` sin `htmlLabels`, las cuatro clases en
+    `flowchart`/`stateDiagram-v2`, colores de la paleta en `sequenceDiagram` y sin `;` en sus
+    mensajes (GitHub los corta);
+  - que existan las rutas citadas en «Fuentes en el código»;
+  - que todo `{{diagrama:NN-nombre}}` de `docs/` (salvo `docs/v1/prompts/` y el código) exista;
+  - `TestValidateRejects` prueba con 25 diagramas rotos que el validador falla. A mano: borrar el
+    front-matter del 04 hace fallar `go test ./docs`.
+- **Verificado:** los 15 bloques renderizan con `@mermaid-js/mermaid-cli` 11 (instalado solo en
+  un directorio temporal, no se versiona) y ningún SVG lleva `foreignObject`. Falta verlos en
+  GitHub tras empujar a `develop`.
+- **No implementado (etapa del render):** SVG claro/oscuro, `scripts/docs/generar-diagramas.*`,
+  manifiesto y chequeo de hash.
+- **Para la etapa 18:** al crear la navegación y el manual en `docs/administracion/`, actualizar
+  `pantallas` y `secciones_manual` (la prueba fallará hasta hacerlo si se renombran las
+  secciones), agregar el diagrama 10 y generar el árbol interactivo a partir del 12.

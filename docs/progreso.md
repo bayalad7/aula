@@ -648,6 +648,19 @@
 - `gofmt`, `go vet` (Windows, Linux y macOS), `staticcheck` y `go test -race ./...` sin errores.
   En una de dos corridas completas, `internal/screen` e `internal/broadcast` (que esta etapa no
   toca) fallaron por tiempos bajo carga; solos y en la segunda corrida completa pasan.
+- **Prueba en el laboratorio (29/10/2026, reportada por el usuario):** apagar 1 equipo sin forzar.
+  La cuenta regresiva y el posponer funcionaron, pero al final el alumno mostró "No se pudo apagar
+  este equipo". **Causa:** con el agente como servicio, `InitiateShutdownW` sin forzar se llamaba
+  desde SYSTEM, y Windows lo rechaza con `ERROR_SHUTDOWN_USERS_LOGGED_ON` mientras el alumno tiene
+  sesión iniciada. Las pruebas usan un doble y no podían verlo. **Corregido:**
+  - sin forzar y con sesión iniciada, apagar, reiniciar y cerrar sesión los ejecuta el ayudante
+    en la sesión del alumno (`agentsvc.Power`, `Countdown.InSession`);
+  - con forzar, o sin sesión, sigue haciéndolo el servicio;
+  - el `error` a la consola incluye ahora el motivo del SO;
+  - pruebas nuevas: qué camino toma cada acción, y el caso del laboratorio de punta a punta con
+    el servicio y un ayudante doble.
+
+  Falta repetir la prueba en el laboratorio con un instalador nuevo.
 - **Falta:**
   - la prueba en VM de `docs/prueba-vms.md` §15 (PW-A a PW-I; aceptación con PW-A, PW-B y PW-D);
   - probar la interfaz de las dos apps con clics;

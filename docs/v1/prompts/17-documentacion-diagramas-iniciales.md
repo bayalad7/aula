@@ -37,6 +37,8 @@ Crea, en este orden, con contenido fiel al protocolo y al código actual:
 Si el tiempo alcanza y la función existe, agrega 07, 08, 09, 10 y 12 según el README; si no, déjalos
 listados como pendientes en docs/progreso.md.
 
+Si piensas que hace falta algún diagrama importante agregalo y documentalo.
+
 ## Validador
 - Agrega (o ajusta) la prueba `go test ./docs` que exige front-matter en cada diagrama y valida cada
   campo contra el esquema del README, y que falla si un `{{diagrama:...}}` del manual referencia un

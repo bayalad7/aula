@@ -635,9 +635,16 @@ que el profesor fuerce la orden.
   - `InitiateShutdownW` (apagar o reiniciar) tras habilitar `SeShutdownPrivilege`, sin gracia;
     con `force`, `SHUTDOWN_FORCE_OTHERS|SHUTDOWN_FORCE_SELF`;
   - cerrar sesión con `WTSLogoffSession` (con `force`, sobre la sesión del alumno) o
-    `ExitWindowsEx(EWX_LOGOFF)` desde la propia sesión sin `force`. En modo servicio, este
-    último lo pide el servicio al ayudante por el canal local (D-016), porque `ExitWindowsEx`
-    actúa sobre la sesión del proceso que llama.
+    `ExitWindowsEx(EWX_LOGOFF)` desde la propia sesión sin `force`;
+  - **sin `force` y con sesión iniciada, las tres acciones las ejecuta el ayudante** en la sesión
+    del alumno (modo servicio, por el canal local de D-016). `ExitWindowsEx` actúa sobre la
+    sesión del proceso que llama, y `InitiateShutdownW` sin `SHUTDOWN_FORCE_OTHERS` falla desde
+    SYSTEM con `ERROR_SHUTDOWN_USERS_LOGGED_ON` (1190), porque el alumno es "otro usuario".
+    Forzar desde el servicio no sirve: cerraría las apps sin dejarlas guardar. Con `force`, o
+    sin sesión, lo hace el servicio.
+    *Encontrado en la prueba del laboratorio del 2026-10-29*: la cuenta y el posponer
+    funcionaron, pero el apagado sin forzar terminó en "No se pudo apagar este equipo". Las
+    pruebas automáticas usan un doble de `platform.Power` y no podían verlo.
 - **El `ack executing` sale antes de ejecutar.** El agente registra la orden, envía `executing` y
   espera hasta 2 s a que la cola de escritura lo saque. Después llama al SO: un apagado corta la
   conexión y lo que quedara en cola se perdería.

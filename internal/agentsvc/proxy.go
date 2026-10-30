@@ -18,11 +18,11 @@ const (
 	CallScreenCapture  = "screen.capture"
 	CallIndicatorShow  = "indicator.show"
 	CallIndicatorHide  = "indicator.hide"
-	CallPowerLogoff    = "power.logoff" // log off the own session, without force
-	EventEmit          = "emit"         // a Wails event for the window
-	EventRaise         = "raise"        // bring the window forward
-	EventMaximize      = "maximize"     // maximize (true) or restore (false)
-	EventOnTop         = "ontop"        // keep the window above the others (true) or not
+	CallPower          = "power.run" // shut down, reboot or log off from the student's session: PowerArgs
+	EventEmit          = "emit"      // a Wails event for the window
+	EventRaise         = "raise"     // bring the window forward
+	EventMaximize      = "maximize"  // maximize (true) or restore (false)
+	EventOnTop         = "ontop"     // keep the window above the others (true) or not
 )
 
 // Helper → service.
@@ -164,13 +164,28 @@ func (i Indicator) Hide() error {
 	return err
 }
 
-// Logoff ends the student's session without force through the helper:
-// ExitWindowsEx only acts on the caller's own session, and lets the student's
-// applications ask to save (D-018).
-type Logoff struct{ Helper *Current }
+// PowerArgs are the arguments of CallPower.
+type PowerArgs struct {
+	Action  string `json:"action"` // "shutdown" | "reboot" | "logoff"
+	Session uint32 `json:"session"`
+	Force   bool   `json:"force"`
+}
 
-// Logoff asks the helper to log off its session; session is only checked
-// there.
-func (l Logoff) Logoff(session uint32) error {
-	return l.Helper.call(context.Background(), CallPowerLogoff, session, nil)
+// Power shuts down, reboots or logs off from the student's session through
+// the helper (D-018): from SYSTEM, Windows refuses a shutdown without force
+// while the student is logged on, and ExitWindowsEx only logs off the
+// caller's own session.
+type Power struct{ Helper *Current }
+
+// Shutdown implements platform.Power.
+func (p Power) Shutdown(force bool) error { return p.run("shutdown", 0, force) }
+
+// Reboot implements platform.Power.
+func (p Power) Reboot(force bool) error { return p.run("reboot", 0, force) }
+
+// Logoff implements platform.Power; the helper checks it is its session.
+func (p Power) Logoff(session uint32, force bool) error { return p.run("logoff", session, force) }
+
+func (p Power) run(action string, session uint32, force bool) error {
+	return p.Helper.call(context.Background(), CallPower, PowerArgs{Action: action, Session: session, Force: force}, nil)
 }

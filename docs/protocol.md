@@ -727,7 +727,8 @@ Anula la cuenta regresiva de esa orden: el agente quita el aviso y responde `pow
 | `cancelled` | Respuesta a `power.cancel` (`ref_id` = el del `cancel`), o la orden fue reemplazada por otra nueva (`ref_id` = el de la orden vieja). | `0` |
 
 `postpones_left` dice cuántos aplazamientos le quedan al alumno (2, 1 o 0). Si el SO rechaza la
-acción, el agente responde `error` `internal` con el `ref_id` de la orden y el aviso lo dice.
+acción, el agente responde `error` `internal` con el `ref_id` de la orden y el motivo que dio el
+SO en `message` (sin datos del alumno), y el aviso lo dice.
 
 Reglas:
 
@@ -749,7 +750,7 @@ Reglas:
 
 | Acción | Windows | Requiere |
 |---|---|---|
-| `shutdown`, `reboot` | `InitiateShutdownW` sin período de gracia (la cuenta ya la hizo Aula); con `force`, `SHUTDOWN_FORCE_OTHERS` y `SHUTDOWN_FORCE_SELF`. Motivo: "otro, planificado". | **`SeShutdownPrivilege`**, que el agente habilita en su token. SYSTEM (el servicio) lo tiene; los usuarios estándar de un equipo de escritorio también, salvo que una GPO lo quite ("Apagar el sistema"). No se usa `SeRemoteShutdownPrivilege`: se ejecuta localmente. |
+| `shutdown`, `reboot` | `InitiateShutdownW` sin período de gracia (la cuenta ya la hizo Aula); con `force`, `SHUTDOWN_FORCE_OTHERS` y `SHUTDOWN_FORCE_SELF`. Motivo: "otro, planificado". **Sin `force` y con sesión iniciada se llama desde la sesión del alumno** (en modo servicio, el ayudante): desde SYSTEM, Windows lo rechaza con `ERROR_SHUTDOWN_USERS_LOGGED_ON` (1190) porque el alumno es "otro usuario". Con `force`, o sin sesión, lo llama el servicio. | **`SeShutdownPrivilege`**, que el agente habilita en su token. SYSTEM (el servicio) lo tiene; los usuarios estándar de un equipo de escritorio también, salvo que una GPO lo quite ("Apagar el sistema"); si la quita, el apagado sin forzar falla y la consola muestra el motivo. No se usa `SeRemoteShutdownPrivilege`: se ejecuta localmente. |
 | `logoff` sin `force` | `ExitWindowsEx(EWX_LOGOFF)` desde la sesión del alumno (en modo servicio lo hace el ayudante). | Ninguno: es la propia sesión. |
 | `logoff` con `force` | `WTSLogoffSession` sobre la sesión del alumno. | SYSTEM o administrador para otra sesión (el servicio); la propia sesión, sin permisos. |
 

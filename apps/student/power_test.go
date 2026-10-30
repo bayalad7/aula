@@ -348,22 +348,53 @@ func TestServiceAgentPower(t *testing.T) {
 	}
 	got.wait(t, "postponed", ackStatus(protocol.PowerPostponed))
 	clock.fireLast(t)
+	h.waitPower(t, []string{"logoff 4 false"})
+	clock.waitTimer(t)
+	clock.fireLast(t) // still on two minutes later (it is a test)
+
+	// The lab case: shutting down without force while Ana is logged on runs
+	// in her session, never from SYSTEM (ERROR_SHUTDOWN_USERS_LOGGED_ON).
+	if _, err := c.console.Send(ctx, s.ID, protocol.PowerAction{ActionID: protocol.NewID(), Action: protocol.PowerShutdown}); err != nil {
+		t.Fatal(err)
+	}
+	clock.waitTimer(t)
+	clock.fireLast(t)
+	h.waitPower(t, []string{"logoff 4 false", "shutdown 0 false"})
+	clock.waitTimer(t)
+	clock.fireLast(t)
+
+	// With force, the service does it.
+	if _, err := c.console.Send(ctx, s.ID, protocol.PowerAction{ActionID: protocol.NewID(), Action: protocol.PowerShutdown, Force: true}); err != nil {
+		t.Fatal(err)
+	}
 	deadline = time.Now().Add(5 * time.Second)
+	for len(rp.list()) < 2 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if calls := rp.list(); !slices.Equal(calls, []string{"reboot false", "shutdown true"}) {
+		t.Fatalf("service OS calls %v", calls)
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if !slices.Contains(h.evs, agentsvc.EventOnTop) {
+		t.Fatalf("events %v", h.evs)
+	}
+}
+
+// waitPower waits until the helper ran exactly want.
+func (h *fakeHelper) waitPower(t *testing.T, want []string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		h.mu.Lock()
-		n := len(h.logoffs)
+		got := slices.Clone(h.power)
 		h.mu.Unlock()
-		if n > 0 {
-			break
+		if slices.Equal(got, want) {
+			return
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	if !slices.Equal(h.logoffs, []uint32{4}) || !slices.Contains(h.evs, agentsvc.EventOnTop) {
-		t.Fatalf("helper log offs %v, events %v", h.logoffs, h.evs)
-	}
-	if calls := rp.list(); len(calls) != 1 {
-		t.Fatalf("the service logged off by itself: %v", calls)
-	}
+	t.Fatalf("helper ran %v, want %v", h.power, want)
 }

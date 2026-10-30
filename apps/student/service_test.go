@@ -86,11 +86,11 @@ func (c liveConsole) waitAgent(t *testing.T, what string, cond func(session.Sess
 // fakeHelper is the helper's end of the channel: it records what the service
 // asks of the student's screen and clipboard.
 type fakeHelper struct {
-	link    *agentsvc.Link
-	mu      sync.Mutex
-	clip    []string
-	evs     []string
-	logoffs []uint32
+	link  *agentsvc.Link
+	mu    sync.Mutex
+	clip  []string
+	evs   []string
+	power []string // what the service asked the helper to run
 }
 
 func newFakeHelper(t *testing.T, conn net.Conn) *fakeHelper {
@@ -106,10 +106,10 @@ func newFakeHelper(t *testing.T, conn net.Conn) *fakeHelper {
 			return nil, nil
 		case agentsvc.CallIndicatorShow, agentsvc.CallIndicatorHide:
 			return nil, nil
-		case agentsvc.CallPowerLogoff:
-			var id uint32
-			_ = json.Unmarshal(data, &id)
-			h.logoffs = append(h.logoffs, id)
+		case agentsvc.CallPower:
+			var a agentsvc.PowerArgs
+			_ = json.Unmarshal(data, &a)
+			h.power = append(h.power, fmt.Sprintf("%s %d %v", a.Action, a.Session, a.Force))
 			return nil, nil
 		}
 		return nil, fmt.Errorf("%s: unexpected", name)

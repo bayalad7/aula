@@ -351,15 +351,70 @@ func TestLogoffUsesTheSession(t *testing.T) {
 		t.Fatalf("ran %q", got)
 	}
 
-	// Without force, the helper's Logoff when there is one.
-	r = newRig(t, nil)
-	r.c.Session = func() (uint32, bool) { return 3, true }
-	r.c.Logoff = func(s uint32) error { r.ev.add(fmt.Sprintf("helper:logoff %d", s)); r.ev.ran <- "helper"; return nil }
-	r.handle(t, envA, protocol.PowerAction{ActionID: actionA, Action: protocol.PowerLogoff})
-	r.clock.Advance(30 * time.Second)
-	if got := r.waitRun(t); got != "helper" {
-		t.Fatalf("ran %q", got)
+}
+
+// Without force and with someone logged on, every action goes through the
+// session (the service's helper); with force, or nobody logged on, through
+// Power.
+func TestInSessionRunsTheGentleActions(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		order  protocol.PowerAction
+		logged bool
+		want   string
+	}{
+		{"shutdown", protocol.PowerAction{Action: protocol.PowerShutdown}, true, "session:shutdown force=false"},
+		{"reboot", protocol.PowerAction{Action: protocol.PowerReboot}, true, "session:reboot force=false"},
+		{"logoff", protocol.PowerAction{Action: protocol.PowerLogoff}, true, "session:logoff 3 force=false"},
+		{"forced", protocol.PowerAction{Action: protocol.PowerShutdown, Force: true}, true, "shutdown force=true"},
+		{"nobody", protocol.PowerAction{Action: protocol.PowerReboot}, false, "reboot force=false"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newRig(t, nil)
+			logged := tc.logged
+			r.c.Session = func() (uint32, bool) { return 3, logged }
+			r.c.InSession = sessionPower{fakePower{ev: r.ev}}
+			tc.order.ActionID = actionA
+			r.handle(t, envA, tc.order)
+			r.clock.Advance(30 * time.Second)
+			if got := r.waitRun(t); got != tc.want {
+				t.Fatalf("ran %q, want %q", got, tc.want)
+			}
+		})
 	}
+}
+
+// sessionPower is the helper's side: it marks what it ran.
+type sessionPower struct{ f fakePower }
+
+func (s sessionPower) Shutdown(force bool) error {
+	return s.f.record(fmt.Sprintf("session:shutdown force=%v", force))
+}
+func (s sessionPower) Reboot(force bool) error {
+	return s.f.record(fmt.Sprintf("session:reboot force=%v", force))
+}
+func (s sessionPower) Logoff(id uint32, force bool) error {
+	return s.f.record(fmt.Sprintf("session:logoff %d force=%v", id, force))
+}
+
+// The console hears why the OS refused, without student data.
+func TestOSFailureReason(t *testing.T) {
+	r := newRig(t, errors.New("shutdown: ERROR_SHUTDOWN_USERS_LOGGED_ON"))
+	r.handle(t, envA, protocol.PowerAction{ActionID: actionA, Action: protocol.PowerShutdown, Force: true})
+	r.waitRun(t)
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		for _, p := range r.ev.payloads() {
+			if e, ok := p.(protocol.ErrorPayload); ok {
+				if e.Message != "no se pudo apagar el equipo: shutdown: ERROR_SHUTDOWN_USERS_LOGGED_ON" {
+					t.Fatalf("message %q", e.Message)
+				}
+				return
+			}
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatal("no error sent")
 }
 
 func TestCountdownGoesOnWithoutConnection(t *testing.T) {

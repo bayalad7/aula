@@ -60,9 +60,13 @@ type Countdown struct {
 	// (the service without a helper): shutdown and reboot then run at once.
 	// Nil means always logged on (the agent runs in the session).
 	Session func() (uint32, bool)
-	// Logoff, if set, ends the session without force instead of Power (the
-	// service asks its helper, D-018).
-	Logoff func(session uint32) error
+	// InSession, if set, runs the actions without force while someone is
+	// logged on, instead of Power: the service asks its helper in the
+	// student's session (D-018). From SYSTEM, Windows refuses a shutdown
+	// without force while users are logged on (ERROR_SHUTDOWN_USERS_LOGGED_ON),
+	// and only the session's own process can log it off letting its
+	// applications ask to save.
+	InSession platform.Power
 	// OnChange is called with the notice to show, nil to remove it, before
 	// the console hears about it.
 	OnChange  func(*Notice)
@@ -263,7 +267,8 @@ func (c *Countdown) execute(o *order) {
 		n := c.noticeLocked(o)
 		c.mu.Unlock()
 		c.notify(n)
-		c.sendTo(context.Background(), o, protocol.NewError(o.refID, protocol.CodeInternal, failText(o.p.Action)))
+		// The OS's reason (no student data) helps the teacher fix the lab.
+		c.sendTo(context.Background(), o, protocol.NewError(o.refID, protocol.CodeInternal, failText(o.p.Action)+": "+err.Error()))
 		return
 	}
 	// Still running after a while: the student kept the session in
@@ -282,20 +287,21 @@ func (c *Countdown) execute(o *order) {
 }
 
 func (c *Countdown) run(p protocol.PowerAction) error {
+	sid, logged := c.session()
+	pw := c.Power
+	if !p.Force && logged && c.InSession != nil {
+		pw = c.InSession
+	}
 	switch p.Action {
 	case protocol.PowerShutdown:
-		return c.Power.Shutdown(p.Force)
+		return pw.Shutdown(p.Force)
 	case protocol.PowerReboot:
-		return c.Power.Reboot(p.Force)
+		return pw.Reboot(p.Force)
 	case protocol.PowerLogoff:
-		sid, ok := c.session()
-		if !ok {
+		if !logged {
 			return errors.New("no session to log off")
 		}
-		if !p.Force && c.Logoff != nil {
-			return c.Logoff(sid)
-		}
-		return c.Power.Logoff(sid, p.Force)
+		return pw.Logoff(sid, p.Force)
 	}
 	return fmt.Errorf("unknown power action %q", p.Action)
 }

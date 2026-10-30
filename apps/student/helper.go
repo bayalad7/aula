@@ -129,12 +129,12 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 			return nil, nil
 		}
 		return nil, h.indicator.Hide()
-	case agentsvc.CallPowerLogoff:
-		var session uint32
-		if err := json.Unmarshal(data, &session); err != nil {
+	case agentsvc.CallPower:
+		var a agentsvc.PowerArgs
+		if err := json.Unmarshal(data, &a); err != nil {
 			return nil, err
 		}
-		return nil, logoffOwnSession(session)
+		return nil, runPower(a)
 	}
 	return nil, fmt.Errorf("%s: unknown call", name)
 }
@@ -172,19 +172,28 @@ func (h *helper) event(ctx context.Context, app *App, name string, data json.Raw
 	}
 }
 
-// logoffOwnSession logs off the helper's session without force, as the
-// service asks after the countdown (D-018); it refuses any other session.
-func logoffOwnSession(session uint32) error {
-	own, err := platform.CurrentSession()
-	if err != nil {
-		return err
-	}
-	if own != session {
-		return fmt.Errorf("log off session %d: the helper runs in session %d", session, own)
-	}
+// runPower shuts down, reboots or logs off from the student's session, as
+// the service asks after the countdown (D-018). It only logs off its own
+// session.
+func runPower(a agentsvc.PowerArgs) error {
 	p, err := platform.NewPower()
 	if err != nil {
 		return err
 	}
-	return p.Logoff(own, false)
+	switch a.Action {
+	case "shutdown":
+		return p.Shutdown(a.Force)
+	case "reboot":
+		return p.Reboot(a.Force)
+	case "logoff":
+		own, err := platform.CurrentSession()
+		if err != nil {
+			return err
+		}
+		if own != a.Session {
+			return fmt.Errorf("log off session %d: the helper runs in session %d", a.Session, own)
+		}
+		return p.Logoff(own, a.Force)
+	}
+	return fmt.Errorf("unknown power action %q", a.Action)
 }

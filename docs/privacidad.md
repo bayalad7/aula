@@ -105,16 +105,17 @@ Reglas para `screen.broadcast.*` (`docs/protocol.md` §5.12), aprobadas el 2026-
     servicio lanza en la sesión del alumno con sus permisos normales. El servicio **no puede
     capturar la pantalla ni mostrar nada por sí mismo**: la captura solo existe en el ayudante,
     que muestra el distintivo antes. Sin ayudante (nadie inició sesión, o se acaba de cerrar), el
-    agente se conecta **sin capacidades**: la consola solo ve que el equipo está encendido y no
-    puede pedirle pantalla ni código.
+    agente se conecta **sin capacidades**, salvo `power` (regla 29): la consola solo ve que el
+    equipo está encendido y no puede pedirle pantalla ni código.
 18. **El alumno ve el agente.** El servicio se llama "Aula — agente del aula" en
     `services.msc`, con una descripción clara, y el ayudante aparece como `aula-cliente.exe` en el
     Administrador de tareas. No hay nombres engañosos ni procesos escondidos. Si el alumno cierra
     el ayudante, el servicio lo vuelve a abrir en segundos y con él el distintivo.
 19. **Lo que cambia con los privilegios.** Antes, el alumno podía cerrar el agente; ahora solo un
     administrador puede detener el servicio. Correr como SYSTEM no habilita por sí mismo ninguna
-    función nueva: cada una que use esos privilegios (`power.*`, `app.block`, `web.filter`,
-    `remote.*`) se documentará aquí, con su aviso visible, antes de implementarse.
+    función nueva: cada una que use esos privilegios se documenta aquí, con su aviso visible,
+    antes de implementarse. Ya lo están `app.block` y `web.filter` (reglas 20–25) y `power.*`
+    (reglas 26–31); falta `remote.*`.
 
 ## Bloqueo de aplicaciones y filtro web (v0.4, Windows)
 
@@ -149,8 +150,45 @@ Reglas para `app.block.*` y `web.filter.*` (`docs/protocol.md` §5.13–5.14), a
     - entrar a un sitio por su dirección IP evita el filtro por nombre;
     - Ctrl+Alt+Supr no se bloquea.
 
+## Apagar, reiniciar y cerrar sesión (v0.5, Windows)
+
+Reglas para `power.*` (`docs/protocol.md` §5.15), aprobadas el 2026-10-29. Una orden de apagado
+puede hacer perder trabajo no guardado: por eso, salvo que el profesor la fuerce, el alumno
+siempre tiene tiempo de guardar.
+
+26. **Aviso antes de apagar, siempre visible.** Sin `force`, al llegar la orden la ventana de Aula
+    pasa al frente, queda siempre encima y muestra un aviso fijo con la cuenta en vivo:
+
+    > **⏻ El profesor <nombre> (canal <X>) va a reiniciar este equipo en 0:30. Guarda tu
+    > trabajo.**
+
+    ("apagar este equipo" o "cerrar tu sesión" según la orden), con el botón **"Posponer 5 min
+    (te quedan 2)"**. La cuenta dura 30 s si el profesor no elige otra (10 s a 10 min). La barra
+    de la ventana agrega "· reinicio en 0:30".
+27. **Posponer.** Cada aplazamiento suma 5 minutos a lo que falta, como máximo 2 veces por orden.
+    La consola ve cada aplazamiento. Agotados, el botón se deshabilita con "Ya no se puede
+    posponer". Aula no cierra nada durante la cuenta.
+28. **Forzar es explícito y se advierte.** Con `force` no hay cuenta: el alumno ve "El profesor
+    <nombre> está apagando este equipo" mientras Windows lo apaga, y las aplicaciones se cierran
+    **sin guardar**. La consola lo advierte en rojo antes de confirmar. Sin `force`, Windows
+    deja que las apps pidan guardar ("Esta aplicación impide…").
+29. **Solo la consola autenticada.** Ninguna orden `power.*` se procesa antes de `auth.ok`. Sin
+    sesión iniciada (el servicio sin ayudante, regla 17), el agente declara solo `power`:
+    apagar o reiniciar es inmediato, porque no hay trabajo que perder, y queda en el log del
+    servicio. Cerrar sesión no aplica.
+30. **La cuenta no depende de la red.** Si se pierde la conexión con la consola, la cuenta sigue
+    visible, se puede posponer y al final se ejecuta. El profesor puede anularla con "Cancelar"
+    mientras esté conectado; el aviso desaparece de inmediato.
+31. **Registros.** Se registran la acción, `action_id`, `force`, los aplazamientos, el
+    resultado y el equipo, **antes** de ejecutar. Nunca qué aplicaciones estaban abiertas ni su
+    contenido.
+
+Permisos del SO (detalle en `docs/protocol.md` §5.15.1): apagar y reiniciar usan
+`SeShutdownPrivilege`, que tienen SYSTEM y, salvo una GPO que lo quite, los usuarios de un equipo
+de escritorio; cerrar la sesión de otro usuario (con `force`, desde el servicio) requiere SYSTEM.
+
 ## Pendiente para etapas futuras
 
 - Guardar una captura por petición explícita del profesor, y Linux y macOS (incluida la
   recepción de la transmisión y las restricciones): sus textos de aviso se agregarán aquí antes
-  de implementarlos, con las mismas reglas 6–25.
+  de implementarlos, con las mismas reglas 6–31.

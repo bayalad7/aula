@@ -306,7 +306,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `web.filter` | `web.filter.set`, `web.filter.clear` | v0.4 (§5.14). Windows, solo con el agente como servicio y su ayudante. |
 | `file.collect` | `file.collect` | Reservada |
 | `code.collect` | `code.collect` | Reservada |
-| `power` | `power.*` | Reservada |
+| `power` | `power.action`, `power.cancel` | v0.5 (§5.15). Windows, en modo ventana y como servicio (también sin sesión iniciada). Linux y macOS no la declaran. |
 | `remote` | `remote.*` | Reservada |
 | `poll` | `poll.*` | Reservada |
 
@@ -344,6 +344,9 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `web.filter.set` | P → A | `web.filter` | `policy_id`, `mode`, `domains` | `web.filter.ack` o `error` |
 | `web.filter.clear` | P → A | `web.filter` | `{}` | `web.filter.ack` |
 | `web.filter.ack` | A → P | — | `ref_id`, `policy_id`, `active` | — |
+| `power.action` | P → A | `power` | `action_id`, `action`, `delay_s`?, `force` | `power.ack` (uno o varios) o `error` |
+| `power.cancel` | P → A | `power` | `action_id` | `power.ack` (`cancelled`); sin orden vigente se ignora |
+| `power.ack` | A → P | — | `ref_id`, `action_id`, `status`, `remaining_s`, `postpones_left` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -673,6 +676,87 @@ aplicar, el agente responde `error` `internal`, no deja nada a medias y no enví
 
 **`web.filter.ack` (A → P)**: igual que `app.block.ack`.
 
+### 5.15 Energía: apagar, reiniciar y cerrar sesión (`power.*`)
+
+> Implementado en v0.5 (Windows), aprobado el 2026-10-29. Decisión técnica en D-018;
+> implementación en `internal/power`; avisos en `docs/privacidad.md` reglas 26–31.
+
+```
+Consola (P)                                   Agente (A)
+   |-- power.action (reboot, 30 s) ------------->|  muestra el aviso con la cuenta
+   |<---------------------- power.ack countdown --|
+   |<---------------------- power.ack postponed --|  el alumno pospuso (+5 min)
+   |<---------------------- power.ack executing --|  justo antes de llamar al SO
+   |                                              |  reinicia
+```
+
+**`power.action` (P → A)**
+
+```json
+{ "action_id": "c2e1…", "action": "reboot", "delay_s": 30, "force": false }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `action_id` | string | UUID v4 de la consola; identifica la orden en `power.ack` y `power.cancel`. |
+| `action` | string | `shutdown` (apagar), `reboot` (reiniciar) o `logoff` (cerrar sesión). |
+| `delay_s` | entero | **Opcional.** Duración de la cuenta regresiva, 10–600 s. Ausente o `0` = **30 s**. Con `force` se ignora. |
+| `force` | booleano | `true`: sin cuenta regresiva y cerrando las aplicaciones aunque tengan cambios sin guardar. `false` (o ausente): aviso con cuenta regresiva y cierre normal, en el que Windows deja que las apps pidan guardar. |
+
+**`power.cancel` (P → A)**
+
+```json
+{ "action_id": "c2e1…" }
+```
+
+Anula la cuenta regresiva de esa orden: el agente quita el aviso y responde `power.ack`
+`cancelled`. Si la orden vigente es otra, o no hay ninguna (o ya se está ejecutando), se ignora.
+
+**`power.ack` (A → P)**
+
+```json
+{ "ref_id": "<id del power.action>", "action_id": "c2e1…", "status": "postponed",
+  "remaining_s": 325, "postpones_left": 1 }
+```
+
+| `status` | Cuándo | `remaining_s` |
+|---|---|---|
+| `countdown` | El aviso ya se muestra y empezó la cuenta. | Segundos que faltan. |
+| `postponed` | El alumno pospuso 5 minutos. | Los que faltan ahora. |
+| `executing` | Se envía **justo antes** de llamar al SO. Con `force` (o sin sesión iniciada) es el único. | `0` |
+| `cancelled` | Respuesta a `power.cancel` (`ref_id` = el del `cancel`), o la orden fue reemplazada por otra nueva (`ref_id` = el de la orden vieja). | `0` |
+
+`postpones_left` dice cuántos aplazamientos le quedan al alumno (2, 1 o 0). Si el SO rechaza la
+acción, el agente responde `error` `internal` con el `ref_id` de la orden y el aviso lo dice.
+
+Reglas:
+
+- **Una orden a la vez.** Una `power.action` nueva reemplaza a la vigente: el agente envía
+  `cancelled` de la vieja y empieza la nueva (con `force`, se ejecuta de inmediato).
+- **Posponer:** el alumno puede sumar 5 minutos a lo que falta, como máximo **2 veces** por orden.
+- **La cuenta sigue si se cae la conexión.** La orden ya vino de la consola autenticada: el aviso
+  sigue y se puede posponer, y al terminar se ejecuta. Los `ack` que no se pueden enviar solo
+  quedan en el log del agente.
+- **Sin sesión iniciada** (agente como servicio sin ayudante, D-016): el agente declara solo
+  `power`. `shutdown` y `reboot` se ejecutan de inmediato, porque no hay trabajo que perder ni
+  nadie que vea el aviso; `logoff` → `error` `unsupported_capability`.
+- **No se reenvía al reconectar** (a diferencia de §5.13–5.14): es una orden puntual.
+- Antes de `auth.ok`, como cualquier otro mensaje, → `error` `unauthorized` y cierre `1008`
+  (§3.1). El agente registra la orden y envía `executing` antes de llamar al SO, y espera hasta
+  2 s a que el `ack` salga.
+
+#### 5.15.1 Permisos del sistema operativo
+
+| Acción | Windows | Requiere |
+|---|---|---|
+| `shutdown`, `reboot` | `InitiateShutdownW` sin período de gracia (la cuenta ya la hizo Aula); con `force`, `SHUTDOWN_FORCE_OTHERS` y `SHUTDOWN_FORCE_SELF`. Motivo: "otro, planificado". | **`SeShutdownPrivilege`**, que el agente habilita en su token. SYSTEM (el servicio) lo tiene; los usuarios estándar de un equipo de escritorio también, salvo que una GPO lo quite ("Apagar el sistema"). No se usa `SeRemoteShutdownPrivilege`: se ejecuta localmente. |
+| `logoff` sin `force` | `ExitWindowsEx(EWX_LOGOFF)` desde la sesión del alumno (en modo servicio lo hace el ayudante). | Ninguno: es la propia sesión. |
+| `logoff` con `force` | `WTSLogoffSession` sobre la sesión del alumno. | SYSTEM o administrador para otra sesión (el servicio); la propia sesión, sin permisos. |
+
+Sin `force`, una app con cambios sin guardar puede detener el apagado en la pantalla de Windows
+"Esta aplicación impide…". Es intencional: no se pierde trabajo, y el profesor puede reenviar la
+orden con `force`.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -684,7 +768,6 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
 | `file.collect` | Recolectar un archivo que el alumno elige entregar. |
 | `code.collect` | Recolectar el código que el alumno entrega desde el overlay. |
-| `power.*` | Apagar, reiniciar o cerrar sesión de equipos (con aviso previo). |
 | `remote.*` | Control remoto de teclado y ratón (con indicador visible y consentimiento). |
 | `poll.*` | Encuestas y preguntas rápidas a los alumnos. |
 
@@ -707,6 +790,7 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `screen.broadcast.*.attempt` | 1–1000 | `error` `invalid_message` |
 | `app.block.set.apps` | 1–100 nombres de ≤ 64 caracteres | `error` `invalid_message` |
 | `web.filter.set.domains` | 1–500 dominios de ≤ 253 caracteres | `error` `invalid_message` |
+| `power.action.delay_s` | 10–600 s (0 o ausente = 30 s) | `error` `invalid_message` |
 | `error.message` | 500 caracteres | El emisor lo trunca. |
 | `hello.capabilities` | 64 entradas | `error` `invalid_message` y cierre |
 | Versión `v` ≠ 1 | — | `error` `unsupported_version` y cierre `1008` |
@@ -736,6 +820,8 @@ emisor verifica el tamaño final de la envoltura.
 - De `screen.broadcast.*` se registran `broadcast_id`, `attempt`, tamaños y estados de la
   conexión WebRTC; **no** el SDP ni los candidatos (llevan direcciones de la LAN). El video de la
   transmisión no se graba en ningún extremo.
+- De `power.*` se registran `action`, `action_id`, `force`, `status`, los aplazamientos y el
+  resultado; el agente lo registra **antes** de llamar al SO.
 - `hello` revela al profesor el usuario y el equipo del alumno. Es intencional (monitoreo
   transparente) y se explica en `docs/privacidad.md`.
 
@@ -795,4 +881,5 @@ paso 3.
 | Robo de la clave privada del equipo del profesor | **No cubierto**: quien la tenga puede suplantar la consola. Protegerla con la cuenta del SO; si se filtra, generar otra y reconfigurar agentes. |
 | Agente no autorizado que se une al canal | **No cubierto en v0**: la consola no autentica agentes (§3.2). El profesor ve hostname y usuario. |
 | Saturación (DoS) en la LAN | Solo límites de tamaño y timeouts (§7). |
+| Orden de apagado falsa | `power.*` solo se procesa después de `auth.ok` (§3.1), como todo mensaje de la consola; antes → `unauthorized` y cierre. |
 | Video de transmisión falso o interceptado | El SDP (con la huella DTLS) viaja por la sesión autenticada (§3.2), así que el agente solo acepta medios de la consola legítima; el video va cifrado con DTLS-SRTP. |

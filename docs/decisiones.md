@@ -616,3 +616,38 @@ Versión: función nueva compatible → sube `y`.
     se suspende hasta que el servicio reinicia (5 s) y lo restaura o vuelve a recibirlo.
 - Al leer las reglas desde Go con la salida redirigida, Windows PowerShell 5.1 solo imprime si el
   resultado pasa por `Out-String`.
+
+## D-018: Apagar, reiniciar y cerrar sesión con cuenta regresiva en el agente
+
+**Fecha:** 2026-10-29 · **Estado:** aprobada en v0.5 (Windows).
+
+**Contexto.** El profesor quiere apagar, reiniciar o cerrar la sesión de los equipos del canal
+(`power.*`, `docs/protocol.md` §5.15). Es una acción destructiva de sesión: el alumno puede perder
+trabajo sin guardar. Por eso hay aviso con cuenta regresiva y la posibilidad de posponer, salvo
+que el profesor fuerce la orden.
+
+**Decisiones.**
+- **La cuenta vive en el agente** (`internal/power`), no en `platform` ni en el SO. Así se puede
+  probar con un reloj falso y un doble, y no se usa el período de gracia de `InitiateShutdownW`,
+  porque Windows no deja posponerlo ni mostrar el aviso de Aula. `platform.Power` solo actúa de
+  inmediato.
+- **APIs de Windows:**
+  - `InitiateShutdownW` (apagar o reiniciar) tras habilitar `SeShutdownPrivilege`, sin gracia;
+    con `force`, `SHUTDOWN_FORCE_OTHERS|SHUTDOWN_FORCE_SELF`;
+  - cerrar sesión con `WTSLogoffSession` (con `force`, sobre la sesión del alumno) o
+    `ExitWindowsEx(EWX_LOGOFF)` desde la propia sesión sin `force`. En modo servicio, este
+    último lo pide el servicio al ayudante por el canal local (D-016), porque `ExitWindowsEx`
+    actúa sobre la sesión del proceso que llama.
+- **El `ack executing` sale antes de ejecutar.** El agente registra la orden, envía `executing` y
+  espera hasta 2 s a que la cola de escritura lo saque. Después llama al SO: un apagado corta la
+  conexión y lo que quedara en cola se perdería.
+- **La cuenta sigue sin red.** La orden ya vino de la consola autenticada. El caso típico es
+  "apagar todo al terminar la clase y cerrar la laptop", así que cancelar al perder la conexión
+  dejaría los equipos encendidos. El alumno conserva el aviso y la opción de posponer.
+- **Sin sesión iniciada se declara `power`**, como excepción a la regla 17 de privacidad: sin
+  usuario no hay trabajo que perder ni aviso que mostrar, y apagar el laboratorio en la pantalla
+  de inicio de sesión es el uso principal.
+- **Posponer: 5 minutos, 2 veces.** Da tiempo de guardar sin que un alumno bloquee indefinidamente
+  el apagado; el profesor puede reenviar con `force`.
+
+Versión: función nueva compatible → sube `y`.

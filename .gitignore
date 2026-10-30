@@ -31,3 +31,6 @@ Thumbs.db
 
 # Local builds for manual tests
 /dist/
+
+# Arnés web (scripts/ux)
+scripts/ux/salida/

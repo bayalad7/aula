@@ -1,0 +1,14 @@
+{
+  "name": "aula-ux",
+  "private": true,
+  "description": "Arnés web de la consola del profesor: recorrido con axe-core y capturas del manual. No forma parte del build.",
+  "type": "module",
+  "scripts": {
+    "recorrido": "node recorrido.mjs",
+    "capturas-manual": "node capturas-manual.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "4.14.0",
+    "puppeteer": "25.16.0"
+  }
+}

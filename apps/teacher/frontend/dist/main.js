@@ -69,24 +69,19 @@
     return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
   };
 
-  // Mensajes de error con la fórmula «qué pasó + qué hacer», y el detalle
-  // técnico aparte. Los errores de Go llegan como texto.
+  // Mensajes de error con la fórmula «qué pasó + qué hacer». Go devuelve
+  // "aula:<código>: <detalle>" (apps/teacher/errores.go): el código elige el
+  // texto y el detalle técnico queda plegado en «Ver detalles».
   function amable(err) {
     const raw = String(err && err.message ? err.message : err);
-    const casos = [
-      [/puerto \d+ está ocupado/, "error.puertoOcupado"],
-      [/^clave del centro:/, "error.claveCentro"],
-      [/^clave de la consola:/, "error.claveConsola"],
-      [/^certificado:/, "error.certificado"],
-      [/codificador H\.264/, "error.sinH264"],
-      [/ocultar la consola/, "error.ocultarConsola"],
-      [/portapapeles no está disponible/, "error.sinPortapapeles"],
-      [/portapapeles (está vacío|no tiene texto)/, "error.portapapelesVacio"],
-    ];
-    for (const [re, key] of casos) {
-      if (re.test(raw)) return { titulo: T(key + ".titulo"), texto: T(key + ".texto"), detalle: raw };
+    const m = /^aula:([A-Za-z]+): ([\s\S]*)$/.exec(raw);
+    const base = m ? "error." + m[1] : "";
+    if (m && typeof TX[base + ".titulo"] === "string") {
+      return { titulo: T(base + ".titulo"), texto: T(base + ".texto"), detalle: m[2] };
     }
-    const frase = raw.charAt(0).toUpperCase() + raw.slice(1);
+    // Sin código (no debería pasar): el texto de Go, presentable.
+    const texto = m ? m[2] : raw;
+    const frase = texto.charAt(0).toUpperCase() + texto.slice(1);
     return { titulo: T("error.generico"), texto: /[.!?]$/.test(frase) ? frase : frase + ".", detalle: "" };
   }
 

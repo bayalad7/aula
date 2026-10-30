@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -55,7 +54,7 @@ func (a *App) SetRestriction(req RestrictionRequest) (RestrictionsView, error) {
 		}
 		a.restr.SetWeb(set, req.Hosts)
 	default:
-		return a.Restrictions(), fmt.Errorf("tipo de restricción %q desconocido", req.Kind)
+		return a.Restrictions(), codedf(codeInvalidRestriction, "tipo de restricción %q desconocido", req.Kind)
 	}
 	a.log.Info("restriction set", "kind", req.Kind, "mode", req.Mode, "items", len(req.Items), "hosts", len(req.Hosts))
 	a.syncRestrictions()
@@ -226,13 +225,13 @@ func friendlyPolicy(err error, what string) error {
 		if what == "sitios" {
 			limit = protocol.MaxFilterDomain
 		}
-		return fmt.Errorf("escribe entre 1 y %d %s, uno por línea", limit, what)
+		return codedf(codeInvalidRestriction, "escribe entre 1 y %d %s, uno por línea", limit, what)
 	case strings.Contains(msg, "mode must be"):
-		return errors.New("elige si se bloquean esos o solo se permiten esos")
+		return codedf(codeInvalidRestriction, "elige si se bloquean esos o solo se permiten esos")
 	case strings.Contains(msg, "app name"):
-		return errors.New("un nombre de aplicación no es válido: usa el nombre del ejecutable, p. ej. steam o steam.exe")
+		return codedf(codeInvalidApp, "un nombre de aplicación no es válido: usa el nombre del ejecutable, p. ej. steam o steam.exe")
 	case strings.Contains(msg, "invalid domain"):
-		return errors.New("un sitio no es válido: escribe dominios como youtube.com (sin acentos; usa la forma xn-- para ellos)")
+		return codedf(codeInvalidDomain, "un sitio no es válido: escribe dominios como youtube.com (sin acentos; usa la forma xn-- para ellos)")
 	default:
 		return err
 	}

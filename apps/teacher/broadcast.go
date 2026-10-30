@@ -69,7 +69,7 @@ func (a *App) StartBroadcast(display int) (BroadcastState, error) {
 	defer a.bcMu.Unlock()
 	if err := a.exclude(true); err != nil {
 		a.log.Warn("console cannot be excluded from the capture", "err", err)
-		return a.BroadcastState(), errors.New("no se pudo ocultar la consola de la transmisión; no se transmite para no mostrar la lista de alumnos")
+		return a.BroadcastState(), codedf(codeHideConsole, "no se pudo ocultar la consola de la transmisión; no se transmite para no mostrar la lista de alumnos")
 	}
 	a.bc.Media.UDPPort = a.broadcastUDPPort
 	a.mu.Lock()
@@ -134,10 +134,10 @@ func (a *App) onBroadcastMessage(sessionID string, env protocol.Envelope) {
 func friendlyBroadcast(err error) error {
 	switch {
 	case errors.Is(err, platform.ErrNotSupported):
-		return errors.New("este equipo no puede transmitir su pantalla: falta el codificador H.264 de Windows (en ediciones N, instala el Media Feature Pack)")
+		return codedf(codeNoH264, "este equipo no puede transmitir su pantalla: falta el codificador H.264 de Windows (en ediciones N, instala el Media Feature Pack)")
 	case errors.Is(err, broadcast.ErrAlreadyBroadcasting):
-		return errors.New("ya estás transmitiendo")
+		return codedf(codeAlreadyBroadcasting, "ya estás transmitiendo")
 	default:
-		return fmt.Errorf("no se pudo transmitir: %w", err)
+		return codedf(codeBroadcastFailed, "no se pudo transmitir: %w", err)
 	}
 }

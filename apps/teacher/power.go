@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -37,13 +35,13 @@ func (a *App) PowerAction(req PowerRequest) (PowerResult, error) {
 	}
 	order := protocol.PowerAction{ActionID: protocol.NewID(), Action: protocol.PowerKind(req.Action), DelayS: req.DelayS, Force: req.Force}
 	if err := order.Validate(); err != nil {
-		return PowerResult{}, fmt.Errorf("orden de energía no válida: elige apagar, reiniciar o cerrar sesión y una cuenta de %d s a %d min",
+		return PowerResult{}, codedf(codeInvalidPower, "orden de energía no válida: elige apagar, reiniciar o cerrar sesión y una cuenta de %d s a %d min",
 			protocol.MinPowerDelay, protocol.MaxPowerDelay/60)
 	}
 	res := PowerResult{Unsupported: []string{}, Failed: []string{}}
 	targets := targetsOf(class.Sessions(), req.Hosts)
 	if len(targets) == 0 {
-		return res, errors.New("no hay alumnos conectados a quienes enviarla")
+		return res, codedf(codeNoPowerTargets, "no hay alumnos conectados a quienes enviarla")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

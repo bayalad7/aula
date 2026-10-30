@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/bayalad7/aula/internal/protocol"
@@ -34,8 +33,8 @@ type SimulationView struct {
 }
 
 var (
-	errSimUnavailable = errors.New("esta clase no admite alumnos simulados")
-	errSimNotActive   = errors.New("el aula simulada no está abierta")
+	errSimUnavailable = codedf(codeSimUnavailable, "esta clase no admite alumnos simulados")
+	errSimNotActive   = codedf(codeSimClosed, "el aula simulada no está abierta")
 )
 
 // Simulation returns the state of the aula simulada.
@@ -85,9 +84,9 @@ func (a *App) SimulationAdd(req SimRequest) (SimulationView, error) {
 	if _, err := sim.Add(protocol.OS(req.OS), caps); err != nil {
 		switch {
 		case errors.Is(err, simclass.ErrFull):
-			err = fmt.Errorf("ya hay %d alumnos simulados, el máximo", simclass.MaxStudents)
+			err = codedf(codeSimFull, "ya hay %d alumnos simulados, el máximo", simclass.MaxStudents)
 		case errors.Is(err, simclass.ErrBadCapability):
-			err = errors.New("un alumno simulado solo puede recibir código, avisos y mostrar su pantalla")
+			err = codedf(codeSimCapability, "un alumno simulado solo puede recibir código, avisos y mostrar su pantalla")
 		}
 		return a.Simulation(), err
 	}
@@ -103,7 +102,7 @@ func (a *App) SimulationRemove(id string) (SimulationView, error) {
 		return a.Simulation(), errSimNotActive
 	}
 	if err := sim.Remove(id); err != nil {
-		return a.Simulation(), errors.New("ese alumno simulado ya no existe")
+		return a.Simulation(), codedf(codeSimGone, "ese alumno simulado ya no existe")
 	}
 	return a.Simulation(), nil
 }
@@ -120,9 +119,9 @@ func (a *App) SimulationFault(id, fault string, delayMs int) (SimulationView, er
 	err := sim.SetFault(id, simclass.Fault(fault), time.Duration(delayMs)*time.Millisecond)
 	switch {
 	case errors.Is(err, simclass.ErrUnknownStudent):
-		err = errors.New("ese alumno simulado ya no existe")
+		err = codedf(codeSimGone, "ese alumno simulado ya no existe")
 	case errors.Is(err, simclass.ErrBadFault):
-		err = fmt.Errorf("falla %q desconocida", fault)
+		err = codedf(codeSimFault, "falla %q desconocida", fault)
 	}
 	return a.Simulation(), err
 }
@@ -159,7 +158,7 @@ func (a *App) ensureSimulation() (*simclass.Class, error) {
 	sim, err := simclass.New(con, version, a.emitSimulation, a.log)
 	if err != nil {
 		host.StopSimulation()
-		return nil, fmt.Errorf("no se pudo abrir el aula simulada: %w", err)
+		return nil, codedf(codeSimFailed, "no se pudo abrir el aula simulada: %w", err)
 	}
 	a.sim = sim
 	return sim, nil

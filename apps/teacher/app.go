@@ -22,7 +22,7 @@ import (
 	"github.com/bayalad7/aula/internal/simclass"
 )
 
-var errNoClass = errors.New("primero abre una clase")
+var errNoClass = codedf(codeNoClass, "primero abre una clase")
 
 // version is the console's SemVer. Releases set it with
 // -ldflags "-X main.version=x.y.z".
@@ -171,11 +171,11 @@ func (a *App) Setup() Setup {
 func (a *App) StartClass(channel, consoleName string) (View, error) {
 	channel, err := protocol.ParseChannel(channel)
 	if err != nil {
-		return View{}, err
+		return View{}, coded(codeInvalidChannel, err)
 	}
 	consoleName = strings.TrimSpace(consoleName)
 	if consoleName == "" || len(consoleName) > 63 {
-		return View{}, errors.New("escribe tu nombre como lo verán los alumnos (hasta 63 caracteres)")
+		return View{}, codedf(codeInvalidName, "escribe tu nombre como lo verán los alumnos (hasta 63 caracteres)")
 	}
 	a.EndClass()
 
@@ -250,15 +250,15 @@ func (a *App) View() View {
 func (a *App) Emit(req EmitRequest) (codedist.Delivery, error) {
 	mode := protocol.CodeMode(req.Mode)
 	if mode != protocol.ModeReplace && mode != protocol.ModeAppend {
-		return codedist.Delivery{}, fmt.Errorf("modo %q desconocido", req.Mode)
+		return codedist.Delivery{}, codedf(codeInvalidMode, "modo %q desconocido", req.Mode)
 	}
 	content := normalizeNewlines(req.Content)
 	if strings.TrimSpace(content) == "" {
-		return codedist.Delivery{}, errors.New("el editor está vacío")
+		return codedist.Delivery{}, codedf(codeEmptyCode, "el editor está vacío")
 	}
 	title := strings.TrimSpace(req.Title)
 	if utf8.RuneCountInString(title) > protocol.MaxTitle {
-		return codedist.Delivery{}, fmt.Errorf("el título pasa de %d caracteres", protocol.MaxTitle)
+		return codedist.Delivery{}, codedf(codeTitleTooLong, "el título pasa de %d caracteres", protocol.MaxTitle)
 	}
 	lang := req.Lang
 	if lang == "" {
@@ -290,7 +290,7 @@ func (a *App) Reemit(snippetID string) (codedist.Delivery, error) {
 	entry, ok := a.history.Touch(snippetID, a.now())
 	a.mu.Unlock()
 	if !ok {
-		return codedist.Delivery{}, errors.New("ese fragmento ya no está en el historial")
+		return codedist.Delivery{}, codedf(codeSnippetGone, "ese fragmento ya no está en el historial")
 	}
 	a.emitHistory()
 	return a.broadcast("code", entryLabel(entry)+" (reemitido)", entry.Share(protocol.ModeReplace))
@@ -334,7 +334,7 @@ func (a *App) Resend(deliveryID string) (codedist.Delivery, error) {
 	p := a.payloads[deliveryID]
 	a.mu.Unlock()
 	if !ok || p == nil {
-		return codedist.Delivery{}, errors.New("ese envío ya no está entre los recientes")
+		return codedist.Delivery{}, codedf(codeDeliveryGone, "ese envío ya no está entre los recientes")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -481,20 +481,20 @@ func (a *App) capture(source string) (Draft, error) {
 
 func (a *App) readDraft(source string) (Draft, error) {
 	if a.clip == nil {
-		return Draft{}, fmt.Errorf("el portapapeles no está disponible: %v", a.clipErr)
+		return Draft{}, codedf(codeClipboardUnavailable, "el portapapeles no está disponible: %v", a.clipErr)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	text, err := a.clip.ReadText(ctx)
 	if err != nil {
-		return Draft{}, errors.New("el portapapeles no tiene texto: copia el código primero (Ctrl+C)")
+		return Draft{}, codedf(codeClipboardEmpty, "el portapapeles no tiene texto: copia el código primero (Ctrl+C)")
 	}
 	text = normalizeNewlines(text)
 	if strings.TrimSpace(text) == "" {
-		return Draft{}, errors.New("el portapapeles está vacío: copia el código primero (Ctrl+C)")
+		return Draft{}, codedf(codeClipboardEmpty, "el portapapeles está vacío: copia el código primero (Ctrl+C)")
 	}
 	if len(text) > protocol.MaxCodeContent {
-		return Draft{}, fmt.Errorf("el texto copiado pasa de %d KiB", protocol.MaxCodeContent/1024)
+		return Draft{}, codedf(codeClipboardTooLarge, "el texto copiado pasa de %d KiB", protocol.MaxCodeContent/1024)
 	}
 	a.mu.Lock()
 	prev := a.lastLang
@@ -616,13 +616,13 @@ func entryLabel(e codedist.HistoryEntry) string {
 func friendly(err error) error {
 	switch {
 	case errors.Is(err, protocol.ErrMessageTooLarge):
-		return fmt.Errorf("el código pasa del límite de %d KiB", protocol.MaxCodeContent/1024)
+		return codedf(codeCodeTooLarge, "el código pasa del límite de %d KiB", protocol.MaxCodeContent/1024)
 	case strings.Contains(err.Error(), "text must be"):
-		return fmt.Errorf("el aviso debe tener entre 1 y %d caracteres", protocol.MaxMsgText)
+		return codedf(codeInvalidNotice, "el aviso debe tener entre 1 y %d caracteres", protocol.MaxMsgText)
 	case strings.Contains(err.Error(), "level must be"):
-		return errors.New("nivel de aviso desconocido")
+		return codedf(codeInvalidNotice, "nivel de aviso desconocido")
 	case strings.Contains(err.Error(), "malformed lang"):
-		return errors.New("lenguaje desconocido")
+		return codedf(codeUnknownLanguage, "lenguaje desconocido")
 	default:
 		return err
 	}

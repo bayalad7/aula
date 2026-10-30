@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"net"
@@ -70,7 +69,7 @@ func consoleKey(siteDir, userDir string, create bool) (*security.Identity, strin
 			return id, keyCentre, nil
 		}
 		if !errors.Is(err, fs.ErrNotExist) {
-			return nil, "", fmt.Errorf("clave del centro: %w", err)
+			return nil, "", codedf(codeSiteKey, "clave del centro: %w", err)
 		}
 	}
 	id, err := security.LoadIdentity(userDir)
@@ -78,7 +77,7 @@ func consoleKey(siteDir, userDir string, create bool) (*security.Identity, strin
 		id, err = security.CreateIdentity(userDir, false)
 	}
 	if err != nil {
-		return nil, "", fmt.Errorf("clave de la consola: %w", err)
+		return nil, "", codedf(codeConsoleKey, "clave de la consola: %w", err)
 	}
 	return id, keyPersonal, nil
 }
@@ -166,7 +165,7 @@ func (l *liveClass) StartSimulation() (simclass.Console, error) {
 	if l.sim == nil {
 		ln, err := net.Listen("tcp", "127.0.0.1:0") // loopback only: no real student can reach it
 		if err != nil {
-			return simclass.Console{}, fmt.Errorf("no se pudo abrir el aula simulada: %w", err)
+			return simclass.Console{}, codedf(codeSimFailed, "no se pudo abrir el aula simulada: %w", err)
 		}
 		log := l.log.With("simulated", true)
 		reg := session.NewRegistry(0)
@@ -259,11 +258,11 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 	}
 	cert, err := security.LoadOrCreateCertificate(cfg.Dir)
 	if err != nil {
-		return nil, ClassInfo{}, fmt.Errorf("certificado: %w", err)
+		return nil, ClassInfo{}, codedf(codeCertificate, "certificado: %w", err)
 	}
 	ln, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.Port))
 	if err != nil {
-		return nil, ClassInfo{}, fmt.Errorf("el puerto %d está ocupado (¿hay otra consola abierta?): %w", cfg.Port, err)
+		return nil, ClassInfo{}, codedf(codePortInUse, "el puerto %d está ocupado (¿hay otra consola abierta?): %w", cfg.Port, err)
 	}
 
 	port := ln.Addr().(*net.TCPAddr).Port // the real one when cfg.Port is 0 (tests)

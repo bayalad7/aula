@@ -84,6 +84,12 @@ func TestTextsAreComplete(t *testing.T) {
 		}
 	}
 
+	// Error texts are chosen by the code Go returns (errores.go).
+	for _, code := range errorCodes {
+		need("error."+code+".titulo", "errores.go")
+		need("error."+code+".texto", "errores.go")
+	}
+
 	for key, where := range used {
 		if !defined[key] {
 			t.Errorf("%s uses the text %q, missing from textos.es-MX.js", where, key)

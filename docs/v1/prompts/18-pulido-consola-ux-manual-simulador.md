@@ -112,8 +112,8 @@ Evalúa e implementa lo que corresponda:
    Mapea cada código de error del protocolo a un mensaje amable y a la sección del manual.
 5. Formularios: validación en línea, sin perder datos al fallar, confirmación de acciones
    destructivas indicando qué se pierde.
-6. Navegación: Inicio · Alumnos · (Pantalla/Transmitir) · Recoger · Código ·
-   Recursos · Ajustes · Ayuda. Ruta actual visible; atajos de teclado básicos.
+6. Navegación: Inicio · Alumnos · (Pantalla/Transmitir) · Código · Ajustes ·
+   Ayuda. Ruta actual visible; atajos de teclado básicos.
 7. Rendimiento percibido: estados de carga, sin saltos de diseño.
 
 # FASE 4 — Manual de usuario dentro de la consola

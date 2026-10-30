@@ -132,22 +132,22 @@ Evalúa e implementa lo que corresponda:
    pantalla y sus diagramas, sin perder lo que el profesor estaba haciendo. Iconos de información
    junto a los campos técnicos.
 3. Árbol interactivo "Mi alumno no conecta": preguntas sí/no que llevan a la solución, generado a
-   partir del diagrama de diagnóstico de docs/diagramas/ (fuente única; si el formato no lo
+   partir del diagrama de diagnóstico de docs/v1/diagramas/ (fuente única; si el formato no lo
    permite, propón una convención en el Markdown). Debe atar con el comprobador de conexión de la
    Fase 6 y con el diagnóstico de la etapa 15.
 4. Los mensajes de error de la consola enlazan a la sección exacta del manual.
 5. Una prueba falla si una pantalla no tiene su sección de ayuda, o si un código de error no tiene
    mensaje amable con enlace al manual.
 
-# FASE 5 — Diagramas de docs/diagramas/ dentro de la consola
-Objetivo: cualquier diagrama de docs/diagramas/*.md se ve en la consola, sin internet, legible, y
+# FASE 5 — Diagramas de docs/v1/diagramas/ dentro de la consola
+Objetivo: cualquier diagrama de docs/v1/diagramas/*.md se ve en la consola, sin internet, legible, y
 siempre sincronizado con docs/.
 1. Evalúa y recomienda (con tamaños medidos) cómo renderizarlos. Mi preferencia inicial es:
    a) Pre-render en el build con @mermaid-js/mermaid-cli (mmdc) a SVG (variante clara y oscura),
       embebidos; consola sin JS de Mermaid. Alternativas: (b) Mermaid en el navegador embebido solo
       en Ayuda; (c) híbrido. Criterios: tamaño del binario, sin internet, seguridad/CSP, fidelidad,
       y que `go build` no dependa de Node.
-2. Front-matter YAML en cada docs/diagramas/NN-nombre.md (titulo, descripcion, audiencia,
+2. Front-matter YAML en cada docs/v1/diagramas/NN-nombre.md (titulo, descripcion, audiencia,
    pantallas, secciones_manual), validado con un esquema; la prueba falla si falta o es inválido.
 3. Pipeline (scripts/docs/generar-diagramas.{sh,ps1} + CI): por diagrama, SVG claro/oscuro, texto
    alternativo y un manifiesto JSON (id, metadatos, hash del bloque mermaid, rutas). Mermaid con
@@ -191,7 +191,7 @@ Objetivo: que el profesor pruebe Aula de principio a fin SIN equipos de alumno r
    ventana nativa como en un panel web; prueba el frontend por ese arnés, los bindings Go con
    `go test`, y deja chequeos visuales/manuales para la ventana nativa. Si decides generar capturas
    automáticas, hazlo contra el arnés web, no contra la ventana de Wails.
-2. Pruebas de diagramas: todos los docs/diagramas/*.md con front-matter válido, SVG claro/oscuro
+2. Pruebas de diagramas: todos los docs/v1/diagramas/*.md con front-matter válido, SVG claro/oscuro
    vigentes (hash), SVG sanitizados (prueba que busque script, on*, foreignObject y URLs externas),
    y cada {{diagrama:...}} existente.
 3. Pruebas de la aula simulada: un alumno simulado recibe y acusa como uno real; las fallas
@@ -201,7 +201,7 @@ Objetivo: que el profesor pruebe Aula de principio a fin SIN equipos de alumno r
    pantalla, pasos y clics por flujo (antes vs después), hallazgos resueltos y pendientes.
 5. Prueba de "usuario nuevo": sigue el manual desde una instalación limpia y SIN alumnos reales
    (solo aula simulada) y reporta cualquier paso confuso.
-6. Actualiza CHANGELOG.md, docs/administracion/, docs/progreso.md y agrega el diagrama de la aula
+6. Actualiza CHANGELOG.md, docs/v1/administracion/, docs/progreso.md y agrega el diagrama de la aula
    simulada. Verifica que el binario siga autocontenido, reporta el tamaño agregado, y confirma que
    `go build` funciona sin Node y que `go test -race ./...` pasa en los tres sistemas.
 
@@ -211,7 +211,7 @@ Objetivo: que el profesor pruebe Aula de principio a fin SIN equipos de alumno r
 - Orden sugerido tras aprobar el análisis: sistema de diseño → aula simulada (Fase 6.1, porque el
   asistente y las pruebas la usan) → mejoras de UX/UI → manual → diagramas → verificación.
 - Si una mejora exige cambiar el protocolo o el modelo de seguridad (fuera de la excepción de la
-  aula simulada), no la implementes: anótala como propuesta en docs/ux/PROPUESTAS.md.
+  aula simulada), no la implementes: anótala como propuesta en docs/v1/ux/PROPUESTAS.md.
 ~~~~
 
 ## Notas de adaptación (por qué difiere del de PRISMA)

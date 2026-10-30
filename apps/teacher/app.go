@@ -56,6 +56,7 @@ type App struct {
 	startErr   string // why the automatic start failed, shown on the setup screen
 	history    *codedist.History
 	deliveries *codedist.Deliveries
+	payloads   map[string]protocol.Payload // what each recent delivery sent, for Resend
 	lastLang   string
 	hotkey     HotkeyStatus
 	wall       *screen.Wall // screens view: who streams and their last frame
@@ -191,8 +192,9 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		return View{}, err
 	}
 	a.mu.Lock()
+	// The history and the deliveries are the teacher's, not the channel's:
+	// they survive a change of channel or name (docs/v1/ux/profesor, C2).
 	a.class, a.info, a.startErr = class, info, ""
-	a.history, a.deliveries = &codedist.History{}, &codedist.Deliveries{}
 	a.mu.Unlock()
 	a.power.Reset() // orders of another class are not followed
 
@@ -242,8 +244,9 @@ func (a *App) View() View {
 
 // --- Emitting -------------------------------------------------------------------
 
-// Emit sends the code panel to every student: "replace" leaves it alone on
-// their screens, "append" adds it below. Each emission is a new history entry.
+// Emit sends the code panel to every student, or only to req.Targets (session
+// IDs, real or simulated): "replace" leaves it alone on their screens,
+// "append" adds it below. Each emission is a new history entry.
 func (a *App) Emit(req EmitRequest) (codedist.Delivery, error) {
 	mode := protocol.CodeMode(req.Mode)
 	if mode != protocol.ModeReplace && mode != protocol.ModeAppend {
@@ -274,7 +277,7 @@ func (a *App) Emit(req EmitRequest) (codedist.Delivery, error) {
 	a.lastLang = lang
 	a.mu.Unlock()
 	a.emitHistory()
-	return a.broadcast("code", entryLabel(entry), entry.Share(mode))
+	return a.broadcastTo("code", entryLabel(entry), entry.Share(mode), req.Targets)
 }
 
 // Reemit sends a snippet from the history again, replacing the students'
@@ -300,6 +303,12 @@ func (a *App) ClearScreens() (codedist.Delivery, error) {
 
 // SendNotice shows a notice to every student.
 func (a *App) SendNotice(text, level string) (codedist.Delivery, error) {
+	return a.SendNoticeTo(text, level, nil)
+}
+
+// SendNoticeTo shows a notice to the given sessions (real or simulated), or
+// to every student if targets is empty.
+func (a *App) SendNoticeTo(text, level string, targets []string) (codedist.Delivery, error) {
 	text = strings.TrimSpace(text)
 	p := protocol.MsgShow{Text: text, Level: protocol.MsgLevel(level)}
 	if err := p.Validate(); err != nil {
@@ -309,10 +318,49 @@ func (a *App) SendNotice(text, level string) (codedist.Delivery, error) {
 	if utf8.RuneCountInString(label) > 60 {
 		label = string([]rune(label)[:59]) + "…"
 	}
-	return a.broadcast("notice", label, p)
+	return a.broadcastTo("notice", label, p, targets)
+}
+
+// Resend sends a delivery again to the students that have not acknowledged
+// it and are still connected ("Reenviar a los que faltan"). Their late acks
+// of the first send no longer count; the new ones do, once.
+func (a *App) Resend(deliveryID string) (codedist.Delivery, error) {
+	class := a.currentClass()
+	if class == nil {
+		return codedist.Delivery{}, errNoClass
+	}
+	a.mu.Lock()
+	d, ok := a.deliveries.Get(deliveryID)
+	p := a.payloads[deliveryID]
+	a.mu.Unlock()
+	if !ok || p == nil {
+		return codedist.Delivery{}, errors.New("ese envío ya no está entre los recientes")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	a.sendMu.Lock()
+	sent := map[string]string{}
+	for _, sessionID := range d.Pending {
+		if envID, err := class.Send(ctx, sessionID, p); err == nil {
+			sent[sessionID] = envID
+		}
+	}
+	a.mu.Lock()
+	d, _ = a.deliveries.Resent(deliveryID, sent)
+	a.mu.Unlock()
+	a.sendMu.Unlock()
+	a.log.Info("resend", "delivery", deliveryID, "type", p.MessageType(), "sent", len(sent))
+	a.emitDeliveries()
+	return d, nil
 }
 
 func (a *App) broadcast(kind, label string, p protocol.Payload) (codedist.Delivery, error) {
+	return a.broadcastTo(kind, label, p, nil)
+}
+
+// broadcastTo sends p to every student, or only to targets (session IDs), and
+// tracks the acks: real students in Sent/Acked, simulated ones apart.
+func (a *App) broadcastTo(kind, label string, p protocol.Payload, targets []string) (codedist.Delivery, error) {
 	class := a.currentClass()
 	if class == nil {
 		return codedist.Delivery{}, errNoClass
@@ -321,17 +369,16 @@ func (a *App) broadcast(kind, label string, p protocol.Payload) (codedist.Delive
 	defer cancel()
 
 	a.sendMu.Lock()
-	sent, failed := class.Broadcast(ctx, p)
-	var simIDs []string
-	if host, ok := class.(simulationHost); ok {
-		simSent, _ := host.SimBroadcast(ctx, p)
-		for _, envID := range simSent {
-			simIDs = append(simIDs, envID)
+	var sent, simSent map[string]string
+	var failed map[string]error
+	if len(targets) == 0 {
+		sent, failed = class.Broadcast(ctx, p)
+		simSent = map[string]string{}
+		if host, ok := class.(simulationHost); ok {
+			simSent, _ = host.SimBroadcast(ctx, p)
 		}
-	}
-	ids := make([]string, 0, len(sent))
-	for _, envID := range sent {
-		ids = append(ids, envID)
+	} else {
+		sent, simSent, failed = sendToTargets(ctx, class, p, targets)
 	}
 	var noCap int
 	for _, err := range failed {
@@ -340,10 +387,11 @@ func (a *App) broadcast(kind, label string, p protocol.Payload) (codedist.Delive
 		}
 	}
 	a.mu.Lock()
-	d := a.deliveries.Start(kind, label, ids, len(failed)-noCap, noCap, a.now())
-	if len(simIDs) > 0 {
-		d, _ = a.deliveries.AddSimulated(d.ID, simIDs)
+	d := a.deliveries.Start(kind, label, sent, len(failed)-noCap, noCap, a.now())
+	if len(simSent) > 0 {
+		d, _ = a.deliveries.AddSimulated(d.ID, simSent)
 	}
+	a.rememberPayload(d.ID, p)
 	a.mu.Unlock()
 	a.sendMu.Unlock()
 

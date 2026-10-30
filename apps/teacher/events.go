@@ -176,4 +176,7 @@ type EmitRequest struct {
 	Lang    string `json:"lang"`
 	Content string `json:"content"`
 	Mode    string `json:"mode"` // "replace" | "append"
+	// Targets are the sessions (real or simulated) to send it to; empty
+	// means every student.
+	Targets []string `json:"targets"`
 }

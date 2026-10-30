@@ -1,298 +1,552 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Monaco needs inline styles, its font and a same-origin worker. -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; worker-src 'self' blob:; connect-src 'self' ws: wss:">
+  <link rel="icon" href="data:,">
   <title>Aula — Consola</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="sistema/tokens.css">
+  <link rel="stylesheet" href="sistema/componentes.css">
   <link rel="stylesheet" href="vendor/monaco/vs/editor/editor.main.css">
+  <link rel="stylesheet" href="style.css">
 </head>
+<!-- Every visible text comes from textos.es-MX.js: data-t sets textContent,
+     data-t-aria-label / data-t-title / data-t-placeholder set attributes. -->
 <body>
-  <!-- 1. Channel selection -->
-  <!-- Shown only while the console starts, or if the automatic start on the
-       default channel failed (port in use…). -->
-  <section id="setup" class="setup" hidden>
-    <form id="setup-form" class="setup-card">
-      <h1>Aula — Consola</h1>
-      <p id="setup-intro" class="muted">Abriendo el canal predeterminado…</p>
-      <p id="setup-error" class="error" role="alert"></p>
-      <label>Canal
-        <input id="setup-channel" type="number" min="1" max="16000" step="1" required inputmode="numeric">
+  <a class="saltar" href="#contenido" data-t="comun.saltar"></a>
+
+  <!-- Arranque: only while the class opens, or if opening failed. -->
+  <main id="arranque" class="arranque" hidden aria-labelledby="arranque-titulo">
+    <form id="arranque-form" class="tarjeta arranque__tarjeta" novalidate>
+      <div class="arranque__marca"><svg class="icono icono--lg" aria-hidden="true"><use href="sistema/iconos.svg#codigo"/></svg><h1 id="arranque-titulo" data-t="arranque.titulo"></h1></div>
+      <p id="arranque-estado" class="grupo-botones" role="status"><span class="cargador" aria-hidden="true"></span><span id="arranque-estado-texto"></span></p>
+      <div id="arranque-error" class="aviso-en-linea aviso-en-linea--error" role="alert" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#error"/></svg>
+        <div class="pila-mini"><strong id="arranque-error-titulo"></strong><span id="arranque-error-texto"></span>
+          <details class="detalles"><summary data-t="comun.verDetalles"></summary><pre id="arranque-error-detalle"></pre></details></div>
+      </div>
+      <label class="campo"><span class="campo__etiqueta" data-t="arranque.canal"></span>
+        <input id="arranque-canal" class="mono" inputmode="numeric" autocomplete="off" aria-describedby="arranque-canal-ayuda">
+        <span class="campo__ayuda" id="arranque-canal-ayuda" data-t="arranque.canalAyuda"></span>
       </label>
-      <div id="setup-chips" class="chips"></div>
-      <label>Tu nombre (lo ven los alumnos)
-        <input id="setup-name" required maxlength="63" placeholder="Prof. Ayala">
+      <div id="arranque-recientes" class="grupo-botones"></div>
+      <label class="campo"><span class="campo__etiqueta" data-t="arranque.nombre"></span>
+        <input id="arranque-nombre" maxlength="63" autocomplete="off" data-t-placeholder="arranque.nombreEjemplo">
       </label>
-      <button type="submit" class="primary">Abrir</button>
-      <p id="setup-key" class="key muted"></p>
-      <p id="setup-version" class="key muted"></p>
+      <button type="submit" id="arranque-abrir" class="btn btn--primario btn--lg" data-t="arranque.abrir"></button>
+      <p class="suave pequeno" id="arranque-version"></p>
     </form>
-  </section>
+  </main>
 
-  <!-- 2–4. Console -->
-  <section id="console" class="console" hidden>
-    <header class="topbar">
-      <form id="channel-form" class="channel-form" title="Cambia el canal: verás a los alumnos de ese canal">
-        <label for="channel-input"><strong>Canal</strong></label>
-        <input id="channel-input" type="number" min="1" max="16000" step="1" required inputmode="numeric">
-        <button type="submit" id="channel-change">Cambiar</button>
-      </form>
-      <form id="name-form" class="name-form" title="Nombre que ven los alumnos">
-        <input id="name-input" maxlength="63" required aria-label="Tu nombre">
-        <button type="submit" id="name-save">Guardar</button>
-      </form>
-      <div class="class-key">
-        <span id="key-label" class="muted">Clave del centro:</span>
-        <code id="class-fingerprint"></code>
+  <div class="app" id="app" hidden>
+    <nav class="nav-lateral" data-t-aria-label="nav.etiqueta">
+      <div class="nav-lateral__marca"><svg class="icono icono--lg" aria-hidden="true"><use href="sistema/iconos.svg#codigo"/></svg><strong>Aula</strong></div>
+      <button type="button" class="nav-lateral__clase" id="nav-clase" data-t-title="nav.cambiarCanal">
+        <span class="suave" data-t="nav.claseAbierta"></span>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#flecha-abajo"/></svg>
+        <strong id="nav-clase-texto"></strong>
+      </button>
+      <button type="button" class="nav-lateral__clase-compacta" id="nav-clase-compacta"></button>
+      <p class="nav-lateral__grupo" data-t="nav.grupoClase"></p>
+      <a href="#alumnos" data-vista="alumnos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span class="nav-lateral__texto" data-t="nav.alumnos"></span></a>
+      <a href="#codigo" data-vista="codigo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#codigo"/></svg><span class="nav-lateral__texto" data-t="nav.codigo"></span></a>
+      <p class="nav-lateral__grupo" data-t="nav.grupoPruebas"></p>
+      <a href="#simulada" data-vista="simulada"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg><span class="nav-lateral__texto" data-t="nav.simulada"></span></a>
+      <div class="nav-lateral__pie">
+        <a href="#ayuda" data-vista="ayuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg><span class="nav-lateral__texto" data-t="nav.ayuda"></span></a>
+        <button type="button" class="nav-lateral__boton" id="nav-ajustes"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ajustes"/></svg><span class="nav-lateral__texto" data-t="nav.ajustes"></span></button>
       </div>
-      <button type="button" id="screens-open" title="Ver las pantallas de los alumnos en miniatura">Ver pantallas</button>
-      <button type="button" id="restr-open" title="Bloquear aplicaciones o filtrar sitios durante la clase">Restricciones</button>
-      <button type="button" id="power-open" title="Apagar, reiniciar o cerrar la sesión de los equipos">Energía</button>
-      <div class="bc-controls" title="Muestra uno de tus monitores a los alumnos del canal">
-        <select id="bc-display" aria-label="Monitor a transmitir"></select>
-        <button type="button" id="bc-toggle">Transmitir mi pantalla</button>
-      </div>
-    </header>
-    <!-- Broadcast of the teacher's screen (docs/privacidad.md rule 15). -->
-    <p id="bc-band" class="bc-band" role="status" aria-live="polite" hidden>
-      <span class="bc-dot" aria-hidden="true">●</span>
-      <span id="bc-text"></span>
-      <span class="bc-note">La ventana de Aula no aparece en la transmisión.</span>
-      <button type="button" id="bc-stop">Detener</button>
-    </p>
-    <!-- Pending power orders (docs/protocol.md §5.15). -->
-    <p id="power-band" class="power-band" role="status" aria-live="polite" hidden>
-      <span id="power-band-text"></span>
-      <button type="button" id="power-band-cancel">Cancelar</button>
-    </p>
-    <p id="key-warning" class="key-warning" hidden>
-      Este equipo no tiene la <strong>clave del centro</strong>: la consola usa una clave personal y los
-      alumnos instalados con la clave del centro no la reconocerán. Instálala con
-      <code>aula-consola centro importar</code> (ver la guía de uso).
-    </p>
+    </nav>
 
-    <div class="layout">
-      <aside class="students">
-        <h2>Alumnos <span id="students-count" class="count"></span></h2>
-        <p id="students-empty" class="muted">Esperando alumnos en este canal…</p>
-        <ul id="students-list"></ul>
-        <!-- Aula simulada: alumnos de prueba dentro de la consola (docs/v1/ux/profesor, Fase 6). -->
-        <div class="sim-box">
-          <button type="button" id="sim-toggle" title="Abre 2 alumnos de prueba en este equipo para probar sin laboratorio">Probar con alumnos simulados</button>
-          <p class="muted sim-note">Se ven como «Simulado», no son equipos reales y no cuentan en los conectados.</p>
-        </div>
-      </aside>
-
-      <main class="work">
-        <section class="panel code-panel">
-          <div class="code-head">
-            <input id="code-title" maxlength="200" placeholder="Título (opcional), p. ej. Factorial recursivo">
-            <select id="code-lang" aria-label="Lenguaje"></select>
-          </div>
-          <div id="editor" class="editor" aria-label="Editor de código"></div>
-          <div class="actions">
-            <button type="button" id="emit" class="primary">Emitir a todos</button>
-            <button type="button" id="append">Agregar bloque</button>
-            <button type="button" id="clear">Limpiar pantallas</button>
-            <span id="code-reason" class="muted reason"></span>
-          </div>
-          <p id="last-delivery" class="delivery" aria-live="polite"></p>
-        </section>
-
-        <section class="panel notice-panel">
-          <h2>Aviso a todos</h2>
-          <div class="notice-row">
-            <input id="notice-text" maxlength="2000" placeholder="Guarden su trabajo: en 5 minutos cerramos.">
-            <select id="notice-level" aria-label="Nivel">
-              <option value="info">Información</option>
-              <option value="warning">Advertencia</option>
-            </select>
-            <button type="button" id="notice-send">Enviar aviso</button>
-          </div>
-        </section>
-      </main>
-
-      <aside class="side">
-        <h2>Historial de la sesión</h2>
-        <p id="history-empty" class="muted">Lo que emitas aparecerá aquí para reemitirlo con un clic.</p>
-        <ol id="history-list" class="history"></ol>
-        <h2>Confirmaciones</h2>
-        <ul id="delivery-list" class="deliveries"></ul>
-      </aside>
-    </div>
-
-    <button type="button" id="capture" class="fab" title="Carga el portapapeles en el editor">
-      Capturar portapapeles <small id="capture-combo"></small>
-    </button>
-    <p id="hotkey-warning" class="hotkey-warning" hidden></p>
-    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-
-    <!-- 5. Screens view: thumbnails stream only while it is open (docs/privacidad.md). -->
-    <section id="screens" class="screens" hidden aria-label="Pantallas de los alumnos">
-      <header class="screens-head">
-        <h2>Pantallas <span id="screens-count" class="count"></span></h2>
-        <p class="muted">Mientras esta vista esté abierta, cada alumno ve el aviso
-          «Tu pantalla está siendo vista por el profesor».</p>
-        <button type="button" id="screens-close">Cerrar</button>
-      </header>
-      <p id="screens-empty" class="muted">Ningún alumno conectado puede compartir su pantalla (por ahora, solo Windows).</p>
-      <ul id="screens-grid" class="screens-grid"></ul>
-      <div id="screen-detail" class="screen-detail" hidden>
-        <header class="screens-head">
-          <h2 id="detail-host"></h2>
-          <button type="button" id="detail-back">Volver a la cuadrícula</button>
-        </header>
-        <img id="detail-img" alt="Pantalla del alumno">
-      </div>
-    </section>
-  </section>
-
-  <!-- 6. Class restrictions (docs/protocol.md §5.13-5.14, docs/privacidad.md rules 20-25). -->
-  <section id="restr" class="screens restr" hidden aria-label="Restricciones de la clase">
-    <header class="screens-head">
-      <h2>Restricciones de la clase</h2>
-      <p id="restr-support" class="muted"></p>
-      <button type="button" id="restr-close">Cerrar</button>
-    </header>
-    <div class="restr-grid">
-      <section class="panel restr-kind" data-kind="apps">
-        <h3>Aplicaciones</h3>
-        <select class="r-mode" aria-label="Modo de las aplicaciones">
-          <option value="deny">Bloquear estas</option>
-          <option value="allow">Permitir solo estas</option>
-        </select>
-        <textarea class="r-items" rows="8" spellcheck="false" aria-label="Aplicaciones, una por línea"
-          placeholder="Una por línea, el nombre del ejecutable:&#10;steam&#10;discord.exe"></textarea>
-        <div class="chips"><button type="button" class="chip r-tpl" data-tpl="games">Plantilla: juegos y chats</button></div>
-        <p class="r-state muted"></p>
-        <div class="actions">
-          <button type="button" class="r-apply primary">Aplicar</button>
-          <button type="button" class="r-clear">Quitar</button>
-        </div>
-      </section>
-      <section class="panel restr-kind" data-kind="web">
-        <h3>Sitios web</h3>
-        <select class="r-mode" aria-label="Modo de los sitios">
-          <option value="deny">Bloquear estos</option>
-          <option value="allow">Permitir solo estos</option>
-        </select>
-        <textarea class="r-items" rows="8" spellcheck="false" aria-label="Sitios, uno por línea"
-          placeholder="Uno por línea; incluye sus subdominios:&#10;youtube.com&#10;tiktok.com"></textarea>
-        <div class="chips">
-          <button type="button" class="chip r-tpl" data-tpl="social">Plantilla: redes y video</button>
-          <button type="button" class="chip r-tpl" data-tpl="docs">Plantilla: solo documentación</button>
-        </div>
-        <p class="r-state muted"></p>
-        <div class="actions">
-          <button type="button" class="r-apply primary">Aplicar</button>
-          <button type="button" class="r-clear">Quitar</button>
-        </div>
-      </section>
-    </div>
-    <fieldset class="restr-target">
-      <legend>Aplicar a</legend>
-      <label><input type="radio" name="restr-target" value="all" checked> Todo el canal</label>
-      <label><input type="radio" name="restr-target" value="marked"> <span id="restr-marked">Alumnos marcados (0)</span></label>
-      <span class="muted">Marca alumnos con la casilla de su tarjeta.</span>
-    </fieldset>
-    <p class="restr-limits muted">
-      Los alumnos ven un aviso mientras haya restricciones, y todo se quita solo al cerrar la clase o
-      si se pierde la conexión. <strong>No se puede garantizar del todo:</strong> un alumno con
-      permisos de administrador puede detener el agente; renombrar un ejecutable evita el bloqueo por
-      nombre; entrar a un sitio por su IP, con una VPN o con un DNS cifrado propio evita el filtro;
-      Ctrl+Alt+Supr no se bloquea.
-    </p>
-    <div class="actions"><button type="button" id="restr-clear-all">Quitar todas las restricciones</button></div>
-  </section>
-
-  <!-- 7. Power (docs/protocol.md §5.15, docs/privacidad.md rules 26-31). -->
-  <section id="power" class="screens power-panel" hidden aria-label="Energía de los equipos">
-    <header class="screens-head">
-      <h2>Energía de los equipos</h2>
-      <p id="power-support" class="muted"></p>
-      <button type="button" id="power-close">Cerrar</button>
-    </header>
-    <div class="panel power-form">
-      <div class="power-actions">
-        <button type="button" class="power-do" data-action="shutdown">Apagar</button>
-        <button type="button" class="power-do" data-action="reboot">Reiniciar</button>
-        <button type="button" class="power-do" data-action="logoff">Cerrar sesión</button>
-      </div>
-      <fieldset class="restr-target">
-        <legend>Enviar a</legend>
-        <label><input type="radio" name="power-target" value="all" checked> Todo el canal</label>
-        <label><input type="radio" name="power-target" value="marked"> <span id="power-marked">Alumnos marcados (0)</span></label>
-        <span class="muted">Marca alumnos con la casilla de su tarjeta.</span>
-      </fieldset>
-      <label>Cuenta regresiva
-        <select id="power-delay">
-          <option value="30" selected>30 segundos</option>
-          <option value="60">1 minuto</option>
-          <option value="120">2 minutos</option>
-          <option value="300">5 minutos</option>
-        </select>
-      </label>
-      <label class="power-force"><input type="checkbox" id="power-force"> Forzar (sin cuenta regresiva)</label>
-      <p class="muted">
-        Sin forzar, cada alumno ve un aviso con la cuenta regresiva y puede posponerla 5 minutos hasta
-        2 veces; Windows deja que sus aplicaciones pidan guardar. Puedes cancelar mientras cuenta.
+    <div class="principal">
+      <!-- Franjas globales: visibles en todas las vistas. -->
+      <p class="franja franja--transmitiendo" id="f-transmitiendo" role="status" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg>
+        <span class="franja__texto"><span id="f-transmitiendo-texto"></span> <span class="franja__nota" data-t="transmitir.nota"></span></span>
+        <button type="button" class="btn btn--sm" id="f-transmitiendo-detener" data-t="transmitir.detener"></button>
       </p>
-      <div class="actions"><button type="button" id="power-cancel">Cancelar órdenes pendientes</button></div>
-    </div>
-  </section>
+      <p class="franja franja--energia" id="f-energia" role="status" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg>
+        <span class="franja__texto" id="f-energia-texto"></span>
+        <button type="button" class="btn btn--sm" id="f-energia-cancelar" data-t="energia.cancelarPendientes"></button>
+      </p>
+      <p class="franja franja--simulada" id="f-simulada" role="status" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg>
+        <span class="franja__texto"><span id="f-simulada-texto"></span> <span class="franja__nota" data-t="simulada.franjaNota"></span></span>
+        <button type="button" class="btn btn--sm" id="f-simulada-salir" data-t="simulada.salir"></button>
+      </p>
+      <p class="franja franja--advertencia" id="f-clave" role="status" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#llave"/></svg>
+        <span class="franja__texto" data-t="clave.sinCentro"></span>
+        <button type="button" class="btn btn--sm" id="f-clave-que-hago" data-t="clave.queHago"></button>
+      </p>
 
-  <dialog id="power-confirm" class="power-confirm" aria-labelledby="power-confirm-title">
-    <h2 id="power-confirm-title"></h2>
-    <p id="power-confirm-text"></p>
-    <p id="power-confirm-force" class="power-danger" hidden>
-      Se cerrarán sus aplicaciones <strong>sin guardar</strong>, sin aviso previo.
-    </p>
-    <div class="actions">
-      <button type="button" id="power-confirm-no" autofocus>Volver</button>
-      <button type="button" id="power-confirm-yes" class="danger"></button>
+      <div class="con-panel">
+        <main class="vista" id="contenido" tabindex="-1">
+
+          <!-- ============ Alumnos ============ -->
+          <section data-vista-de="alumnos" aria-labelledby="h-alumnos" class="vista__seccion">
+            <header class="vista__cabecera">
+              <h1 id="h-alumnos" data-t="alumnos.titulo"></h1>
+              <div class="resumen" id="alumnos-resumen" aria-live="polite"></div>
+              <div class="segmentado" role="group" data-t-aria-label="alumnos.modo">
+                <button type="button" data-modo="lista"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#lista"/></svg><span data-t="alumnos.lista"></span></button>
+                <button type="button" data-modo="miniaturas"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#miniaturas"/></svg><span data-t="alumnos.miniaturas"></span></button>
+              </div>
+              <button type="button" class="btn" id="seleccionar-todos" data-t-title="alumnos.ctrlA"><svg class="icono" aria-hidden="true"><use id="seleccionar-todos-icono" href="sistema/iconos.svg#hecho"/></svg><span class="btn__texto" id="seleccionar-todos-texto"></span></button>
+              <a class="btn btn--fantasma" href="#falta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg><span data-t="falta.titulo"></span></a>
+            </header>
+            <div class="vista__cuerpo">
+              <div id="alumnos-vacio" class="tarjeta vacio" hidden>
+                <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg>
+                <h2 id="alumnos-vacio-titulo"></h2>
+                <p data-t="alumnos.vacioTexto"></p>
+                <div class="grupo-botones">
+                  <a class="btn btn--primario" href="#falta" data-t="falta.titulo"></a>
+                  <button type="button" class="btn" data-abrir-simulada><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg><span data-t="simulada.probar"></span></button>
+                </div>
+              </div>
+              <div id="alumnos-lista" class="tabla-adaptable">
+                <table class="tabla" data-t-aria-label="alumnos.tablaEtiqueta">
+                  <thead><tr>
+                    <th class="col-marca"><input type="checkbox" id="alumnos-todos" data-t-aria-label="alumnos.seleccionarTodos"></th>
+                    <th data-t="alumnos.colEquipo"></th><th data-t="alumnos.colEstado"></th>
+                    <th data-t="alumnos.colCodigo"></th><th data-t="alumnos.colNotas"></th>
+                  </tr></thead>
+                  <tbody id="alumnos-filas"></tbody>
+                </table>
+              </div>
+              <div id="alumnos-miniaturas" hidden>
+                <p class="aviso-en-linea aviso-en-linea--advertencia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="alumnos.avisoMiniaturas"></span></p>
+                <ul class="cuadricula-alumnos" id="alumnos-cuadricula"></ul>
+              </div>
+            </div>
+            <div class="barra-acciones" role="toolbar" data-t-aria-label="alumnos.barraEtiqueta">
+              <div class="barra-acciones__dentro">
+                <span class="barra-acciones__seleccion" id="seleccion-texto" aria-live="polite"></span>
+                <button type="button" class="btn" data-panel="pantalla" aria-expanded="false" data-t-title="panel.pantalla"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg><span class="btn__texto" data-t="panel.pantalla"></span></button>
+                <button type="button" class="btn" data-panel="aviso" aria-expanded="false" data-t-title="panel.aviso"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#aviso"/></svg><span class="btn__texto" data-t="panel.aviso"></span></button>
+                <button type="button" class="btn" data-panel="restricciones" aria-expanded="false" data-t-title="panel.restricciones"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg><span class="btn__texto" data-t="panel.restricciones"></span></button>
+                <button type="button" class="btn" data-panel="energia" aria-expanded="false" data-t-title="panel.energia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg><span class="btn__texto" data-t="panel.energia"></span></button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============ Código ============ -->
+          <section data-vista-de="codigo" aria-labelledby="h-codigo" class="vista__seccion" hidden>
+            <header class="vista__cabecera"><h1 id="h-codigo" data-t="codigo.titulo"></h1></header>
+            <div class="vista__cuerpo pila">
+              <div class="codigo-rejilla">
+                <section class="tarjeta" aria-labelledby="codigo-ejercicio">
+                  <div class="tarjeta__cabecera">
+                    <h2 id="codigo-ejercicio"></h2>
+                    <span class="insignia insignia--info"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="codigo.borrador"></span></span>
+                  </div>
+                  <div class="tarjeta__cuerpo pila">
+                    <div class="fila">
+                      <label class="campo crece"><span class="campo__etiqueta"><span data-t="codigo.tituloCampo"></span> <span class="suave" data-t="comun.opcional"></span></span>
+                        <input id="codigo-titulo" maxlength="200" data-t-placeholder="codigo.tituloEjemplo"></label>
+                      <label class="campo"><span class="campo__etiqueta" data-t="codigo.lenguaje"></span><select id="codigo-lenguaje"></select></label>
+                    </div>
+                    <div id="editor" class="editor" data-t-aria-label="codigo.editor"></div>
+                    <p class="pequeno suave" id="codigo-ayuda-teclado"></p>
+                    <fieldset class="campo">
+                      <legend class="campo__etiqueta" data-t="codigo.enviarA"></legend>
+                      <div class="fila">
+                        <label class="opcion"><input type="radio" name="codigo-destino" value="todos" checked> <span id="codigo-destino-todos"></span></label>
+                        <label class="opcion"><input type="radio" name="codigo-destino" value="seleccion" id="codigo-destino-seleccion-radio"> <span id="codigo-destino-seleccion"></span></label>
+                      </div>
+                    </fieldset>
+                    <div class="grupo-botones">
+                      <button type="button" class="btn btn--primario" id="codigo-emitir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="codigo.emitir"></span></button>
+                      <button type="button" class="btn" id="codigo-agregar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="codigo.agregar"></span></button>
+                      <button type="button" class="btn" id="codigo-pegar" data-t-title="codigo.pegarAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#portapapeles"/></svg><span data-t="codigo.pegar"></span></button>
+                      <button type="button" class="btn btn--fantasma" id="codigo-limpiar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg><span data-t="codigo.limpiar"></span></button>
+                    </div>
+                    <p class="pequeno suave" id="codigo-motivo" aria-live="polite"></p>
+                  </div>
+                </section>
+
+                <section class="tarjeta tarjeta--estirada" aria-labelledby="h-envios">
+                  <div class="tarjeta__cabecera"><h2 id="h-envios" data-t="codigo.envios"></h2></div>
+                  <div class="tarjeta__cuerpo tarjeta__cuerpo--desplazable" tabindex="0" role="region" data-t-aria-label="codigo.enviosRegion">
+                    <p class="suave pequeno" id="envios-vacio" data-t="codigo.enviosVacio"></p>
+                    <ul class="lista-limpia" id="envios-lista"></ul>
+                  </div>
+                </section>
+              </div>
+
+              <section class="tarjeta" aria-labelledby="h-historial">
+                <div class="tarjeta__cabecera"><h2 id="h-historial" data-t="codigo.historial"></h2><span class="suave pequeno" data-t="codigo.historialNota"></span></div>
+                <p class="tarjeta__cuerpo suave" id="historial-vacio" data-t="codigo.historialVacio"></p>
+                <div class="tabla-adaptable" id="historial-tabla">
+                  <table class="tabla" aria-labelledby="h-historial">
+                    <thead><tr>
+                      <th data-t="codigo.colNumero"></th><th data-t="codigo.colTitulo"></th><th data-t="codigo.lenguaje"></th>
+                      <th data-t="codigo.colLineas"></th><th data-t="codigo.colVeces"></th><th data-t="codigo.colHora"></th>
+                      <th><span class="solo-lector" data-t="comun.acciones"></span></th>
+                    </tr></thead>
+                    <tbody id="historial-filas"></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <!-- ============ Aula simulada ============ -->
+          <section data-vista-de="simulada" aria-labelledby="h-simulada" class="vista__seccion" hidden>
+            <header class="vista__cabecera"><h1 id="h-simulada" data-t="simulada.titulo"></h1></header>
+            <div class="vista__cuerpo pila">
+              <div id="simulada-cerrada" class="tarjeta vacio">
+                <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg>
+                <h2 data-t="simulada.vacioTitulo"></h2>
+                <p data-t="simulada.vacioTexto"></p>
+                <button type="button" class="btn btn--primario" data-abrir-simulada><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg><span data-t="simulada.probar"></span></button>
+              </div>
+              <div id="simulada-abierta" class="pila" hidden>
+                <section class="tarjeta" aria-labelledby="h-sim-agregar">
+                  <div class="tarjeta__cabecera"><h2 id="h-sim-agregar" data-t="simulada.agregarTitulo"></h2></div>
+                  <form class="tarjeta__cuerpo fila" id="sim-form">
+                    <label class="campo"><span class="campo__etiqueta" data-t="simulada.so"></span>
+                      <select id="sim-so" class="control"><option value="windows">Windows</option><option value="linux">Linux</option><option value="darwin">macOS</option></select></label>
+                    <fieldset class="campo"><legend class="campo__etiqueta" data-t="simulada.puede"></legend>
+                      <div class="fila" id="sim-capacidades"></div></fieldset>
+                    <button type="submit" class="btn btn--primario"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="simulada.agregar"></span></button>
+                  </form>
+                </section>
+                <section class="tarjeta" aria-labelledby="h-sim-lista">
+                  <div class="tarjeta__cabecera"><h2 id="h-sim-lista" data-t="simulada.listaTitulo"></h2>
+                    <button type="button" class="btn btn--sm" id="sim-cerrar" data-t="simulada.salir"></button></div>
+                  <div class="tabla-adaptable">
+                    <table class="tabla" aria-labelledby="h-sim-lista">
+                      <thead><tr><th data-t="simulada.colAlumno"></th><th data-t="alumnos.colEstado"></th><th data-t="simulada.colPantalla"></th><th data-t="simulada.colFalla"></th><th><span class="solo-lector" data-t="comun.acciones"></span></th></tr></thead>
+                      <tbody id="sim-filas"></tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============ Ayuda ============ -->
+          <section data-vista-de="ayuda" aria-labelledby="h-ayuda" class="vista__seccion" hidden>
+            <header class="vista__cabecera"><h1 id="h-ayuda" data-t="ayuda.titulo"></h1><p class="suave pequeno" data-t="ayuda.subtitulo"></p></header>
+            <div class="vista__cuerpo pila">
+              <p class="aviso-en-linea"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="ayuda.enPreparacion"></span></p>
+              <ul class="indice-manual" id="ayuda-indice"></ul>
+            </div>
+          </section>
+
+          <!-- ============ ¿Falta un alumno? ============ -->
+          <section data-vista-de="falta" aria-labelledby="h-falta" class="vista__seccion" hidden>
+            <header class="vista__cabecera">
+              <nav class="ancho-completo" data-t-aria-label="comun.estasEn"><ol class="migas"><li><a href="#ayuda" data-t="ayuda.titulo"></a></li><li data-t="ayuda.problemas"></li><li aria-current="page" data-t="falta.titulo"></li></ol></nav>
+              <h1 id="h-falta" data-t="falta.titulo"></h1>
+              <a class="btn btn--fantasma" href="#alumnos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span data-t="falta.volver"></span></a>
+            </header>
+            <div class="vista__cuerpo codigo-rejilla">
+              <section class="tarjeta" aria-labelledby="h-falta-pasos">
+                <div class="tarjeta__cabecera"><h2 id="h-falta-pasos" data-t="falta.pasosTitulo"></h2></div>
+                <div class="tarjeta__cuerpo pila">
+                  <ol class="pasos">
+                    <li class="paso paso--hecho"><span class="paso__titulo" data-t="falta.paso1"></span><span class="suave pequeno" id="falta-paso1-texto"></span></li>
+                    <li class="paso paso--actual" aria-current="step"><span class="paso__titulo" data-t="falta.paso2"></span><span class="suave pequeno" data-t="falta.paso2Ayuda"></span>
+                      <div class="grupo-botones" id="falta-respuestas"></div></li>
+                  </ol>
+                  <div id="falta-causa" class="aviso-en-linea aviso-en-linea--advertencia" hidden aria-live="polite">
+                    <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg>
+                    <div class="pila-mini"><strong id="falta-causa-titulo"></strong><span id="falta-causa-texto"></span></div>
+                  </div>
+                </div>
+              </section>
+              <aside class="pila" data-t-aria-label="falta.lateral">
+                <section class="tarjeta" aria-labelledby="h-falta-datos">
+                  <div class="tarjeta__cabecera"><h2 id="h-falta-datos" data-t="instalador.titulo"></h2></div>
+                  <div class="tarjeta__cuerpo pila">
+                    <p class="pequeno suave" data-t="instalador.ayuda"></p>
+                    <div class="bloque-codigo">
+                      <div class="bloque-codigo__cabecera"><span data-t="instalador.estaConsola"></span>
+                        <button type="button" class="btn btn--fantasma btn--sm" data-copiar="falta-datos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#copiar"/></svg><span data-t="comun.copiar"></span></button></div>
+                      <pre id="falta-datos"></pre>
+                    </div>
+                  </div>
+                </section>
+                <section class="tarjeta vacio">
+                  <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg>
+                  <h2 data-t="simulada.vacioTitulo"></h2>
+                  <p data-t="simulada.vacioTexto"></p>
+                  <button type="button" class="btn btn--primario" data-abrir-simulada><span data-t="simulada.probar"></span></button>
+                </section>
+              </aside>
+            </div>
+          </section>
+        </main>
+
+        <!-- ============ Paneles laterales (acciones sobre la selección) ============ -->
+        <aside class="panel-lateral" id="panel-pantalla" hidden aria-labelledby="h-panel-pantalla">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg>
+            <h2 id="h-panel-pantalla" tabindex="-1" data-t="panel.pantalla"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p id="pantalla-destino"></p>
+            <label class="campo"><span class="campo__etiqueta" data-t="transmitir.monitor"></span><select id="pantalla-monitor"></select>
+              <span class="campo__ayuda" data-t="transmitir.nota"></span></label>
+            <p class="aviso-en-linea" id="pantalla-no-disponible" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="transmitir.noDisponible"></span></p>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel data-t="comun.cancelar"></button>
+            <button type="button" class="btn btn--primario" id="pantalla-empezar" data-t="transmitir.empezar"></button>
+          </div>
+        </aside>
+
+        <aside class="panel-lateral" id="panel-aviso" hidden aria-labelledby="h-panel-aviso">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#aviso"/></svg>
+            <h2 id="h-panel-aviso" tabindex="-1" data-t="panel.aviso"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p data-destino></p>
+            <label class="campo"><span class="campo__etiqueta" data-t="aviso.mensaje"></span>
+              <textarea id="aviso-texto" rows="4" maxlength="2000" data-t-placeholder="aviso.ejemplo" aria-describedby="aviso-error"></textarea>
+              <span class="campo__error" id="aviso-error" hidden></span></label>
+            <fieldset class="campo"><legend class="campo__etiqueta" data-t="aviso.tipo"></legend>
+              <label class="opcion"><input type="radio" name="aviso-nivel" value="info" checked> <span data-t="aviso.info"></span></label>
+              <label class="opcion"><input type="radio" name="aviso-nivel" value="warning"> <span data-t="aviso.advertencia"></span></label>
+            </fieldset>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel data-t="comun.cancelar"></button>
+            <button type="button" class="btn btn--primario" id="aviso-enviar" data-t="aviso.enviar"></button>
+          </div>
+        </aside>
+
+        <aside class="panel-lateral" id="panel-restricciones" hidden aria-labelledby="h-panel-restricciones">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg>
+            <h2 id="h-panel-restricciones" tabindex="-1" data-t="panel.restricciones"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p data-destino-hosts></p>
+            <p class="aviso-en-linea" id="restr-sin-soporte" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="restr-sin-soporte-texto"></span></p>
+            <div class="segmentado" role="group" data-t-aria-label="restr.que">
+              <button type="button" data-restr-tipo="web" aria-pressed="true"><span data-t="restr.web"></span></button>
+              <button type="button" data-restr-tipo="apps" aria-pressed="false"><span data-t="restr.apps"></span></button>
+            </div>
+            <div class="fila"><p class="pequeno crece" id="restr-estado"></p>
+              <button type="button" class="btn btn--sm btn--fantasma" id="restr-quitar-todas" data-t="restr.quitarTodas" hidden></button></div>
+            <label class="campo"><span class="campo__etiqueta" data-t="restr.modo"></span>
+              <select id="restr-modo"><option value="deny" data-t="restr.bloquear"></option><option value="allow" data-t="restr.permitir"></option></select></label>
+            <label class="campo"><span class="campo__etiqueta" id="restr-lista-etiqueta"></span>
+              <textarea id="restr-lista" rows="7" spellcheck="false" aria-describedby="restr-ayuda restr-error"></textarea>
+              <span class="campo__error" id="restr-error" hidden></span>
+              <span class="campo__ayuda" id="restr-ayuda"></span></label>
+            <div class="grupo-botones" id="restr-plantillas"></div>
+            <details class="detalles"><summary data-t="restr.limitesTitulo"></summary><p class="pequeno suave" data-t="restr.limites"></p></details>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn btn--fantasma" id="restr-quitar" data-t="restr.quitar"></button>
+            <button type="button" class="btn btn--primario" id="restr-aplicar" data-t="restr.aplicar"></button>
+          </div>
+        </aside>
+
+        <aside class="panel-lateral" id="panel-energia" hidden aria-labelledby="h-panel-energia">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg>
+            <h2 id="h-panel-energia" tabindex="-1" data-t="panel.energia"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p data-destino-hosts></p>
+            <p class="aviso-en-linea" id="energia-sin-soporte" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="energia-sin-soporte-texto"></span></p>
+            <fieldset class="campo"><legend class="campo__etiqueta" data-t="energia.que"></legend>
+              <label class="opcion"><input type="radio" name="energia-accion" value="reboot" checked> <span data-t="energia.reiniciar"></span></label>
+              <label class="opcion"><input type="radio" name="energia-accion" value="shutdown"> <span data-t="energia.apagar"></span></label>
+              <label class="opcion"><input type="radio" name="energia-accion" value="logoff"> <span data-t="energia.cerrarSesion"></span></label>
+            </fieldset>
+            <label class="campo"><span class="campo__etiqueta" data-t="energia.tiempo"></span>
+              <select id="energia-espera"><option value="30" data-t="energia.s30"></option><option value="60" selected data-t="energia.m1"></option><option value="120" data-t="energia.m2"></option><option value="300" data-t="energia.m5"></option></select>
+              <span class="campo__ayuda" data-t="energia.tiempoAyuda"></span></label>
+            <label class="opcion"><input type="checkbox" id="energia-forzar"> <span data-t="energia.forzar"></span></label>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel data-t="comun.cancelar"></button>
+            <button type="button" class="btn btn--peligro" id="energia-ejecutar"></button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Diálogos ============ -->
+  <dialog class="dialogo" id="confirmar" aria-labelledby="confirmar-titulo">
+    <div class="dialogo__cuerpo">
+      <h2 id="confirmar-titulo"></h2>
+      <p id="confirmar-texto"></p>
+      <p class="dialogo__consecuencia" id="confirmar-consecuencia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg><span id="confirmar-consecuencia-texto"></span></p>
+    </div>
+    <div class="dialogo__acciones">
+      <button type="button" class="btn" id="confirmar-no" autofocus data-t="comun.volver"></button>
+      <button type="button" class="btn btn--primario" id="confirmar-si"></button>
     </div>
   </dialog>
 
-  <template id="tile-template">
-    <li class="tile">
-      <button type="button" class="tile-view" title="Ver en detalle">
-        <img alt="">
-        <span class="tile-wait muted">Esperando imagen…</span>
-      </button>
-      <div class="tile-name"></div>
+  <dialog class="dialogo" id="cambiar-canal" aria-labelledby="cc-titulo">
+    <form method="dialog" id="cc-form" novalidate>
+      <div class="dialogo__cuerpo">
+        <h2 id="cc-titulo" data-t="canal.titulo"></h2>
+        <label class="campo"><span class="campo__etiqueta" data-t="canal.nuevo"></span>
+          <input id="cc-canal" class="mono" inputmode="numeric" autocomplete="off" aria-describedby="cc-ayuda cc-error">
+          <span class="campo__error" id="cc-error" hidden></span>
+          <span class="campo__ayuda" id="cc-ayuda" data-t="arranque.canalAyuda"></span></label>
+        <div class="grupo-botones" id="cc-recientes"></div>
+        <p class="dialogo__consecuencia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="cc-consecuencia"></span></p>
+      </div>
+      <div class="dialogo__acciones">
+        <button type="button" class="btn" data-cerrar-dialogo autofocus data-t="comun.volver"></button>
+        <button type="submit" class="btn btn--primario" id="cc-si"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogo" id="cambiar-nombre" aria-labelledby="cn-titulo">
+    <form method="dialog" id="cn-form" novalidate>
+      <div class="dialogo__cuerpo">
+        <h2 id="cn-titulo" data-t="nombre.titulo"></h2>
+        <label class="campo"><span class="campo__etiqueta" data-t="nombre.campo"></span>
+          <input id="cn-nombre" maxlength="63" autocomplete="off" aria-describedby="cn-error">
+          <span class="campo__error" id="cn-error" hidden></span></label>
+        <p class="dialogo__consecuencia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="nombre.consecuencia"></span></p>
+      </div>
+      <div class="dialogo__acciones">
+        <button type="button" class="btn" data-cerrar-dialogo autofocus data-t="comun.volver"></button>
+        <button type="submit" class="btn btn--primario" data-t="nombre.guardar"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialogo dialogo--grande" id="pantalla-grande" aria-labelledby="pg-titulo">
+    <div class="dialogo__cuerpo">
+      <div class="fila"><h2 id="pg-titulo" class="crece"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <img id="pg-imagen" alt="">
+      <p class="pequeno suave" data-t="alumnos.avisoMiniaturas"></p>
+    </div>
+  </dialog>
+
+  <dialog class="modal-ajustes" id="ajustes" aria-labelledby="aj-titulo">
+    <div class="modal-ajustes__lado">
+      <h2 id="aj-titulo" data-t="nav.ajustes"></h2>
+      <div class="modal-ajustes__pestanas" role="tablist" aria-orientation="vertical" aria-labelledby="aj-titulo">
+        <button type="button" role="tab" id="tab-clase" aria-controls="aj-clase" aria-selected="true"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span data-t="ajustes.clase"></span></button>
+        <button type="button" role="tab" id="tab-apariencia" aria-controls="aj-apariencia" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#sol"/></svg><span data-t="ajustes.apariencia"></span></button>
+        <button type="button" role="tab" id="tab-acerca" aria-controls="aj-acerca" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="ajustes.acerca"></span></button>
+      </div>
+    </div>
+    <div class="modal-ajustes__contenido">
+      <button type="button" class="btn btn--fantasma btn--icono modal-ajustes__cerrar" data-cerrar-dialogo data-t-aria-label="ajustes.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+      <section role="tabpanel" id="aj-clase" aria-labelledby="tab-clase">
+        <h3 data-t="ajustes.clase"></h3>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong id="aj-nombre"></strong><span data-t="ajustes.nombreAyuda"></span></div>
+          <button type="button" class="btn" id="aj-cambiar-nombre" data-t="comun.cambiar"></button>
+        </div>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong id="aj-canal"></strong><span data-t="ajustes.canalAyuda"></span></div>
+          <button type="button" class="btn" id="aj-cambiar-canal" data-t="comun.cambiar"></button>
+        </div>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong data-t="ajustes.canalInicio"></strong><span data-t="ajustes.canalInicioAyuda"></span></div>
+          <span class="insignia" id="aj-canal-inicio"></span>
+        </div>
+      </section>
+      <section role="tabpanel" id="aj-apariencia" aria-labelledby="tab-apariencia" hidden>
+        <h3 data-t="ajustes.apariencia"></h3>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong data-t="ajustes.tema"></strong><span data-t="ajustes.temaAyuda"></span></div>
+          <div class="opciones-tarjeta ajuste__ancho" role="radiogroup" data-t-aria-label="ajustes.tema">
+            <button type="button" class="opcion-tarjeta" role="radio" data-tema="sistema"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ajustes"/></svg><span data-t="ajustes.temaSistema"></span></button>
+            <button type="button" class="opcion-tarjeta" role="radio" data-tema="light"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#sol"/></svg><span data-t="ajustes.temaClaro"></span></button>
+            <button type="button" class="opcion-tarjeta" role="radio" data-tema="dark"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#luna"/></svg><span data-t="ajustes.temaOscuro"></span></button>
+          </div>
+        </div>
+      </section>
+      <section role="tabpanel" id="aj-acerca" aria-labelledby="tab-acerca" hidden>
+        <h3 data-t="ajustes.acerca"></h3>
+        <div class="ajuste"><div class="ajuste__texto"><strong data-t="ajustes.version"></strong><span id="aj-version"></span></div></div>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong id="aj-clave-titulo"></strong><span id="aj-clave-texto"></span></div>
+          <span class="insignia" id="aj-clave"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#llave"/></svg><span class="mono" id="aj-clave-huella"></span></span>
+        </div>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong data-t="ajustes.atajo"></strong><span id="aj-atajo"></span></div>
+        </div>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong data-t="instalador.titulo"></strong><span data-t="instalador.ayuda"></span></div>
+          <div class="bloque-codigo ajuste__ancho">
+            <div class="bloque-codigo__cabecera"><span data-t="instalador.estaConsola"></span>
+              <button type="button" class="btn btn--fantasma btn--sm" data-copiar="aj-datos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#copiar"/></svg><span data-t="comun.copiar"></span></button></div>
+            <pre id="aj-datos"></pre>
+          </div>
+        </div>
+      </section>
+    </div>
+  </dialog>
+
+  <div class="avisos-flotantes" id="avisos" aria-live="polite"></div>
+
+  <!-- ============ Plantillas ============ -->
+  <template id="t-fila-alumno">
+    <tr>
+      <td class="col-marca"><input type="checkbox" class="marca"></td>
+      <td class="celda-principal" data-t-etiqueta="alumnos.colEquipo"><span class="equipo"></span><span class="celda-sub usuario"></span></td>
+      <td data-t-etiqueta="alumnos.colEstado" class="estado"></td>
+      <td data-t-etiqueta="alumnos.colCodigo" class="codigo"></td>
+      <td data-t-etiqueta="alumnos.colNotas" class="notas"></td>
+    </tr>
+  </template>
+  <template id="t-tarjeta-alumno">
+    <li class="alumno">
+      <input class="alumno__marca marca" type="checkbox">
+      <button type="button" class="alumno__pantalla"><img alt=""><span class="alumno__pantalla-texto"></span></button>
+      <div class="alumno__pie"><span class="alumno__nombre"></span><span class="estado"></span></div>
+      <div class="alumno__sub"></div>
     </li>
   </template>
-
-  <template id="student-template">
-    <li class="student">
-      <div class="student-head">
-        <input type="checkbox" class="pick" title="Marcar para restricciones o energía">
-        <span class="state-dot" aria-hidden="true"></span>
-        <strong class="host"></strong>
-        <span class="state"></span>
-      </div>
-      <div class="muted user"></div>
-      <div class="muted os"></div>
-      <div class="caps"></div>
-      <div class="power-state" hidden></div>
-      <div class="ack"></div>
+  <template id="t-envio">
+    <li class="envio">
+      <div class="envio__cabecera"><strong class="envio__titulo"></strong><span class="envio__conteo"></span></div>
+      <button type="button" class="btn btn--fantasma btn--sm envio__desplegar" aria-expanded="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#flecha-abajo"/></svg><span></span></button>
+      <dl class="desglose" hidden></dl>
+      <div class="grupo-botones envio__acciones" hidden><button type="button" class="btn btn--sm envio__reenviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reenviar"/></svg><span></span></button></div>
     </li>
   </template>
-
-  <template id="history-template">
-    <li class="history-item">
-      <div>
-        <strong class="h-label"></strong>
-        <div class="muted h-meta"></div>
-      </div>
-      <button type="button" class="h-reemit">Reemitir</button>
-    </li>
+  <template id="t-historial">
+    <tr>
+      <td class="num"></td><td class="celda-principal titulo"></td><td class="lenguaje"></td><td class="lineas"></td><td class="veces"></td><td class="hora"></td>
+      <td><div class="grupo-botones grupo-botones--fin">
+        <button type="button" class="btn btn--sm abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#editar"/></svg><span></span></button>
+        <button type="button" class="btn btn--sm reemitir"></button></div></td>
+    </tr>
+  </template>
+  <template id="t-fila-simulado">
+    <tr>
+      <td class="celda-principal"><span class="nombre"></span><span class="celda-sub detalle"></span></td>
+      <td class="estado"></td>
+      <td class="pantalla"></td>
+      <td><select class="falla control control--sm"></select></td>
+      <td><button type="button" class="btn btn--sm btn--fantasma quitar"></button></td>
+    </tr>
   </template>
 
   <script src="events.js"></script>
+  <script src="textos.es-MX.js"></script>
   <script src="vendor/monaco/vs/loader.js"></script>
   <script src="main.js"></script>
 </body>

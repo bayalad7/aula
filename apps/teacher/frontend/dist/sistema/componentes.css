@@ -595,3 +595,6 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
   .tarjeta--estirada { contain: none; max-height: 28rem; }
 }
 .grupo-botones--fin { justify-content: flex-end; flex-wrap: nowrap; }
+
+/* Control compacto (p. ej., un select dentro de una fila de tabla). */
+.control--sm { width: auto; min-height: 1.875rem; padding: 0 var(--e-2); font-size: var(--t-sm); }

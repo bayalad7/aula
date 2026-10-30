@@ -31,6 +31,8 @@ Elige **Sistema** (sigue a Windows), **Claro** u **Oscuro**. La consola recuerda
 - **Versión** de Aula Consola.
 - **Clave del centro**: la prueba de que esta consola es de tu centro. Más en
   [Conceptos](conceptos#la-clave-del-centro).
+- **Certificado de la conexión**: lo que cifra la conexión con los alumnos y hasta qué fecha es
+  vigente. Los alumnos lo reconocen por su huella, así que la fecha es solo informativa.
 - **Atajo para capturar código**: carga en el editor lo que copiaste, desde cualquier programa.
 - **Datos para quien instala**: canal, equipo, puertos y clave, con un botón para copiarlos. Dáselos
   al responsable de TI si un alumno no aparece.

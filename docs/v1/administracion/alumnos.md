@@ -15,13 +15,23 @@ o solo a algunos.
 
 ## Lista o miniaturas
 
-- **Lista**: una fila por equipo con su estado, el código que tiene en pantalla y notas (por
-  ejemplo, «No comparte su pantalla» o «Restricciones»).
+- **Lista**: una fila por equipo con su estado, el código que tiene en pantalla, su sistema y
+  versión de Aula, y notas (por ejemplo, «No comparte su pantalla», «Restricciones» o «No pudo: …»
+  si su equipo contestó con un problema).
 - **Miniaturas**: la pantalla de cada alumno, actualizada cada segundo. Haz clic en una para verla
   en grande.
 
 Mientras ves las miniaturas, cada alumno tiene en su pantalla el aviso «Tu pantalla está siendo
 vista por el profesor». Las imágenes no se guardan: al salir de Miniaturas se dejan de pedir.
+
+## La ficha de un alumno
+
+El botón de información al final de cada fila abre su **ficha** a la derecha: usuario, estado,
+sistema, versión de Aula, canal, desde qué hora está conectado y sus restricciones. Abajo dice
+**qué puede hacer su equipo** (recibir código, mostrar su pantalla, energía…), y arriba, si su
+equipo contestó con un problema, cuál fue y qué hacer.
+
+![La ficha de un alumno con un problema reciente](img/ficha-alumno.png)
 
 ## Seleccionar alumnos
 

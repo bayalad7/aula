@@ -104,11 +104,28 @@ consola agrega aquí sus casos.
 | C-24 | «¿Falta un alumno?»: responde las preguntas hasta una causa, luego «Empezar de nuevo» | Cada respuesta queda anotada; al final, la causa y qué hacer; reiniciar vuelve a la primera pregunta |
 | C-25 | En Código, «Pegar del portapapeles» con el portapapeles vacío | El aviso «No hay texto copiado» con «Ver en el manual», que abre «El portapapeles no funciona» |
 
+### Ficha, errores de los alumnos e información
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-26 | En Alumnos, con simulados abiertos | La lista tiene la columna Sistema (SO y «Aula x.y.z»); al encoger la ventana o abrir un panel, la columna se esconde |
+| C-27 | Pulsa el botón «i» al final de la fila de un simulado | Se abre su ficha: usuario, estado, sistema, versión, canal, hora de conexión y «Qué puede hacer su equipo» con Sí/No |
+| C-28 | Ajustes › Acerca de: pulsa la «i» junto a «Clave del centro», luego fuera | Aparece la explicación con «Más en el manual»; un clic fuera o Esc la cierra |
+| C-29 | Ajustes › Acerca de | «Certificado de la conexión: Vigente hasta el …» (10 años después de instalar) |
+| C-30 | Con un alumno real de otra versión o sin una capacidad, mándale lo que no soporta (opcional) | En su fila «No pudo: …»; en Código, «Quién falta» lo lista con el motivo y «Ver en el manual»; «Reenviar» lo reintenta |
+
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 
 | # | Pasos | Esperado |
 |---|---|---|
 | C-20 | Con 1 VM de alumno y los simulados abiertos | El real cuenta en «conectados» y los simulados aparte. Energía y Restricciones solo se ofrecen para el real |
+
+## Revisión automática del frontend (arnés web)
+
+Antes de pedir la prueba en la ventana real, corre el arnés de `scripts/ux/` (ver su
+`README.md`): recorre 41 pantallas en Chromium headless con datos de demostración, falla si hay
+errores de JS o violaciones serias de accesibilidad, y regenera las capturas del manual. No
+sustituye estos casos: no ve la ventana nativa ni el backend.
 
 ## Si algo falla
 

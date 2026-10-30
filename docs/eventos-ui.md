@@ -127,6 +127,7 @@ interfaz ──App.StartClass(canal, nombre)──▶ Go: cierra la clase actual
 agentes ──hello/heartbeat/desconexión──▶ session.Console.OnChange ──"aula:students"──▶ interfaz
 interfaz ──App.Emit({title, lang, content, mode})──▶ Go: historial + Broadcast(code.share)
 agentes ──code.ack / msg.ack──▶ codedist.Deliveries ──"aula:deliveries"──▶ "confirmados 2/2 ✓"
+agentes ──error (en vez del acuse)──▶ Deliveries.Reject + último error del alumno ──"aula:deliveries" y "aula:students"
 Ctrl+Alt+Shift+C (o botón Capturar) ──▶ Go lee el portapapeles ──"aula:capture"──▶ editor (sin emitir)
 interfaz ──App.OpenScreens()──▶ screen.Wall ──screen.thumb.start──▶ agentes con screen.thumb
 agentes ──screen.thumb.frame──▶ screen.Wall (solo el start vigente) ──"aula:frame"──▶ <img> de la cuadrícula
@@ -142,9 +143,9 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 
 | Evento | Datos | Cuándo |
 |---|---|---|
-| `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código o responde a una orden de energía (`power`). |
+| `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código, responde a una orden de energía (`power`) o manda un error del protocolo (`lastError`). |
 | `aula:history` | `History` | Tras cada emisión o reemisión. |
-| `aula:deliveries` | `Deliveries` | Tras cada envío y cada acuse (`code.ack`, `msg.ack`). |
+| `aula:deliveries` | `Deliveries` | Tras cada envío, cada acuse (`code.ack`, `msg.ack`) y cada error con que un alumno contesta a un envío (`rejected`). |
 | `aula:capture` | `Capture` | Al pulsar el atajo global o el botón Capturar. |
 | `aula:class` | `View` | Al terminar el arranque automático en el canal predeterminado. Si falló, `active` es `false` y el motivo está en `Setup().startError`. |
 | `aula:frame` | `Thumb` | Por cada cuadro recibido mientras la vista de pantallas está abierta (≤ 1 por segundo y alumno). Solo cuadros del `screen.thumb.start` vigente. |
@@ -163,6 +164,8 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
                              "status": "postponed",   // sent | countdown | postponed | executing | cancelled | error
                              "deadline_ms": 1792771530000, "postpones_left": 1 },  // null sin orden
                   "lastCodeAck": "0c9a…", "ackedAt": "10:00:05",
+                  "connectedAt": "09:58",          // hora en que abrió esta sesión
+                  "lastError": { "code": "unsupported_capability", "at": "10:03:12" },  // null si no ha mandado ninguno
                   "simulated": false } ],          // true: alumno del aula simulada, siempre con su insignia
   "connected": 1,                      // solo alumnos reales
   "simulated": 0,                      // alumnos simulados conectados, aparte
@@ -178,6 +181,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
                     "sent": 2, "acked": 2, "failed": 0, "noCapability": 1,
                     "simSent": 2, "simAcked": 1,   // alumnos simulados, contados aparte
                     "pending": ["…"],              // sesiones que aún no lo confirman (reales y simuladas)
+                    "rejected": [ { "session": "…", "code": "internal" } ],  // contestaron con un error
                     "at": "…" } ] }
 
 // SimulationView: el aula simulada
@@ -221,6 +225,14 @@ pasó + qué hacer») y deja el detalle en «Ver detalles». Los códigos están
 devuelvan el código correcto en sus fallos típicos. Un error sin código se muestra tal cual, como
 último recurso.
 
+Los errores que **mandan los alumnos** (mensaje `error` del protocolo, `docs/protocol.md` §2.1)
+no los devuelve un método: llegan en `aula:students` (`lastError`) y, si contestan a un envío, en
+`aula:deliveries` (`rejected`). La interfaz los explica con `errorAlumno.<código>` (en camelCase:
+`unsupported_capability` → `errorAlumno.unsupportedCapability`) y los enlaza con
+`Manual().agentErrors` (`agentErrorHelp` en `apps/teacher/agenterrors.go`).
+`TestAgentErrorCodesLinkToTheManual` lee los códigos de `internal/protocol/errors.go` y exige su
+texto y su sección.
+
 Cada código enlaza además a su sección del manual (`errorHelp` en `errores.go`, que llega en
 `Manual().errors`): el aviso lleva «Ver en el manual». `TestErrorCodesLinkToTheManual` exige que
 cada código tenga su enlace y que la sección exista.
@@ -232,13 +244,13 @@ cada código tenga su enlace y que la sección exista.
 | `Setup()` | `Setup` | Canal predeterminado (`defaultChannel`), canales recientes, nombre, huella, origen de la clave (`keySource`: `centro` o `personal`) y `startError` si el arranque automático falló. |
 | `StartClass(canal, nombre)` | `View` / error | Abre la clase en el canal (número 1–16000); si ya había una abierta, la cierra antes («Cambiar de canal» y «Cambiar tu nombre», con su confirmación). **El historial de código y los envíos se conservan** (son del profesor, no del canal). Usa la clave del centro o, si no hay, la personal. |
 | `EndClass()` | — | Cierra la clase. La interfaz no lo llama directamente. |
-| `View()` | `View` | Estado completo para el primer dibujo. |
+| `View()` | `View` | Estado completo para el primer dibujo. `class` = `{channel, consoleName, publicKey, fingerprint, keySource, port, certExpires}`; `certExpires` (`AAAA-MM-DD`) es el vencimiento del certificado de la conexión, solo informativo: los alumnos fijan su huella y no revisan fechas. |
 | `Emit({title, lang, content, mode, targets})` | `Delivery` / error | `mode` = `replace` («Emitir») o `append` («Agregar debajo»). `targets`: IDs de sesión (reales o simulados) de la selección; vacío = todos. Crea una entrada nueva en el historial. |
 | `Reemit(snippetId)` | `Delivery` / error | Reenvía un fragmento del historial con el mismo número e ID (`replace`). |
 | `ClearScreens()` | `Delivery` / error | `code.clear` a todos. |
 | `SendNotice(text, level)` | `Delivery` / error | `msg.show` a todos, `info` o `warning`. |
 | `SendNoticeTo(text, level, targets)` | `Delivery` / error | Igual, solo a `targets` (vacío = todos). Lo usa el panel **Aviso**. |
-| `Resend(deliveryId)` | `Delivery` / error | **Reenviar a los que faltan**: manda de nuevo el mismo mensaje a las sesiones de `pending` que siguen conectadas. Los acuses tardíos del primer envío ya no cuentan; los nuevos, una vez. |
+| `Resend(deliveryId)` | `Delivery` / error | **Reenviar a los que faltan**: manda de nuevo el mismo mensaje a las sesiones de `pending` y de `rejected` que siguen conectadas (las de `rejected` vuelven a `pending`). Los acuses tardíos del primer envío ya no cuentan; los nuevos, una vez. |
 | `InstallerInfo()` | `InstallerInfo` | Datos para quien instala: `{channel, consoleName, hostname, addresses, port, mediaPort, fingerprint, keySource, version}`. |
 | `CaptureClipboard()` | `Draft` / error | Igual que el atajo global; el resultado también llega como `aula:capture`. |
 | `OpenScreens()` | error | Abre la vista de pantallas (botón **Ver pantallas**): envía `screen.thumb.start` (1000 ms, calidad 50, 320 px) a cada alumno conectado con `canThumb`, y también a los que se conecten mientras siga abierta. Error si no hay clase. |
@@ -259,7 +271,7 @@ cada código tenga su enlace y que la sección exista.
 | `SimulationAdd({os, capabilities})` | `SimulationView` / error | Agrega un alumno simulado: `os` `windows`, `linux` o `darwin`; `capabilities` entre `code.view`, `msg.show` y `screen.thumb` (vacío: las tres). Máximo 40. |
 | `SimulationRemove(id)` | `SimulationView` / error | Quita uno. |
 | `SimulationFault(id, fault, delayMs)` | `SimulationView` / error | Hace fallar a uno: `slow` (contesta con `delayMs` de retraso, 500–10 000), `noack` (muestra pero no confirma), `disconnected` (se va hasta volver a `none`). |
-| `Manual()` | `ManualView` / error | El manual embebido (`docs/v1/administracion`), ya leído y validado: `{pages, diagrams, images, errors, diagnosis}`. `pages[]` = `{slug, title, summary, group, order, screens, blocks, headings}`; los bloques no traen HTML (la interfaz los dibuja con el DOM). `images`: `img/x.png` → data URI. `errors`: código de error → `página#sección`. `diagnosis`: el árbol de «¿Falta un alumno?» sacado del diagrama 12 (`{start, nodes}`). |
+| `Manual()` | `ManualView` / error | El manual embebido (`docs/v1/administracion`), ya leído y validado: `{pages, diagrams, images, errors, diagnosis}`. `pages[]` = `{slug, title, summary, group, order, screens, blocks, headings}`; los bloques no traen HTML (la interfaz los dibuja con el DOM). `images`: `img/x.png` → data URI. `errors`: código de error → `página#sección`; `agentErrors`, lo mismo para los códigos del protocolo que mandan los alumnos. `diagnosis`: el árbol de «¿Falta un alumno?» sacado del diagrama 12 (`{start, nodes}`). |
 | `ManualSearch(q)` | `Result[]` | Búsqueda local, sin distinguir acentos ni mayúsculas, en títulos, secciones y texto de las páginas y en los títulos y descripciones de los diagramas. Hasta 12 `{slug, anchor, diagram, title, snippet}`. |
 | `SimulationStop()` | `SimulationView` | Cierra el aula simulada: sus alumnos se van y se olvidan. También ocurre al cambiar de canal o de nombre, o al cerrar la clase. Los alumnos reales no se tocan. |
 

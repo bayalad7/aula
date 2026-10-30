@@ -32,8 +32,9 @@ hacerse pasar por ti con otra consola. En Ajustes ves su **huella**, un código 
 
 No todos los equipos pueden todo. Por ejemplo, por ahora solo los equipos con Windows comparten
 su pantalla o reciben órdenes de energía, y las restricciones necesitan Aula instalada como
-servicio. La consola te lo dice: en la lista de [Alumnos](alumnos) («No comparte su pantalla») y
-en cada panel («1 equipo no puede recibirla»).
+servicio. La consola te lo dice: en la lista de [Alumnos](alumnos) («No comparte su pantalla»), en
+la [ficha de cada alumno](alumnos#la-ficha-de-un-alumno) y en cada panel («1 equipo no puede
+recibirla»).
 
 ## Conectado y desconectado
 

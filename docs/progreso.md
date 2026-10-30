@@ -20,7 +20,7 @@
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 15 diagramas (falta el 10, aula simulada) |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1 y 2, aula simulada (6.1), E3 y E2 aprobadas; manual (E7) espera aprobación |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1 y 2, aula simulada (6.1), E3, E2, E7 y pendientes de las Fases 3 y 4 aprobados |
 
 ## Etapa 02: notas
 
@@ -752,7 +752,8 @@
   `TestBindingsReturnCodedErrors` (21 fallos típicos) y `TestPortInUseIsCoded`.
 - **Pendiente de E2:** los códigos de error del protocolo que mandan los alumnos (hoy solo
   afectan a la energía, que muestra «no se pudo»).
-- **E7, el manual en la consola** (`docs/v1/ux/profesor/ENTREGA-E7.md`, espera aprobación):
+- **E7, el manual en la consola** (`docs/v1/ux/profesor/ENTREGA-E7.md`, commits `1c99c1d`,
+  `f0b7260` y `8e5cc21`):
   - Markdown en `docs/v1/administracion/` (única fuente), embebido por el paquete `docs`;
   - `internal/manual` lo lee sin HTML, lo valida, lo busca y saca el asistente «¿Falta un
     alumno?» del diagrama 12;
@@ -760,5 +761,16 @@
   - pruebas: una página por pantalla, enlaces y secciones válidos, el árbol del diagrama 12 y
     el enlace de cada código de error;
   - falta la prueba en la ventana real (C-21 a C-25).
+- **Pendientes de las Fases 3 y 4** (`docs/v1/ux/profesor/ENTREGA-FASES-3-4.md`,
+  aprobados):
+  - los errores del protocolo que mandan los alumnos llegan a la consola: «No pudo: …» en el
+    alumno y en «Quién falta», con texto y enlace al manual, y «Reenviar» los reintenta;
+  - ficha de cada alumno, columna Sistema, «i» de información en los campos técnicos y
+    vencimiento del certificado en Ajustes;
+  - el arnés web pasa al repo (`scripts/ux/`): recorrido con axe-core y capturas del manual;
+  - propuestas que cambiarían el protocolo en `docs/v1/ux/PROPUESTAS.md`;
+  - falta la prueba en la ventana real (C-26 a C-30).
+- **`internal/ui`** ya está en `CLAUDE.md` (sistema de diseño compartido con la app del
+  alumno), pero el paquete no existe todavía: hay que mover `apps/teacher/frontend/dist/sistema/`.
 - **Siguiente:** diagramas en la consola (E8), comprobador de conexión (6.3) y verificación
   final (E10).

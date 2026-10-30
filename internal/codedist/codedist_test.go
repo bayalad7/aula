@@ -92,3 +92,22 @@ func TestReceiverAcks(t *testing.T) {
 		t.Fatal("unexpected message not rejected")
 	}
 }
+
+func TestDeliveriesCountSimulatedApart(t *testing.T) {
+	var d Deliveries
+	del := d.Start("code", "Ejercicio 1", []string{"r1", "r2"}, 0, 0, time.Now())
+	if _, ok := d.AddSimulated(del.ID, []string{"s1"}); !ok {
+		t.Fatal("AddSimulated did not find the delivery")
+	}
+	if _, ok := d.AddSimulated("nope", []string{"s2"}); ok {
+		t.Error("AddSimulated found an unknown delivery")
+	}
+	d.Ack("r1")
+	got, _ := d.Ack("s1")
+	if got.Sent != 2 || got.Acked != 1 || got.SimSent != 1 || got.SimAcked != 1 {
+		t.Errorf("delivery = %+v, want sent 2, acked 1, simSent 1, simAcked 1", got)
+	}
+	if _, ok := d.Ack("s1"); ok {
+		t.Error("a simulated ack counted twice")
+	}
+}

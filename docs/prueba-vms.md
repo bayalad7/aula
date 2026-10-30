@@ -1040,3 +1040,34 @@ Get-DnsClientServerAddress | Format-Table > C:\aula-prueba\dns-antes.txt
 | **RB-L** No se vigila la navegación | Revisa `aula-agente.log` tras navegar con el filtro activo. | Solo dice "web filter applied/removed" con conteos; **ningún** nombre de sitio visitado. |
 
 **Para aceptar** bastan RB-A, RB-D, RB-H y RB-J en ✅.
+
+## 15. Energía: apagar, reiniciar y cerrar sesión (D-018)
+
+Comprueba que el profesor apaga, reinicia o cierra sesión, que el alumno ve el aviso y puede
+posponerlo, y que "forzar" omite la espera (`docs/privacidad.md`, reglas 26–31). **Solo en VMs**:
+estos casos apagan y reinician equipos de verdad. Toma una instantánea de cada VM antes de empezar.
+
+### 15.1 Preparación
+
+- Consola en el equipo del profesor (o en otra VM) y al menos una VM de alumno con el agente como
+  servicio (§13), con una sesión iniciada. Para PW-E, otra VM (o la misma reiniciada) **sin** sesión
+  iniciada.
+- En la tarjeta del alumno aparece la capacidad "energía". Si no, revisa que sea Windows y que el
+  servicio esté corriendo.
+- Ten a mano `C:\ProgramData\Aula\alumno\logs\aula-agente.log` para revisar qué registró.
+
+### 15.2 Casos
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **PW-A** Reiniciar con aviso (**aceptación**) | **Energía** → cuenta de 30 s, sin forzar → **Reiniciar**. Lee la confirmación y confirma. | La confirmación dice "¿Reiniciar 1 equipo del canal N?" y el botón "Volver" tiene el foco. En el alumno, la ventana pasa al frente, queda **siempre encima**, con la franja roja "⏻ El profesor … (canal N) va a reiniciar este equipo en 0:30. Guarda tu trabajo." y la cuenta baja; la barra dice "· reinicio pendiente". En la consola, la tarjeta dice "⏻ reinicio en 0:2x" y aparece la franja "Órdenes de energía pendientes". Al llegar a 0 la VM se reinicia (Windows puede preguntar por apps sin guardar). |
+| **PW-B** Posponer (**aceptación**) | Repite PW-A. En el alumno, pulsa **Posponer 5 min** dos veces. | Cada clic suma 5 min ("te quedan 1", luego "Ya no se puede posponer" con el botón deshabilitado). La tarjeta del profesor dice "pospuesto (1/2)" y "(2/2)" con el tiempo nuevo. No se reinicia antes. |
+| **PW-C** Cancelar | Con una cuenta en curso, pulsa **Cancelar** en la franja de la consola. | El aviso desaparece del alumno al instante; la tarjeta dice "⏻ reinicio cancelado"; no se reinicia. |
+| **PW-D** Forzar omite la espera (**aceptación**) | Abre el Bloc de notas en el alumno y escribe algo sin guardar. **Energía** → marca **Forzar (sin cuenta regresiva)** → **Reiniciar**. | La confirmación muestra en rojo "Se cerrarán sus aplicaciones **sin guardar**". Al confirmar, el alumno ve "⏻ El profesor … está reiniciando este equipo" y la VM se reinicia **de inmediato**, sin cuenta ni pregunta por el Bloc de notas. |
+| **PW-E** Apagar sin sesión iniciada | Con la VM del alumno en la pantalla de inicio de sesión (nadie dentro), **Apagar** (sin forzar). | La tarjeta muestra solo la capacidad "energía". La VM se apaga de inmediato (no hay a quién avisar). El log del servicio dice "power order … logged_on=false" y "power executing". |
+| **PW-F** Cerrar sesión sin guardar | Bloc de notas con texto sin guardar. **Cerrar sesión** sin forzar; deja pasar la cuenta. Luego repite con **Forzar**. | Sin forzar: Windows pregunta por el Bloc de notas y el alumno puede guardar (o cancelar el cierre). Con forzar: la sesión se cierra sin preguntar y se pierde el texto. |
+| **PW-G** Sin conexión, la cuenta sigue | Inicia un reinicio con cuenta de 2 min y cierra la consola. | El aviso sigue y se puede posponer; al terminar, la VM se reinicia. |
+| **PW-H** Solo a marcados | Con 2 alumnos: marca uno, "Alumnos marcados" → **Apagar**. | Solo ese equipo recibe el aviso. |
+| **PW-I** Registros | Revisa `aula-agente.log` y el log de la consola. | Aparecen la acción, `action_id`, `force`, los aplazamientos y "power executing" **antes** del apagado; ningún contenido de las apps abiertas. |
+
+**Para aceptar** bastan PW-A, PW-B y PW-D en ✅.

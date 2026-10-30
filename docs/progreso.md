@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-10-29 (transmisión de la pantalla del profesor con WebRTC).
+Última actualización: 2026-10-29 (energía: apagar, reiniciar y cerrar sesión).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -16,6 +16,7 @@
 | 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
+| 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado y probado con dobles (falta prueba en VM, `docs/prueba-vms.md` §15) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 
@@ -593,3 +594,61 @@
     y RB-K (apagado);
   - probar la interfaz de la consola con clics;
   - Linux y macOS.
+
+## Etapa 10.3: energía (apagar, reiniciar, cerrar sesión, D-018) — notas
+
+- **Diseño aprobado** (2026-10-29):
+  - `power.action`, `power.cancel` y `power.ack` (`docs/protocol.md` §5.15, con permisos del SO
+    en §5.15.1);
+  - capacidad `power`;
+  - posponer 5 min como máximo 2 veces;
+  - la cuenta sigue sin conexión;
+  - sin sesión iniciada el servicio declara solo `power` (apagar y reiniciar inmediatos; cerrar
+    sesión → `unsupported_capability`);
+  - reglas de privacidad 26–31 y ajuste de las reglas 17 y 19.
+- **`internal/protocol`:** los tres mensajes con validación (`delay_s` 10–600 o 0 = 30 s,
+  estados, límites), fixtures válidos e inválidos y capacidad requerida.
+- **`internal/platform`:** interfaz `Power` (`Shutdown`, `Reboot`, `Logoff`) y `CurrentSession`.
+  En Windows: `InitiateShutdownW` sin gracia tras habilitar `SeShutdownPrivilege`;
+  `WTSLogoffSession` con `force` y `ExitWindowsEx(EWX_LOGOFF)` en la propia sesión sin `force`.
+  Fallback "no soportado" en Linux y macOS. Las pruebas solo comprueban que el privilegio se
+  resuelve y la sesión se lee; **nunca llaman a las acciones**.
+- **`internal/power`** (nuevo, sin APIs del SO):
+  - `Countdown` (agente): el aviso antes del `ack`; posponer; cancelar; una orden reemplaza a la
+    anterior; `executing` registrado y enviado antes de llamar al SO, con hasta 2 s para que salga;
+    sobrevive a la desconexión; tras ejecutar sin que el equipo se apague (el alumno canceló en
+    Windows), el aviso se quita a los 2 min;
+  - `Tracker` (consola): última orden por sesión, su estado y su vencimiento.
+- **Alumno:**
+  - modo ventana y servicio declaran `power` si hay `platform.Power`;
+  - franja roja fija con la cuenta en vivo, **Posponer 5 min (te quedan N)**, ventana al frente y
+    siempre encima, y barra "· reinicio pendiente";
+  - en modo servicio, el cierre de sesión sin forzar lo hace el ayudante (*proxy*
+    `agentsvc.Logoff`), y el evento `ontop` llega a su ventana.
+- **Consola:**
+  - botón **Energía**: Apagar, Reiniciar o Cerrar sesión; todo el canal o los marcados; cuenta de
+    30 s a 5 min; **Forzar (sin cuenta regresiva)**;
+  - confirmación explícita con `<dialog>`: "Volver" tiene el foco, Esc cancela, y con forzar
+    advierte en rojo que se pierde lo no guardado;
+  - estado en las tarjetas ("⏻ reinicio en 0:25 · pospuesto (1/2)") y franja de pendientes con
+    **Cancelar**.
+- **Pruebas automáticas (todas con dobles; ninguna apaga el equipo):**
+  - `internal/power` con reloj falso: se ejecuta una sola vez y solo al vencer; `delay_s`;
+    posponer dos veces y el tercero falla; `force` sin cuenta y con el `ack` antes del SO (orden
+    comprobado); cancelar e ignorar otro `action_id`; reemplazo; sin sesión; desconexión; fallo
+    del SO;
+  - `apps/student`:
+    - una consola que envía `power.action` **antes de `auth.ok`** recibe `unauthorized` y el doble
+      no se llama;
+    - con consola real: `countdown` → `postponed` → `executing` y una sola llamada al doble;
+    - como servicio: sin ayudante solo `power` y reinicio inmediato; con ayudante, posponer por el
+      binding y cierre de sesión por el ayudante;
+  - `apps/teacher`: destinatarios, sin capacidad, marcados, forzado, entradas inválidas, acuses,
+    errores y cancelar solo lo pendiente; contrato de eventos y bindings.
+- `gofmt`, `go vet` (Windows, Linux y macOS), `staticcheck` y `go test -race ./...` sin errores.
+  En una de dos corridas completas, `internal/screen` e `internal/broadcast` (que esta etapa no
+  toca) fallaron por tiempos bajo carga; solos y en la segunda corrida completa pasan.
+- **Falta:**
+  - la prueba en VM de `docs/prueba-vms.md` §15 (PW-A a PW-I; aceptación con PW-A, PW-B y PW-D);
+  - probar la interfaz de las dos apps con clics;
+  - Linux y macOS (cuando se indique).

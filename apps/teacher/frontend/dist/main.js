@@ -77,7 +77,7 @@
     const m = /^aula:([A-Za-z]+): ([\s\S]*)$/.exec(raw);
     const base = m ? "error." + m[1] : "";
     if (m && typeof TX[base + ".titulo"] === "string") {
-      return { titulo: T(base + ".titulo"), texto: T(base + ".texto"), detalle: m[2] };
+      return { titulo: T(base + ".titulo"), texto: T(base + ".texto"), detalle: m[2], codigo: m[1] };
     }
     // Sin código (no debería pasar): el texto de Go, presentable.
     const texto = m ? m[2] : raw;
@@ -86,7 +86,7 @@
   }
 
   // --- Avisos flotantes ------------------------------------------------------------------
-  function toast(tipo, titulo, texto, detalle) {
+  function toast(tipo, titulo, texto, detalle, ayuda) {
     const ic = { exito: "conectado", error: "error", advertencia: "advertencia", info: "info" }[tipo];
     const t = el("div", "toast toast--" + tipo);
     t.setAttribute("role", tipo === "error" ? "alert" : "status");
@@ -99,6 +99,11 @@
       d.append(el("summary", "", T("comun.verDetalles")), el("pre", "", detalle));
       cuerpo.append(d);
     }
+    if (ayuda) {
+      const a = Object.assign(el("a", "pequeno", T("ayuda.verEnManual")), { href: rutaManual(ayuda) });
+      a.addEventListener("click", () => t.remove());
+      cuerpo.append(a);
+    }
     const cerrar = el("button", "btn btn--fantasma btn--icono btn--sm");
     cerrar.type = "button";
     cerrar.setAttribute("aria-label", T("comun.cerrar"));
@@ -108,9 +113,10 @@
     $("avisos").append(t);
     if (tipo !== "error") setTimeout(() => t.remove(), 6000); // los errores se quedan
   }
+  // Cada error enlaza a su sección del manual (apps/teacher/errores.go, errorHelp).
   const fallo = (err) => {
     const m = amable(err);
-    toast("error", m.titulo, m.texto, m.detalle);
+    toast("error", m.titulo, m.texto, m.detalle, m.codigo && manual ? manual.errors[m.codigo] : "");
   };
 
   // --- Confirmación única ------------------------------------------------------------------
@@ -201,7 +207,10 @@
 
   // --- Navegación ------------------------------------------------------------------------
   const VISTAS = ["alumnos", "codigo", "simulada", "ayuda", "falta"];
-  function irA(nueva) {
+  function irA(ruta) {
+    // «ayuda/pagina/seccion» abre una página del manual en una sección.
+    const [base, pagina, seccion] = ruta.split("/");
+    let nueva = base;
     if (!VISTAS.includes(nueva)) nueva = "alumnos";
     const antes = vista;
     vista = nueva;
@@ -219,6 +228,7 @@
     if (nueva === "falta") pintarFalta();
     if (nueva === "simulada") pintarSimulada();
     $("contenido").scrollTop = 0;
+    if (nueva === "ayuda") mostrarAyuda(pagina ? decodeURIComponent(pagina) : "", seccion ? decodeURIComponent(seccion) : "");
   }
   window.addEventListener("hashchange", () => irA(location.hash.slice(1)));
 
@@ -278,6 +288,7 @@
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
     api.Simulation().then(pintarSimulacion);
+    if (!manual) api.Manual().then(cargarManual, fallo);
     if (!editor) iniciarEditor();
     irA(location.hash.slice(1) || "alumnos");
   }
@@ -984,43 +995,263 @@
   $("sim-cerrar").addEventListener("click", cerrarSimulada);
   $("f-simulada-salir").addEventListener("click", cerrarSimulada);
 
-  // --- Ayuda y «¿Falta un alumno?» -----------------------------------------------------------
-  // El manual completo se genera de docs/ (entrega del manual); por ahora el
-  // índice muestra lo que ya existe y lo que viene.
-  const INDICE = [
-    ["ayuda.primerosPasos", "flecha-der", [["ayuda.pAbrir"], ["ayuda.pEnviar"], ["ayuda.pSimulada", "#simulada"]]],
-    ["ayuda.problemas", "advertencia", [["falta.titulo", "#falta"], ["ayuda.pConsolaNoAbre"], ["ayuda.pFirewall"]]],
-    ["ayuda.conceptos", "info", [["ayuda.pCanal"], ["ayuda.pClave"], ["ayuda.pSimulados"]]],
-    ["ayuda.comoFunciona", "red", [["ayuda.pDiagramas"], ["ayuda.pPrivacidad"]]],
-  ];
-  const indice = $("ayuda-indice");
-  indice.replaceChildren(...INDICE.map(([titulo, ic, items]) => {
-    const li = el("li", "tarjeta");
-    const h = el("h2");
-    h.append(icono(ic), document.createTextNode(T(titulo)));
-    const ul = el("ul");
-    ul.append(...items.map(([k, href]) => {
-      const i = el("li");
-      if (href) i.append(Object.assign(el("a", "", T(k)), { href }));
-      else i.append(document.createTextNode(T(k) + " "), el("span", "suave", T("ayuda.proximamente")));
-      return i;
-    }));
-    li.append(h, ul);
-    return li;
-  }));
-
-  const RESPUESTAS = [["falta.rBuscando", "falta.cBuscando"], ["falta.rSinConfigurar", "falta.cSinConfigurar"],
-    ["falta.rNoConecta", "falta.cNoConecta"], ["falta.rClave", "falta.cClave"], ["falta.rCertificado", "falta.cCertificado"],
-    ["falta.rNoVeo", "falta.cNoVeo"]];
-  $("falta-respuestas").replaceChildren(...RESPUESTAS.map(([r, c]) => {
-    const b = boton(T(r), "btn--sm");
-    b.addEventListener("click", () => {
-      $("falta-causa").hidden = false;
-      $("falta-causa-titulo").textContent = T(c + ".titulo");
-      $("falta-causa-texto").textContent = T(c + ".texto");
+  // --- Manual (docs/v1/administracion) --------------------------------------------------------
+  // Las páginas llegan como datos (bloques e incisos), no como HTML: aquí se
+  // arman con elementos y nodos de texto.
+  let manual = null;
+  function rutaManual(href) {
+    const [pagina, seccion] = href.split("#");
+    return "#ayuda/" + encodeURIComponent(pagina) + (seccion ? "/" + encodeURIComponent(seccion) : "");
+  }
+  function incisos(lista, pagina) {
+    return (lista || []).map((x) => {
+      switch (x.kind) {
+        case "strong": return el("strong", "", x.text);
+        case "em": return el("em", "", x.text);
+        case "code": return el("code", "", x.text);
+        case "link": {
+          if (x.href.startsWith("diagrama:")) {
+            const b = el("button", "enlace", x.text);
+            b.type = "button";
+            b.addEventListener("click", () => verDiagrama(x.href.slice(9)));
+            return b;
+          }
+          const href = x.href.startsWith("pantalla:") ? "#" + x.href.slice(9)
+            : rutaManual(x.href.startsWith("#") ? pagina + x.href : x.href);
+          return Object.assign(el("a", "", x.text), { href });
+        }
+        default: return document.createTextNode(x.text);
+      }
     });
-    return b;
-  }));
+  }
+  function bloqueDiagrama(id) {
+    const d = manual.diagrams[id];
+    const fig = el("figure", "diagrama-manual tarjeta tarjeta__cuerpo");
+    const cab = el("div", "fila");
+    cab.append(icono("red"), el("strong", "crece", d ? d.title : id));
+    fig.append(cab);
+    if (d) {
+      fig.append(el("p", "suave pequeno", d.description));
+      // El dibujo llega con la entrega de los diagramas; mientras, su fuente.
+      const det = el("details", "detalles");
+      // Bloques con desplazamiento: enfocables para leerlos con el teclado.
+      const pre = Object.assign(el("pre", "mono", d.mermaid), { tabIndex: 0 });
+      det.append(el("summary", "", T("ayuda.verFuenteDiagrama")), pre);
+      fig.append(det);
+    }
+    return fig;
+  }
+  function dibujarPagina(p, destino) {
+    const nodos = [];
+    for (const b of p.blocks) {
+      switch (b.kind) {
+        case "heading": {
+          const h = el(b.level === 2 ? "h2" : "h3");
+          h.id = "manual-" + p.slug + "-" + b.anchor;
+          h.append(...incisos(b.text, p.slug));
+          nodos.push(h);
+          break;
+        }
+        case "paragraph": { const e = el("p"); e.append(...incisos(b.text, p.slug)); nodos.push(e); break; }
+        case "note": {
+          const e = el("p", "aviso-en-linea");
+          e.append(icono("info"), el("span"));
+          e.lastChild.append(...incisos(b.text, p.slug));
+          nodos.push(e);
+          break;
+        }
+        case "list": {
+          const e = el(b.ordered ? "ol" : "ul");
+          for (const it of b.items) { const li = el("li"); li.append(...incisos(it, p.slug)); e.append(li); }
+          nodos.push(e);
+          break;
+        }
+        case "code": {
+          const e = Object.assign(el("pre", "bloque-codigo manual__codigo"), { tabIndex: 0 });
+          e.append(el("code", "", b.code));
+          nodos.push(e);
+          break;
+        }
+        case "table": {
+          const tabla = el("table", "tabla");
+          const thead = el("thead"), tr = el("tr");
+          for (const c of b.head || []) { const th = el("th"); th.append(...incisos(c, p.slug)); tr.append(th); }
+          thead.append(tr);
+          const tbody = el("tbody");
+          for (const row of b.rows || []) {
+            const r = el("tr");
+            for (const c of row) { const td = el("td"); td.append(...incisos(c, p.slug)); r.append(td); }
+            tbody.append(r);
+          }
+          tabla.append(thead, tbody);
+          const cont = el("div", "tabla-adaptable");
+          cont.append(tabla);
+          nodos.push(cont);
+          break;
+        }
+        case "image": {
+          const fig = el("figure", "manual__imagen");
+          const img = Object.assign(el("img"), { alt: b.alt, src: manual.images[b.src] || "" });
+          fig.append(img, el("figcaption", "suave pequeno", b.alt));
+          nodos.push(fig);
+          break;
+        }
+        case "diagram": nodos.push(bloqueDiagrama(b.diagram)); break;
+      }
+    }
+    destino.replaceChildren(...nodos);
+  }
+  function verDiagrama(id) {
+    const d = manual && manual.diagrams[id];
+    $("dg-titulo").textContent = d ? d.title : id;
+    const fig = bloqueDiagrama(id);
+    // En el diálogo el título ya es el encabezado y no hay más que ver: fuente abierta.
+    fig.className = "diagrama-manual";
+    fig.firstChild.remove();
+    const det = fig.querySelector("details");
+    if (det) det.open = true;
+    $("dg-cuerpo").replaceChildren(fig);
+    $("diagrama").showModal();
+  }
+
+  function cargarManual(m) {
+    manual = m;
+    // Índice, agrupado como lo dicen las páginas (front-matter «grupo»).
+    const grupos = [];
+    for (const p of m.pages) {
+      let g = grupos.find((x) => x.nombre === p.group);
+      if (!g) grupos.push(g = { nombre: p.group, paginas: [] });
+      g.paginas.push(p);
+    }
+    $("ayuda-indice").replaceChildren(...grupos.map((g) => {
+      const li = el("li", "tarjeta");
+      li.append(el("h2", "", g.nombre));
+      const ul = el("ul");
+      for (const p of g.paginas) {
+        const i = el("li");
+        i.append(Object.assign(el("a", "", p.title), { href: rutaManual(p.slug) }));
+        if (p.summary) i.append(el("span", "celda-sub", p.summary));
+        ul.append(i);
+      }
+      li.append(ul);
+      return li;
+    }));
+    if (vista === "ayuda") irA(location.hash.slice(1));
+    if (vista === "falta") pintarFalta();
+  }
+
+  function mostrarAyuda(slug, seccion) {
+    const p = manual && slug ? manual.pages.find((x) => x.slug === slug) : null;
+    $("ayuda-pagina").hidden = !p;
+    $("ayuda-indice").hidden = !!p;
+    $("ayuda-migas").hidden = !p;
+    $("h-ayuda").textContent = p ? p.title : T("ayuda.titulo");
+    if (!p) return;
+    $("ayuda-migas-pagina").textContent = p.title;
+    $("ayuda-resultados").hidden = true;
+    $("ayuda-buscar").value = "";
+    dibujarPagina(p, $("ayuda-pagina"));
+    if (seccion) {
+      const h = $("manual-" + p.slug + "-" + seccion);
+      if (h) h.scrollIntoView();
+    }
+  }
+
+  // Búsqueda local (Go: internal/manual), con títulos y textos de los diagramas.
+  let buscarTimer = 0;
+  $("ayuda-buscar").addEventListener("input", () => {
+    clearTimeout(buscarTimer);
+    buscarTimer = setTimeout(() => {
+      const q = $("ayuda-buscar").value.trim();
+      $("ayuda-resultados").hidden = !q;
+      if (!q) return;
+      api.ManualSearch(q).then((rs) => {
+        $("ayuda-resultados-titulo").textContent = rs.length ? P("ayuda.resultados", rs.length) : T("ayuda.sinResultados");
+        $("ayuda-resultados-lista").replaceChildren(...rs.map((r) => {
+          const li = el("li", "resultado");
+          if (r.diagram) {
+            const b = el("button", "enlace", r.title);
+            b.type = "button";
+            b.addEventListener("click", () => verDiagrama(r.diagram));
+            li.append(b);
+          } else {
+            li.append(Object.assign(el("a", "", r.title), { href: rutaManual(r.slug + (r.anchor ? "#" + r.anchor : "")) }));
+          }
+          li.append(el("span", "celda-sub", r.snippet));
+          return li;
+        }));
+      });
+    }, 200);
+  });
+
+  // Ayuda contextual: la página de la vista actual, en un panel, sin salir de ella.
+  for (const b of $$("[data-ayuda-contextual]")) {
+    b.addEventListener("click", () => {
+      if (!manual) return;
+      const p = manual.pages.find((x) => (x.screens || []).includes(vista));
+      if (!p) return;
+      abrirPanel("ayuda");
+      $("h-panel-ayuda").textContent = p.title;
+      $("panel-ayuda-abrir").href = rutaManual(p.slug);
+      dibujarPagina(p, $("panel-ayuda-cuerpo"));
+      $("h-panel-ayuda").focus();
+    });
+  }
+
+  // «¿Falta un alumno?»: preguntas y respuestas leídas del diagrama 12.
+  let camino = [];
+  function pintarArbol() {
+    const t = manual && manual.diagnosis;
+    const ol = $("falta-pasos");
+    const items = [];
+    const paso = (estado, titulo, texto) => {
+      const li = el("li", "paso" + (estado ? " paso--" + estado : ""));
+      li.append(el("span", "paso__titulo", titulo));
+      if (texto) li.append(el("span", "suave pequeno", texto));
+      return li;
+    };
+    items.push(paso("hecho", T("falta.paso1"), falta1));
+    if (!t) {
+      $("falta-pasos").replaceChildren(...items);
+      return;
+    }
+    // Recorre: preguntas respondidas, sus pasos, y la pregunta o el final actual.
+    let id = t.nodes[t.start].next || t.start;
+    for (let i = 0; ; i++) {
+      const n = t.nodes[id];
+      if (!n) break;
+      if (n.question) {
+        const elegida = camino[i];
+        if (elegida === undefined) {
+          const li = paso("actual", n.text);
+          li.setAttribute("aria-current", "step");
+          const g = el("div", "grupo-botones");
+          n.answers.forEach((r, k) => {
+            const b = boton(r.label, "btn--sm");
+            b.addEventListener("click", () => { camino[i] = k; pintarArbol(); });
+            g.append(b);
+          });
+          li.append(g);
+          items.push(li);
+          break;
+        }
+        items.push(paso("hecho", n.text, T("falta.respuesta", { r: n.answers[elegida].label })));
+        id = n.answers[elegida].to;
+        continue;
+      }
+      // Un paso intermedio es lo que ya sabemos por las respuestas: va como hecho.
+      const final = !n.next;
+      items.push(paso("hecho", n.text));
+      if (final) break;
+      id = n.next;
+      i--; // los pasos no consumen respuesta
+    }
+    ol.replaceChildren(...items);
+    $("falta-reiniciar").hidden = camino.length === 0;
+  }
+  let falta1 = "";
+  $("falta-reiniciar").addEventListener("click", () => { camino = []; pintarArbol(); });
+
   function datosInstalador(i) {
     return [T("instalador.canal", { v: i.channel }), T("instalador.equipo", { v: i.hostname + (i.addresses.length ? " (" + i.addresses.join(", ") + ")" : "") }),
       T("instalador.puertos", { tcp: i.port, udp: i.mediaPort }), T("instalador.clave", { v: i.fingerprint }),
@@ -1029,7 +1260,8 @@
   function pintarFalta() {
     api.InstallerInfo().then((i) => {
       $("falta-datos").textContent = datosInstalador(i);
-      $("falta-paso1-texto").textContent = T("falta.paso1Texto", { canal: i.channel, ip: i.addresses[0] || i.hostname });
+      falta1 = T("falta.paso1Texto", { canal: i.channel, ip: i.addresses[0] || i.hostname });
+      pintarArbol();
     });
   }
 

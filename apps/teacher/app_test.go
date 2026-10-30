@@ -389,7 +389,7 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	for _, m := range []string{"Setup", "StartClass", "View", "Emit", "Reemit", "Resend", "ClearScreens", "SendNoticeTo", "CaptureClipboard",
 		"OpenScreens", "CloseScreens", "ViewScreen", "Displays", "StartBroadcast", "StopBroadcast",
 		"SetRestriction", "ClearRestriction", "ClearAllRestrictions", "PowerAction", "PowerCancel", "InstallerInfo",
-		"Simulation", "SimulationStart", "SimulationAdd", "SimulationRemove", "SimulationFault", "SimulationStop"} {
+		"Simulation", "SimulationStart", "SimulationAdd", "SimulationRemove", "SimulationFault", "SimulationStop", "Manual", "ManualSearch"} {
 		if !strings.Contains(string(main), "api."+m+"(") {
 			t.Errorf("main.js does not call App.%s", m)
 		}

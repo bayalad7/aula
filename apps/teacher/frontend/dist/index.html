@@ -98,6 +98,7 @@
               </div>
               <button type="button" class="btn" id="seleccionar-todos" data-t-title="alumnos.ctrlA"><svg class="icono" aria-hidden="true"><use id="seleccionar-todos-icono" href="sistema/iconos.svg#hecho"/></svg><span class="btn__texto" id="seleccionar-todos-texto"></span></button>
               <a class="btn btn--fantasma" href="#falta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg><span data-t="falta.titulo"></span></a>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
             </header>
             <div class="vista__cuerpo">
               <div id="alumnos-vacio" class="tarjeta vacio" hidden>
@@ -137,7 +138,7 @@
 
           <!-- ============ Código ============ -->
           <section data-vista-de="codigo" aria-labelledby="h-codigo" class="vista__seccion" hidden>
-            <header class="vista__cabecera"><h1 id="h-codigo" data-t="codigo.titulo"></h1></header>
+            <header class="vista__cabecera"><h1 id="h-codigo" data-t="codigo.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
             <div class="vista__cuerpo pila">
               <div class="codigo-rejilla">
                 <section class="tarjeta" aria-labelledby="codigo-ejercicio">
@@ -198,7 +199,7 @@
 
           <!-- ============ Aula simulada ============ -->
           <section data-vista-de="simulada" aria-labelledby="h-simulada" class="vista__seccion" hidden>
-            <header class="vista__cabecera"><h1 id="h-simulada" data-t="simulada.titulo"></h1></header>
+            <header class="vista__cabecera"><h1 id="h-simulada" data-t="simulada.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
             <div class="vista__cuerpo pila">
               <div id="simulada-cerrada" class="tarjeta vacio">
                 <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg>
@@ -231,12 +232,24 @@
             </div>
           </section>
 
-          <!-- ============ Ayuda ============ -->
+          <!-- ============ Ayuda: el manual (docs/v1/administracion) ============ -->
           <section data-vista-de="ayuda" aria-labelledby="h-ayuda" class="vista__seccion" hidden>
-            <header class="vista__cabecera"><h1 id="h-ayuda" data-t="ayuda.titulo"></h1><p class="suave pequeno" data-t="ayuda.subtitulo"></p></header>
+            <header class="vista__cabecera">
+              <nav class="ancho-completo" id="ayuda-migas" data-t-aria-label="comun.estasEn" hidden><ol class="migas"><li><a href="#ayuda" data-t="ayuda.titulo"></a></li><li id="ayuda-migas-pagina" aria-current="page"></li></ol></nav>
+              <h1 id="h-ayuda" data-t="ayuda.titulo"></h1>
+              <p class="suave pequeno" data-t="ayuda.subtitulo"></p>
+            </header>
             <div class="vista__cuerpo pila">
-              <p class="aviso-en-linea"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="ayuda.enPreparacion"></span></p>
+              <div class="buscador" role="search">
+                <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#buscar"/></svg>
+                <input type="search" id="ayuda-buscar" autocomplete="off" data-t-placeholder="ayuda.buscar" data-t-aria-label="ayuda.buscarEtiqueta">
+              </div>
+              <div id="ayuda-resultados" class="pila" hidden aria-live="polite">
+                <h2 id="ayuda-resultados-titulo"></h2>
+                <ul class="lista-limpia" id="ayuda-resultados-lista"></ul>
+              </div>
               <ul class="indice-manual" id="ayuda-indice"></ul>
+              <article id="ayuda-pagina" class="manual tarjeta tarjeta__cuerpo" hidden></article>
             </div>
           </section>
 
@@ -246,20 +259,18 @@
               <nav class="ancho-completo" data-t-aria-label="comun.estasEn"><ol class="migas"><li><a href="#ayuda" data-t="ayuda.titulo"></a></li><li data-t="ayuda.problemas"></li><li aria-current="page" data-t="falta.titulo"></li></ol></nav>
               <h1 id="h-falta" data-t="falta.titulo"></h1>
               <a class="btn btn--fantasma" href="#alumnos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span data-t="falta.volver"></span></a>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
             </header>
             <div class="vista__cuerpo codigo-rejilla">
               <section class="tarjeta" aria-labelledby="h-falta-pasos">
                 <div class="tarjeta__cabecera"><h2 id="h-falta-pasos" data-t="falta.pasosTitulo"></h2></div>
                 <div class="tarjeta__cuerpo pila">
-                  <ol class="pasos">
-                    <li class="paso paso--hecho"><span class="paso__titulo" data-t="falta.paso1"></span><span class="suave pequeno" id="falta-paso1-texto"></span></li>
-                    <li class="paso paso--actual" aria-current="step"><span class="paso__titulo" data-t="falta.paso2"></span><span class="suave pequeno" data-t="falta.paso2Ayuda"></span>
-                      <div class="grupo-botones" id="falta-respuestas"></div></li>
-                  </ol>
-                  <div id="falta-causa" class="aviso-en-linea aviso-en-linea--advertencia" hidden aria-live="polite">
-                    <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg>
-                    <div class="pila-mini"><strong id="falta-causa-titulo"></strong><span id="falta-causa-texto"></span></div>
+                  <ol class="pasos" id="falta-pasos" aria-live="polite"></ol>
+                  <div class="grupo-botones">
+                    <button type="button" class="btn btn--sm" id="falta-reiniciar" data-t="falta.reiniciar" hidden></button>
+                    <a class="btn btn--sm btn--fantasma" href="#ayuda/solucion-de-problemas/un-alumno-no-aparece" data-t="falta.enManual"></a>
                   </div>
+                  <p class="pequeno suave" data-t="falta.fuente"></p>
                 </div>
               </section>
               <aside class="pila" data-t-aria-label="falta.lateral">
@@ -284,6 +295,19 @@
             </div>
           </section>
         </main>
+
+        <!-- ============ Ayuda contextual: la página del manual de la vista ============ -->
+        <aside class="panel-lateral" id="panel-ayuda" hidden aria-labelledby="h-panel-ayuda">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg>
+            <h2 id="h-panel-ayuda" tabindex="-1"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo manual" id="panel-ayuda-cuerpo"></div>
+          <div class="panel-lateral__pie">
+            <a class="btn" id="panel-ayuda-abrir" href="#ayuda" data-t="ayuda.abrirEnManual"></a>
+          </div>
+        </aside>
 
         <!-- ============ Paneles laterales (acciones sobre la selección) ============ -->
         <aside class="panel-lateral" id="panel-pantalla" hidden aria-labelledby="h-panel-pantalla">
@@ -429,6 +453,14 @@
         <button type="submit" class="btn btn--primario" data-t="nombre.guardar"></button>
       </div>
     </form>
+  </dialog>
+
+  <dialog class="dialogo dialogo--grande" id="diagrama" aria-labelledby="dg-titulo">
+    <div class="dialogo__cuerpo">
+      <div class="fila"><h2 id="dg-titulo" class="crece"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <div id="dg-cuerpo" class="manual"></div>
+    </div>
   </dialog>
 
   <dialog class="dialogo dialogo--grande" id="pantalla-grande" aria-labelledby="pg-titulo">

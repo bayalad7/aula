@@ -107,3 +107,33 @@ func TestCodedKeepsTheFirstCode(t *testing.T) {
 		t.Error("coded(nil) must stay nil")
 	}
 }
+
+// Every error links to an existing section of the manual (the manual itself
+// excepted: if it cannot be read, there is nothing to link to).
+func TestErrorCodesLinkToTheManual(t *testing.T) {
+	app := NewApp(t.TempDir(), nil, nil, &fakeHotkeys{}, quiet)
+	v, err := app.Manual()
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, _, _ := app.loadManual()
+	for _, code := range errorCodes {
+		href, ok := v.Errors[code]
+		if !ok {
+			t.Errorf("error %q has no manual link in errorHelp", code)
+			continue
+		}
+		if code == codeManualFailed {
+			continue
+		}
+		if !m.Resolves(href, "", nil) {
+			t.Errorf("error %q links to %q, which is not a section of the manual", code, href)
+		}
+	}
+	if v.Tree == nil || len(v.Pages) == 0 || len(v.Images) == 0 {
+		t.Errorf("manual view incomplete: %d pages, %d images, tree %v", len(v.Pages), len(v.Images), v.Tree != nil)
+	}
+	if r := app.ManualSearch("firewall"); len(r) == 0 {
+		t.Error("searching the manual for firewall found nothing")
+	}
+}

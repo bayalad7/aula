@@ -47,6 +47,7 @@ const (
 	codeSimGone              = "simGone"
 	codeSimFault             = "simFault"
 	codeSimFailed            = "simFailed"
+	codeManualFailed         = "manualFailed"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -56,7 +57,48 @@ var errorCodes = []string{
 	codeUnknownLanguage, codeSnippetGone, codeDeliveryGone, codeClipboardUnavailable, codeClipboardEmpty,
 	codeClipboardTooLarge, codeNoH264, codeHideConsole, codeAlreadyBroadcasting, codeBroadcastFailed,
 	codeInvalidPower, codeNoPowerTargets, codeInvalidRestriction, codeInvalidApp, codeInvalidDomain,
-	codeSimUnavailable, codeSimClosed, codeSimFull, codeSimCapability, codeSimGone, codeSimFault, codeSimFailed,
+	codeSimUnavailable, codeSimClosed, codeSimFull, codeSimCapability, codeSimGone, codeSimFault, codeSimFailed, codeManualFailed,
+}
+
+// errorHelp is the section of the manual (docs/v1/administracion) that each
+// error links to. TestErrorCodesLinkToTheManual checks every code has one and
+// that it exists.
+var errorHelp = map[string]string{
+	codeNoClass:              "primeros-pasos#abrir-tu-primera-clase",
+	codePortInUse:            "solucion-de-problemas#la-consola-no-abre",
+	codeSiteKey:              "solucion-de-problemas#la-consola-no-abre",
+	codeConsoleKey:           "solucion-de-problemas#la-consola-no-abre",
+	codeCertificate:          "solucion-de-problemas#la-consola-no-abre",
+	codeInvalidChannel:       "solucion-de-problemas#el-alumno-está-en-otro-canal",
+	codeInvalidName:          "ajustes#clase",
+	codeInvalidMode:          "codigo#enviar",
+	codeEmptyCode:            "codigo#enviar",
+	codeTitleTooLong:         "codigo#el-editor",
+	codeCodeTooLarge:         "codigo#enviar",
+	codeInvalidNotice:        "tareas-frecuentes#mandar-un-aviso",
+	codeUnknownLanguage:      "codigo#el-editor",
+	codeSnippetGone:          "codigo#historial-de-la-clase",
+	codeDeliveryGone:         "codigo#últimos-envíos",
+	codeClipboardUnavailable: "solucion-de-problemas#el-portapapeles-no-funciona",
+	codeClipboardEmpty:       "solucion-de-problemas#el-portapapeles-no-funciona",
+	codeClipboardTooLarge:    "solucion-de-problemas#el-portapapeles-no-funciona",
+	codeNoH264:               "solucion-de-problemas#no-puedo-mostrar-mi-pantalla",
+	codeHideConsole:          "solucion-de-problemas#no-puedo-mostrar-mi-pantalla",
+	codeAlreadyBroadcasting:  "solucion-de-problemas#no-puedo-mostrar-mi-pantalla",
+	codeBroadcastFailed:      "solucion-de-problemas#no-puedo-mostrar-mi-pantalla",
+	codeInvalidPower:         "tareas-frecuentes#apagar-o-reiniciar-los-equipos",
+	codeNoPowerTargets:       "tareas-frecuentes#apagar-o-reiniciar-los-equipos",
+	codeInvalidRestriction:   "tareas-frecuentes#bloquear-aplicaciones-o-sitios",
+	codeInvalidApp:           "tareas-frecuentes#bloquear-aplicaciones-o-sitios",
+	codeInvalidDomain:        "tareas-frecuentes#bloquear-aplicaciones-o-sitios",
+	codeSimUnavailable:       "probar-sin-laboratorio#abrir-el-aula-simulada",
+	codeSimClosed:            "probar-sin-laboratorio#abrir-el-aula-simulada",
+	codeSimFull:              "probar-sin-laboratorio#agregar-alumnos-y-simular-fallas",
+	codeSimCapability:        "probar-sin-laboratorio#qué-hacen-los-alumnos-simulados",
+	codeSimGone:              "probar-sin-laboratorio#agregar-alumnos-y-simular-fallas",
+	codeSimFault:             "probar-sin-laboratorio#agregar-alumnos-y-simular-fallas",
+	codeSimFailed:            "probar-sin-laboratorio#abrir-el-aula-simulada",
+	codeManualFailed:         "",
 }
 
 // codedError is an error the UI can explain by its code.

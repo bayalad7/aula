@@ -51,3 +51,18 @@
 /* --- Avisos en línea: variante de error (arranque) --------------------------------------- */
 .aviso-en-linea--error { background: var(--c-error-fondo); color: var(--c-error); }
 .aviso-en-linea pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* --- Manual (Ayuda y ayuda contextual) --------------------------------------------------- */
+.manual { display: grid; gap: var(--e-3); align-content: start; max-width: 52rem; line-height: 1.6; }
+.manual h2 { margin-top: var(--e-4); font-size: var(--t-lg); }
+.manual h3 { margin-top: var(--e-2); }
+.manual ul, .manual ol { margin: 0; padding-left: var(--e-5); display: grid; gap: var(--e-1); }
+.manual__imagen { margin: 0; display: grid; gap: var(--e-1); }
+.manual__imagen img { width: 100%; height: auto; border: 1px solid var(--c-borde); border-radius: var(--r-md); }
+.manual__codigo { margin: 0; padding: var(--e-3); overflow: auto; }
+.diagrama-manual { margin: 0; display: grid; gap: var(--e-2); }
+.diagrama-manual pre { max-height: 20rem; overflow: auto; font-size: var(--t-xs); }
+.panel-lateral .manual h2 { font-size: var(--t-md); }
+.enlace { padding: 0; border: 0; background: none; color: var(--c-enlace); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; text-align: left; }
+.resultado { display: grid; gap: 2px; padding: var(--e-2) 0; border-bottom: 1px solid var(--c-borde); }
+.indice-manual .celda-sub { display: block; }

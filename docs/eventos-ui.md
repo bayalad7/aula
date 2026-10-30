@@ -142,7 +142,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 
 | Evento | Datos | Cuándo |
 |---|---|---|
-| `aula:students` | `Students` | Un agente entra, sale, se queda mudo o confirma código. |
+| `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código o responde a una orden de energía (`power`). |
 | `aula:history` | `History` | Tras cada emisión o reemisión. |
 | `aula:deliveries` | `Deliveries` | Tras cada envío y cada acuse (`code.ack`, `msg.ack`). |
 | `aula:capture` | `Capture` | Al pulsar el atajo global o el botón Capturar. |
@@ -157,8 +157,12 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
                   "osVersion": "…", "agentVersion": "0.1.0", "state": "connected",
                   "capabilities": ["code.view", "msg.show", "screen.thumb"], "canCode": true,
                   "canNotice": true, "canThumb": true, "canBroadcast": true,
+                  "canPower": true,
+                  "power": { "action_id": "c2e1…", "action": "reboot", "force": false,
+                             "status": "postponed",   // sent | countdown | postponed | executing | cancelled | error
+                             "deadline_ms": 1792771530000, "postpones_left": 1 },  // null sin orden
                   "lastCodeAck": "0c9a…", "ackedAt": "10:00:05" } ],
-  "connected": 1, "canCode": 1, "canNotice": 1, "canThumb": 1, "canBroadcast": 1 }
+  "connected": 1, "canCode": 1, "canNotice": 1, "canThumb": 1, "canBroadcast": 1, "canPower": 1 }
 
 // History: fragmentos de la sesión, numerados ("Ejercicio N")
 { "entries": [ { "snippetId": "…", "number": 1, "title": "Factorial", "lang": "python",
@@ -213,6 +217,8 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `SetRestriction({kind, mode, items, hosts})` | `RestrictionsView` / error | `kind` `apps` o `web`; `mode` `deny` o `allow`; `items` como los escribe el profesor (Go quita rutas, `.exe` duplicados, `https://`, `www.` y rutas de URL); `hosts` los alumnos marcados, o vacío para todo el canal. Se reenvía sola a quien se reconecta. |
 | `ClearRestriction(kind)` | `RestrictionsView` | Quita una de las dos. |
 | `ClearAllRestrictions()` | `RestrictionsView` | **Quitar todas las restricciones.** Cerrar la clase o cambiar de canal también las quita. |
+| `PowerAction({action, hosts, delayS, force})` | `PowerResult` / error | **Energía → Apagar / Reiniciar / Cerrar sesión**, después de la confirmación explícita de la interfaz. `action` `shutdown`, `reboot` o `logoff`; `hosts` los marcados o vacío (todo el canal); `delayS` 10–600 (0 = 30 s); `force` sin cuenta regresiva. Solo a quien declaró `power`. `PowerResult` = `{sent, unsupported: [hostname], failed: [hostname]}`. No se reenvía a quien se reconecta. |
+| `PowerCancel(hosts)` | `PowerResult` | **Cancelar.** `power.cancel` a quien tiene una orden en cuenta regresiva (`sent`, `countdown`, `postponed`); `hosts` vacío: todo el canal. |
 
 ### Reglas
 

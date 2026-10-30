@@ -50,6 +50,7 @@
       </div>
       <button type="button" id="screens-open" title="Ver las pantallas de los alumnos en miniatura">Ver pantallas</button>
       <button type="button" id="restr-open" title="Bloquear aplicaciones o filtrar sitios durante la clase">Restricciones</button>
+      <button type="button" id="power-open" title="Apagar, reiniciar o cerrar la sesión de los equipos">Energía</button>
       <div class="bc-controls" title="Muestra uno de tus monitores a los alumnos del canal">
         <select id="bc-display" aria-label="Monitor a transmitir"></select>
         <button type="button" id="bc-toggle">Transmitir mi pantalla</button>
@@ -61,6 +62,11 @@
       <span id="bc-text"></span>
       <span class="bc-note">La ventana de Aula no aparece en la transmisión.</span>
       <button type="button" id="bc-stop">Detener</button>
+    </p>
+    <!-- Pending power orders (docs/protocol.md §5.15). -->
+    <p id="power-band" class="power-band" role="status" aria-live="polite" hidden>
+      <span id="power-band-text"></span>
+      <button type="button" id="power-band-cancel">Cancelar</button>
     </p>
     <p id="key-warning" class="key-warning" hidden>
       Este equipo no tiene la <strong>clave del centro</strong>: la consola usa una clave personal y los
@@ -197,6 +203,54 @@
     <div class="actions"><button type="button" id="restr-clear-all">Quitar todas las restricciones</button></div>
   </section>
 
+  <!-- 7. Power (docs/protocol.md §5.15, docs/privacidad.md rules 26-31). -->
+  <section id="power" class="screens power-panel" hidden aria-label="Energía de los equipos">
+    <header class="screens-head">
+      <h2>Energía de los equipos</h2>
+      <p id="power-support" class="muted"></p>
+      <button type="button" id="power-close">Cerrar</button>
+    </header>
+    <div class="panel power-form">
+      <div class="power-actions">
+        <button type="button" class="power-do" data-action="shutdown">Apagar</button>
+        <button type="button" class="power-do" data-action="reboot">Reiniciar</button>
+        <button type="button" class="power-do" data-action="logoff">Cerrar sesión</button>
+      </div>
+      <fieldset class="restr-target">
+        <legend>Enviar a</legend>
+        <label><input type="radio" name="power-target" value="all" checked> Todo el canal</label>
+        <label><input type="radio" name="power-target" value="marked"> <span id="power-marked">Alumnos marcados (0)</span></label>
+        <span class="muted">Marca alumnos con la casilla de su tarjeta.</span>
+      </fieldset>
+      <label>Cuenta regresiva
+        <select id="power-delay">
+          <option value="30" selected>30 segundos</option>
+          <option value="60">1 minuto</option>
+          <option value="120">2 minutos</option>
+          <option value="300">5 minutos</option>
+        </select>
+      </label>
+      <label class="power-force"><input type="checkbox" id="power-force"> Forzar (sin cuenta regresiva)</label>
+      <p class="muted">
+        Sin forzar, cada alumno ve un aviso con la cuenta regresiva y puede posponerla 5 minutos hasta
+        2 veces; Windows deja que sus aplicaciones pidan guardar. Puedes cancelar mientras cuenta.
+      </p>
+      <div class="actions"><button type="button" id="power-cancel">Cancelar órdenes pendientes</button></div>
+    </div>
+  </section>
+
+  <dialog id="power-confirm" class="power-confirm" aria-labelledby="power-confirm-title">
+    <h2 id="power-confirm-title"></h2>
+    <p id="power-confirm-text"></p>
+    <p id="power-confirm-force" class="power-danger" hidden>
+      Se cerrarán sus aplicaciones <strong>sin guardar</strong>, sin aviso previo.
+    </p>
+    <div class="actions">
+      <button type="button" id="power-confirm-no" autofocus>Volver</button>
+      <button type="button" id="power-confirm-yes" class="danger"></button>
+    </div>
+  </dialog>
+
   <template id="tile-template">
     <li class="tile">
       <button type="button" class="tile-view" title="Ver en detalle">
@@ -210,7 +264,7 @@
   <template id="student-template">
     <li class="student">
       <div class="student-head">
-        <input type="checkbox" class="pick" title="Marcar para aplicarle restricciones">
+        <input type="checkbox" class="pick" title="Marcar para restricciones o energía">
         <span class="state-dot" aria-hidden="true"></span>
         <strong class="host"></strong>
         <span class="state"></span>
@@ -218,6 +272,7 @@
       <div class="muted user"></div>
       <div class="muted os"></div>
       <div class="caps"></div>
+      <div class="power-state" hidden></div>
       <div class="ack"></div>
     </li>
   </template>

@@ -388,7 +388,7 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	main, _ := os.ReadFile(filepath.Join("frontend", "dist", "main.js"))
 	for _, m := range []string{"Setup", "StartClass", "View", "Emit", "Reemit", "ClearScreens", "SendNotice", "CaptureClipboard",
 		"OpenScreens", "CloseScreens", "ViewScreen", "Displays", "StartBroadcast", "StopBroadcast",
-		"SetRestriction", "ClearRestriction", "ClearAllRestrictions"} {
+		"SetRestriction", "ClearRestriction", "ClearAllRestrictions", "PowerAction", "PowerCancel"} {
 		if !strings.Contains(string(main), "api."+m+"(") {
 			t.Errorf("main.js does not call App.%s", m)
 		}

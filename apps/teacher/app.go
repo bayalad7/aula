@@ -14,6 +14,7 @@ import (
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
+	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/security"
@@ -67,6 +68,7 @@ type App struct {
 	bcClass          classroom // the class the broadcast goes to; guarded by mu
 
 	restr *policy.ClassPolicy // class restrictions: who has what (D-017)
+	power *power.Tracker      // power orders and each agent's answer (§5.15)
 
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
 	// with respect to acks, so a fast agent's ack is never counted as unknown.
@@ -88,6 +90,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	}
 	a.broadcastUDPPort = a.port + 1
 	a.restr = policy.NewClassPolicy()
+	a.power = &power.Tracker{Now: func() time.Time { return a.now() }}
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	return a
 }
@@ -181,7 +184,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	}
 	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
-		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck}, a.log)
+		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -189,6 +192,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	a.class, a.info, a.startErr = class, info, ""
 	a.history, a.deliveries = &codedist.History{}, &codedist.Deliveries{}
 	a.mu.Unlock()
+	a.power.Reset() // orders of another class are not followed
 
 	s := loadSettings(a.dir)
 	s.remember(channel, consoleName)
@@ -500,7 +504,7 @@ func studentsOf(list []session.Session) Students {
 			CanCode: s.Can(protocol.CapCodeView), CanNotice: s.Can(protocol.CapMsgShow),
 			CanThumb: s.Can(protocol.CapScreenThumb), CanBroadcast: s.Can(protocol.CapScreenBroadcast),
 			CanAppBlock: s.Can(protocol.CapAppBlock), CanWebFilter: s.Can(protocol.CapWebFilter),
-			LastCodeAck: s.LastCodeAck,
+			CanPower: s.Can(protocol.CapPower), LastCodeAck: s.LastCodeAck,
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))
@@ -528,6 +532,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanWebFilter {
 				out.CanWebFilter++
+			}
+			if st.CanPower {
+				out.CanPower++
 			}
 		}
 		out.Students = append(out.Students, st)

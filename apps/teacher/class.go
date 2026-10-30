@@ -40,6 +40,8 @@ type classHooks struct {
 	onBroadcast func(sessionID string, env protocol.Envelope)
 	// onPolicyAck receives app.block.ack and web.filter.ack.
 	onPolicyAck func(sessionID string, p protocol.Payload)
+	// onPower receives power.ack and the errors (which may answer an order).
+	onPower func(sessionID string, env protocol.Envelope)
 }
 
 type classConfig struct {
@@ -145,9 +147,16 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onPolicyAck != nil {
 					hooks.onPolicyAck(conn.ID(), env.Payload)
 				}
+			case protocol.PowerAck:
+				if hooks.onPower != nil {
+					hooks.onPower(conn.ID(), env)
+				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {
 					hooks.onBroadcast(conn.ID(), env)
+				}
+				if _, isErr := env.Payload.(protocol.ErrorPayload); isErr && hooks.onPower != nil {
+					hooks.onPower(conn.ID(), env)
 				}
 			}
 		},

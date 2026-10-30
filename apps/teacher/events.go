@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/bayalad7/aula/internal/codedist"
+	"github.com/bayalad7/aula/internal/power"
 )
 
 // UI contract between this Go backend and frontend/dist (documented in
@@ -72,10 +73,13 @@ type Student struct {
 	CanBroadcast bool     `json:"canBroadcast"` // screen.broadcast (Windows agents)
 	CanAppBlock  bool     `json:"canAppBlock"`  // app.block (Windows service agents)
 	CanWebFilter bool     `json:"canWebFilter"` // web.filter (Windows service agents)
-	AppsActive   bool     `json:"appsActive"`   // acknowledged the class's app policy
-	WebActive    bool     `json:"webActive"`    // acknowledged the class's web filter
-	LastCodeAck  string   `json:"lastCodeAck"`  // snippet_id; "" after a clear
-	AckedAt      string   `json:"ackedAt"`      // "" if nothing acknowledged yet
+	CanPower     bool     `json:"canPower"`     // power (Windows agents)
+	// Power is the last power order sent to this session and its state.
+	Power       *power.Entry `json:"power"`
+	AppsActive  bool         `json:"appsActive"`  // acknowledged the class's app policy
+	WebActive   bool         `json:"webActive"`   // acknowledged the class's web filter
+	LastCodeAck string       `json:"lastCodeAck"` // snippet_id; "" after a clear
+	AckedAt     string       `json:"ackedAt"`     // "" if nothing acknowledged yet
 }
 
 // Students is the list for the channel plus the counts that enable actions.
@@ -90,6 +94,7 @@ type Students struct {
 	// CanAppBlock and CanWebFilter count connected agents with each.
 	CanAppBlock  int `json:"canAppBlock"`
 	CanWebFilter int `json:"canWebFilter"`
+	CanPower     int `json:"canPower"` // connected agents with power
 }
 
 // DisplayInfo is a monitor the teacher can broadcast.

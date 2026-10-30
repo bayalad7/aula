@@ -15,13 +15,15 @@
     ["kotlin", "Kotlin"], ["plaintext", "Texto"],
   ];
   const CAP_NAMES = { "code.view": "código", "msg.show": "avisos", "screen.thumb": "pantalla",
-    "screen.broadcast": "ve tu pantalla", "app.block": "bloqueo de apps", "web.filter": "filtro web" };
+    "screen.broadcast": "ve tu pantalla", "app.block": "bloqueo de apps", "web.filter": "filtro web",
+    "power": "energía" };
 
   let editor = null;          // Monaco instance
   let students = { connected: 0, canCode: 0, canNotice: 0, students: [] };
   let deliveries = [];
   let lastDeliveryId = "";
   let restrictionsReady = false; // set once the restrictions code below has run
+  let powerReady = false;        // the same for the power code
 
   // --- Monaco -----------------------------------------------------------------------
   function initEditor() {
@@ -167,11 +169,14 @@
         { className: "cap locked", textContent: "🔒 sitios" }));
       const pick = li.querySelector(".pick");
       pick.checked = marked.has(st.hostname);
-      pick.disabled = !st.canAppBlock && !st.canWebFilter;
+      pick.disabled = !st.canAppBlock && !st.canWebFilter && !st.canPower;
       pick.addEventListener("change", () => {
         if (pick.checked) marked.add(st.hostname); else marked.delete(st.hostname);
         updateMarked();
       });
+      const ps = li.querySelector(".power-state");
+      ps.hidden = !st.power;
+      if (st.power) ps.dataset.power = JSON.stringify(st.power);
       li.querySelector(".ack").textContent = st.ackedAt
         ? (st.lastCodeAck ? "✓ código recibido " : "✓ pantalla limpia ") + st.ackedAt : "";
       return li;
@@ -179,6 +184,7 @@
     updateActions();
     renderTiles();
     if (typeof renderRestrictions === "function" && restrictionsReady) renderRestrictions(restrictions);
+    if (powerReady) renderPower();
   }
 
   // Actions are enabled only when someone can receive them.
@@ -515,7 +521,122 @@
   });
   function updateMarked() {
     $("restr-marked").textContent = "Alumnos marcados (" + marked.size + ")";
+    $("power-marked").textContent = "Alumnos marcados (" + marked.size + ")";
   }
+
+  // --- Power (docs/protocol.md §5.15, docs/privacidad.md rules 26-31) -----------------
+  // Every order goes through an explicit confirmation. The cards follow each
+  // agent's power.ack; the countdown is drawn from its deadline.
+  const POWER = {
+    shutdown: { verb: "Apagar", noun: "apagado", doing: "apagándose" },
+    reboot: { verb: "Reiniciar", noun: "reinicio", doing: "reiniciándose" },
+    logoff: { verb: "Cerrar sesión de", noun: "cierre de sesión", doing: "cerrando sesión" },
+  };
+  let powerAsk = null;
+
+  function mmss(ms) {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  function powerText(p) {
+    const n = POWER[p.action] || POWER.shutdown;
+    const forced = p.force ? " (forzado)" : "";
+    switch (p.status) {
+      case "sent": return "⏻ " + n.noun + " enviado…" + forced;
+      case "countdown":
+      case "postponed": {
+        const used = 2 - p.postpones_left;
+        return "⏻ " + n.noun + " en " + mmss(p.deadline_ms - Date.now()) + (used ? " · pospuesto (" + used + "/2)" : "");
+      }
+      case "executing": return "⏻ " + n.doing + "…" + forced;
+      case "cancelled": return "⏻ " + n.noun + " cancelado";
+      default: return "⏻ no se pudo: " + n.noun;
+    }
+  }
+
+  function pendingPower() {
+    return students.students.filter((s) => s.state === "connected" && s.power &&
+      ["sent", "countdown", "postponed"].includes(s.power.status));
+  }
+
+  function renderPower() {
+    for (const el of document.querySelectorAll(".power-state[data-power]")) {
+      el.textContent = powerText(JSON.parse(el.dataset.power));
+    }
+    const pending = pendingPower();
+    $("power-band").hidden = pending.length === 0;
+    $("power-band-text").textContent = pending.length === 0 ? "" :
+      "⏻ Órdenes de energía pendientes en " + pending.length + (pending.length === 1 ? " equipo" : " equipos");
+    $("power-cancel").disabled = pending.length === 0;
+    const can = students.canPower || 0;
+    $("power-support").textContent = can + " de " + students.connected + " alumnos conectados pueden recibirlas (Windows).";
+    for (const b of document.querySelectorAll(".power-do")) b.disabled = can === 0;
+  }
+  setInterval(() => { if (pendingPower().length) renderPower(); }, 1000);
+
+  function powerTargets() {
+    const target = document.querySelector('input[name="power-target"]:checked').value;
+    const hosts = target === "marked" ? [...marked] : [];
+    const want = new Set(hosts.map((h) => h.toLowerCase()));
+    const list = students.students.filter((s) => s.state === "connected" && (!hosts.length || want.has(s.hostname.toLowerCase())));
+    return { target, hosts, able: list.filter((s) => s.canPower).length, other: list.filter((s) => !s.canPower).length };
+  }
+
+  function askPower(action) {
+    const t = powerTargets();
+    if (t.target === "marked" && t.hosts.length === 0) {
+      toast("Marca al menos un alumno o elige «Todo el canal».", "error");
+      return;
+    }
+    if (t.able === 0) {
+      toast("Ninguno de esos equipos puede recibir órdenes de energía.", "error");
+      return;
+    }
+    const force = $("power-force").checked;
+    const delay = Number($("power-delay").value);
+    const n = POWER[action];
+    const what = t.able + (t.able === 1 ? " equipo" : " equipos");
+    const scope = t.target === "marked" ? "marcados" : "del canal " + $("channel-input").value;
+    $("power-confirm-title").textContent = "¿" + n.verb + " " + what + " " + scope + "?";
+    $("power-confirm-text").textContent = (force
+      ? "Se ejecutará de inmediato, sin cuenta regresiva."
+      : "Los alumnos verán un aviso con una cuenta de " + mmss(delay * 1000) + " y podrán posponerla hasta 2 veces.") +
+      (t.other ? " " + t.other + " equipo(s) no lo soportan y no la recibirán." : "");
+    $("power-confirm-force").hidden = !force;
+    $("power-confirm-yes").textContent = n.verb + " " + what;
+    powerAsk = { action, hosts: t.hosts, delayS: delay, force };
+    $("power-confirm").showModal();
+    $("power-confirm-no").focus();
+  }
+
+  $("power-confirm-no").addEventListener("click", () => $("power-confirm").close());
+  $("power-confirm").addEventListener("close", () => { powerAsk = null; });
+  $("power-confirm-yes").addEventListener("click", () => {
+    const req = powerAsk;
+    $("power-confirm").close();
+    if (!req) return;
+    api.PowerAction(req).then((r) => {
+      let msg = "Orden enviada a " + r.sent + (r.sent === 1 ? " equipo." : " equipos.");
+      if (r.unsupported.length) msg += " No la soportan: " + r.unsupported.join(", ") + ".";
+      if (r.failed.length) msg += " No llegó a: " + r.failed.join(", ") + ".";
+      toast(msg, r.failed.length ? "error" : undefined);
+    }, (err) => toast(String(err), "error"));
+  });
+  for (const b of document.querySelectorAll(".power-do")) {
+    b.addEventListener("click", () => askPower(b.dataset.action));
+  }
+  function cancelPower(hosts) {
+    api.PowerCancel(hosts).then((r) => toast("Cancelación enviada a " + r.sent + " equipo(s)."));
+  }
+  $("power-cancel").addEventListener("click", () => {
+    const t = powerTargets();
+    cancelPower(t.target === "marked" ? t.hosts : []);
+  });
+  $("power-band-cancel").addEventListener("click", () => cancelPower([]));
+  $("power-open").addEventListener("click", () => { $("power").hidden = false; renderPower(); });
+  $("power-close").addEventListener("click", () => { $("power").hidden = true; });
+  powerReady = true;
 
   restrictionsReady = true;
   rt.EventsOn(ev.RESTRICTIONS, renderRestrictions);

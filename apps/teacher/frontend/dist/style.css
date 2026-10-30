@@ -259,6 +259,22 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   font-size: 0.9rem;
 }
 
+/* Power (docs/protocol.md §5.15) */
+.power-band { display: flex; align-items: center; gap: 1rem; margin: 0; padding: 0.5rem 1rem; background: var(--error-bg); color: var(--error); font-weight: 600; }
+.power-band span { flex: 1; }
+.power-band[hidden] { display: none; }
+.power-form { display: flex; flex-direction: column; gap: 0.7rem; max-width: 46rem; }
+.power-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.power-force { font-weight: 600; color: var(--error); }
+.power-state { margin-top: 0.2rem; font-size: 0.9rem; color: var(--error); font-weight: 600; }
+.power-state[hidden] { display: none; }
+.power-confirm { max-width: 32rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--fg); }
+.power-confirm::backdrop { background: rgb(0 0 0 / 0.45); }
+.power-confirm h2 { margin-top: 0; font-size: 1.15rem; }
+.power-danger { padding: 0.5rem 0.7rem; border-radius: 6px; background: var(--error-bg); color: var(--error); }
+.power-danger[hidden] { display: none; }
+button.danger { background: var(--error); border-color: var(--error); color: #fff; font-weight: 600; }
+
 /* Screens view (thumbnails) */
 .screens {
   position: fixed;

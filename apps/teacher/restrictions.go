@@ -121,6 +121,9 @@ func (a *App) studentsOf(list []session.Session) Students {
 		s := &st.Students[i]
 		s.AppsActive = a.restr.Active(s.ID, policy.KindApps)
 		s.WebActive = a.restr.Active(s.ID, policy.KindWeb)
+		if e, ok := a.power.Get(s.ID); ok {
+			s.Power = &e
+		}
 	}
 	return st
 }

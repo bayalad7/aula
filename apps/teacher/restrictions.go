@@ -138,6 +138,13 @@ func (a *App) studentsIn(class classroom) Students {
 	st.CanCode += sims.CanCode
 	st.CanNotice += sims.CanNotice
 	st.CanThumb += sims.CanThumb
+	present := map[string]bool{}
+	for i := range st.Students {
+		s := &st.Students[i]
+		present[s.ID] = true
+		s.LastError = a.agentErrs.get(s.ID)
+	}
+	a.agentErrs.keep(present)
 	return st
 }
 

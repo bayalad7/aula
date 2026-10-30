@@ -40,6 +40,23 @@ type Certificate struct {
 // Fingerprint returns the "sha256:<hex>" form announced in mDNS.
 func (c Certificate) Fingerprint() string { return FormatFingerprint(c.SHA256) }
 
+// NotAfter returns when the certificate expires, or the zero time if it
+// cannot be read. It is informative: agents pin the fingerprint and do not
+// check the dates (ClientTLS).
+func (c Certificate) NotAfter() time.Time {
+	if c.TLS.Leaf != nil {
+		return c.TLS.Leaf.NotAfter
+	}
+	if len(c.TLS.Certificate) == 0 {
+		return time.Time{}
+	}
+	leaf, err := x509.ParseCertificate(c.TLS.Certificate[0])
+	if err != nil {
+		return time.Time{}
+	}
+	return leaf.NotAfter
+}
+
 // FormatFingerprint renders a certificate hash as "sha256:<64 hex>".
 func FormatFingerprint(sum [32]byte) string { return fingerprintPrefix + hex.EncodeToString(sum[:]) }
 

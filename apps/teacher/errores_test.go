@@ -1,6 +1,9 @@
 package main
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"net"
 	"os"
 	"path/filepath"
@@ -135,5 +138,57 @@ func TestErrorCodesLinkToTheManual(t *testing.T) {
 	}
 	if r := app.ManualSearch("firewall"); len(r) == 0 {
 		t.Error("searching the manual for firewall found nothing")
+	}
+}
+
+// Every error code of internal/protocol (read from its source, so a new one
+// cannot be forgotten) has its texts and a manual section.
+func TestAgentErrorCodesLinkToTheManual(t *testing.T) {
+	src := filepath.Join("..", "..", "internal", "protocol", "errors.go")
+	f, err := parser.ParseFile(token.NewFileSet(), src, nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var codes []protocol.ErrorCode
+	for _, d := range f.Decls {
+		g, ok := d.(*ast.GenDecl)
+		if !ok || g.Tok != token.CONST {
+			continue
+		}
+		for _, spec := range g.Specs {
+			vs := spec.(*ast.ValueSpec)
+			if id, ok := vs.Type.(*ast.Ident); !ok || id.Name != "ErrorCode" {
+				continue
+			}
+			for _, v := range vs.Values {
+				lit := v.(*ast.BasicLit)
+				code, _ := strconv.Unquote(lit.Value)
+				codes = append(codes, protocol.ErrorCode(code))
+			}
+		}
+	}
+	if len(codes) < 7 {
+		t.Fatalf("found %d protocol error codes in %s; did the declaration change?", len(codes), src)
+	}
+	app := NewApp(t.TempDir(), nil, nil, &fakeHotkeys{}, quiet)
+	m, _, err := app.loadManual()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, code := range codes {
+		href, ok := agentErrorHelp[code]
+		if !ok {
+			t.Errorf("protocol error %q has no manual link in agentErrorHelp", code)
+			continue
+		}
+		if !m.Resolves(href, "", nil) {
+			t.Errorf("protocol error %q links to %q, which is not a section of the manual", code, href)
+		}
+	}
+	if len(agentErrorHelp) != len(codes) {
+		t.Errorf("agentErrorHelp has %d codes, internal/protocol %d", len(agentErrorHelp), len(codes))
+	}
+	if got := agentErrorKey("unsupported_capability"); got != "unsupportedCapability" {
+		t.Errorf("agentErrorKey = %q", got)
 	}
 }

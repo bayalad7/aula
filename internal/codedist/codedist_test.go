@@ -139,3 +139,34 @@ func TestDeliveriesResent(t *testing.T) {
 		t.Errorf("Get = %+v, %v", g, ok)
 	}
 }
+
+// An error instead of the ack takes the session out of Pending and into
+// Rejected with its code; a resend makes it pending again.
+func TestDeliveriesReject(t *testing.T) {
+	var d Deliveries
+	del := d.Start("code", "Ejercicio 3", map[string]string{"pc1": "r1", "pc2": "r2"}, 0, 0, time.Now())
+	d.AddSimulated(del.ID, map[string]string{"sim1": "s1"})
+	got, ok := d.Reject("r2", "unsupported_capability")
+	if !ok || len(got.Rejected) != 1 || got.Rejected[0] != (Rejection{Session: "pc2", Code: "unsupported_capability"}) {
+		t.Fatalf("Reject = %+v, %v", got, ok)
+	}
+	if len(got.Pending) != 2 || got.Pending[0] != "pc1" || got.Pending[1] != "sim1" {
+		t.Errorf("pending = %v, want [pc1 sim1]", got.Pending)
+	}
+	if _, again := d.Reject("r2", "internal"); again {
+		t.Error("a settled envelope was rejected twice")
+	}
+	if _, late := d.Ack("r2"); late {
+		t.Error("the ack of a rejected envelope counted")
+	}
+	d.Reject("s1", "internal")
+	got, _ = d.Resent(del.ID, map[string]string{"pc2": "r2b", "sim1": "s1b"})
+	if len(got.Rejected) != 0 || len(got.Pending) != 3 {
+		t.Fatalf("after resend = %+v, want nobody rejected and 3 pending", got)
+	}
+	d.Ack("r2b")
+	got, _ = d.Ack("s1b")
+	if got.Acked != 1 || got.SimAcked != 1 {
+		t.Errorf("acks after resend = %+v, want 1 real and 1 simulated", got)
+	}
+}

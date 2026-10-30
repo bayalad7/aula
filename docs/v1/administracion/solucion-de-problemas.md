@@ -67,3 +67,17 @@ franja «Este equipo no tiene la clave del centro», pide que la instalen en tu 
 Si «Pegar del portapapeles» dice que no hay texto copiado, copia el código con Ctrl+C y vuelve a
 intentarlo. Si dice que no puede leer el portapapeles, pega el código en el editor con Ctrl+V.
 Aula envía hasta 256 KiB por envío.
+
+## El equipo del alumno no pudo hacerlo
+
+A veces el equipo de un alumno recibe lo que mandaste pero contesta que no pudo hacerlo. La
+consola lo muestra en dos lugares: en **Código**, dentro de «Quién falta» del envío, y en
+**Alumnos**, en la columna Notas de ese alumno (por ejemplo, «No pudo: versión distinta»).
+
+| Lo que dice | Qué hacer |
+|---|---|
+| **No puede hacer eso** | Ese equipo no tiene esa función (por ejemplo, mostrar su pantalla fuera de Windows). Revisa en su ficha qué puede hacer: [Qué puede hacer cada equipo](conceptos#qué-puede-hacer-cada-equipo). |
+| **Versión distinta** o **No entendió la orden** | Aula del alumno y Aula Consola son de versiones que no se entienden. Pide al responsable de TI que instale en los dos la misma versión. |
+| **Envío demasiado grande** | Manda el código en partes más pequeñas. |
+| **No confía en esta consola** | Ve [La clave no coincide](#la-clave-no-coincide). |
+| **Falló en el equipo del alumno** | Pulsa **Reenviar a los que faltan**: también reintenta a quien falló. Si se repite, reinicia Aula en ese equipo o el equipo. |

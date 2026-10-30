@@ -42,6 +42,8 @@ type classHooks struct {
 	onPolicyAck func(sessionID string, p protocol.Payload)
 	// onPower receives power.ack and the errors (which may answer an order).
 	onPower func(sessionID string, env protocol.Envelope)
+	// onError receives every error message of a student, real or simulated.
+	onError func(sessionID string, p protocol.ErrorPayload)
 }
 
 type classConfig struct {
@@ -242,6 +244,10 @@ func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, prot
 			if h.onFrame != nil {
 				h.onFrame(conn.ID(), p)
 			}
+		case protocol.ErrorPayload:
+			if h.onError != nil {
+				h.onError(conn.ID(), p)
+			}
 		}
 	}
 }
@@ -293,8 +299,13 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onBroadcast != nil {
 					hooks.onBroadcast(conn.ID(), env)
 				}
-				if _, isErr := env.Payload.(protocol.ErrorPayload); isErr && hooks.onPower != nil {
-					hooks.onPower(conn.ID(), env)
+				if p, isErr := env.Payload.(protocol.ErrorPayload); isErr {
+					if hooks.onPower != nil {
+						hooks.onPower(conn.ID(), env)
+					}
+					if hooks.onError != nil {
+						hooks.onError(conn.ID(), p)
+					}
 				}
 			}
 		},
@@ -326,12 +337,16 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 			log.Warn("mdns announce unavailable", "err", err)
 		}
 	}()
-	return l, ClassInfo{
+	info := ClassInfo{
 		Channel:     cfg.Channel,
 		ConsoleName: cfg.ConsoleName,
 		PublicKey:   security.EncodePublicKey(id.Public()),
 		Fingerprint: security.KeyFingerprint(id.Public()),
 		KeySource:   source,
 		Port:        port,
-	}, nil
+	}
+	if t := cert.NotAfter(); !t.IsZero() {
+		info.CertExpires = t.Format("2006-01-02")
+	}
+	return l, info, nil
 }

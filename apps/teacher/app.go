@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -72,6 +73,8 @@ type App struct {
 	restr *policy.ClassPolicy // class restrictions: who has what (D-017)
 	power *power.Tracker      // power orders and each agent's answer (§5.15)
 	sim   *simclass.Class     // the aula simulada's students; nil while closed (guarded by mu)
+
+	agentErrs agentErrors // the last error each student reported
 
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
 	// with respect to acks, so a fast agent's ack is never counted as unknown.
@@ -187,7 +190,8 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	}
 	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
-		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage}, a.log)
+		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage,
+		onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -340,7 +344,11 @@ func (a *App) Resend(deliveryID string) (codedist.Delivery, error) {
 	defer cancel()
 	a.sendMu.Lock()
 	sent := map[string]string{}
-	for _, sessionID := range d.Pending {
+	again := slices.Clone(d.Pending) // who did not confirm, and who could not do it
+	for _, r := range d.Rejected {
+		again = append(again, r.Session)
+	}
+	for _, sessionID := range again {
 		if envID, err := class.Send(ctx, sessionID, p); err == nil {
 			sent[sessionID] = envID
 		}
@@ -574,6 +582,9 @@ func studentsOf(list []session.Session) Students {
 		}
 		if !s.LastCodeAckAt.IsZero() {
 			st.AckedAt = s.LastCodeAckAt.Format("15:04:05")
+		}
+		if !s.ConnectedAt.IsZero() {
+			st.ConnectedAt = s.ConnectedAt.Format("15:04")
 		}
 		if s.State == session.StateConnected {
 			st.State = "connected"

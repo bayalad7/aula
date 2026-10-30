@@ -58,6 +58,9 @@ type ClassInfo struct {
 	Fingerprint string `json:"fingerprint"`
 	KeySource   string `json:"keySource"` // "centro" (site key) or "personal" (no site key on this machine)
 	Port        int    `json:"port"`
+	// CertExpires is when the connection certificate expires ("2006-01-02";
+	// "" if unknown). Informative: agents pin it and ignore its dates.
+	CertExpires string `json:"certExpires"`
 }
 
 // Student is one agent as shown in its card.
@@ -86,6 +89,10 @@ type Student struct {
 	// Simulated marks a student of the aula simulada: shown with its badge
 	// and never counted as real.
 	Simulated bool `json:"simulated"`
+	// ConnectedAt is when this session opened ("15:04"); LastError the last
+	// protocol error it reported, nil if none.
+	ConnectedAt string      `json:"connectedAt"`
+	LastError   *AgentError `json:"lastError"`
 }
 
 // Students is the list for the channel plus the counts that enable actions.

@@ -6,6 +6,7 @@ import (
 
 	"github.com/bayalad7/aula/docs"
 	"github.com/bayalad7/aula/internal/manual"
+	"github.com/bayalad7/aula/internal/protocol"
 )
 
 // --- Manual (docs/v1/administracion, embedded from the docs package) ------------------
@@ -18,9 +19,11 @@ const diagnosticDiagram = "12-diagnostico-conexion"
 type ManualView struct {
 	Pages    []manual.Page             `json:"pages"`
 	Diagrams map[string]manual.Diagram `json:"diagrams"`
-	Images   map[string]string         `json:"images"`    // file name → data: URI
-	Errors   map[string]string         `json:"errors"`    // error code → manual link
-	Tree     *manual.Tree              `json:"diagnosis"` // «¿Falta un alumno?»; nil if it could not be read
+	Images   map[string]string         `json:"images"` // file name → data: URI
+	Errors   map[string]string         `json:"errors"` // error code → manual link
+	// AgentErrors links the protocol error codes the students send.
+	AgentErrors map[protocol.ErrorCode]string `json:"agentErrors"`
+	Tree        *manual.Tree                  `json:"diagnosis"` // «¿Falta un alumno?»; nil if it could not be read
 }
 
 var (
@@ -38,7 +41,8 @@ func (a *App) loadManual() (*manual.Manual, ManualView, error) {
 			manualErr = err
 			return
 		}
-		v := ManualView{Pages: m.Pages, Diagrams: m.Diagrams, Images: map[string]string{}, Errors: errorHelp}
+		v := ManualView{Pages: m.Pages, Diagrams: m.Diagrams, Images: map[string]string{}, Errors: errorHelp,
+			AgentErrors: agentErrorHelp}
 		for name, b := range m.Images {
 			v.Images[name] = "data:image/png;base64," + base64.StdEncoding.EncodeToString(b)
 		}

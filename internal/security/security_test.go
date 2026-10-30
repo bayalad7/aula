@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bayalad7/aula/internal/platform"
 )
@@ -142,6 +143,12 @@ func TestCertificateIsPersisted(t *testing.T) {
 	}
 	if first.SHA256 != again.SHA256 {
 		t.Fatal("certificate regenerated on second start")
+	}
+	if exp := again.NotAfter(); exp.Before(time.Now().AddDate(9, 0, 0)) {
+		t.Errorf("NotAfter = %v, want about 10 years from now", exp)
+	}
+	if !(Certificate{}).NotAfter().IsZero() {
+		t.Error("NotAfter of an empty certificate is not zero")
 	}
 	sum, err := ParseFingerprint(first.Fingerprint())
 	if err != nil || sum != first.SHA256 {

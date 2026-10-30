@@ -3,6 +3,7 @@ package codedist
 import (
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -25,15 +26,31 @@ type Delivery struct {
 	SimAcked int `json:"simAcked"`
 	// Pending lists the sessions (real or simulated) that have not
 	// acknowledged it yet, so the console can say who is missing.
-	Pending []string  `json:"pending"`
-	At      time.Time `json:"at"`
+	Pending []string `json:"pending"`
+	// Rejected lists the sessions that answered with a protocol error
+	// instead of the ack, with its code. They are retried by a resend.
+	Rejected []Rejection `json:"rejected"`
+	At       time.Time   `json:"at"`
 
-	pending map[string]pendingRef // envelope ID → who still owes the ack
+	pending  map[string]pendingRef  // envelope ID → who still owes the ack
+	rejected map[string]rejectedRef // session → its error
+}
+
+// Rejection is a session that could not process a delivery.
+type Rejection struct {
+	Session string `json:"session"`
+	Code    string `json:"code"` // protocol error code, e.g. "unsupported_capability"
 }
 
 // pendingRef is an envelope awaiting its ack.
 type pendingRef struct {
 	session   string
+	simulated bool
+}
+
+// rejectedRef is a session that answered with an error.
+type rejectedRef struct {
+	code      string
 	simulated bool
 }
 
@@ -58,6 +75,7 @@ func (d *Deliveries) Start(kind, label string, sent map[string]string, failed, n
 	del := &Delivery{
 		ID: "d" + strconv.Itoa(d.seq), Kind: kind, Label: label, Sent: len(sent),
 		Failed: failed, NoCapability: noCapability, At: now, pending: map[string]pendingRef{},
+		rejected: map[string]rejectedRef{},
 	}
 	for session, env := range sent {
 		del.pending[env] = pendingRef{session: session}
@@ -93,6 +111,23 @@ func (d *Deliveries) Ack(refID string) (Delivery, bool) {
 	return del.snapshot(), true
 }
 
+// Reject records that the envelope refID was answered with a protocol error
+// (code) instead of its ack: the session stops being pending and is listed in
+// Rejected. Unknown or already settled references return false.
+func (d *Deliveries) Reject(refID, code string) (Delivery, bool) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	del, ok := d.byRef[refID]
+	if !ok {
+		return Delivery{}, false
+	}
+	ref := del.pending[refID]
+	delete(d.byRef, refID)
+	delete(del.pending, refID)
+	del.rejected[ref.session] = rejectedRef{code: code, simulated: ref.simulated}
+	return del.snapshot(), true
+}
+
 // AddSimulated records that the delivery with ID id also went to simulated
 // students (session → envelope ID). Their acks count in SimAcked.
 func (d *Deliveries) AddSimulated(id string, sent map[string]string) (Delivery, bool) {
@@ -111,9 +146,10 @@ func (d *Deliveries) AddSimulated(id string, sent map[string]string) (Delivery, 
 }
 
 // Resent records that the delivery was sent again to some of the sessions
-// that had not acknowledged it (session → new envelope ID). The old envelopes
-// of those sessions stop counting, so a late ack of the first send is not
-// counted twice; sessions not still pending are ignored.
+// that had not acknowledged it or had rejected it (session → new envelope
+// ID). The old envelopes of those sessions stop counting, so a late ack of
+// the first send is not counted twice; a rejected session is pending again.
+// Other sessions are ignored.
 func (d *Deliveries) Resent(id string, sent map[string]string) (Delivery, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -129,6 +165,15 @@ func (d *Deliveries) Resent(id string, sent map[string]string) (Delivery, bool) 
 		delete(del.pending, env)
 		delete(d.byRef, env)
 		del.pending[newEnv] = ref
+		d.byRef[newEnv] = del
+	}
+	for session, rej := range del.rejected {
+		newEnv, again := sent[session]
+		if !again {
+			continue
+		}
+		delete(del.rejected, session)
+		del.pending[newEnv] = pendingRef{session: session, simulated: rej.simulated}
 		d.byRef[newEnv] = del
 	}
 	return del.snapshot(), true
@@ -173,5 +218,11 @@ func (del *Delivery) snapshot() Delivery {
 		c.Pending = append(c.Pending, ref.session)
 	}
 	slices.Sort(c.Pending)
+	c.rejected = nil
+	c.Rejected = make([]Rejection, 0, len(del.rejected))
+	for session, rej := range del.rejected {
+		c.Rejected = append(c.Rejected, Rejection{Session: session, Code: rej.code})
+	}
+	slices.SortFunc(c.Rejected, func(a, b Rejection) int { return strings.Compare(a.Session, b.Session) })
 	return c
 }

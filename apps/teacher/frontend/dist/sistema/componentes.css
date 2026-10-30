@@ -535,7 +535,7 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
 .ajuste { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--e-1) var(--e-4); align-items: center; padding-bottom: var(--e-4); border-bottom: 1px solid var(--c-borde); }
 .ajuste:last-child { border-bottom: 0; }
 .ajuste__texto { display: grid; gap: 2px; }
-.ajuste__texto span { font-size: var(--t-sm); color: var(--c-texto-suave); }
+.ajuste__texto > span:not(.con-info) { font-size: var(--t-sm); color: var(--c-texto-suave); }
 .ajuste > .bloque-codigo, .ajuste > .campo { grid-column: 1 / -1; }
 @media (max-width: 760px) {
   .modal-ajustes[open] { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
@@ -598,3 +598,20 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
 
 /* Control compacto (p. ej., un select dentro de una fila de tabla). */
 .control--sm { width: auto; min-height: 1.875rem; padding: 0 var(--e-2); font-size: var(--t-sm); }
+
+/* --- Información junto a un campo técnico (toggletip) ----------------------------------- */
+/* <span class="con-info"><strong>Huella</strong><button class="info-boton" data-info="x">…</button></span>
+   El botón abre .info-globo (su hermano siguiente) con la explicación y un enlace al manual. */
+.con-info { position: relative; display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--e-1); }
+.info-boton {
+  display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; padding: 0;
+  border: 0; border-radius: var(--r-pill); background: none; color: var(--c-texto-suave); cursor: pointer;
+}
+.info-boton .icono { width: 1rem; height: 1rem; }
+.info-boton:hover, .info-boton[aria-expanded="true"] { background: var(--c-info-fondo); color: var(--c-info); }
+.info-globo {
+  flex-basis: 100%; display: grid; gap: var(--e-1); max-width: 28rem; padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--c-borde); border-radius: var(--r-md); background: var(--c-superficie);
+  box-shadow: var(--sombra-2); color: var(--c-texto); font-size: var(--t-sm); font-weight: normal; line-height: 1.5;
+}
+.info-globo[hidden] { display: none; }

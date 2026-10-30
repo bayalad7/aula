@@ -119,6 +119,13 @@
     toast("error", m.titulo, m.texto, m.detalle, m.codigo && manual ? manual.errors[m.codigo] : "");
   };
 
+  // Errores que manda el equipo del alumno (códigos del protocolo, agenterrors.go).
+  function errorAlumno(code) {
+    const k = "errorAlumno." + String(code).replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    const base = typeof TX[k + ".titulo"] === "string" ? k : "errorAlumno.desconocido";
+    return { titulo: T(base + ".titulo"), texto: T(base + ".texto"), ayuda: manual && manual.agentErrors ? manual.agentErrors[code] || "" : "" };
+  }
+
   // --- Confirmación única ------------------------------------------------------------------
   // confirmar({titulo, texto, consecuencia, si, peligro}) → Promise<boolean>
   let confirmarResolver = null;
@@ -298,6 +305,7 @@
     const n = [];
     if (s.simulated) n.push(insignia("simulado", "simulado", T("alumnos.simulado")));
     if (s.state !== "connected") return n;
+    if (s.lastError) n.push(insignia("error", "error", T("alumnos.noPudo", { r: errorAlumno(s.lastError.code).titulo })));
     if (s.appsActive || s.webActive) n.push(insignia("advertencia", "candado", T("alumnos.conRestricciones")));
     if (s.power) n.push(insigniaEnergia(s.power));
     if (!s.canCode) n.push(insignia("", "info", s.username ? T("alumnos.noRecibeCodigo") : T("alumnos.sinSesion")));
@@ -348,6 +356,11 @@
       tr.querySelector(".usuario").textContent = s.username || T("alumnos.sinSesion");
       tr.querySelector(".estado").append(estadoDe(s));
       tr.querySelector(".codigo").append(...codigoDe(s));
+      tr.querySelector(".so").textContent = sistemaDe(s);
+      tr.querySelector(".version").textContent = s.agentVersion ? T("alumnos.versionAula", { v: s.agentVersion }) : "";
+      const f = tr.querySelector(".ficha");
+      f.setAttribute("aria-label", T("alumnos.verFicha", { equipo: s.hostname }));
+      f.title = T("alumnos.verFicha", { equipo: s.hostname });
       const notas = notasDe(s);
       tr.querySelector(".notas").append(...(notas.length ? notas : [el("span", "suave", "—")]));
       return tr;
@@ -356,7 +369,7 @@
     if (sims.length) {
       const g = el("tr", "tabla__grupo");
       const th = el("th");
-      th.colSpan = 5;
+      th.colSpan = 7;
       th.scope = "rowgroup";
       th.append(icono("simulado"), document.createTextNode(" " + T("alumnos.grupoSimulados")), insignia("simulado", "", T("alumnos.grupoSimuladosNota")));
       g.append(th);
@@ -369,6 +382,56 @@
     if (!$("panel-restricciones").hidden) pintarPanelRestricciones();
     pintarDestinoCodigo();
     actualizarAccionesCodigo();
+    if (panel === "alumno") pintarFicha();
+  }
+  const SO = { windows: "Windows", linux: "Linux", darwin: "macOS" };
+  const sistemaDe = (s) => [SO[s.os] || s.os, s.osVersion].filter(Boolean).join(" ") || "—";
+
+  // Ficha de un alumno: sus datos, qué puede hacer su equipo y su último error.
+  let fichaClave = "";
+  function abrirFicha(k) {
+    fichaClave = k;
+    abrirPanel("alumno");
+  }
+  function pintarFicha() {
+    const s = alumnos.students.find((x) => clave(x) === fichaClave);
+    if (!s) {
+      cerrarPanel();
+      return;
+    }
+    $("h-panel-alumno").textContent = s.hostname;
+    const filas = [
+      ["ficha.usuario", s.username || T("alumnos.sinSesion")],
+      ["ficha.estado", estadoDe(s)],
+      ["ficha.sistema", sistemaDe(s)],
+      ["ficha.version", s.agentVersion || "—"],
+      ["ficha.canal", String(clase.channel)],
+      ["ficha.desde", s.state === "connected" && s.connectedAt ? s.connectedAt : "—"],
+      ["ficha.restricciones", s.appsActive || s.webActive ? T("alumnos.conRestricciones") : T("ficha.ninguna")],
+    ];
+    if (s.simulated) filas.unshift(["ficha.tipo", insignia("simulado", "simulado", T("alumnos.simulado"))]);
+    $("ficha-datos").replaceChildren(...filas.flatMap(([k, v]) => {
+      const dd = el("dd");
+      dd.append(typeof v === "string" ? document.createTextNode(v) : v);
+      return [el("dt", "", T(k)), dd];
+    }));
+    const puede = [["canCode", "ficha.codigo"], ["canNotice", "ficha.avisos"], ["canThumb", "ficha.miniaturas"],
+      ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"]];
+    $("ficha-puede").replaceChildren(...puede.map(([c, k]) => {
+      const li = el("li", "fila");
+      li.append(s[c] ? insignia("conectado", "hecho", T("ficha.si")) : insignia("", "cerrar", T("ficha.no")), el("span", "", T(k)));
+      return li;
+    }));
+    const e = s.lastError;
+    $("ficha-error").hidden = !e;
+    if (e) {
+      const m = errorAlumno(e.code);
+      $("ficha-error-titulo").textContent = T("ficha.ultimoError", { r: m.titulo, hora: e.at });
+      $("ficha-error-texto").textContent = m.texto;
+      const a = $("ficha-error-ayuda");
+      a.hidden = !m.ayuda;
+      if (m.ayuda) a.href = rutaManual(m.ayuda);
+    }
   }
 
   // Miniaturas: las imágenes solo viven aquí, en memoria.
@@ -476,6 +539,10 @@
     cont.addEventListener("click", (e) => {
       if (e.target.closest(".alumno__pantalla")) return;
       const f = e.target.closest("[data-clave]");
+      if (f && e.target.closest(".ficha")) {
+        abrirFicha(f.dataset.clave);
+        return;
+      }
       if (f) alternar(f.dataset.clave);
     });
   }
@@ -507,19 +574,63 @@
     pintarDestinoEquipos();
   }
 
+  // --- Información junto a los campos técnicos -------------------------------------------
+  // Un botón «i» muestra una explicación corta y el enlace al manual (toggletip).
+  const INFO = { canal: "conceptos#el-canal", clave: "conceptos#la-clave-del-centro", certificado: "glosario",
+    puertos: "glosario", capacidades: "conceptos#qué-puede-hacer-cada-equipo" };
+  let infoN = 0;
+  for (const b of $$("[data-info]")) {
+    const k = b.dataset.info;
+    const base = "info." + k; // claves info.<k>.etiqueta y .texto
+    const g = el("span", "info-globo");
+    g.id = "info-globo-" + ++infoN;
+    g.hidden = true;
+    g.setAttribute("role", "status");
+    b.setAttribute("aria-label", T(base + ".etiqueta"));
+    b.setAttribute("aria-controls", g.id);
+    b.title = T(base + ".etiqueta");
+    b.after(g);
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const abrir = g.hidden;
+      cerrarInfos();
+      if (!abrir) return;
+      const a = Object.assign(el("a", "", T("info.masEnManual")), { href: rutaManual(INFO[k]) });
+      a.addEventListener("click", () => {
+        cerrarInfos();
+        const d = b.closest("dialog[open]");
+        if (d) d.close();
+      });
+      g.replaceChildren(el("span", "", T(base + ".texto")), a);
+      g.hidden = false;
+      b.setAttribute("aria-expanded", "true");
+    });
+  }
+  function cerrarInfos() {
+    for (const b of $$("[data-info]")) {
+      b.setAttribute("aria-expanded", "false");
+      b.nextElementSibling.hidden = true;
+    }
+  }
+  document.addEventListener("click", (e) => { if (!e.target.closest(".info-globo")) cerrarInfos(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarInfos(); });
+
   // --- Paneles laterales ---------------------------------------------------------------------
   let panel = "";
   function abrirPanel(id) {
     panel = id;
+    document.body.dataset.panel = id; // con un panel abierto, la lista cede columnas (style.css)
     for (const p of $$(".panel-lateral")) p.hidden = p.id !== "panel-" + id;
     for (const b of $$("[data-panel]")) b.setAttribute("aria-expanded", String(b.dataset.panel === id));
     if (id === "pantalla") pintarPanelPantalla();
     if (id === "restricciones") pintarPanelRestricciones();
     if (id === "energia") pintarPanelEnergia();
+    if (id === "alumno") pintarFicha();
     $("h-panel-" + id).focus();
   }
   function cerrarPanel() {
     panel = "";
+    delete document.body.dataset.panel;
     for (const p of $$(".panel-lateral")) p.hidden = true;
     for (const b of $$("[data-panel]")) b.setAttribute("aria-expanded", "false");
   }
@@ -865,10 +976,12 @@
       const dl = li.querySelector(".desglose");
       const acc = li.querySelector(".envio__acciones");
       const faltan = d.pending || [];
-      des.hidden = faltan.length === 0;
-      des.querySelector("span").textContent = P("codigo.quienFalta", faltan.length);
+      const fallaron = d.rejected || [];
+      const nFaltan = faltan.length + fallaron.length;
+      des.hidden = nFaltan === 0;
+      des.querySelector("span").textContent = P("codigo.quienFalta", nFaltan);
       const abierto = abiertos.has(d.id);
-      dl.hidden = acc.hidden = !abierto || faltan.length === 0;
+      dl.hidden = acc.hidden = !abierto || nFaltan === 0;
       des.setAttribute("aria-expanded", String(abierto));
       dl.replaceChildren(...faltan.flatMap((id) => {
         const s = alumnoPorSesion(id);
@@ -878,6 +991,12 @@
         const dd = el("dd");
         dd.append(estado);
         return [el("dt", "", nombreDe(id)), dd];
+      }), ...fallaron.flatMap((r) => {
+        const m = errorAlumno(r.code);
+        const dd = el("dd", "pila-mini");
+        dd.append(insignia("error", "error", T("alumnos.noPudo", { r: m.titulo })), el("span", "suave", m.texto));
+        if (m.ayuda) dd.append(Object.assign(el("a", "", T("ayuda.verEnManual")), { href: rutaManual(m.ayuda) }));
+        return [el("dt", "", nombreDe(r.session)), dd];
       }));
       des.addEventListener("click", () => {
         if (abiertos.has(d.id)) abiertos.delete(d.id); else abiertos.add(d.id);
@@ -1294,6 +1413,9 @@
     $("aj-clave-texto").textContent = T(centro ? "clave.centroTexto" : "clave.personalTexto");
     $("aj-clave").className = "insignia " + (centro ? "insignia--conectado" : "insignia--advertencia");
     $("aj-clave-huella").textContent = clase.fingerprint;
+    $("aj-certificado").textContent = clase.certExpires
+      ? T("ajustes.certificadoVence", { fecha: new Date(clase.certExpires + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }) })
+      : T("ajustes.certificadoSinFecha");
     $("aj-atajo").textContent = hotkey.active ? T("ajustes.atajoActivo", { combo: hotkey.combo }) : (hotkey.error || T("ajustes.atajoInactivo"));
     api.InstallerInfo().then((i) => { $("aj-datos").textContent = datosInstalador(i); });
     aplicarTema(tema);

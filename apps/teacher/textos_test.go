@@ -48,6 +48,11 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, m := range regexp.MustCompile(`data-t(?:-[a-z-]+)?="([A-Za-z0-9.]+)"`).FindAllStringSubmatch(html, -1) {
 		need(m[1], "index.html")
 	}
+	// A data-info="x" button shows info.x.etiqueta and info.x.texto.
+	for _, m := range regexp.MustCompile(`data-info="([a-z]+)"`).FindAllStringSubmatch(html, -1) {
+		need("info."+m[1]+".etiqueta", "index.html (data-info)")
+		need("info."+m[1]+".texto", "index.html (data-info)")
+	}
 	for _, m := range regexp.MustCompile(`\bT\("([A-Za-z0-9.]+)"`).FindAllStringSubmatch(main, -1) {
 		need(m[1], "main.js")
 	}
@@ -62,7 +67,7 @@ func TestTextsAreComplete(t *testing.T) {
 	for key := range defined {
 		sections[strings.SplitN(key, ".", 2)[0]] = true
 	}
-	for _, m := range regexp.MustCompile(`"([a-z]+\.[A-Za-z0-9]+)"`).FindAllStringSubmatch(main, -1) {
+	for _, m := range regexp.MustCompile(`"([a-z][A-Za-z]*\.[A-Za-z0-9]+)"`).FindAllStringSubmatch(main, -1) {
 		lit := m[1]
 		if !sections[strings.SplitN(lit, ".", 2)[0]] {
 			continue // a domain, a capability…: not a text
@@ -88,6 +93,12 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, code := range errorCodes {
 		need("error."+code+".titulo", "errores.go")
 		need("error."+code+".texto", "errores.go")
+	}
+
+	// So are the texts of the students' protocol errors (agenterrors.go).
+	for code := range agentErrorHelp {
+		need("errorAlumno."+agentErrorKey(code)+".titulo", "agenterrors.go")
+		need("errorAlumno."+agentErrorKey(code)+".texto", "agenterrors.go")
 	}
 
 	for key, where := range used {

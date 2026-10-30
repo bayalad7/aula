@@ -115,7 +115,8 @@
                   <thead><tr>
                     <th class="col-marca"><input type="checkbox" id="alumnos-todos" data-t-aria-label="alumnos.seleccionarTodos"></th>
                     <th data-t="alumnos.colEquipo"></th><th data-t="alumnos.colEstado"></th>
-                    <th data-t="alumnos.colCodigo"></th><th data-t="alumnos.colNotas"></th>
+                    <th data-t="alumnos.colCodigo"></th><th class="col-sistema" data-t="alumnos.colSistema"></th><th data-t="alumnos.colNotas"></th>
+                    <th class="col-accion"><span class="solo-lector" data-t="alumnos.colFicha"></span></th>
                   </tr></thead>
                   <tbody id="alumnos-filas"></tbody>
                 </table>
@@ -275,7 +276,7 @@
               </section>
               <aside class="pila" data-t-aria-label="falta.lateral">
                 <section class="tarjeta" aria-labelledby="h-falta-datos">
-                  <div class="tarjeta__cabecera"><h2 id="h-falta-datos" data-t="instalador.titulo"></h2></div>
+                  <div class="tarjeta__cabecera con-info"><h2 id="h-falta-datos" data-t="instalador.titulo"></h2><button type="button" class="info-boton" data-info="puertos" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></div>
                   <div class="tarjeta__cuerpo pila">
                     <p class="pequeno suave" data-t="instalador.ayuda"></p>
                     <div class="bloque-codigo">
@@ -306,6 +307,26 @@
           <div class="panel-lateral__cuerpo manual" id="panel-ayuda-cuerpo"></div>
           <div class="panel-lateral__pie">
             <a class="btn" id="panel-ayuda-abrir" href="#ayuda" data-t="ayuda.abrirEnManual"></a>
+          </div>
+        </aside>
+
+        <!-- ============ Ficha de un alumno ============ -->
+        <aside class="panel-lateral" id="panel-alumno" hidden aria-labelledby="h-panel-alumno">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg>
+            <h2 id="h-panel-alumno" tabindex="-1"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo pila">
+            <div id="ficha-error" class="aviso-en-linea aviso-en-linea--error" hidden>
+              <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#error"/></svg>
+              <div class="pila-mini"><strong id="ficha-error-titulo"></strong><span id="ficha-error-texto"></span><a id="ficha-error-ayuda" data-t="ayuda.verEnManual"></a></div>
+            </div>
+            <dl class="ficha" id="ficha-datos"></dl>
+            <div class="pila-mini">
+              <h3 class="con-info"><span data-t="ficha.puede"></span><button type="button" class="info-boton" data-info="capacidades" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></h3>
+              <ul class="lista-limpia" id="ficha-puede"></ul>
+            </div>
           </div>
         </aside>
 
@@ -425,10 +446,11 @@
     <form method="dialog" id="cc-form" novalidate>
       <div class="dialogo__cuerpo">
         <h2 id="cc-titulo" data-t="canal.titulo"></h2>
-        <label class="campo"><span class="campo__etiqueta" data-t="canal.nuevo"></span>
+        <div class="con-info"><label class="campo__etiqueta" for="cc-canal" data-t="canal.nuevo"></label><button type="button" class="info-boton" data-info="canal" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></div>
+        <div class="campo">
           <input id="cc-canal" class="mono" inputmode="numeric" autocomplete="off" aria-describedby="cc-ayuda cc-error">
           <span class="campo__error" id="cc-error" hidden></span>
-          <span class="campo__ayuda" id="cc-ayuda" data-t="arranque.canalAyuda"></span></label>
+          <span class="campo__ayuda" id="cc-ayuda" data-t="arranque.canalAyuda"></span></div>
         <div class="grupo-botones" id="cc-recientes"></div>
         <p class="dialogo__consecuencia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="cc-consecuencia"></span></p>
       </div>
@@ -490,7 +512,7 @@
           <button type="button" class="btn" id="aj-cambiar-nombre" data-t="comun.cambiar"></button>
         </div>
         <div class="ajuste">
-          <div class="ajuste__texto"><strong id="aj-canal"></strong><span data-t="ajustes.canalAyuda"></span></div>
+          <div class="ajuste__texto"><span class="con-info"><strong id="aj-canal"></strong><button type="button" class="info-boton" data-info="canal" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></span><span data-t="ajustes.canalAyuda"></span></div>
           <button type="button" class="btn" id="aj-cambiar-canal" data-t="comun.cambiar"></button>
         </div>
         <div class="ajuste">
@@ -513,14 +535,17 @@
         <h3 data-t="ajustes.acerca"></h3>
         <div class="ajuste"><div class="ajuste__texto"><strong data-t="ajustes.version"></strong><span id="aj-version"></span></div></div>
         <div class="ajuste">
-          <div class="ajuste__texto"><strong id="aj-clave-titulo"></strong><span id="aj-clave-texto"></span></div>
+          <div class="ajuste__texto"><span class="con-info"><strong id="aj-clave-titulo"></strong><button type="button" class="info-boton" data-info="clave" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></span><span id="aj-clave-texto"></span></div>
           <span class="insignia" id="aj-clave"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#llave"/></svg><span class="mono" id="aj-clave-huella"></span></span>
+        </div>
+        <div class="ajuste">
+          <div class="ajuste__texto"><span class="con-info"><strong data-t="ajustes.certificado"></strong><button type="button" class="info-boton" data-info="certificado" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></span><span id="aj-certificado"></span></div>
         </div>
         <div class="ajuste">
           <div class="ajuste__texto"><strong data-t="ajustes.atajo"></strong><span id="aj-atajo"></span></div>
         </div>
         <div class="ajuste">
-          <div class="ajuste__texto"><strong data-t="instalador.titulo"></strong><span data-t="instalador.ayuda"></span></div>
+          <div class="ajuste__texto"><span class="con-info"><strong data-t="instalador.titulo"></strong><button type="button" class="info-boton" data-info="puertos" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></span><span data-t="instalador.ayuda"></span></div>
           <div class="bloque-codigo ajuste__ancho">
             <div class="bloque-codigo__cabecera"><span data-t="instalador.estaConsola"></span>
               <button type="button" class="btn btn--fantasma btn--sm" data-copiar="aj-datos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#copiar"/></svg><span data-t="comun.copiar"></span></button></div>
@@ -540,7 +565,9 @@
       <td class="celda-principal" data-t-etiqueta="alumnos.colEquipo"><span class="equipo"></span><span class="celda-sub usuario"></span></td>
       <td data-t-etiqueta="alumnos.colEstado" class="estado"></td>
       <td data-t-etiqueta="alumnos.colCodigo" class="codigo"></td>
+      <td data-t-etiqueta="alumnos.colSistema" class="sistema col-sistema"><span class="so"></span><span class="celda-sub version"></span></td>
       <td data-t-etiqueta="alumnos.colNotas" class="notas"></td>
+      <td class="col-accion"><button type="button" class="btn btn--fantasma btn--icono btn--sm ficha"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></td>
     </tr>
   </template>
   <template id="t-tarjeta-alumno">

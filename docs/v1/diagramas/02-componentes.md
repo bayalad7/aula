@@ -27,6 +27,7 @@ flowchart TB
         policy["policy<br/>apps, filtro DNS, diario"]
         power["power<br/>cuenta regresiva"]
         agentsvc["agentsvc<br/>supervisor y canal local"]
+        simclass["simclass<br/>aula simulada"]
     end
 
     security["security<br/>Ed25519, TLS, huella"]
@@ -39,7 +40,7 @@ flowchart TB
 
     sistema["Windows · Linux · macOS"]
 
-    teacher --> session & codedist & screen & broadcast & policy & power & platform
+    teacher --> session & codedist & screen & broadcast & policy & power & simclass & platform
     student --> session & codedist & screen & broadcast & policy & power & agentsvc & platform
     session --> transport & discovery & security & protocol
     transport --> protocol
@@ -50,6 +51,7 @@ flowchart TB
     policy --> session & platform
     power --> platform & protocol
     agentsvc --> session & platform
+    simclass --> session & codedist & screen & platform
     security --> platform & protocol
     platform --> win & other
     win --> sistema
@@ -58,7 +60,7 @@ flowchart TB
     classDef aula fill:#dcfce7,stroke:#15803d,color:#111827
     classDef datos fill:#ffedd5,stroke:#c2410c,color:#111827
     classDef seguridad fill:#fee2e2,stroke:#b91c1c,color:#111827
-    class teacher,student,session,transport,discovery,protocol,codedist,screen,broadcast,policy,power,agentsvc,platform,win,other aula
+    class teacher,student,session,transport,discovery,protocol,codedist,screen,broadcast,policy,power,agentsvc,simclass,platform,win,other aula
     class security seguridad
     class sistema externo
 ```
@@ -66,7 +68,7 @@ flowchart TB
 ## Lo que no es obvio
 
 - **La regla de oro**: `protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`,
-  `broadcast`, `agentsvc`, `policy` y `power` no llaman APIs del SO. Lo que toca pantalla,
+  `broadcast`, `agentsvc`, `policy`, `power` y `simclass` no llaman APIs del SO. Lo que toca pantalla,
   portapapeles, teclado, servicios, DNS o energía pasa por una interfaz de `internal/platform`,
   con una implementación por SO (`*_windows.go`) y un fallback `*_other.go` que devuelve
   `ErrNotSupported`. Por eso esos paquetes se prueban con dobles en los tres SO del CI.

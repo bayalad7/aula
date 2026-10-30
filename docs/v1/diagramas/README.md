@@ -43,7 +43,7 @@ lleve `foreignObject`.
 | 07 | [Acuses y recolección de código/archivos](07-acuses-recoleccion.md) | `flowchart` | desarrollador |
 | 08 | [Monitoreo: miniaturas y pantalla](08-monitoreo-pantalla.md) | `sequenceDiagram` | profesor, desarrollador |
 | 09 | [Transparencia: avisos e indicadores al alumno](09-transparencia-avisos.md) | `flowchart` | profesor, alumno, desarrollador |
-| 10 | Aula simulada y simulación de fallas (pendiente) | `flowchart` | profesor, desarrollador |
+| 10 | [Aula simulada y simulación de fallas](10-aula-simulada.md) | `flowchart` | profesor, desarrollador |
 | 11 | [Modelo de datos local](11-modelo-datos.md) | `erDiagram` | desarrollador, auditor |
 | 12 | [Diagnóstico: «Mi alumno no conecta»](12-diagnostico-conexion.md) | `flowchart` | profesor, instalador |
 | 13 | [El agente como servicio de Windows](13-agente-servicio.md) | `flowchart` | instalador, desarrollador, auditor |
@@ -51,8 +51,8 @@ lleve `foreignObject`.
 | 15 | [Restricciones de la clase: apps y filtro web](15-restricciones.md) | `flowchart` | profesor, desarrollador, auditor |
 | 16 | [Energía: apagar, reiniciar y cerrar sesión](16-energia.md) | `stateDiagram-v2` | profesor, alumno, desarrollador |
 
-El 10 queda pendiente hasta que exista el modo de aula simulada (etapa 18); una fila sin enlace
-debe decir «(pendiente)».
+Una fila sin enlace debe decir «(pendiente)»: así se lista un diagrama cuya función aún no
+existe.
 
 ---
 

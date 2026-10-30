@@ -43,8 +43,11 @@ Dos aplicaciones, mismo monorepo:
     su diario para deshacerlas siempre, y la parte de la consola (quién tiene qué).
   - `internal/power`: apagar, reiniciar y cerrar sesión (`power.*`): la cuenta regresiva del
     agente con su aviso y el posponer, y el registro de órdenes de la consola.
+  - `internal/simclass`: el aula simulada: alumnos simulados dentro de la consola, con el
+    protocolo real por un puerto de `127.0.0.1` que no se anuncia, y sus fallas (desconectado,
+    lento, no acusa). Siempre marcados y contados aparte de los reales.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `simclass` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

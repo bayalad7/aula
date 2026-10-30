@@ -150,6 +150,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:frame` | `Thumb` | Por cada cuadro recibido mientras la vista de pantallas está abierta (≤ 1 por segundo y alumno). Solo cuadros del `screen.thumb.start` vigente. |
 | `aula:broadcast` | `BroadcastState` | La transmisión de tu pantalla empieza, termina o cambia su número de receptores. |
 | `aula:restrictions` | `RestrictionsView` | Cambian las restricciones de la clase: `{apps, web}`, cada uno `null` o `{policyId, mode, items, hosts}` (`hosts` vacío: todo el canal). Los acuses de cada alumno llegan en `aula:students` (`appsActive`, `webActive`). |
+| `aula:simulation` | `SimulationView` | El aula simulada se abre o se cierra, o uno de sus alumnos cambia (conecta, recibe código o un aviso, se ve su pantalla, cambia de falla). Sus sesiones también llegan en `aula:students` con `simulated: true`. |
 
 ```jsonc
 // Students: la lista del canal y los conteos que habilitan los botones
@@ -161,8 +162,12 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
                   "power": { "action_id": "c2e1…", "action": "reboot", "force": false,
                              "status": "postponed",   // sent | countdown | postponed | executing | cancelled | error
                              "deadline_ms": 1792771530000, "postpones_left": 1 },  // null sin orden
-                  "lastCodeAck": "0c9a…", "ackedAt": "10:00:05" } ],
-  "connected": 1, "canCode": 1, "canNotice": 1, "canThumb": 1, "canBroadcast": 1, "canPower": 1 }
+                  "lastCodeAck": "0c9a…", "ackedAt": "10:00:05",
+                  "simulated": false } ],          // true: alumno del aula simulada, siempre con su insignia
+  "connected": 1,                      // solo alumnos reales
+  "simulated": 0,                      // alumnos simulados conectados, aparte
+  "canCode": 1, "canNotice": 1, "canThumb": 1,  // incluyen a los simulados
+  "canBroadcast": 1, "canPower": 1 }   // solo reales: los simulados nunca los reciben
 
 // History: fragmentos de la sesión, numerados ("Ejercicio N")
 { "entries": [ { "snippetId": "…", "number": 1, "title": "Factorial", "lang": "python",
@@ -170,7 +175,19 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 
 // Deliveries: envíos recientes, el más nuevo primero
 { "deliveries": [ { "id": "d3", "kind": "code", "label": "Ejercicio 1 · Factorial",
-                    "sent": 2, "acked": 2, "failed": 0, "noCapability": 1, "at": "…" } ] }
+                    "sent": 2, "acked": 2, "failed": 0, "noCapability": 1,
+                    "simSent": 2, "simAcked": 1,   // alumnos simulados, contados aparte
+                    "at": "…" } ] }
+
+// SimulationView: el aula simulada
+{ "active": true, "max": 40, "capabilities": ["code.view", "msg.show", "screen.thumb"],
+  "students": [ { "id": "…", "name": "Simulado 1", "os": "windows",
+                  "capabilities": ["code.view", "msg.show", "screen.thumb"],
+                  "connected": true, "fault": "none",   // none | slow | noack | disconnected
+                  "delayMs": 0,                         // solo con slow
+                  "viewed": false,                      // el profesor está viendo su pantalla
+                  "snippets": [ { "exercise": "1", "title": "Factorial", "lang": "python", "lines": 6 } ],
+                  "notices": 1, "lastNotice": "Guarden su trabajo" } ] }
 
 // Capture: o draft o error
 { "draft": { "content": "…", "lang": "python", "lines": 9, "source": "hotkey", "capturedAt": "…" },
@@ -219,6 +236,12 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `ClearAllRestrictions()` | `RestrictionsView` | **Quitar todas las restricciones.** Cerrar la clase o cambiar de canal también las quita. |
 | `PowerAction({action, hosts, delayS, force})` | `PowerResult` / error | **Energía → Apagar / Reiniciar / Cerrar sesión**, después de la confirmación explícita de la interfaz. `action` `shutdown`, `reboot` o `logoff`; `hosts` los marcados o vacío (todo el canal); `delayS` 10–600 (0 = 30 s); `force` sin cuenta regresiva. Solo a quien declaró `power`. `PowerResult` = `{sent, unsupported: [hostname], failed: [hostname]}`. No se reenvía a quien se reconecta. |
 | `PowerCancel(hosts)` | `PowerResult` | **Cancelar.** `power.cancel` a quien tiene una orden en cuenta regresiva (`sent`, `countdown`, `postponed`); `hosts` vacío: todo el canal. |
+| `Simulation()` | `SimulationView` | Estado del aula simulada. |
+| `SimulationStart(n)` | `SimulationView` / error | Abre el aula simulada con `n` alumnos (0 = 2), o agrega `n` si ya está abierta. Los alumnos simulados corren dentro de la consola y se conectan por un puerto local (`127.0.0.1`) que no se anuncia: ningún alumno real lo alcanza. Error si no hay clase. |
+| `SimulationAdd({os, capabilities})` | `SimulationView` / error | Agrega un alumno simulado: `os` `windows`, `linux` o `darwin`; `capabilities` entre `code.view`, `msg.show` y `screen.thumb` (vacío: las tres). Máximo 40. |
+| `SimulationRemove(id)` | `SimulationView` / error | Quita uno. |
+| `SimulationFault(id, fault, delayMs)` | `SimulationView` / error | Hace fallar a uno: `slow` (contesta con `delayMs` de retraso, 500–10 000), `noack` (muestra pero no confirma), `disconnected` (se va hasta volver a `none`). |
+| `SimulationStop()` | `SimulationView` | Cierra el aula simulada: sus alumnos se van y se olvidan. También ocurre al cambiar de canal o de nombre, o al cerrar la clase. Los alumnos reales no se tocan. |
 
 ### Reglas
 

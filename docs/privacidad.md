@@ -188,6 +188,26 @@ Permisos del SO (detalle en `docs/protocol.md` §5.15.1): apagar y reiniciar usa
 `SeShutdownPrivilege`, que tienen SYSTEM y, salvo una GPO que lo quite, los usuarios de un equipo
 de escritorio; cerrar la sesión de otro usuario (con `force`, desde el servicio) requiere SYSTEM.
 
+## Aula simulada (consola del profesor)
+
+Alumnos de prueba que la consola crea dentro de sí misma para probar Aula sin laboratorio
+(`internal/simclass`).
+
+32. **Un simulado nunca pasa por real.** Lleva siempre la insignia «Simulado» y su propio conteo,
+    aparte de los conectados. Sus acuses se cuentan aparte (`simSent`, `simAcked`), y cada línea
+    de log que lo menciona lleva `simulated=true`. Ser simulado depende del puerto por el que
+    llegó, nunca de su nombre: un equipo real llamado «Simulado 1» sigue siendo real.
+33. **No toca a los alumnos reales.** Los simulados se conectan por un puerto de `127.0.0.1` que
+    no se anuncia por mDNS; ningún equipo del laboratorio lo alcanza. Hablan el protocolo real,
+    sin mensajes nuevos.
+34. **No reciben lo que tiene efecto en un equipo.** Ni energía, ni restricciones, ni la
+    transmisión: un simulado no puede declararlo, y la consola no se lo envía. Así nadie cree
+    que funcionó en un equipo real cuando solo fue una prueba.
+35. **No guarda nada.** Los simulados viven en memoria y desaparecen al cerrar el aula simulada,
+    al cambiar de canal o de nombre y al cerrar la clase. Su «pantalla» se dibuja en memoria y,
+    como la de un equipo real, muestra «Tu pantalla está siendo vista por el profesor» mientras
+    se ve.
+
 ## Pendiente para etapas futuras
 
 - Guardar una captura por petición explícita del profesor, y Linux y macOS (incluida la

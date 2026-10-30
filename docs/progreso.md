@@ -20,7 +20,7 @@
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 15 diagramas (falta el 10, aula simulada) |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1 (análisis) y 2 (sistema de diseño y prototipo) hechas; esperan aprobación |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1 y 2 aprobadas; aula simulada (6.1) hecha, espera aprobación |
 
 ## Etapa 02: notas
 
@@ -725,6 +725,15 @@
     que se ven con `go run ./tools/vistaprevia`;
   - prueba de contraste AA `TestTokensContrast`;
   - 12 capturas sin violaciones de axe.
-- **Pendiente:** la aprobación del prototipo y de 3 preguntas abiertas (aula simulada en la
-  lista, paleta oscura de los diagramas, compartir el sistema con la app del alumno). Después
-  vienen las entregas E2–E10 del análisis.
+- **Fase 2 aprobada** (commits `63b337b`, `97912f7` y `b194ade`), con las decisiones de la
+  ronda 2 en `FASE2-SISTEMA-DISENO.md`.
+- **Aula simulada, Fase 6.1** (`docs/v1/ux/profesor/ENTREGA-AULA-SIMULADA.md`):
+  - `internal/simclass`: alumnos simulados en proceso, con el protocolo real por un puerto de
+    `127.0.0.1` sin anuncio, y sus fallas (lento, no acusa, desconectado);
+  - la consola los separa por el registro al que llegan: se cuentan aparte y nunca reciben
+    energía, restricciones ni transmisión;
+  - bindings `Simulation*` y evento `aula:simulation`;
+  - botón mínimo en la consola actual;
+  - reglas de privacidad 32–35 y diagrama 10.
+- **Siguiente:** la nueva navegación con la vista Alumnos y la pantalla «Aula simulada» (E3),
+  y los textos en un solo archivo con los errores en lenguaje claro (E2).

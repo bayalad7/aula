@@ -32,6 +32,7 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
 | `aula:broadcast-signal` | `broadcast.Signal` | Una oferta SDP (`kind: "offer"`) o un candidato ICE del profesor (`kind: "ice"`), ya validados por Go. |
 | `aula:restrictions` | `policy.State` | Empiezan, cambian o terminan las restricciones de la clase. Llega **antes** de aplicarlas. `{apps, web}`: cada uno `null` o `{policyId, mode, items (≤ 15), total}`. |
 | `aula:app-closed` | `AppClosed` | El agente cerró una app bloqueada: `{app: "steam.exe"}`, como mucho uno por app cada 30 s. |
+| `aula:power` | `PowerView` | Llega, se pospone, se ejecuta, falla o se anula una orden de energía (`power.*`). Llega **antes** de que la consola reciba el `power.ack`. `notice` es `null` cuando no hay aviso. |
 
 ```jsonc
 // Status
@@ -57,6 +58,13 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
 { "snippets": [ { "id": "0c9a…", "exercise": "3", "title": "Factorial", "lang": "python",
                   "content": "def f(n):\n    …", "receivedAt": "2026-10-28T10:00:00-06:00" } ] }
 
+// PowerView: el aviso de energía (docs/privacidad.md reglas 26-28)
+{ "notice": { "action_id": "c2e1…", "action": "reboot",     // shutdown | reboot | logoff
+              "state": "countdown",                          // countdown | executing | failed
+              "remaining_s": 30, "postpones_left": 2, "force": false },
+  "teacher": "Lab 3 — Prof. Ayala", "channel": "1",          // quién dio la orden
+  "verb": "reiniciar este equipo" }
+
 // Notices: avisos no cerrados, el más antiguo primero (máx. 10)
 { "notices": [ { "id": "5b0e…", "text": "Guarden su trabajo", "level": "warning", "at": "…" } ] }
 ```
@@ -68,13 +76,15 @@ llevar estado propio.
 
 | Método | Devuelve | Uso |
 |---|---|---|
-| `App.View()` | `View` = `{status, snippets, notices, broadcast}` | Estado completo para el primer dibujo. |
+| `App.View()` | `View` = `{status, snippets, notices, broadcast, restrictions, power}` | Estado completo para el primer dibujo. |
 | `App.Copy(snippetId)` | error (promesa rechazada con texto en español) | Copia el fragmento al portapapeles del sistema. |
 | `App.DismissNotice(noticeId)` | — | Cierra un aviso; emite `aula:notices`. |
 | `App.ReportMedia(webrtc, h264)` | — | Al cargar: si hay `RTCPeerConnection` y decodificador H.264. Go espera este aviso (máx. 5 s) antes de conectarse y solo entonces declara `screen.broadcast`. |
 | `App.BroadcastAnswer(broadcastId, attempt, sdp)` | error | La respuesta SDP de la interfaz. Go comprueba que sea solo recepción de video y la envía con el `ref_id` de la oferta. |
 | `App.BroadcastCandidate(broadcastId, attempt, candidate, sdpMid, sdpMLineIndex)` | error | Un candidato ICE local; `""` cierra la lista. |
 | `App.BroadcastFailed(broadcastId, attempt)` | error | La interfaz no pudo abrir la conexión: Go responde `error` `internal` a la oferta y la consola reintenta. |
+| `App.PowerPostpone()` | error | "Posponer 5 min": suma 5 minutos, como máximo 2 veces; emite `aula:power` y avisa a la consola. |
+| `App.DismissPower()` | — | Cierra el aviso de una orden de energía que falló. |
 
 `Copy` recibe solo el **ID**: el texto sale de la copia que guarda Go, no de la página. Así lo
 que se pega es exactamente lo que envió el profesor, sin depender de cómo lo dibujó el
@@ -96,6 +106,12 @@ navegador.
   llegan antes de aplicar la oferta se guardan y se aplican después. Al terminar (`active:
   false`) la interfaz cierra la conexión y Go restaura la ventana. La CSP permite
   `media-src mediastream: blob:` para el video.
+- **Aviso de energía** (`docs/privacidad.md`, reglas 26–28): con `aula:power`, Go trae la ventana
+  al frente y la deja siempre encima mientras cuenta o se ejecuta. La franja roja fija dice quién
+  y qué ("⏻ El profesor … va a reiniciar este equipo en 0:30. Guarda tu trabajo.") y la interfaz
+  cuenta hacia atrás desde `remaining_s` con su propio reloj. "Posponer 5 min (te quedan N)" se
+  deshabilita con 0. Con `executing` dice "está reiniciando este equipo"; con `failed`, "No se
+  pudo …" y "Entendido".
 
 ## Consola del profesor (`apps/teacher`)
 

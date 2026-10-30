@@ -16,6 +16,16 @@
     <span id="banner-detail" class="detail"></span>
   </header>
 
+  <!-- Power order (docs/privacidad.md rules 26-28): fixed, with the countdown. -->
+  <section id="power" class="power" role="alert" aria-live="assertive" hidden>
+    <p id="power-text" class="power-text"></p>
+    <div class="power-actions">
+      <button type="button" id="power-postpone">Posponer 5 min</button>
+      <span id="power-left" class="power-left"></span>
+      <button type="button" id="power-dismiss" hidden>Entendido</button>
+    </div>
+  </section>
+
   <!-- Class restrictions (docs/privacidad.md rules 20-22). -->
   <section id="restrictions" class="restrictions" role="status" aria-live="polite" hidden>
     <div class="restr-head">

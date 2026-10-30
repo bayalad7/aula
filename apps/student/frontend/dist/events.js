@@ -9,4 +9,5 @@ window.AulaEvents = Object.freeze({
   SIGNAL: "aula:broadcast-signal",
   RESTRICTIONS: "aula:restrictions",
   APP_CLOSED: "aula:app-closed",
+  POWER: "aula:power",
 });

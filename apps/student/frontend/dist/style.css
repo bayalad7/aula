@@ -124,6 +124,13 @@ body.watching main { display: none; }
 }
 .bc-wait[hidden] { display: none; }
 
+/* Power order (docs/privacidad.md rules 26-28): always visible while it counts. */
+.power { position: sticky; top: 0; z-index: 5; margin: 0; padding: 0.9rem 1rem; background: var(--error); color: #fff; border-bottom: 1px solid var(--border); }
+.power[hidden] { display: none; }
+.power-text { margin: 0 0 0.5rem; font-size: 1.15rem; font-weight: 700; }
+.power-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.power-left { font-size: 0.9rem; }
+
 /* Class restrictions (docs/privacidad.md rules 20-22). */
 .restrictions { margin: 0; padding: 0.55rem 1rem; background: var(--warn-bg); color: var(--warn-fg); border-bottom: 1px solid var(--border); }
 .restrictions[hidden] { display: none; }

@@ -18,6 +18,7 @@ import (
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
+	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/session"
@@ -37,6 +38,7 @@ type App struct {
 	board  *codedist.Board
 	recv   *codedist.Receiver
 	screen *screen.Streamer   // screen thumbnails; inert until enableScreen
+	power  *power.Countdown   // power.*; inert until enablePower
 	viewer *broadcast.Viewer  // the teacher's screen; declared after ReportMedia
 	clip   platform.Clipboard // nil when the system has none
 	clipEr error
@@ -46,6 +48,7 @@ type App struct {
 	emit     func(event string, data any)
 	raise    func()        // bring the window to the front
 	maximize func(on bool) // maximize (broadcast) or restore the window
+	onTop    func(on bool) // keep the window above the others (power notice)
 
 	// The frontend reports whether it can play the broadcast; start waits up
 	// to mediaWait for it (0: do not wait) before declaring the capability.
@@ -83,6 +86,7 @@ type App struct {
 	viewed   bool         // the console is receiving this screen (docs/privacidad.md rule 6)
 	restrict policy.State // class restrictions in force (rules 20-21)
 	watching bool         // this screen shows the teacher's broadcast (rule 12)
+	powerV   PowerView    // power notice in force (rules 26-28)
 	cancel   context.CancelFunc
 	done     chan struct{}
 }
@@ -94,12 +98,13 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a := &App{
 		cfg: cfg, pub: pub, cfgErr: cfgErr, hello: hello,
 		board: codedist.NewBoard(0), clip: clip, clipEr: clipErr, log: log,
-		emit: func(string, any) {}, raise: func() {}, maximize: func(bool) {},
+		emit: func(string, any) {}, raise: func() {}, maximize: func(bool) {}, onTop: func(bool) {},
 		mediaReady: make(chan struct{}), restart: make(chan struct{}, 1),
 	}
 	a.recv = &codedist.Receiver{Board: a.board, OnBoard: a.onBoard, OnNotice: a.onNotice}
 	a.screen = &screen.Streamer{Logger: log, OnViewed: a.onViewed}
 	a.viewer = &broadcast.Viewer{Logger: log, OnView: a.onBroadcastView, OnSignal: a.onBroadcastSignal}
+	a.power = &power.Countdown{OnChange: a.onPower, Logger: log}
 	if cfgErr != nil {
 		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Banner: "Aula — sin configurar", Detail: cfgErr.Error()}
 	} else {
@@ -344,6 +349,10 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		reply, ok = a.extra(env)
 	}
 	if !ok {
+		// Only after auth.ok: the session rejects everything earlier.
+		reply, ok = a.power.Handle(ctx, power.Sender(send), env)
+	}
+	if !ok {
 		reply, ok = a.screen.Handle(ctx, send, env)
 	}
 	if !ok {
@@ -401,6 +410,9 @@ func (a *App) setStatus(s Status) {
 	if s.Restricted {
 		s.Banner += " · restricciones activas"
 	}
+	if pending := powerPending(a.powerV.Notice); pending != "" && s.State != StateUnconfigured {
+		s.Banner += " · " + pending
+	}
 	a.status = s
 	a.mu.Unlock()
 	a.emit(EventStatus, s)
@@ -440,7 +452,7 @@ func (a *App) View() View {
 		snippets = []codedist.Snippet{}
 	}
 	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...),
-		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict}
+		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

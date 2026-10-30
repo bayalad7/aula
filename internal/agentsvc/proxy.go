@@ -18,9 +18,11 @@ const (
 	CallScreenCapture  = "screen.capture"
 	CallIndicatorShow  = "indicator.show"
 	CallIndicatorHide  = "indicator.hide"
-	EventEmit          = "emit"     // a Wails event for the window
-	EventRaise         = "raise"    // bring the window forward
-	EventMaximize      = "maximize" // maximize (true) or restore (false)
+	CallPowerLogoff    = "power.logoff" // log off the own session, without force
+	EventEmit          = "emit"         // a Wails event for the window
+	EventRaise         = "raise"        // bring the window forward
+	EventMaximize      = "maximize"     // maximize (true) or restore (false)
+	EventOnTop         = "ontop"        // keep the window above the others (true) or not
 )
 
 // Helper → service.
@@ -160,4 +162,15 @@ func (i Indicator) Hide() error {
 		return nil
 	}
 	return err
+}
+
+// Logoff ends the student's session without force through the helper:
+// ExitWindowsEx only acts on the caller's own session, and lets the student's
+// applications ask to save (D-018).
+type Logoff struct{ Helper *Current }
+
+// Logoff asks the helper to log off its session; session is only checked
+// there.
+func (l Logoff) Logoff(session uint32) error {
+	return l.Helper.call(context.Background(), CallPowerLogoff, session, nil)
 }

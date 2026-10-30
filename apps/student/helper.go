@@ -129,6 +129,12 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 			return nil, nil
 		}
 		return nil, h.indicator.Hide()
+	case agentsvc.CallPowerLogoff:
+		var session uint32
+		if err := json.Unmarshal(data, &session); err != nil {
+			return nil, err
+		}
+		return nil, logoffOwnSession(session)
 	}
 	return nil, fmt.Errorf("%s: unknown call", name)
 }
@@ -158,5 +164,27 @@ func (h *helper) event(ctx context.Context, app *App, name string, data json.Raw
 		if json.Unmarshal(data, &on) == nil {
 			app.maximize(on)
 		}
+	case agentsvc.EventOnTop:
+		var on bool
+		if json.Unmarshal(data, &on) == nil {
+			app.onTop(on)
+		}
 	}
+}
+
+// logoffOwnSession logs off the helper's session without force, as the
+// service asks after the countdown (D-018); it refuses any other session.
+func logoffOwnSession(session uint32) error {
+	own, err := platform.CurrentSession()
+	if err != nil {
+		return err
+	}
+	if own != session {
+		return fmt.Errorf("log off session %d: the helper runs in session %d", session, own)
+	}
+	p, err := platform.NewPower()
+	if err != nil {
+		return err
+	}
+	return p.Logoff(own, false)
 }

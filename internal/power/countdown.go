@@ -20,6 +20,8 @@ const (
 	// staleAfter clears an "executing" notice when the computer is still on:
 	// without force, the student may cancel in Windows' own screen.
 	staleAfter = 2 * time.Minute
+	// sendTimeout bounds queueing a message on a busy connection.
+	sendTimeout = 5 * time.Second
 )
 
 // Errors of Postpone.
@@ -315,7 +317,7 @@ func (c *Countdown) sendTo(ctx context.Context, o *order, p protocol.Payload) bo
 	if o.send == nil {
 		return false
 	}
-	ctx, cancel := context.WithTimeout(ctx, c.flushWait())
+	ctx, cancel := context.WithTimeout(ctx, sendTimeout)
 	defer cancel()
 	if err := o.send(ctx, p); err != nil {
 		c.log().Info("power message not sent", "type", p.MessageType(), "action_id", o.p.ActionID, "err", err)

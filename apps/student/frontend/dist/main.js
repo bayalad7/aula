@@ -1,7 +1,7 @@
 // Interfaz del cliente del alumno. Recibe el estado del backend Go por eventos
 // de Wails y llama a sus métodos (View, Copy, DismissNotice y los de la
 // transmisión del profesor: ReportMedia, BroadcastAnswer, BroadcastCandidate,
-// BroadcastFailed).
+// BroadcastFailed; y los del aviso de energía: PowerPostpone, DismissPower).
 // Seguridad: todo texto recibido se inserta con textContent; el único HTML es
 // el que genera Prism, que escapa el código antes de colorearlo.
 "use strict";
@@ -234,7 +234,65 @@
     closedTimer = setTimeout(() => { p.hidden = true; }, 8000);
   }
 
+  // --- Power order (docs/privacidad.md rules 26-28) -------------------------------
+  // The backend sends the seconds left; the window counts down by itself.
+  const powerBox = $("power");
+  const powerText = $("power-text");
+  const powerPostpone = $("power-postpone");
+  const powerLeft = $("power-left");
+  const powerDismiss = $("power-dismiss");
+  let powerView = null;
+  let powerEnd = 0;
+  let powerTick = 0;
+
+  function clock(s) {
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  function drawPower() {
+    const v = powerView;
+    const n = v && v.notice;
+    powerBox.hidden = !n;
+    if (!n) return;
+    const who = "El profesor " + (v.teacher || "de la clase") + (v.channel ? " (canal " + v.channel + ")" : "");
+    powerPostpone.hidden = n.state !== "countdown";
+    powerLeft.hidden = n.state !== "countdown";
+    powerDismiss.hidden = n.state !== "failed";
+    if (n.state === "countdown") {
+      const left = Math.max(0, Math.ceil((powerEnd - Date.now()) / 1000));
+      powerText.textContent = "⏻ " + who + " va a " + v.verb + " en " + clock(left) + ". Guarda tu trabajo.";
+      powerPostpone.disabled = n.postpones_left === 0;
+      powerLeft.textContent = n.postpones_left === 0 ? "Ya no se puede posponer" : "(te quedan " + n.postpones_left + ")";
+    } else if (n.state === "executing") {
+      const verb = v.verb.replace(/^apagar/, "apagando").replace(/^reiniciar/, "reiniciando").replace(/^cerrar/, "cerrando");
+      powerText.textContent = "⏻ " + who + " está " + verb + ".";
+    } else {
+      powerText.textContent = "No se pudo " + v.verb + ".";
+    }
+  }
+
+  function renderPower(v) {
+    powerView = v && v.notice ? v : null;
+    clearInterval(powerTick);
+    if (powerView && powerView.notice.state === "countdown") {
+      powerEnd = Date.now() + powerView.notice.remaining_s * 1000;
+      powerTick = setInterval(drawPower, 250);
+    }
+    drawPower();
+  }
+
+  powerPostpone.addEventListener("click", () => {
+    powerPostpone.disabled = true;
+    api.PowerPostpone().catch((e) => {
+      powerLeft.textContent = String(e);
+    });
+  });
+  powerDismiss.addEventListener("click", () => api.DismissPower());
+
   // Subscribe first, then fetch the full state, so nothing is missed.
+  rt.EventsOn(ev.POWER, renderPower);
   rt.EventsOn(ev.RESTRICTIONS, renderRestrictions);
   rt.EventsOn(ev.APP_CLOSED, onAppClosed);
   rt.EventsOn(ev.BROADCAST, renderBroadcast);
@@ -248,6 +306,7 @@
     renderNotices(v.notices);
     renderBroadcast(v.broadcast);
     renderRestrictions(v.restrictions);
+    renderPower(v.power);
   });
   probeMedia();
 })();

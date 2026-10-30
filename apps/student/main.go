@@ -72,6 +72,11 @@ func main() {
 	} else {
 		log.Info("screen thumbnails not available", "capture", capErr, "indicator", indErr)
 	}
+	if p, err := platform.NewPower(); err == nil {
+		app.enablePower(p)
+	} else {
+		log.Info("power actions not available", "err", err)
+	}
 	if len(os.Args) == 1 {
 		// Configured by files (installer): follow their changes. Flags pin it.
 		app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }
@@ -112,6 +117,7 @@ func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func())
 					runtime.WindowUnmaximise(ctx)
 				}
 			}
+			app.onTop = func(on bool) { runtime.WindowSetAlwaysOnTop(ctx, on) }
 			onStartup(ctx)
 		},
 		OnShutdown: func(context.Context) { onShutdown() },

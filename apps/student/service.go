@@ -188,6 +188,11 @@ func runService(ctx context.Context, sessionChanged <-chan struct{}) error {
 	}
 	sa := newServiceAgent(cfg, pub, cfgErr, log)
 	sa.policy = newPolicyManager(exe, sa, log)
+	if p, err := platform.NewPower(); err == nil {
+		sa.app.power.Power = p // also without a helper (docs/privacidad.md rule 29)
+	} else {
+		log.Info("power actions not available", "err", err)
+	}
 	// A web filter left by a crash or a power cut is undone before
 	// connecting (D-017).
 	if err := sa.policy.Restore(); err != nil {
@@ -279,6 +284,9 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	}
 	app.raise = func() { sa.helper.Notify(agentsvc.EventRaise, nil) }
 	app.maximize = func(on bool) { sa.helper.Notify(agentsvc.EventMaximize, on) }
+	app.onTop = func(on bool) { sa.helper.Notify(agentsvc.EventOnTop, on) }
+	app.power.Session = sa.session
+	app.power.Logoff = agentsvc.Logoff{Helper: sa.helper}.Logoff
 	app.helloFor = sa.hello
 	app.beforeRestart = sa.apply
 	sa.app = app
@@ -292,18 +300,21 @@ type emitted struct {
 }
 
 // hello is the hello of the next connection: the session's user and the
-// capabilities its helper can honour; none without a helper (no window, no
-// screen: docs/privacidad.md rule 17).
+// capabilities its helper can honour; without a helper only power (no window,
+// no screen, nobody's work to lose: docs/privacidad.md rules 17 and 29).
 func (sa *serviceAgent) hello() protocol.HelloInfo {
 	sa.mu.Lock()
 	defer sa.mu.Unlock()
 	h := sa.base
 	h.Capabilities = nil
+	if sa.app.power.Supported() {
+		h.Capabilities = append(h.Capabilities, protocol.CapPower)
+	}
 	if sa.ready == nil {
 		return h
 	}
 	h.Username = sa.sess.User
-	h.Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow}
+	h.Capabilities = append(h.Capabilities, protocol.CapCodeView, protocol.CapMsgShow)
 	if sa.ready.Capture {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb)
 	}
@@ -421,6 +432,11 @@ func (sa *serviceAgent) binding(_ context.Context, name string, data json.RawMes
 			return nil, err
 		}
 		return nil, a.BroadcastFailed(id, attempt)
+	case "PowerPostpone":
+		return nil, a.PowerPostpone()
+	case "DismissPower":
+		a.DismissPower()
+		return nil, nil
 	}
 	return nil, fmt.Errorf("%s: unknown method", b.Method)
 }

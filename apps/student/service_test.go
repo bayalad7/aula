@@ -34,6 +34,13 @@ type liveConsole struct {
 
 func startLiveConsole(t *testing.T) liveConsole {
 	t.Helper()
+	return startLiveConsoleWith(t, nil)
+}
+
+// startLiveConsoleWith also hands every message of the agents (acks,
+// errors) to onMessage.
+func startLiveConsoleWith(t *testing.T, onMessage func(context.Context, *transport.Conn, protocol.Envelope)) liveConsole {
+	t.Helper()
 	dir := t.TempDir()
 	id, err := security.CreateIdentity(dir, false)
 	if err != nil {
@@ -50,7 +57,7 @@ func startLiveConsole(t *testing.T) liveConsole {
 	ctx, cancel := context.WithCancel(context.Background())
 	reg := session.NewRegistry(0)
 	srv := transport.NewServer(transport.Options{TLS: security.ServerTLS(cert), Logger: quiet})
-	console := &session.Console{Channel: "1", Registry: reg, Identity: id, CertSHA256: cert.SHA256, Logger: quiet}
+	console := &session.Console{Channel: "1", Registry: reg, Identity: id, CertSHA256: cert.SHA256, Logger: quiet, OnMessage: onMessage}
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() { defer wg.Done(); _ = srv.Serve(ctx, ln) }()
@@ -79,10 +86,11 @@ func (c liveConsole) waitAgent(t *testing.T, what string, cond func(session.Sess
 // fakeHelper is the helper's end of the channel: it records what the service
 // asks of the student's screen and clipboard.
 type fakeHelper struct {
-	link *agentsvc.Link
-	mu   sync.Mutex
-	clip []string
-	evs  []string
+	link    *agentsvc.Link
+	mu      sync.Mutex
+	clip    []string
+	evs     []string
+	logoffs []uint32
 }
 
 func newFakeHelper(t *testing.T, conn net.Conn) *fakeHelper {
@@ -97,6 +105,11 @@ func newFakeHelper(t *testing.T, conn net.Conn) *fakeHelper {
 			h.clip = append(h.clip, s)
 			return nil, nil
 		case agentsvc.CallIndicatorShow, agentsvc.CallIndicatorHide:
+			return nil, nil
+		case agentsvc.CallPowerLogoff:
+			var id uint32
+			_ = json.Unmarshal(data, &id)
+			h.logoffs = append(h.logoffs, id)
 			return nil, nil
 		}
 		return nil, fmt.Errorf("%s: unexpected", name)

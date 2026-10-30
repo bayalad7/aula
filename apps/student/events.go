@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/policy"
+	"github.com/bayalad7/aula/internal/power"
 )
 
 // UI contract between this Go backend and frontend/dist (documented in
@@ -11,7 +12,8 @@ import (
 //
 // Backend → frontend: runtime.EventsEmit with one of the events below.
 // Frontend → backend: the bound methods of App (View, Copy, DismissNotice,
-// ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed).
+// ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed,
+// PowerPostpone, DismissPower).
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -30,7 +32,19 @@ const (
 	EventRestrictions = "aula:restrictions"
 	// EventAppClosed carries an AppClosed when a blocked app is closed.
 	EventAppClosed = "aula:app-closed"
+	// EventPower carries a PowerView when a power order starts, is
+	// postponed, runs, fails or ends (docs/privacidad.md rules 26-28).
+	EventPower = "aula:power"
 )
+
+// PowerView is the power notice as the window shows it. Notice is nil when
+// there is none; the window counts RemainingS down by itself.
+type PowerView struct {
+	Notice  *power.Notice `json:"notice"`
+	Teacher string        `json:"teacher"` // who gave the order
+	Channel string        `json:"channel"`
+	Verb    string        `json:"verb"` // "apagar este equipo", "reiniciar este equipo", "cerrar tu sesión"
+}
 
 // AppClosed names the app the agent closed (docs/privacidad.md rule 22).
 type AppClosed struct {
@@ -92,4 +106,6 @@ type View struct {
 	Broadcast BroadcastView `json:"broadcast"`
 	// Restrictions are the class restrictions in force.
 	Restrictions policy.State `json:"restrictions"`
+	// Power is the power notice in force, if any.
+	Power PowerView `json:"power"`
 }

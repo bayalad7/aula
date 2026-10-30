@@ -164,7 +164,8 @@ siempre tiene tiempo de guardar.
 
     ("apagar este equipo" o "cerrar tu sesión" según la orden), con el botón **"Posponer 5 min
     (te quedan 2)"**. La cuenta dura 30 s si el profesor no elige otra (10 s a 10 min). La barra
-    de la ventana agrega "· reinicio en 0:30".
+    de la ventana agrega "· reinicio pendiente" (o "apagado" o "cierre de sesión"), también sin
+    conexión.
 27. **Posponer.** Cada aplazamiento suma 5 minutos a lo que falta, como máximo 2 veces por orden.
     La consola ve cada aplazamiento. Agotados, el botón se deshabilita con "Ya no se puede
     posponer". Aula no cierra nada durante la cuenta.

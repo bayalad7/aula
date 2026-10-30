@@ -16,7 +16,7 @@
 | 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
-| 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado y probado con dobles (falta prueba en VM, `docs/prueba-vms.md` §15) |
+| 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado; apagado con cuenta y posponer probado en el laboratorio (faltan los demás casos de `docs/prueba-vms.md` §15) |
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 
@@ -660,7 +660,8 @@
   - pruebas nuevas: qué camino toma cada acción, y el caso del laboratorio de punta a punta con
     el servicio y un ayudante doble.
 
-  Falta repetir la prueba en el laboratorio con un instalador nuevo.
+  **Confirmado en el laboratorio** (29/10/2026, reportado por el usuario): con el agente
+  corregido, el apagado sin forzar de 1 equipo se ejecutó al terminar la cuenta.
 - **Falta:**
   - la prueba en VM de `docs/prueba-vms.md` §15 (PW-A a PW-I; aceptación con PW-A, PW-B y PW-D);
   - probar la interfaz de las dos apps con clics;

@@ -95,11 +95,11 @@ func TestReceiverAcks(t *testing.T) {
 
 func TestDeliveriesCountSimulatedApart(t *testing.T) {
 	var d Deliveries
-	del := d.Start("code", "Ejercicio 1", []string{"r1", "r2"}, 0, 0, time.Now())
-	if _, ok := d.AddSimulated(del.ID, []string{"s1"}); !ok {
+	del := d.Start("code", "Ejercicio 1", map[string]string{"pc1": "r1", "pc2": "r2"}, 0, 0, time.Now())
+	if _, ok := d.AddSimulated(del.ID, map[string]string{"sim1": "s1"}); !ok {
 		t.Fatal("AddSimulated did not find the delivery")
 	}
-	if _, ok := d.AddSimulated("nope", []string{"s2"}); ok {
+	if _, ok := d.AddSimulated("nope", map[string]string{"sim2": "s2"}); ok {
 		t.Error("AddSimulated found an unknown delivery")
 	}
 	d.Ack("r1")
@@ -109,5 +109,33 @@ func TestDeliveriesCountSimulatedApart(t *testing.T) {
 	}
 	if _, ok := d.Ack("s1"); ok {
 		t.Error("a simulated ack counted twice")
+	}
+	if len(got.Pending) != 1 || got.Pending[0] != "pc2" {
+		t.Errorf("pending = %v, want [pc2]", got.Pending)
+	}
+}
+
+// Resending to who is missing replaces their envelope: the late ack of the
+// first send no longer counts, the new one does, once.
+func TestDeliveriesResent(t *testing.T) {
+	var d Deliveries
+	del := d.Start("code", "Ejercicio 2", map[string]string{"pc1": "r1", "pc2": "r2"}, 0, 0, time.Now())
+	d.Ack("r1")
+	got, ok := d.Resent(del.ID, map[string]string{"pc2": "r2b", "pc1": "ignored"})
+	if !ok || len(got.Pending) != 1 || got.Pending[0] != "pc2" {
+		t.Fatalf("Resent = %+v, %v", got, ok)
+	}
+	if _, late := d.Ack("r2"); late {
+		t.Error("the ack of the replaced envelope still counted")
+	}
+	got, _ = d.Ack("r2b")
+	if got.Acked != 2 || got.Sent != 2 || len(got.Pending) != 0 {
+		t.Errorf("after resend = %+v, want 2/2 and nobody pending", got)
+	}
+	if _, ok := d.Ack("ignored"); ok {
+		t.Error("an envelope for a session that was not pending was tracked")
+	}
+	if g, ok := d.Get(del.ID); !ok || g.Acked != 2 {
+		t.Errorf("Get = %+v, %v", g, ok)
 	}
 }

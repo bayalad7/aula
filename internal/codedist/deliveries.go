@@ -21,11 +21,20 @@ type Delivery struct {
 	NoCapability int    `json:"noCapability"` // connected agents lacking the capability
 	// SimSent and SimAcked count the simulated students apart: they never
 	// add to Sent or Acked (docs/v1/ux/profesor, aula simulada).
-	SimSent  int       `json:"simSent"`
-	SimAcked int       `json:"simAcked"`
-	At       time.Time `json:"at"`
+	SimSent  int `json:"simSent"`
+	SimAcked int `json:"simAcked"`
+	// Pending lists the sessions (real or simulated) that have not
+	// acknowledged it yet, so the console can say who is missing.
+	Pending []string  `json:"pending"`
+	At      time.Time `json:"at"`
 
-	pending map[string]bool // envelope IDs still awaiting their ack; true if simulated
+	pending map[string]pendingRef // envelope ID → who still owes the ack
+}
+
+// pendingRef is an envelope awaiting its ack.
+type pendingRef struct {
+	session   string
+	simulated bool
 }
 
 // Deliveries counts the acks of recent broadcasts by their envelope IDs. It is
@@ -37,9 +46,9 @@ type Deliveries struct {
 	byRef map[string]*Delivery
 }
 
-// Start records a broadcast: envelopeIDs are the IDs of the envelopes sent,
-// one per agent; their acks will reference them.
-func (d *Deliveries) Start(kind, label string, envelopeIDs []string, failed, noCapability int, now time.Time) Delivery {
+// Start records a broadcast: sent maps each session reached to the ID of the
+// envelope it got; their acks will reference those IDs.
+func (d *Deliveries) Start(kind, label string, sent map[string]string, failed, noCapability int, now time.Time) Delivery {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.byRef == nil {
@@ -47,17 +56,17 @@ func (d *Deliveries) Start(kind, label string, envelopeIDs []string, failed, noC
 	}
 	d.seq++
 	del := &Delivery{
-		ID: "d" + strconv.Itoa(d.seq), Kind: kind, Label: label, Sent: len(envelopeIDs),
-		Failed: failed, NoCapability: noCapability, At: now, pending: map[string]bool{},
+		ID: "d" + strconv.Itoa(d.seq), Kind: kind, Label: label, Sent: len(sent),
+		Failed: failed, NoCapability: noCapability, At: now, pending: map[string]pendingRef{},
 	}
-	for _, id := range envelopeIDs {
-		del.pending[id] = false
-		d.byRef[id] = del
+	for session, env := range sent {
+		del.pending[env] = pendingRef{session: session}
+		d.byRef[env] = del
 	}
 	d.list = append(d.list, del)
 	if len(d.list) > maxDeliveries {
-		for id := range d.list[0].pending {
-			delete(d.byRef, id)
+		for env := range d.list[0].pending {
+			delete(d.byRef, env)
 		}
 		d.list = slices.Clone(d.list[1:])
 	}
@@ -73,10 +82,10 @@ func (d *Deliveries) Ack(refID string) (Delivery, bool) {
 	if !ok {
 		return Delivery{}, false
 	}
-	simulated := del.pending[refID]
+	ref := del.pending[refID]
 	delete(d.byRef, refID)
 	delete(del.pending, refID)
-	if simulated {
+	if ref.simulated {
 		del.SimAcked++
 	} else {
 		del.Acked++
@@ -85,19 +94,51 @@ func (d *Deliveries) Ack(refID string) (Delivery, bool) {
 }
 
 // AddSimulated records that the delivery with ID id also went to simulated
-// students, through the given envelope IDs. Their acks count in SimAcked.
-func (d *Deliveries) AddSimulated(id string, envelopeIDs []string) (Delivery, bool) {
+// students (session → envelope ID). Their acks count in SimAcked.
+func (d *Deliveries) AddSimulated(id string, sent map[string]string) (Delivery, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	for _, del := range d.list {
-		if del.ID != id {
+	del := d.find(id)
+	if del == nil {
+		return Delivery{}, false
+	}
+	for session, env := range sent {
+		del.pending[env] = pendingRef{session: session, simulated: true}
+		d.byRef[env] = del
+	}
+	del.SimSent += len(sent)
+	return del.snapshot(), true
+}
+
+// Resent records that the delivery was sent again to some of the sessions
+// that had not acknowledged it (session → new envelope ID). The old envelopes
+// of those sessions stop counting, so a late ack of the first send is not
+// counted twice; sessions not still pending are ignored.
+func (d *Deliveries) Resent(id string, sent map[string]string) (Delivery, bool) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	del := d.find(id)
+	if del == nil {
+		return Delivery{}, false
+	}
+	for env, ref := range del.pending {
+		newEnv, again := sent[ref.session]
+		if !again {
 			continue
 		}
-		for _, ref := range envelopeIDs {
-			del.pending[ref] = true
-			d.byRef[ref] = del
-		}
-		del.SimSent += len(envelopeIDs)
+		delete(del.pending, env)
+		delete(d.byRef, env)
+		del.pending[newEnv] = ref
+		d.byRef[newEnv] = del
+	}
+	return del.snapshot(), true
+}
+
+// Get returns one tracked delivery.
+func (d *Deliveries) Get(id string) (Delivery, bool) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if del := d.find(id); del != nil {
 		return del.snapshot(), true
 	}
 	return Delivery{}, false
@@ -114,8 +155,23 @@ func (d *Deliveries) Recent() []Delivery {
 	return out
 }
 
+// find returns the delivery with ID id; d.mu is held.
+func (d *Deliveries) find(id string) *Delivery {
+	for _, del := range d.list {
+		if del.ID == id {
+			return del
+		}
+	}
+	return nil
+}
+
 func (del *Delivery) snapshot() Delivery {
 	c := *del
 	c.pending = nil
+	c.Pending = make([]string, 0, len(del.pending))
+	for _, ref := range del.pending {
+		c.Pending = append(c.Pending, ref.session)
+	}
+	slices.Sort(c.Pending)
 	return c
 }

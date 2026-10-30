@@ -3,7 +3,7 @@ titulo: "Energía: apagar, reiniciar y cerrar sesión"
 descripcion: "Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que el equipo se apaga"
 audiencia: [profesor, alumno, desarrollador]
 pantallas: [alumnos]
-secciones_manual: [privacidad, protocol]
+secciones_manual: [v1/administracion/tareas-frecuentes, privacidad, protocol]
 ---
 
 # Energía: apagar, reiniciar y cerrar sesión

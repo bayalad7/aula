@@ -3,7 +3,7 @@ titulo: "Aula simulada y simulación de fallas"
 descripcion: "Cómo prueba el profesor Aula sin laboratorio con alumnos de prueba que nunca se confunden con equipos reales"
 audiencia: [profesor, desarrollador]
 pantallas: [simulada]
-secciones_manual: [privacidad, eventos-ui]
+secciones_manual: [v1/administracion/como-funciona, v1/administracion/probar-sin-laboratorio, privacidad, eventos-ui]
 enlaces: [reglas=privacidad#aula-simulada-consola-del-profesor]
 ---
 

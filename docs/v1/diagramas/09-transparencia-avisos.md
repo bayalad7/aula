@@ -3,7 +3,7 @@ titulo: "Transparencia: avisos e indicadores al alumno"
 descripcion: "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le transmite, lo restringe o apaga su equipo"
 audiencia: [profesor, alumno, desarrollador]
 pantallas: [alumnos, ayuda]
-secciones_manual: [privacidad]
+secciones_manual: [v1/administracion/como-funciona, privacidad]
 enlaces: [distintivo=privacidad#reglas-vigentes, visto=pantalla:alumnos, restr=pantalla:alumnos, energia=pantalla:alumnos]
 ---
 

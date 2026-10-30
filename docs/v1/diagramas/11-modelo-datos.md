@@ -3,7 +3,7 @@ titulo: "Modelo de datos local"
 descripcion: "Qué guarda Aula en el disco de cada equipo, qué solo vive en memoria y cómo se relacionan claves y configuración"
 audiencia: [desarrollador, auditor]
 pantallas: [ayuda]
-secciones_manual: [configuracion, privacidad]
+secciones_manual: [v1/administracion/como-funciona, configuracion, privacidad]
 ---
 
 # Modelo de datos local

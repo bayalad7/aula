@@ -3,7 +3,7 @@ titulo: "Ciclo de sesión y heartbeat"
 descripcion: "Por qué estados pasa la conexión de un alumno, cuándo se da por caída y cómo vuelve sola"
 audiencia: [desarrollador]
 pantallas: [alumnos]
-secciones_manual: [protocol]
+secciones_manual: [v1/administracion/como-funciona, protocol]
 ---
 
 # Ciclo de sesión y heartbeat

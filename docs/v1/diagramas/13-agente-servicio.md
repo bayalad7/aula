@@ -3,7 +3,7 @@ titulo: "El agente como servicio de Windows"
 descripcion: "Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno"
 audiencia: [instalador, desarrollador, auditor]
 pantallas: [falta]
-secciones_manual: [privacidad, configuracion]
+secciones_manual: [v1/administracion/como-funciona, privacidad, configuracion]
 ---
 
 # El agente como servicio de Windows

@@ -3,7 +3,7 @@ titulo: "Componentes y dependencias"
 descripcion: "Cómo se reparten las dos aplicaciones en paquetes y por qué solo uno toca el sistema operativo"
 audiencia: [desarrollador]
 pantallas: []
-secciones_manual: [decisiones]
+secciones_manual: [v1/administracion/como-funciona, decisiones]
 ---
 
 # Componentes y dependencias

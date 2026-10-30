@@ -3,7 +3,7 @@ titulo: "Diagnóstico: «Mi alumno no conecta»"
 descripcion: "Preguntas en orden para averiguar por qué un equipo de alumno no aparece en la consola"
 audiencia: [profesor, instalador]
 pantallas: [falta]
-secciones_manual: [uso-hito1, prueba-vms, configuracion]
+secciones_manual: [v1/administracion/solucion-de-problemas, uso-hito1, prueba-vms, configuracion]
 enlaces: [config=configuracion, firewall=uso-hito1#7-red-y-firewall, clave=protocol#101-identidades-y-claves]
 ---
 
@@ -14,42 +14,42 @@ enlaces: [config=configuracion, firewall=uso-hito1#7-red-y-firewall, clave=proto
 ```mermaid
 %%{init: {"htmlLabels": false, "flowchart": {"htmlLabels": false}}}%%
 flowchart TD
-    inicio["El alumno no aparece en la consola"]
-    barra{"¿Qué dice la barra<br/>de Aula — Cliente?"}
+    inicio["Un alumno no aparece en la consola"]
+    barra{"¿Qué dice la barra de arriba<br/>de Aula en el equipo del alumno?"}
 
-    sinconf["«Aula — sin configurar»"]
-    config["Reinstalar el agente con su canal<br/>y aula-centro.pub, o revisar<br/>ProgramData Aula alumno config.json"]
+    sinconf["Aula no está configurada en ese equipo"]
+    config["Pide al responsable de TI que instale<br/>Aula en ese equipo con su canal<br/>y la clave pública del centro"]
 
-    nocons["«No se encontró ninguna<br/>consola del canal X»"]
-    canal{"¿La consola está abierta<br/>en ese mismo canal?"}
-    cambiar["Cambiar el canal de la consola<br/>(el del alumno es fijo)"]
-    perfil{"¿La red de ambos equipos<br/>es Privada o de Dominio?"}
-    privada["Marcar la red como Privada<br/>o reinstalar con «redes Públicas»"]
-    mdns["mDNS bloqueado en la red:<br/>configurar direct host:puerto"]
+    nocons["El alumno no encuentra esta consola"]
+    canal{"¿Tu clase está abierta en el<br/>mismo canal que dice su barra?"}
+    cambiar["Cambia tu canal al del alumno:<br/>el del alumno es fijo"]
+    perfil{"¿La red de Windows de los dos<br/>equipos es Privada o de Dominio?"}
+    privada["Marca la red como Privada en<br/>Configuración › Red e Internet"]
+    mdns["La red bloquea la búsqueda automática:<br/>pide a TI que configure en el alumno<br/>la dirección de esta consola"]
 
-    inalc["«Se encontró la consola …<br/>pero no se pudo conectar»"]
-    firewall["Firewall del equipo del profesor:<br/>TCP 47830 entrante, misma red"]
+    inalc["El alumno encuentra la consola<br/>pero no llega a ella"]
+    firewall["Revisa que el firewall de este equipo<br/>permita Aula Consola y que los dos<br/>equipos estén en la misma red"]
 
-    cert["«… presentó un certificado<br/>distinto del que anuncia»"]
-    impostor["Otro equipo anuncia con datos<br/>ajenos: se ignora; avisar al<br/>administrador si persiste"]
+    cert["Otro equipo se hace pasar por una consola"]
+    impostor["El alumno lo ignora, y está bien.<br/>Si pasa seguido, avisa a TI"]
 
-    clave["«… su clave no es la de este centro»"]
-    reclave["Los alumnos tienen otra clave del centro:<br/>reinstalar con el aula-centro.pub<br/>de esta consola"]
+    clave["El alumno tiene otra clave del centro"]
+    reclave["Pide a TI que reinstale el alumno<br/>con la clave pública de este centro<br/>o la clave del centro en tu equipo"]
 
-    diag["Ejecutar aula-cliente diagnostico:<br/>configuración, consolas vistas por mDNS<br/>e intento de conexión"]
-    ok["Conectado: aparece en la consola"]
+    diag["Pide a TI que ejecute<br/>aula-cliente diagnostico<br/>en el equipo del alumno"]
+    ok["Listo: el alumno aparece en la consola"]
 
     inicio --> barra
-    barra -- "sin configurar" --> sinconf --> config
-    barra -- "buscando" --> nocons --> canal
-    canal -- "no" --> cambiar
-    canal -- "sí" --> perfil
-    perfil -- "no, Pública" --> privada
-    perfil -- "sí" --> mdns
-    barra -- "inalcanzable" --> inalc --> firewall
-    barra -- "certificado" --> cert --> impostor
-    barra -- "clave" --> clave --> reclave
-    barra -- "no sé / sin ventana" --> diag
+    barra -- "«Sin configurar»" --> sinconf --> config
+    barra -- "«Buscando…» o «No se encontró ninguna consola»" --> nocons --> canal
+    canal -- "No" --> cambiar
+    canal -- "Sí" --> perfil
+    perfil -- "No, es Pública" --> privada
+    perfil -- "Sí" --> mdns
+    barra -- "«…no se pudo conectar»" --> inalc --> firewall
+    barra -- "«…presentó un certificado distinto»" --> cert --> impostor
+    barra -- "«…su clave no es la de este centro»" --> clave --> reclave
+    barra -- "No veo la ventana de Aula" --> diag
     config & cambiar & privada & mdns & firewall & reclave --> ok
 
     classDef externo fill:#dbeafe,stroke:#1d4ed8,color:#111827
@@ -66,7 +66,9 @@ flowchart TD
 
 - **Las preguntas salen de mensajes reales**: cada rama corresponde a un texto que el agente
   muestra bajo su barra (`Agent.OnDiagnostic`). Si un mensaje cambia en el código, cambia este
-  diagrama; la etapa 18 genera de aquí el árbol interactivo de la consola.
+  diagrama; **la consola genera de aquí el asistente «¿Falta un alumno?»** (`internal/manual.ParseTree`):
+  los nodos `{…}` son preguntas y las etiquetas de sus flechas, las respuestas. Por eso las
+  etiquetas están escritas para el profesor.
 - **El canal del alumno no se toca en clase**: es fijo por computadora. Si no coincide, se cambia
   el de la consola; reubicar un equipo de sala es reinstalar con `/CANAL=N`.
 - **La red Pública es la causa más común** (prueba real del 29/10/2026, D-012): las reglas de
@@ -89,3 +91,5 @@ flowchart TD
 - `apps/student/app.go` (`onDiagnostic`, `setStatus`), `apps/student/config.go`
 - `internal/discovery/multicast.go` (D-015)
 - `docs/uso-hito1.md`, `docs/prueba-vms.md` §10, `docs/decisiones.md` D-012 y D-015
+- `internal/manual/tree.go` (`ParseTree`: este diagrama → asistente de la consola),
+  `apps/teacher/frontend/dist/main.js` (`pintarArbol`)

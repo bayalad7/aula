@@ -3,7 +3,7 @@ titulo: "Descubrimiento de canal (mDNS)"
 descripcion: "Cómo un equipo de alumno encuentra la consola de su sala entre varias de la misma red"
 audiencia: [instalador, desarrollador]
 pantallas: [falta]
-secciones_manual: [configuracion, prueba-vms]
+secciones_manual: [v1/administracion/como-funciona, configuracion, prueba-vms]
 ---
 
 # Descubrimiento de canal (mDNS)

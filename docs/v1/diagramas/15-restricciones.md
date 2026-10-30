@@ -3,7 +3,7 @@ titulo: "Restricciones de la clase: apps y filtro web"
 descripcion: "Cómo se aplican el bloqueo de aplicaciones y el filtro web, y por qué siempre se pueden deshacer"
 audiencia: [profesor, desarrollador, auditor]
 pantallas: [alumnos]
-secciones_manual: [privacidad, protocol]
+secciones_manual: [v1/administracion/tareas-frecuentes, privacidad, protocol]
 enlaces: [consola=pantalla:alumnos, diario=configuracion]
 ---
 

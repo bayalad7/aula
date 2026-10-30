@@ -48,6 +48,10 @@ const (
 	TypeWebFilterSet   Type = "web.filter.set"
 	TypeWebFilterClear Type = "web.filter.clear"
 	TypeWebFilterAck   Type = "web.filter.ack"
+	// Power (docs/protocol.md §5.15).
+	TypePowerAction Type = "power.action"
+	TypePowerCancel Type = "power.cancel"
+	TypePowerAck    Type = "power.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -234,6 +238,10 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeWebFilterSet:   decodeAs[WebFilterSet],
 	TypeWebFilterClear: decodeAs[WebFilterClear],
 	TypeWebFilterAck:   decodeAs[WebFilterAck],
+
+	TypePowerAction: decodeAs[PowerAction],
+	TypePowerCancel: decodeAs[PowerCancel],
+	TypePowerAck:    decodeAs[PowerAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

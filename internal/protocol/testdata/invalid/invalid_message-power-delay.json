@@ -1,0 +1,1 @@
+{"v": 1, "id": "5b0e8f3c-2a6d-4c1e-9b7a-0f3d2e1c4b5a", "ts": 1792771200000, "type": "power.action", "payload": {"action_id": "c2e1a3b4-5d6e-4f70-8a9b-0c1d2e3f4a5b", "action": "reboot", "delay_s": 5, "force": false}}

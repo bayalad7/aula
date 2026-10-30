@@ -58,6 +58,10 @@ func samplePayloads() []Payload {
 		WebFilterSet{PolicyID: testRefID, Mode: PolicyAllow, Domains: []string{"python.org", "xn--espaol-zwa.org"}},
 		WebFilterClear{},
 		WebFilterAck{RefID: testSnippetID},
+		PowerAction{ActionID: testRefID, Action: PowerReboot, DelayS: 30},
+		PowerAction{ActionID: testRefID, Action: PowerShutdown, Force: true},
+		PowerCancel{ActionID: testRefID},
+		PowerAck{RefID: testSnippetID, ActionID: testRefID, Status: PowerPostponed, RemainingS: 325, PostponesLeft: 1},
 	}
 }
 
@@ -302,6 +306,15 @@ func TestPayloadValidation(t *testing.T) {
 		{"web.filter id", WebFilterSet{Mode: PolicyDeny, Domains: []string{"x.com"}}},
 		{"ack active without policy", AppBlockAck{RefID: testRefID, Active: true}},
 		{"ack inactive with policy", WebFilterAck{RefID: testRefID, PolicyID: testRefID}},
+		{"power action", PowerAction{ActionID: testRefID, Action: "hibernate"}},
+		{"power id", PowerAction{Action: PowerReboot}},
+		{"power delay short", PowerAction{ActionID: testRefID, Action: PowerReboot, DelayS: MinPowerDelay - 1}},
+		{"power delay long", PowerAction{ActionID: testRefID, Action: PowerReboot, DelayS: MaxPowerDelay + 1}},
+		{"power delay negative", PowerAction{ActionID: testRefID, Action: PowerReboot, DelayS: -5}},
+		{"power cancel id", PowerCancel{ActionID: "x"}},
+		{"power ack status", PowerAck{RefID: testRefID, ActionID: testRefID, Status: "done"}},
+		{"power ack postpones", PowerAck{RefID: testRefID, ActionID: testRefID, Status: PowerPostponed, PostponesLeft: 3}},
+		{"power ack remaining", PowerAck{RefID: testRefID, ActionID: testRefID, Status: PowerCountdown, RemainingS: -1}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -343,12 +356,13 @@ func TestRequiredCapability(t *testing.T) {
 		TypeScreenBroadcastICE: CapScreenBroadcast, TypeScreenBroadcastStop: CapScreenBroadcast,
 		TypeAppBlockSet: CapAppBlock, TypeAppBlockClear: CapAppBlock,
 		TypeWebFilterSet: CapWebFilter, TypeWebFilterClear: CapWebFilter,
+		TypePowerAction: CapPower, TypePowerCancel: CapPower,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}

@@ -14,6 +14,8 @@ const (
 	// Windows, with the agent running as a service.
 	CapAppBlock  Capability = "app.block"
 	CapWebFilter Capability = "web.filter"
+	// CapPower shuts down, reboots or logs off (§5.15). Windows.
+	CapPower Capability = "power"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -21,7 +23,6 @@ const (
 	CapScreenFreeze Capability = "screen.freeze" // documented, pending (§6)
 	CapFileCollect  Capability = "file.collect"
 	CapCodeCollect  Capability = "code.collect"
-	CapPower        Capability = "power"
 	CapRemote       Capability = "remote"
 	CapPoll         Capability = "poll"
 )
@@ -45,6 +46,9 @@ var requiredCapability = map[Type]Capability{
 	TypeAppBlockClear:  CapAppBlock,
 	TypeWebFilterSet:   CapWebFilter,
 	TypeWebFilterClear: CapWebFilter,
+
+	TypePowerAction: CapPower,
+	TypePowerCancel: CapPower,
 }
 
 // RequiredCapability reports the capability needed to receive a message of

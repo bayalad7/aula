@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-10-29 (diagramas iniciales de `docs/v1/diagramas/` y su validador).
+Última actualización: 2026-10-29 (etapa 18: análisis de UX y sistema de diseño de la consola).
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -20,6 +20,7 @@
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 15 diagramas (falta el 10, aula simulada) |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1 (análisis) y 2 (sistema de diseño y prototipo) hechas; esperan aprobación |
 
 ## Etapa 02: notas
 
@@ -707,3 +708,23 @@
 - **Para la etapa 18:** al crear la navegación y el manual en `docs/administracion/`, actualizar
   `pantallas` y `secciones_manual` (la prueba fallará hasta hacerlo si se renombran las
   secciones), agregar el diagrama 10 y generar el árbol interactivo a partir del 12.
+
+## Etapa 18: pulido de la consola — notas (en curso)
+
+- **Fase 1, análisis** (`docs/v1/ux/profesor/ANALISIS-CONSOLA.md`, commit `b27c408`):
+  - 26 capturas del frontend real en Chromium headless, con un doble de los bindings;
+  - revisión WCAG con axe-core;
+  - hallazgos priorizados;
+  - decisiones del usuario: Alumnos como inicio, acciones sobre la selección en paneles
+    laterales, conservar el historial al cambiar de nombre o canal con confirmación,
+    «Reenviar a los que faltan» y Aula simulada en la navegación principal.
+- **Fase 2, sistema de diseño** (`docs/v1/ux/profesor/FASE2-SISTEMA-DISENO.md`):
+  - tokens, componentes e iconos en `apps/teacher/frontend/dist/sistema/` (todavía no los usa
+    la consola);
+  - catálogo y prototipo de 3 pantallas en `apps/teacher/frontend/dev/`, fuera del binario,
+    que se ven con `go run ./tools/vistaprevia`;
+  - prueba de contraste AA `TestTokensContrast`;
+  - 12 capturas sin violaciones de axe.
+- **Pendiente:** la aprobación del prototipo y de 3 preguntas abiertas (aula simulada en la
+  lista, paleta oscura de los diagramas, compartir el sistema con la app del alumno). Después
+  vienen las entregas E2–E10 del análisis.

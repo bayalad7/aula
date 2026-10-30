@@ -211,6 +211,16 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 { "index": 0, "label": "Monitor 1 (principal) · 1920×1080", "width": 1920, "height": 1080, "primary": true }
 ```
 
+### Errores de los métodos
+
+Un método que falla devuelve un error con **código estable**, que llega a la interfaz como
+`aula:<código>: <detalle>` (por ejemplo, `aula:portInUse: el puerto 47830 está ocupado…`). La
+interfaz muestra `error.<código>.titulo` y `error.<código>.texto` de `textos.es-MX.js` («qué
+pasó + qué hacer») y deja el detalle en «Ver detalles». Los códigos están en
+`apps/teacher/errores.go`. Las pruebas exigen que cada código tenga su texto y que los métodos
+devuelvan el código correcto en sus fallos típicos. Un error sin código se muestra tal cual, como
+último recurso.
+
 ### Métodos enlazados (interfaz → Go)
 
 | Método | Devuelve | Uso |

@@ -744,5 +744,14 @@
     `Resend` e `InstallerInfo`;
   - 27 capturas sin errores de JS ni violaciones de axe;
   - falta la prueba en la ventana real.
-- **Siguiente:** códigos de error desde Go (E2), manual (E7), diagramas en la consola (E8),
-  comprobador de conexión (6.3) y verificación final (E10).
+- **E3 aprobada** (commits `1bc0e2c`, `67830d5` y `1baed73`) y guía
+  `docs/desarrollo/probar-consola-local.md` (`98b51a7`).
+- **E2, errores con código** (espera aprobación): cada error de los métodos lleva un código
+  estable (`apps/teacher/errores.go`, 34 códigos) y la interfaz muestra su texto de
+  `textos.es-MX.js`, con el detalle técnico plegado. Lo prueban `TestErrorCodesHaveTexts`,
+  `TestBindingsReturnCodedErrors` (21 fallos típicos) y `TestPortInUseIsCoded`.
+- **Pendiente de E2:** enlazar cada error a su sección del manual cuando exista (E7), y los
+  códigos de error del protocolo que mandan los alumnos (hoy solo afectan a la energía, que
+  muestra «no se pudo»).
+- **Siguiente:** manual (E7), diagramas en la consola (E8), comprobador de conexión (6.3) y
+  verificación final (E10).

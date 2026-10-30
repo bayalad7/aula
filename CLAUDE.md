@@ -46,8 +46,12 @@ Dos aplicaciones, mismo monorepo:
   - `internal/simclass`: el aula simulada: alumnos simulados dentro de la consola, con el
     protocolo real por un puerto de `127.0.0.1` que no se anuncia, y sus fallas (desconectado,
     lento, no acusa). Siempre marcados y contados aparte de los reales.
+  - `internal/manual`: el manual de la consola: lee el Markdown de `docs/v1/administracion` y los
+    diagramas de `docs/v1/diagramas` a bloques sin HTML (sanitizado por construcción), lo valida,
+    busca y genera el asistente «¿Falta un alumno?» del diagrama 12. El paquete `docs` los embebe
+    (`docs.Files()`): `docs/` es la única fuente.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `simclass` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `simclass`, `manual` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

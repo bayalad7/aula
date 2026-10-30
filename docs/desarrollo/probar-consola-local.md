@@ -94,6 +94,16 @@ consola agrega aquí sus casos.
 | C-18 | Recorre con Tab desde el inicio | El primer Tab ofrece «Saltar al contenido». En el editor, Ctrl+M y luego Tab sale del editor |
 | C-19 | En Alumnos, Ctrl+A | Selecciona a todos; el botón cambia a «Quitar selección» |
 
+### Manual y ayuda
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-21 | Ayuda → «Solución de problemas» | La página con migas «Ayuda › Solución de problemas»; las capturas y las notas se ven bien en claro y oscuro |
+| C-22 | En Ayuda busca «firewal» y luego «simulado» | Resultados con su sección; clic en uno lleva a esa sección |
+| C-23 | En Alumnos y en Código, pulsa «?» | Se abre el panel con la página de esa pantalla; «Abrir en el manual» la abre en Ayuda |
+| C-24 | «¿Falta un alumno?»: responde las preguntas hasta una causa, luego «Empezar de nuevo» | Cada respuesta queda anotada; al final, la causa y qué hacer; reiniciar vuelve a la primera pregunta |
+| C-25 | En Código, «Pegar del portapapeles» con el portapapeles vacío | El aviso «No hay texto copiado» con «Ver en el manual», que abre «El portapapeles no funciona» |
+
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 
 | # | Pasos | Esperado |

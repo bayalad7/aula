@@ -221,6 +221,10 @@ pasó + qué hacer») y deja el detalle en «Ver detalles». Los códigos están
 devuelvan el código correcto en sus fallos típicos. Un error sin código se muestra tal cual, como
 último recurso.
 
+Cada código enlaza además a su sección del manual (`errorHelp` en `errores.go`, que llega en
+`Manual().errors`): el aviso lleva «Ver en el manual». `TestErrorCodesLinkToTheManual` exige que
+cada código tenga su enlace y que la sección exista.
+
 ### Métodos enlazados (interfaz → Go)
 
 | Método | Devuelve | Uso |
@@ -255,6 +259,8 @@ devuelvan el código correcto en sus fallos típicos. Un error sin código se mu
 | `SimulationAdd({os, capabilities})` | `SimulationView` / error | Agrega un alumno simulado: `os` `windows`, `linux` o `darwin`; `capabilities` entre `code.view`, `msg.show` y `screen.thumb` (vacío: las tres). Máximo 40. |
 | `SimulationRemove(id)` | `SimulationView` / error | Quita uno. |
 | `SimulationFault(id, fault, delayMs)` | `SimulationView` / error | Hace fallar a uno: `slow` (contesta con `delayMs` de retraso, 500–10 000), `noack` (muestra pero no confirma), `disconnected` (se va hasta volver a `none`). |
+| `Manual()` | `ManualView` / error | El manual embebido (`docs/v1/administracion`), ya leído y validado: `{pages, diagrams, images, errors, diagnosis}`. `pages[]` = `{slug, title, summary, group, order, screens, blocks, headings}`; los bloques no traen HTML (la interfaz los dibuja con el DOM). `images`: `img/x.png` → data URI. `errors`: código de error → `página#sección`. `diagnosis`: el árbol de «¿Falta un alumno?» sacado del diagrama 12 (`{start, nodes}`). |
+| `ManualSearch(q)` | `Result[]` | Búsqueda local, sin distinguir acentos ni mayúsculas, en títulos, secciones y texto de las páginas y en los títulos y descripciones de los diagramas. Hasta 12 `{slug, anchor, diagram, title, snippet}`. |
 | `SimulationStop()` | `SimulationView` | Cierra el aula simulada: sus alumnos se van y se olvidan. También ocurre al cambiar de canal o de nombre, o al cerrar la clase. Los alumnos reales no se tocan. |
 
 ### Reglas

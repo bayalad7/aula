@@ -20,7 +20,7 @@
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 15 diagramas (falta el 10, aula simulada) |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1, 2 y aula simulada (6.1) aprobadas; consola nueva (E3) hecha, espera aprobación |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1 y 2, aula simulada (6.1), E3 y E2 aprobadas; manual (E7) espera aprobación |
 
 ## Etapa 02: notas
 
@@ -746,12 +746,19 @@
   - falta la prueba en la ventana real.
 - **E3 aprobada** (commits `1bc0e2c`, `67830d5` y `1baed73`) y guía
   `docs/desarrollo/probar-consola-local.md` (`98b51a7`).
-- **E2, errores con código** (espera aprobación): cada error de los métodos lleva un código
-  estable (`apps/teacher/errores.go`, 34 códigos) y la interfaz muestra su texto de
+- **E2, errores con código** (commits `cd429c6` y `e45e0e5`): cada error de los métodos lleva
+  un código estable (`apps/teacher/errores.go`, hoy 35 códigos) y la interfaz muestra su texto de
   `textos.es-MX.js`, con el detalle técnico plegado. Lo prueban `TestErrorCodesHaveTexts`,
   `TestBindingsReturnCodedErrors` (21 fallos típicos) y `TestPortInUseIsCoded`.
-- **Pendiente de E2:** enlazar cada error a su sección del manual cuando exista (E7), y los
-  códigos de error del protocolo que mandan los alumnos (hoy solo afectan a la energía, que
-  muestra «no se pudo»).
-- **Siguiente:** manual (E7), diagramas en la consola (E8), comprobador de conexión (6.3) y
-  verificación final (E10).
+- **Pendiente de E2:** los códigos de error del protocolo que mandan los alumnos (hoy solo
+  afectan a la energía, que muestra «no se pudo»).
+- **E7, el manual en la consola** (`docs/v1/ux/profesor/ENTREGA-E7.md`, espera aprobación):
+  - Markdown en `docs/v1/administracion/` (única fuente), embebido por el paquete `docs`;
+  - `internal/manual` lo lee sin HTML, lo valida, lo busca y saca el asistente «¿Falta un
+    alumno?» del diagrama 12;
+  - Ayuda con índice, búsqueda y enlaces; «?» por pantalla; cada error enlaza a su sección;
+  - pruebas: una página por pantalla, enlaces y secciones válidos, el árbol del diagrama 12 y
+    el enlace de cada código de error;
+  - falta la prueba en la ventana real (C-21 a C-25).
+- **Siguiente:** diagramas en la consola (E8), comprobador de conexión (6.3) y verificación
+  final (E10).

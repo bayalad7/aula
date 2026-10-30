@@ -67,7 +67,7 @@ van en una línea (`[a, b]`):
 | `titulo` | El título, igual al encabezado del diagrama. |
 | `descripcion` | Una frase sin tecnicismos: qué muestra el diagrama. |
 | `audiencia` | Para quién es: `profesor`, `alumno`, `instalador`, `desarrollador`, `auditor`. |
-| `pantallas` | Las pantallas de la consola donde aparece como ayuda: el `id` de su `<section>` en `apps/teacher/frontend/dist/index.html` (hoy `setup`, `console`, `screens`, `restr`, `power`). Puede ir vacía. |
+| `pantallas` | Las vistas de la consola donde aparece como ayuda: su `data-vista-de` en `apps/teacher/frontend/dist/index.html` (`alumnos`, `codigo`, `simulada`, `ayuda`, `falta`). Puede ir vacía. |
 | `secciones_manual` | Los documentos de `docs/` que lo citan, sin `.md` (por ejemplo `privacidad` o, cuando exista el manual, `administracion/conexion`). Al menos uno, y deben existir. |
 | `enlaces` | Opcional, solo en `flowchart`: nodos que llevan a otra parte, como `nodo=destino`. El destino es un documento de `docs/` (sin `.md`, con `#ancla` opcional, el ancla de GitHub de un encabezado) o `pantalla:<id>`. |
 
@@ -85,7 +85,7 @@ Ejemplo de front-matter (diagrama 04):
 titulo: "Autenticación y fijado de certificado"
 descripcion: "Cómo el agente comprueba que habla con la consola del profesor y no con un impostor"
 audiencia: [desarrollador, auditor]
-pantallas: [setup]
+pantallas: [ayuda]
 secciones_manual: [protocol]
 ---
 ```
@@ -93,7 +93,7 @@ secciones_manual: [protocol]
 Con enlaces (solo `flowchart`):
 
 ```yaml
-enlaces: [canal=configuracion, clave=protocol#101-identidades-y-claves, consola=pantalla:console]
+enlaces: [canal=configuracion, clave=protocol#101-identidades-y-claves, consola=pantalla:alumnos]
 ```
 
 Cada diagrama tiene, después del bloque, las secciones **«Lo que no es obvio»** (prosa) y

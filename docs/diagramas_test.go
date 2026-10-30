@@ -45,7 +45,7 @@ var (
 	fieldRe     = regexp.MustCompile(`^([a-z_]+): (.*)$`)
 	listItemRe  = regexp.MustCompile(`^[A-Za-z0-9_./#=:-]+$`)
 	docRefRe    = regexp.MustCompile(`^[a-z0-9-]+(/[a-z0-9-]+)*$`)
-	screenRe    = regexp.MustCompile(`<section\s+id="([a-z0-9-]+)"`)
+	screenRe    = regexp.MustCompile(`data-vista-de="([a-z0-9-]+)"`)
 	includeRe   = regexp.MustCompile(`\{\{diagrama:([^}]*)\}\}`)
 	codeSpanRe  = regexp.MustCompile("`([^`]+)`")
 	sourcePath  = regexp.MustCompile(`^[a-z][A-Za-z0-9_.*-]*(/[A-Za-z0-9_.*-]+)+$`)
@@ -469,7 +469,7 @@ func realEnv(t *testing.T) env {
 		screens[m[1]] = true
 	}
 	if len(screens) == 0 {
-		t.Fatalf("no se encontraron <section id=…> en %s", consoleIndex)
+		t.Fatalf("no se encontraron vistas (data-vista-de) en %s", consoleIndex)
 	}
 	readme, err := os.ReadFile(filepath.Join(diagramsDir, "README.md"))
 	if err != nil {

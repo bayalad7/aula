@@ -2,7 +2,7 @@
 titulo: "Energía: apagar, reiniciar y cerrar sesión"
 descripcion: "Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que el equipo se apaga"
 audiencia: [profesor, alumno, desarrollador]
-pantallas: [power]
+pantallas: [alumnos]
 secciones_manual: [privacidad, protocol]
 ---
 

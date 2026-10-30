@@ -2,7 +2,7 @@
 titulo: "Acuses y recolección de código/archivos"
 descripcion: "Cómo cuenta la consola quién recibió cada envío, y qué falta para recoger trabajos de los alumnos"
 audiencia: [desarrollador]
-pantallas: [console]
+pantallas: [codigo]
 secciones_manual: [protocol]
 enlaces: [deliveries=eventos-ui, reservado=protocol#6-reservados-para-fases-futuras]
 ---

@@ -2,7 +2,7 @@
 titulo: "Autenticación y fijado de certificado"
 descripcion: "Cómo el agente comprueba que habla con la consola del profesor y no con un impostor"
 audiencia: [desarrollador, auditor]
-pantallas: [setup]
+pantallas: [ayuda]
 secciones_manual: [protocol]
 ---
 

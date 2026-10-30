@@ -177,6 +177,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 { "deliveries": [ { "id": "d3", "kind": "code", "label": "Ejercicio 1 · Factorial",
                     "sent": 2, "acked": 2, "failed": 0, "noCapability": 1,
                     "simSent": 2, "simAcked": 1,   // alumnos simulados, contados aparte
+                    "pending": ["…"],              // sesiones que aún no lo confirman (reales y simuladas)
                     "at": "…" } ] }
 
 // SimulationView: el aula simulada
@@ -215,13 +216,16 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | Método | Devuelve | Uso |
 |---|---|---|
 | `Setup()` | `Setup` | Canal predeterminado (`defaultChannel`), canales recientes, nombre, huella, origen de la clave (`keySource`: `centro` o `personal`) y `startError` si el arranque automático falló. |
-| `StartClass(canal, nombre)` | `View` / error | Abre la clase en el canal (número 1–16000); si ya había una abierta, la cierra antes (selector "Canal … Cambiar" y "Guardar" del nombre). Usa la clave del centro o, si no hay, la personal. |
+| `StartClass(canal, nombre)` | `View` / error | Abre la clase en el canal (número 1–16000); si ya había una abierta, la cierra antes («Cambiar de canal» y «Cambiar tu nombre», con su confirmación). **El historial de código y los envíos se conservan** (son del profesor, no del canal). Usa la clave del centro o, si no hay, la personal. |
 | `EndClass()` | — | Cierra la clase. La interfaz no lo llama directamente. |
 | `View()` | `View` | Estado completo para el primer dibujo. |
-| `Emit({title, lang, content, mode})` | `Delivery` / error | `mode` = `replace` ("Emitir a todos") o `append` ("Agregar bloque"). Crea una entrada nueva en el historial. |
+| `Emit({title, lang, content, mode, targets})` | `Delivery` / error | `mode` = `replace` («Emitir») o `append` («Agregar debajo»). `targets`: IDs de sesión (reales o simulados) de la selección; vacío = todos. Crea una entrada nueva en el historial. |
 | `Reemit(snippetId)` | `Delivery` / error | Reenvía un fragmento del historial con el mismo número e ID (`replace`). |
 | `ClearScreens()` | `Delivery` / error | `code.clear` a todos. |
 | `SendNotice(text, level)` | `Delivery` / error | `msg.show` a todos, `info` o `warning`. |
+| `SendNoticeTo(text, level, targets)` | `Delivery` / error | Igual, solo a `targets` (vacío = todos). Lo usa el panel **Aviso**. |
+| `Resend(deliveryId)` | `Delivery` / error | **Reenviar a los que faltan**: manda de nuevo el mismo mensaje a las sesiones de `pending` que siguen conectadas. Los acuses tardíos del primer envío ya no cuentan; los nuevos, una vez. |
+| `InstallerInfo()` | `InstallerInfo` | Datos para quien instala: `{channel, consoleName, hostname, addresses, port, mediaPort, fingerprint, keySource, version}`. |
 | `CaptureClipboard()` | `Draft` / error | Igual que el atajo global; el resultado también llega como `aula:capture`. |
 | `OpenScreens()` | error | Abre la vista de pantallas (botón **Ver pantallas**): envía `screen.thumb.start` (1000 ms, calidad 50, 320 px) a cada alumno conectado con `canThumb`, y también a los que se conecten mientras siga abierta. Error si no hay clase. |
 | `CloseScreens()` | — | Cierra la vista (**Cerrar** o Esc): envía `screen.thumb.stop` a todos los que transmitían y olvida los cuadros. |

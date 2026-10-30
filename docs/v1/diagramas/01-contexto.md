@@ -2,9 +2,9 @@
 titulo: "Contexto del sistema"
 descripcion: "Qué piezas forman Aula en un centro de cómputo y quién se conecta con quién"
 audiencia: [profesor, instalador, desarrollador]
-pantallas: [setup, console]
+pantallas: [alumnos, ayuda]
 secciones_manual: [uso-hito1, configuracion]
-enlaces: [canal=configuracion, clave=protocol#101-identidades-y-claves, consola=pantalla:console]
+enlaces: [canal=configuracion, clave=protocol#101-identidades-y-claves, consola=pantalla:alumnos]
 ---
 
 # Contexto del sistema

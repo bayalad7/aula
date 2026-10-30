@@ -2,7 +2,7 @@
 titulo: "Aula simulada y simulación de fallas"
 descripcion: "Cómo prueba el profesor Aula sin laboratorio con alumnos de prueba que nunca se confunden con equipos reales"
 audiencia: [profesor, desarrollador]
-pantallas: [console]
+pantallas: [simulada]
 secciones_manual: [privacidad, eventos-ui]
 enlaces: [reglas=privacidad#aula-simulada-consola-del-profesor]
 ---
@@ -72,15 +72,16 @@ flowchart LR
 - **Nada persiste.** El aula simulada se cierra con «Cerrar el aula simulada», al cambiar de canal
   o de nombre y al cerrar la clase. La pantalla de un simulado se dibuja en memoria, con la
   franja «Tu pantalla está siendo vista por el profesor» mientras se ve.
-- La pantalla completa del aula simulada (crear alumnos, elegir SO y capacidades, disparar
-  fallas y ver en vivo lo que reciben) llega con la nueva navegación de la consola. El
-  comprobador de conexión del prompt 18 (Fase 6.3) también está pendiente.
+- En la consola, la vista **Aula simulada** crea y quita alumnos (SO y capacidades), dispara las
+  fallas y muestra qué tiene cada uno en pantalla. En **Alumnos** aparecen al final, en su propio
+  grupo. El comprobador de conexión del prompt 18 (Fase 6.3) sigue pendiente.
 
 ## Fuentes en el código
 
 - `internal/simclass/class.go`, `internal/simclass/screen.go`
 - `apps/teacher/class.go` (`simulationHost`, `StartSimulation`, `simulatedMessages`)
 - `apps/teacher/simulation.go`, `apps/teacher/restrictions.go` (`studentsIn`, `simSessionsOf`)
+- `apps/teacher/frontend/dist/main.js` (vista Aula simulada)
 - `internal/codedist/deliveries.go` (`AddSimulated`)
 - `apps/teacher/simulation_test.go`, `internal/simclass/class_test.go`
 - `docs/privacidad.md` reglas 32–35

@@ -2,7 +2,7 @@
 titulo: "Monitoreo: miniaturas y pantalla"
 descripcion: "Cómo ve el profesor las pantallas de sus alumnos y cómo sabe cada alumno que lo están viendo"
 audiencia: [profesor, desarrollador]
-pantallas: [screens]
+pantallas: [alumnos]
 secciones_manual: [privacidad, protocol]
 ---
 

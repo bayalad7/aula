@@ -2,9 +2,9 @@
 titulo: "Transparencia: avisos e indicadores al alumno"
 descripcion: "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le transmite, lo restringe o apaga su equipo"
 audiencia: [profesor, alumno, desarrollador]
-pantallas: [console, screens, restr, power]
+pantallas: [alumnos, ayuda]
 secciones_manual: [privacidad]
-enlaces: [distintivo=privacidad#reglas-vigentes, visto=pantalla:screens, restr=pantalla:restr, energia=pantalla:power]
+enlaces: [distintivo=privacidad#reglas-vigentes, visto=pantalla:alumnos, restr=pantalla:alumnos, energia=pantalla:alumnos]
 ---
 
 # Transparencia: avisos e indicadores al alumno

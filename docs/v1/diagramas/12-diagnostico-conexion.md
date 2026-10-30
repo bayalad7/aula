@@ -2,7 +2,7 @@
 titulo: "Diagnóstico: «Mi alumno no conecta»"
 descripcion: "Preguntas en orden para averiguar por qué un equipo de alumno no aparece en la consola"
 audiencia: [profesor, instalador]
-pantallas: [console, setup]
+pantallas: [falta]
 secciones_manual: [uso-hito1, prueba-vms, configuracion]
 enlaces: [config=configuracion, firewall=uso-hito1#7-red-y-firewall, clave=protocol#101-identidades-y-claves]
 ---

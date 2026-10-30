@@ -2,7 +2,7 @@
 titulo: "Emisión y recepción de código"
 descripcion: "Qué pasa desde que el profesor pulsa Emitir hasta que ve cuántos alumnos ya tienen el código en pantalla"
 audiencia: [profesor, desarrollador]
-pantallas: [console]
+pantallas: [codigo]
 secciones_manual: [uso-hito1, eventos-ui]
 ---
 

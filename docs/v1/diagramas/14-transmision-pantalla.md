@@ -2,7 +2,7 @@
 titulo: "Transmisión de la pantalla del profesor"
 descripcion: "Cómo llega la pantalla del profesor como video a cada alumno y qué pasa si una conexión falla"
 audiencia: [profesor, desarrollador]
-pantallas: [console]
+pantallas: [alumnos]
 secciones_manual: [protocol, privacidad]
 ---
 

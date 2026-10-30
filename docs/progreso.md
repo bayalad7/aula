@@ -20,7 +20,7 @@
 | 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 15 diagramas (falta el 10, aula simulada) |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1 y 2 aprobadas; aula simulada (6.1) hecha, espera aprobación |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1, 2 y aula simulada (6.1) aprobadas; consola nueva (E3) hecha, espera aprobación |
 
 ## Etapa 02: notas
 
@@ -735,5 +735,14 @@
   - bindings `Simulation*` y evento `aula:simulation`;
   - botón mínimo en la consola actual;
   - reglas de privacidad 32–35 y diagrama 10.
-- **Siguiente:** la nueva navegación con la vista Alumnos y la pantalla «Aula simulada» (E3),
-  y los textos en un solo archivo con los errores en lenguaje claro (E2).
+- **Aula simulada aprobada** (commits `085e9f9`, `28b617d`, `87cc9fa` y `51f4b11`).
+- **E3, la consola con la navegación nueva** (`docs/v1/ux/profesor/ENTREGA-E3.md`):
+  - frontend reescrito sobre el sistema de diseño: Alumnos con selección y paneles, Código con
+    quién falta y reenviar, Aula simulada, Ayuda, «¿Falta un alumno?» y Ajustes;
+  - textos en `textos.es-MX.js` (probado);
+  - backend: historial conservado al cambiar de canal o de nombre, envío a la selección,
+    `Resend` e `InstallerInfo`;
+  - 27 capturas sin errores de JS ni violaciones de axe;
+  - falta la prueba en la ventana real.
+- **Siguiente:** códigos de error desde Go (E2), manual (E7), diagramas en la consola (E8),
+  comprobador de conexión (6.3) y verificación final (E10).

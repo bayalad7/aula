@@ -81,6 +81,35 @@ misma LAN.
 - Cambios pequeños e incrementales; no refactorizar paquetes ajenos a la tarea.
 - Antes de terminar: `gofmt -l` (sin salida), `go vet ./...`, `staticcheck ./...`, `go test -race ./...`.
 
+## Definición de terminado (toda función nueva o cambio visible)
+Vale para cualquier prompt, aunque se haya escrito antes de la etapa 18. Lo marcado con (prueba)
+lo exige `go test`; lo demás, la revisión.
+- **Protocolo:** mensajes nuevos primero en `docs/protocol.md`. Una capacidad implementada
+  aparece en la ficha del alumno, «Qué puede hacer su equipo» (prueba). Un código de error nuevo
+  lleva texto `errorAlumno.*` y sección del manual en `agentErrorHelp` (prueba).
+- **Consola, dentro de la navegación actual:**
+  - Lo que se aplica a alumnos va sobre la selección de Alumnos, con un panel de la barra de
+    acciones o en la ficha del alumno. Nada de pantallas a pantalla completa nuevas.
+  - Solo componentes, tokens e iconos de `sistema/`, sin colores sueltos. Funciona en claro y
+    oscuro y a 900×600.
+- **Textos y errores:**
+  - Todo texto en `textos.es-MX.js`, sin `innerHTML` (prueba).
+  - Cada error de un binding con código en `errores.go`, mensaje «qué pasó + qué hacer» y su
+    sección en `errorHelp` (prueba).
+- **Alumnos simulados:** decide y prueba si la función les llega. Lo que controla o cambia un
+  equipo (energía, restricciones, transmisión, control remoto…) nunca les llega (prueba).
+- **Privacidad:** regla y aviso visible en `docs/privacidad.md` si observa o controla al alumno.
+- **Manual y diagramas:**
+  - Sección en `docs/v1/administracion/`: en la página de su pantalla o en Tareas frecuentes; una
+    pantalla nueva lleva su página con `pantallas` (prueba).
+  - Si cambia un flujo, su diagrama en `docs/v1/diagramas/` con front-matter (prueba).
+- **Arnés web:**
+  - Bindings y eventos en `docs/eventos-ui.md` y en `scripts/ux/dobles.js` (prueba).
+  - Una escena y una captura en `scripts/ux/recorrido.mjs`, que pasa sin errores ni violaciones
+    serias (CI).
+  - Si cambia una pantalla del manual, `node scripts/ux/capturas-manual.mjs`.
+- **Cierre:** casos manuales en `docs/desarrollo/probar-consola-local.md` y `docs/progreso.md`.
+
 ## Integración continua (GitHub Actions)
 - Remoto: `origin` = `https://github.com/bayalad7/aula.git`.
 - Acciones ancladas a versión mayor (`actions/checkout@v7`, `actions/setup-go@v7`,
@@ -92,6 +121,9 @@ misma LAN.
   `macos-latest`. Pasos: `go vet ./...`, `staticcheck` (vía
   `go run honnef.co/go/tools/cmd/staticcheck@<versión fija> ./...`), `go test -race ./...`
   (con `CGO_ENABLED=1`, que `-race` requiere; los binarios publicados se compilan sin cgo).
+- **Job `ux` del CI:** en `ubuntu-latest`, `npm ci` y `node recorrido.mjs` en `scripts/ux/`. Recorre
+  la consola en Chromium headless y falla con errores de JS o violaciones serias de axe-core. Sube
+  las capturas como artefacto.
 - **Workflow de release** (`.github/workflows/release.yml`): se dispara al empujar un tag `v*`.
   Compila todas las plataformas, genera los instaladores, produce `checksums.txt` firmado con
   una llave Ed25519 de releases (secreto del repo) y publica con `gh release create`

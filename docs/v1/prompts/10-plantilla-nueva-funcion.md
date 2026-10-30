@@ -2,7 +2,11 @@
 
 **Qué es:** no es una etapa única, sino una plantilla. Cópiala y rellénala cada vez que agregues una función de las Fases 2–3 (transmitir tu pantalla por WebRTC, recoger código/archivos, bloquear apps, filtrar web, encuestas, apagar/reiniciar, control remoto).
 
-**Cómo usarla:** sustituye `<FUNCIÓN>` y los corchetes, y pégala como prompt.
+**Cómo usarla:** sustituye `<FUNCIÓN>` y los corchetes, y pégala como prompt. O, más corto, en
+Claude Code: `/funcionalidad-nueva <descripción o número de prompt>` (esta plantilla hecha
+proceso, en `.claude/commands/funcionalidad-nueva.md`); para cambiar algo que ya existe,
+`/funcionalidad-mejora`. Si cambias esta plantilla, cambia también el comando. Guía con ejemplos:
+`docs/desarrollo/comandos-claude.md`.
 
 ## Prompt (plantilla)
 
@@ -24,14 +28,22 @@ Espera mi aprobación.
   y archivos `*_windows.go` para la implementación.
 - Conecta la lógica en los paquetes `internal/*` que correspondan y la UI en la app (binding +
   evento Wails). No metas lógica de SO fuera de `platform`.
+- En la consola, dentro de la navegación actual: lo que se aplica a alumnos va sobre la
+  selección de Alumnos (panel de la barra de acciones) o en la ficha del alumno; con el sistema
+  de diseño de `sistema/` y los textos en `textos.es-MX.js`.
+- Decide si llega a los alumnos simulados; si controla o cambia el equipo, nunca.
 - Respeta la transparencia: nada de funciones ocultas; el alumno siempre puede saber qué pasa
   en su equipo.
 
 ## 3. Pruebas y cierre
 - Pruebas de la lógica en `internal/*` y de la interfaz de plataforma (con un doble de prueba).
-- Prueba manual descrita paso a paso para verificar en VMs.
-- `gofmt`, `go vet`, `staticcheck ./...`, `go test ./...`.
-- Actualiza docs/progreso.md.
+- Prueba manual descrita paso a paso para verificar en VMs, y sus casos en
+  docs/desarrollo/probar-consola-local.md.
+- Cumple la «Definición de terminado» de CLAUDE.md: errores con código y texto, sección del
+  manual, diagrama si cambia un flujo, `scripts/ux/dobles.js` y una captura en
+  `scripts/ux/recorrido.mjs`.
+- `gofmt`, `go vet`, `staticcheck ./...`, `go test -race ./...`, `node scripts/ux/recorrido.mjs`.
+- Actualiza docs/eventos-ui.md y docs/progreso.md.
 
 ## Restricciones
 - Cambios incrementales; no toques paquetes ajenos a esta función.

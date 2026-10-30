@@ -52,6 +52,8 @@ Sistema multiplataforma de gestión de aula (estilo LanSchool / Veyon) con un m�
 > La `17` puede correrse temprano (tras el protocolo, etapa 03) para los diagramas base.
 > Las etapas 18 y 19 comparten sistema de diseño: córrelas juntas o una tras otra, no por separado.
 > Usa la plantilla `10` para las funciones del backlog que no tengan prompt propio.
+> En Claude Code, `/funcionalidad-nueva` y `/funcionalidad-mejora` hacen ese proceso por ti; ver
+> `docs/desarrollo/comandos-claude.md`.
 
 ## Antes de empezar
 

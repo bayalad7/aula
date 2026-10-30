@@ -770,6 +770,16 @@
   - el arnés web pasa al repo (`scripts/ux/`): recorrido con axe-core y capturas del manual;
   - propuestas que cambiarían el protocolo en `docs/v1/ux/PROPUESTAS.md`;
   - falta la prueba en la ventana real (C-26 a C-30).
+- **Salvaguardas para las funciones nuevas** (espera aprobación):
+  - «Definición de terminado» en `CLAUDE.md`;
+  - pruebas en `apps/teacher/guardrails_test.go`: el doble del arnés tiene todos los bindings,
+    cada capacidad implementada sale en la ficha del alumno, y los simulados solo declaran
+    capacidades inofensivas;
+  - job `ux` del CI con el arnés (sin probar todavía en GitHub);
+  - la plantilla 10 y los prompts 10.4, 10.5, 10.7 y 12.1 apuntan a la consola nueva (ficha del
+    alumno, selección y paneles).
+  - comandos `/funcionalidad-nueva` y `/funcionalidad-mejora` en `.claude/commands/`, con su
+    guía y ejemplos en `docs/desarrollo/comandos-claude.md`.
 - **`internal/ui`** ya está en `CLAUDE.md` (sistema de diseño compartido con la app del
   alumno), pero el paquete no existe todavía: hay que mover `apps/teacher/frontend/dist/sistema/`.
 - **Siguiente:** diagramas en la consola (E8), comprobador de conexión (6.3) y verificación

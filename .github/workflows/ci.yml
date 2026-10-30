@@ -55,6 +55,57 @@ jobs:
           CGO_ENABLED: '1'
         run: go test -race ./...
 
+  # Walks the teacher console's real frontend in headless Chromium with the
+  # bindings faked (scripts/ux): fails on JS errors or serious/critical axe-core
+  # violations (WCAG 2.1 AA). The screenshots are kept as an artifact.
+  ux:
+    name: Consola en el arnés web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.26.x'
+          check-latest: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: scripts/ux/package-lock.json
+
+      # The harness exports the manual with go test ./apps/teacher, which links
+      # Wails (GTK/WebKitGTK) like the Go job.
+      - name: Install Wails Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev
+          echo "GOFLAGS=-tags=webkit2_41" >> "$GITHUB_ENV"
+
+      # Ubuntu 24.04 blocks the unprivileged user namespaces Chromium's sandbox
+      # needs; allow them instead of running Chromium without a sandbox.
+      - name: Allow the Chromium sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: npm ci
+        working-directory: scripts/ux
+        run: npm ci
+
+      - name: Recorrido de la consola
+        working-directory: scripts/ux
+        run: node recorrido.mjs salida
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: capturas-consola
+          path: scripts/ux/salida/
+          retention-days: 7
+
   # Installs a real Windows service (AulaAgentePrueba, never AulaAgente) and runs
   # its lifecycle: install, status, start, crash and automatic restart, stop,
   # uninstall (D-016). The runner is an administrator; the last step deletes the

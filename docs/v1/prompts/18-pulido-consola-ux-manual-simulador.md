@@ -1,6 +1,6 @@
 # 17 · Pulido de la consola: UX/UI, manual integrado, diagramas y aula simulada
 
-**Prerrequisitos:** Hito 1 cerrado (08); mejor aún con algunas funciones de Fase 2 ya hechas, para que haya UX que pulir. Requiere que existan diagramas en `docs/diagramas/` (si no, esta etapa crea los básicos a partir de `docs/protocol.md`).
+**Prerrequisitos:** Hito 1 cerrado (08); mejor aún con algunas funciones de Fase 2 ya hechas, para que haya UX/UI que pulir. Requiere que existan diagramas en `docs/diagramas/` (si no, esta etapa crea los básicos a partir de `docs/protocol.md`).
 **Duración estimada:** varias sesiones; es una fase por entregas pequeñas, no una sola pasada.
 **Origen:** adaptación del prompt de pulido del panel de PRISMA v1.1 a la consola de Aula (Wails de escritorio, no panel web).
 

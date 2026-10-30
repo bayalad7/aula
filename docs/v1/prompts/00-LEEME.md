@@ -44,8 +44,13 @@ Sistema multiplataforma de gestión de aula (estilo LanSchool / Veyon) con un m�
 | 14 | `14-sandbox-ejecucion-entregas.md` | Correr entregas del alumno en sandbox Docker | Fase 3 |
 | 15 | `15-flota-despliegue-actualizacion-diagnostico.md` | Despliegue masivo, auto-actualización y diagnóstico | Fase 3 |
 | 16 | `16-comercializacion-y-licenciamiento.md` | Modelo de negocio (licencia vs. renta) + licenciamiento | Negocio |
+| 17 | `17-documentacion-diagramas-iniciales.md` | Escribir los diagramas de `docs/v1/diagramas/` (ver su README) | Docs |
+| 18 | `18-pulido-consola-ux-manual-simulador.md` | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | Pulido |
+| 19 | `19-pulido-app-alumno-ux.md` | Pulido de la app del alumno: overlay de código, avisos y transparencia | Pulido |
 
-> Las etapas 12 a 16 son ampliaciones posteriores al Hito 1; no tienen un orden estricto entre sí.
+> Las etapas 12 a 19 son ampliaciones posteriores al Hito 1; no tienen un orden estricto entre sí.
+> La `17` puede correrse temprano (tras el protocolo, etapa 03) para los diagramas base.
+> Las etapas 18 y 19 comparten sistema de diseño: córrelas juntas o una tras otra, no por separado.
 > Usa la plantilla `10` para las funciones del backlog que no tengan prompt propio.
 
 ## Antes de empezar

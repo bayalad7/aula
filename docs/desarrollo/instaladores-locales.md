@@ -19,7 +19,7 @@ en las apps (`aula-consola version`, la barra del alumno y el `hello`); usa un s
 no confundirlo con una versión publicada.
 
 ```powershell
-$version = "0.4.0-dev"                  # lo que reportan las apps
+$version = "0.6.0-dev"                  # lo que reportan las apps
 $numeric = ($version -split "-")[0]      # metadatos del .exe: solo números
 $out     = "dist\local"                  # dist/ está en .gitignore
 
@@ -35,8 +35,8 @@ foreach ($app in "student", "teacher") {
 Copy-Item apps\teacher\build\bin\aula-consola.exe, apps\student\build\bin\aula-cliente.exe "$out\bin"
 
 # 2. Comprobar la versión que quedó dentro
-& "$out\bin\aula-consola.exe" version      # aula-consola 0.4.0-dev
-& "$out\bin\aula-cliente.exe" -version     # aula-cliente 0.4.0-dev
+& "$out\bin\aula-consola.exe" version      # aula-consola 0.6.0-dev
+& "$out\bin\aula-cliente.exe" -version     # aula-cliente 0.6.0-dev
 
 # 3. Los instaladores (Inno Setup)
 $iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",

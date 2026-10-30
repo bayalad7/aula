@@ -145,17 +145,20 @@
   // Students
   function renderStudents(s) {
     students = s;
-    $("students-count").textContent = s.connected + " conectado" + (s.connected === 1 ? "" : "s");
+    $("students-count").textContent = s.connected + " conectado" + (s.connected === 1 ? "" : "s") +
+      (s.simulated ? " · " + s.simulated + " simulado" + (s.simulated === 1 ? "" : "s") : "");
     $("students-empty").hidden = s.students.length > 0;
     const tpl = $("student-template").content.firstElementChild;
     $("students-list").replaceChildren(...s.students.map((st) => {
       const li = tpl.cloneNode(true);
       li.dataset.state = st.state;
+      li.dataset.simulated = st.simulated ? "yes" : "no";
       li.querySelector(".host").textContent = st.hostname;
       li.querySelector(".state").textContent = st.state === "connected" ? "conectado" : "desconectado";
       li.querySelector(".user").textContent = st.username || "(sin usuario)";
       li.querySelector(".os").textContent = [st.os, st.osVersion, "agente " + st.agentVersion].filter(Boolean).join(" · ");
-      li.querySelector(".caps").replaceChildren(...st.capabilities.map((c) => {
+      li.querySelector(".caps").replaceChildren(...(st.simulated ? [Object.assign(document.createElement("span"),
+        { className: "cap simulado", textContent: "Simulado" })] : []), ...st.capabilities.map((c) => {
         const span = document.createElement("span");
         span.className = "cap";
         span.textContent = CAP_NAMES[c] || c;
@@ -221,8 +224,13 @@
 
   // Deliveries: "Enviado a 2 · confirmados 2/2 ✓"
   function deliveryText(d) {
-    let t = d.label + " — enviado a " + d.sent + " · confirmados " + d.acked + "/" + d.sent;
-    if (d.sent > 0 && d.acked === d.sent) t += " ✓";
+    let t = d.label;
+    if (d.sent > 0 || !d.simSent) {
+      t += " — enviado a " + d.sent + " · confirmados " + d.acked + "/" + d.sent;
+      if (d.sent > 0 && d.acked === d.sent) t += " ✓";
+    }
+    // Simulated students are counted apart, never as real ones.
+    if (d.simSent) t += (d.sent > 0 ? " · " : " — ") + "simulados " + d.simAcked + "/" + d.simSent;
     if (d.noCapability) t += " · " + d.noCapability + " no lo soporta" + (d.noCapability === 1 ? "" : "n");
     if (d.failed) t += " · " + d.failed + " fallaron";
     return t;
@@ -344,7 +352,8 @@
         li.querySelector(".tile-view").addEventListener("click", () => showDetail(s.id));
         tiles.set(s.id, li);
       }
-      li.querySelector(".tile-name").textContent = s.hostname + (s.username ? " · " + s.username : "");
+      li.querySelector(".tile-name").textContent = s.hostname + (s.username ? " · " + s.username : "") +
+        (s.simulated ? " (simulado)" : "");
       li.querySelector("img").alt = "Pantalla de " + s.hostname;
       return li;
     }));
@@ -637,6 +646,20 @@
   $("power-open").addEventListener("click", () => { $("power").hidden = false; renderPower(); });
   $("power-close").addEventListener("click", () => { $("power").hidden = true; });
   powerReady = true;
+
+  // --- Aula simulada ------------------------------------------------------------------
+  // Minimal entry point until the new navigation: open or close 2 test
+  // students. They are marked "Simulado" everywhere and never counted as real.
+  let simActive = false;
+  function renderSimulation(v) {
+    simActive = v.active;
+    $("sim-toggle").textContent = v.active ? "Cerrar el aula simulada (" + v.students.length + ")" : "Probar con alumnos simulados";
+  }
+  $("sim-toggle").addEventListener("click", () => {
+    const call = simActive ? api.SimulationStop() : api.SimulationStart(0);
+    Promise.resolve(call).then(renderSimulation, (err) => toast(String(err), "error"));
+  });
+  rt.EventsOn(ev.SIMULATION, renderSimulation);
 
   restrictionsReady = true;
   rt.EventsOn(ev.RESTRICTIONS, renderRestrictions);

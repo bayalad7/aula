@@ -63,7 +63,7 @@ func (a *App) PowerAction(req PowerRequest) (PowerResult, error) {
 	}
 	a.log.Info("power order", "action", order.Action, "action_id", order.ActionID, "force", order.Force,
 		"delay_s", order.Delay(), "sent", res.Sent, "unsupported", len(res.Unsupported))
-	a.emit(EventStudents, a.studentsOf(class.Sessions()))
+	a.emit(EventStudents, a.studentsIn(class))
 	return res, nil
 }
 
@@ -106,7 +106,7 @@ func (a *App) onPowerMessage(sessionID string, env protocol.Envelope) {
 		return
 	}
 	if class := a.currentClass(); class != nil {
-		a.emit(EventStudents, a.studentsOf(class.Sessions()))
+		a.emit(EventStudents, a.studentsIn(class))
 	}
 }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
+	"github.com/bayalad7/aula/internal/simclass"
 )
 
 var errNoClass = errors.New("primero abre una clase")
@@ -69,6 +70,7 @@ type App struct {
 
 	restr *policy.ClassPolicy // class restrictions: who has what (D-017)
 	power *power.Tracker      // power orders and each agent's answer (§5.15)
+	sim   *simclass.Class     // the aula simulada's students; nil while closed (guarded by mu)
 
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
 	// with respect to acks, so a fast agent's ack is never counted as unknown.
@@ -211,6 +213,7 @@ func (a *App) EndClass() {
 	a.class = nil
 	a.mu.Unlock()
 	if class != nil {
+		a.stopSimulationOf(class)
 		a.StopBroadcast() // agents also stop when the connection closes
 		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
@@ -228,7 +231,7 @@ func (a *App) View() View {
 		v.History = []codedist.HistoryEntry{}
 	}
 	if a.class != nil {
-		v.Students = a.studentsOf(a.class.Sessions())
+		v.Students = a.studentsIn(a.class)
 	} else {
 		v.Students = studentsOf(nil)
 	}
@@ -319,6 +322,13 @@ func (a *App) broadcast(kind, label string, p protocol.Payload) (codedist.Delive
 
 	a.sendMu.Lock()
 	sent, failed := class.Broadcast(ctx, p)
+	var simIDs []string
+	if host, ok := class.(simulationHost); ok {
+		simSent, _ := host.SimBroadcast(ctx, p)
+		for _, envID := range simSent {
+			simIDs = append(simIDs, envID)
+		}
+	}
 	ids := make([]string, 0, len(sent))
 	for _, envID := range sent {
 		ids = append(ids, envID)
@@ -331,10 +341,14 @@ func (a *App) broadcast(kind, label string, p protocol.Payload) (codedist.Delive
 	}
 	a.mu.Lock()
 	d := a.deliveries.Start(kind, label, ids, len(failed)-noCap, noCap, a.now())
+	if len(simIDs) > 0 {
+		d, _ = a.deliveries.AddSimulated(d.ID, simIDs)
+	}
 	a.mu.Unlock()
 	a.sendMu.Unlock()
 
-	a.log.Info("broadcast", "type", p.MessageType(), "sent", d.Sent, "failed", d.Failed, "no_capability", d.NoCapability)
+	a.log.Info("broadcast", "type", p.MessageType(), "sent", d.Sent, "failed", d.Failed, "no_capability", d.NoCapability,
+		"simulated_sent", d.SimSent)
 	a.emitDeliveries()
 	return d, nil
 }
@@ -377,7 +391,8 @@ func (a *App) syncScreens() {
 	if class == nil || !a.wall.IsOpen() {
 		return
 	}
-	a.sendScreen(class, a.wall.Plan(class.Sessions()))
+	// Simulated students show their screens too, marked as such.
+	a.sendScreen(class, a.wall.Plan(append(class.Sessions(), simSessionsOf(class)...)))
 }
 
 func (a *App) sendScreen(class classroom, cmds []screen.Command) {
@@ -460,7 +475,7 @@ func (a *App) onChange() {
 	if class == nil {
 		return
 	}
-	a.emit(EventStudents, a.studentsOf(class.Sessions()))
+	a.emit(EventStudents, a.studentsIn(class))
 	a.syncScreens()
 	a.bc.Sync(class.Sessions())
 	a.sendRestrictions(class, a.restr.Plan(class.Sessions())) // students who reconnect get them again

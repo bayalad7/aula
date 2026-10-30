@@ -14,6 +14,7 @@ import (
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
+	"github.com/bayalad7/aula/internal/simclass"
 	"github.com/bayalad7/aula/internal/transport"
 )
 
@@ -84,11 +85,45 @@ func consoleKey(siteDir, userDir string, create bool) (*security.Identity, strin
 
 type startClassFunc func(ctx context.Context, cfg classConfig, hooks classHooks, log *slog.Logger) (classroom, ClassInfo, error)
 
+// simulationHost is a class that can also host simulated students (the
+// aula simulada). They connect to their own loopback listener and registry,
+// so they are told apart by where they arrived, never by their name, and
+// Sessions and Broadcast keep meaning real students only.
+type simulationHost interface {
+	// StartSimulation opens the listener for simulated students, if needed,
+	// and returns where they must connect.
+	StartSimulation() (simclass.Console, error)
+	// StopSimulation closes it and forgets the simulated sessions.
+	StopSimulation()
+	SimSessions() []session.Session
+	SimBroadcast(ctx context.Context, p protocol.Payload) (sent map[string]string, failed map[string]error)
+}
+
 // liveClass is the real class: TLS server, console, registry and mDNS.
 type liveClass struct {
 	console *session.Console
 	reg     *session.Registry
 	channel string
+	cancel  context.CancelFunc
+	wg      sync.WaitGroup
+
+	// What a simulated side needs to look like this console.
+	id          *security.Identity
+	cert        security.Certificate
+	consoleName string
+	hooks       classHooks
+	log         *slog.Logger
+
+	simMu sync.Mutex
+	sim   *simSide
+}
+
+// simSide is the console for simulated students: same identity and
+// certificate, its own registry, on 127.0.0.1 and never announced.
+type simSide struct {
+	console *session.Console
+	reg     *session.Registry
+	addr    *net.TCPAddr
 	cancel  context.CancelFunc
 	wg      sync.WaitGroup
 }
@@ -97,15 +132,119 @@ func (l *liveClass) Broadcast(ctx context.Context, p protocol.Payload) (map[stri
 	return l.console.Broadcast(ctx, p)
 }
 
+// Send delivers p to a real session or, if the ID is a simulated one, to it
+// (session IDs are UUIDs: they never collide).
 func (l *liveClass) Send(ctx context.Context, sessionID string, p protocol.Payload) (string, error) {
+	if _, ok := l.reg.Get(sessionID); !ok {
+		if sim := l.simulated(); sim != nil {
+			if _, ok := sim.reg.Get(sessionID); ok {
+				return sim.console.Send(ctx, sessionID, p)
+			}
+		}
+	}
 	return l.console.Send(ctx, sessionID, p)
 }
 
 func (l *liveClass) Sessions() []session.Session { return l.reg.List(l.channel) }
 
 func (l *liveClass) Stop() {
+	l.StopSimulation()
 	l.cancel()
 	l.wg.Wait()
+}
+
+func (l *liveClass) simulated() *simSide {
+	l.simMu.Lock()
+	defer l.simMu.Unlock()
+	return l.sim
+}
+
+// StartSimulation implements simulationHost.
+func (l *liveClass) StartSimulation() (simclass.Console, error) {
+	l.simMu.Lock()
+	defer l.simMu.Unlock()
+	if l.sim == nil {
+		ln, err := net.Listen("tcp", "127.0.0.1:0") // loopback only: no real student can reach it
+		if err != nil {
+			return simclass.Console{}, fmt.Errorf("no se pudo abrir el aula simulada: %w", err)
+		}
+		log := l.log.With("simulated", true)
+		reg := session.NewRegistry(0)
+		srv := transport.NewServer(transport.Options{TLS: security.ServerTLS(l.cert), Logger: log})
+		console := &session.Console{
+			Channel: l.channel, Registry: reg, Identity: l.id, CertSHA256: l.cert.SHA256, Logger: log,
+			OnChange:  l.hooks.onChange,
+			OnMessage: simulatedMessages(l.hooks),
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		sim := &simSide{console: console, reg: reg, addr: ln.Addr().(*net.TCPAddr), cancel: cancel}
+		sim.wg.Add(2)
+		go func() {
+			defer sim.wg.Done()
+			if err := srv.Serve(ctx, ln); err != nil {
+				log.Error("simulated server stopped", "err", err)
+			}
+		}()
+		go func() {
+			defer sim.wg.Done()
+			if err := console.Run(ctx, srv.Events()); err != nil {
+				log.Error("simulated console stopped", "err", err)
+			}
+		}()
+		l.sim = sim
+		log.Info("simulated class opened", "addr", sim.addr.String())
+	}
+	return simclass.Console{
+		Addr: l.sim.addr, Channel: l.channel, Name: l.consoleName,
+		PublicKey: l.id.Public(), CertFingerprint: l.cert.Fingerprint(),
+	}, nil
+}
+
+// StopSimulation implements simulationHost.
+func (l *liveClass) StopSimulation() {
+	l.simMu.Lock()
+	sim := l.sim
+	l.sim = nil
+	l.simMu.Unlock()
+	if sim != nil {
+		sim.cancel()
+		sim.wg.Wait()
+		l.log.Info("simulated class closed", "simulated", true)
+	}
+}
+
+// SimSessions implements simulationHost.
+func (l *liveClass) SimSessions() []session.Session {
+	if sim := l.simulated(); sim != nil {
+		return sim.reg.List(l.channel)
+	}
+	return nil
+}
+
+// SimBroadcast implements simulationHost.
+func (l *liveClass) SimBroadcast(ctx context.Context, p protocol.Payload) (map[string]string, map[string]error) {
+	if sim := l.simulated(); sim != nil {
+		return sim.console.Broadcast(ctx, p)
+	}
+	return map[string]string{}, map[string]error{}
+}
+
+// simulatedMessages routes what simulated students send: acks and screen
+// thumbnails only. They never get power, restrictions or the broadcast, so
+// any other answer is ignored.
+func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, protocol.Envelope) {
+	return func(_ context.Context, conn *transport.Conn, env protocol.Envelope) {
+		switch p := env.Payload.(type) {
+		case protocol.CodeAck:
+			h.onAck(p.RefID)
+		case protocol.MsgAck:
+			h.onAck(p.RefID)
+		case protocol.ScreenThumbFrame:
+			if h.onFrame != nil {
+				h.onFrame(conn.ID(), p)
+			}
+		}
+	}
 }
 
 // startLiveClass opens a class: it loads the console key (consoleKey) and the
@@ -166,7 +305,8 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 	}}
 
 	ctx, cancel := context.WithCancel(ctx)
-	l := &liveClass{console: console, reg: reg, channel: cfg.Channel, cancel: cancel}
+	l := &liveClass{console: console, reg: reg, channel: cfg.Channel, cancel: cancel,
+		id: id, cert: cert, consoleName: cfg.ConsoleName, hooks: hooks, log: log}
 	l.wg.Add(3)
 	go func() {
 		defer l.wg.Done()

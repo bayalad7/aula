@@ -33,6 +33,9 @@ const (
 	// restrictions change (per-student acknowledgements arrive with
 	// aula:students).
 	EventRestrictions = "aula:restrictions"
+	// EventSimulation carries a SimulationView when the aula simulada opens,
+	// closes or one of its students changes.
+	EventSimulation = "aula:simulation"
 )
 
 // Setup is what the channel selection screen needs.
@@ -80,6 +83,9 @@ type Student struct {
 	WebActive   bool         `json:"webActive"`   // acknowledged the class's web filter
 	LastCodeAck string       `json:"lastCodeAck"` // snippet_id; "" after a clear
 	AckedAt     string       `json:"ackedAt"`     // "" if nothing acknowledged yet
+	// Simulated marks a student of the aula simulada: shown with its badge
+	// and never counted as real.
+	Simulated bool `json:"simulated"`
 }
 
 // Students is the list for the channel plus the counts that enable actions.
@@ -95,6 +101,9 @@ type Students struct {
 	CanAppBlock  int `json:"canAppBlock"`
 	CanWebFilter int `json:"canWebFilter"`
 	CanPower     int `json:"canPower"` // connected agents with power
+	// Connected counts real students only; Simulated counts the connected
+	// simulated ones. CanCode, CanNotice and CanThumb include both.
+	Simulated int `json:"simulated"`
 }
 
 // DisplayInfo is a monitor the teacher can broadcast.

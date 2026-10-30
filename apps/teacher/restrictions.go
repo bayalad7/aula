@@ -109,14 +109,17 @@ func (a *App) sendRestrictions(class classroom, cmds []policy.Command) {
 func (a *App) onPolicyAck(sessionID string, p protocol.Payload) {
 	a.restr.Ack(sessionID, p)
 	if class := a.currentClass(); class != nil {
-		a.emit(EventStudents, a.studentsOf(class.Sessions()))
+		a.emit(EventStudents, a.studentsIn(class))
 	}
 }
 
 // studentsOf adds to each card whether the class's restrictions are active
 // on it.
-func (a *App) studentsOf(list []session.Session) Students {
-	st := studentsOf(list)
+// studentsIn returns the students of class for the UI: the real ones with
+// their restrictions and power orders, then the simulated ones, marked and
+// counted apart.
+func (a *App) studentsIn(class classroom) Students {
+	st := studentsOf(class.Sessions())
 	for i := range st.Students {
 		s := &st.Students[i]
 		s.AppsActive = a.restr.Active(s.ID, policy.KindApps)
@@ -125,7 +128,41 @@ func (a *App) studentsOf(list []session.Session) Students {
 			s.Power = &e
 		}
 	}
+	sims := studentsOf(simSessionsOf(class))
+	for _, s := range sims.Students {
+		s.Simulated = true
+		st.Students = append(st.Students, s)
+	}
+	// They can receive code, notices and show their screen, so the buttons
+	// work with only simulated students; the other counts stay real-only.
+	st.Simulated = sims.Connected
+	st.CanCode += sims.CanCode
+	st.CanNotice += sims.CanNotice
+	st.CanThumb += sims.CanThumb
 	return st
+}
+
+// simSessionsOf returns the simulated sessions of class, if it hosts any.
+func simSessionsOf(class classroom) []session.Session {
+	if host, ok := class.(simulationHost); ok {
+		return host.SimSessions()
+	}
+	return nil
+}
+
+// stopSimulationOf closes the aula simulada of a class that is ending.
+func (a *App) stopSimulationOf(class classroom) {
+	a.mu.Lock()
+	sim := a.sim
+	a.sim = nil
+	a.mu.Unlock()
+	if sim != nil {
+		sim.Close()
+		a.emitSimulation()
+	}
+	if host, ok := class.(simulationHost); ok {
+		host.StopSimulation()
+	}
 }
 
 // cleanApps takes app names as a teacher types them: one per line, with or

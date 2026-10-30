@@ -321,3 +321,12 @@ button.danger { background: var(--error); border-color: var(--error); color: #ff
   background: var(--bg);
 }
 .screen-detail img { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+
+/* Aula simulada (docs/v1/ux/profesor, Fase 6) */
+.cap.simulado { color: #6230c9; background: #efe8ff; border-color: transparent; font-weight: 600; }
+.student[data-simulated="yes"] { border-style: dashed; border-color: #7c4ae0; }
+.sim-box { display: grid; gap: 0.3rem; margin-top: 0.8rem; }
+.sim-note { margin: 0; font-size: 0.8rem; }
+@media (prefers-color-scheme: dark) {
+  .cap.simulado { color: #c5b0ff; background: #2a1f47; }
+}

@@ -1,6 +1,6 @@
 # 17 · Pulido de la consola: UX/UI, manual integrado, diagramas y aula simulada
 
-**Prerrequisitos:** Hito 1 cerrado (08); mejor aún con algunas funciones de Fase 2 ya hechas, para que haya UX/UI que pulir. Requiere que existan diagramas en `docs/diagramas/` (si no, esta etapa crea los básicos a partir de `docs/protocol.md`).
+**Prerrequisitos:** Hito 1 cerrado (08); mejor aún con algunas funciones de Fase 2 ya hechas, para que haya UX/UI que pulir. Requiere que existan diagramas en `docs/v1/diagramas/` (si no, esta etapa crea los básicos a partir de `docs/protocol.md`).
 **Duración estimada:** varias sesiones; es una fase por entregas pequeñas, no una sola pasada.
 **Origen:** adaptación del prompt de pulido del panel de PRISMA v1.1 a la consola de Aula (Wails de escritorio, no panel web).
 
@@ -9,8 +9,7 @@
 ~~~~markdown
 Lee CLAUDE.md, docs/protocol.md, docs/privacidad.md, docs/progreso.md, docs/compatibilidad.md y
 TODO el código de la app del profesor (apps/teacher: frontend embebido, bindings Go) y los
-paquetes que consume (internal/discovery, internal/transport, internal/session, internal/codedist
-y, si existen, internal/broadcast y los de Fase 2/3). Revisa también los ejemplos de agentes
+paquetes que consume (internal/*). Revisa también los ejemplos de agentes
 simulados (examples/dos_alumnos u otros).
 
 # Objetivo
@@ -18,7 +17,7 @@ Preparar la consola del profesor para los primeros usuarios reales, sin agregar 
 de aula. Cuatro metas:
 1. Mejorar la UX/UI de la consola.
 2. Incluir un manual de usuario dentro de la propia consola.
-3. Mostrar dentro de la consola los diagramas de arquitectura y protocolo de docs/diagramas/.
+3. Mostrar dentro de la consola los diagramas de arquitectura y protocolo de docs/v1/diagramas/.
 4. Permitir probar el sistema de principio a fin SIN un laboratorio físico: un modo de "aula
    simulada" con alumnos simulados.
 NO se agregan funciones nuevas de aula.
@@ -51,7 +50,7 @@ emitido + un alumno simulado recibiéndolo" en menos de 5 minutos.
 # FASE 1 — Análisis (no escribas código de la consola en esta fase)
 1. Recorre la consola real con datos de demostración (un canal, 2 alumnos simulados, historial de
    snippets, un trabajo/acuse fallido). Captura cada pantalla y estado (vacío, con datos, error,
-   cargando). Guarda las capturas en docs/ux/v1/profesor/antes.
+   cargando). Guarda las capturas en docs/v1/ux/profesor/antes.
 2. Recorre estos flujos clave, cuenta pasos y clics, y anota cada fricción:
    a) ver la lista de alumnos y entender quién está conectado y quién no
    b) entender por qué un alumno no aparece / no conecta y qué hacer
@@ -62,13 +61,24 @@ emitido + un alumno simulado recibiéndolo" en menos de 5 minutos.
 4. Revisa los textos: mensajes de error (¿dicen qué pasó y qué hacer?), etiquetas técnicas sin
    explicar (canal, huella de certificado, clave pública, capacidades, heartbeat), confirmaciones
    de acciones destructivas y estados vacíos.
-5. Inventario de docs/diagramas/: por diagrama, tipo Mermaid, de qué trata, para qué público sirve
+5. Identifica las mejoras más relevantes que se le pueden actualizar a la interface, ejemplo:
+   - Al iniciar aparece la sección de emitir códigos a los alumnos cuando se podría iniciar
+     mostrando una lista de todos los alumnos en forma de tabla cosa que aparece del lado izquierdo
+     "Alumnos X conectados" ... Esperando alumnos en este canal…", emitir códigos a los alumnos 
+     debería estar en un módulo/sección apart.
+   - Las funcionalidades implementadas hasta el momento como "Transmitir mi pantalla", "Restricciones",
+     "Energía", etc. abren nuevas secciones cuando primero podrían utilizar la parte de ver a los
+     alumnos en miniatura, seleccionar y después aplicar la funcionalidad. Se podría implementar que
+     primero se deba eligir ciertos o todos los alumnos y despúes aplicar la función, como tipo "LanSchool".
+   - Crítico: Las funciones como "Ver pantallas", "Restricciones", "Energía" abren nuevas 
+     pantallas con nuevos formularios haciendo que no sea nada dinamico la navegación y complejo de entender.
+6. Inventario de docs/v1/diagramas/: por diagrama, tipo Mermaid, de qué trata, para qué público sirve
    (profesor, TI, integrador) y en qué pantallas aportaría valor. Señala los desactualizados. Si
    casi no hay diagramas, lista los mínimos a crear (arquitectura general, ciclo de sesión y
    autenticación, descubrimiento por canal, diagnóstico de conexión).
-6. Revisa qué hay para probar sin laboratorio (ejemplos de agentes simulados, el registro de
-   sesiones) y qué se reutiliza para el modo de aula simulada de la Fase 6.
-7. Entrega docs/ux/v1/profesor/ANALISIS-CONSOLA.md con: hallazgos priorizados (crítico/alto/medio/bajo) cada
+7. Revisa qué hay para probar sin laboratorio (ejemplos de agentes simulados, el registro de
+   sesiones) y qué se reutiliza para el modo de aula simulada de la Fase 6 de esta sesión.
+8. Entrega docs/v1/ux/profesor/ANALISIS-CONSOLA.md con: hallazgos priorizados (crítico/alto/medio/bajo) cada
    uno con captura, heurística, impacto y propuesta; flujos actuales vs propuestos; arquitectura de
    navegación (flowchart Mermaid) incluyendo Ayuda y Aula simulada; el inventario de diagramas; la
    evaluación de cómo mostrar diagramas (Fase 5) con tu recomendación; el plan de reutilización del
@@ -108,7 +118,7 @@ Evalúa e implementa lo que corresponda:
 
 # FASE 4 — Manual de usuario dentro de la consola
 1. Sección "Ayuda", disponible sin internet:
-   - Manual en Markdown en docs/administracion/ (fuente única), embebido con go:embed y renderizado
+   - Manual en Markdown en docs/v1/administracion/ (fuente única), embebido con go:embed y renderizado
      a HTML sanitizado (librería Go pequeña justificada, o preprocesado en el build).
    - Contenido: Primeros pasos · Conceptos (canal, agente, clave pública, huella de certificado,
      capacidades, heartbeat) sin jerga · Una guía por pantalla · Tareas frecuentes · Probar sin
@@ -187,7 +197,7 @@ Objetivo: que el profesor pruebe Aula de principio a fin SIN equipos de alumno r
 3. Pruebas de la aula simulada: un alumno simulado recibe y acusa como uno real; las fallas
    simuladas se reportan con los estados esperados; los simulados no persisten ni se cuentan como
    reales; el comprobador de conexión coincide con el diagnóstico real.
-4. Capturas "después" en docs/ux/v1/profesor/despues/ y un informe docs/ux/v1/profesor/RESULTADOS.md: antes/después por
+4. Capturas "después" en docs/v1/ux/profesor/despues/ y un informe docs/v1/ux/profesor/RESULTADOS.md: antes/después por
    pantalla, pasos y clics por flujo (antes vs después), hallazgos resueltos y pendientes.
 5. Prueba de "usuario nuevo": sigue el manual desde una instalación limpia y SIN alumnos reales
    (solo aula simulada) y reporta cualquier paso confuso.

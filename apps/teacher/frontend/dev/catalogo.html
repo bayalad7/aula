@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <link rel="icon" href="data:,">
+  <title>Catálogo del sistema de diseño · Aula (desarrollo)</title>
+  <link rel="stylesheet" href="../dist/sistema/tokens.css">
+  <link rel="stylesheet" href="../dist/sistema/componentes.css">
+  <link rel="stylesheet" href="catalogo.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <header class="cat-cabecera">
+    <h1>Sistema de diseño de Aula</h1>
+    <span class="insignia insignia--advertencia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#advertencia"/></svg>Solo desarrollo: no se incluye en la consola</span>
+    <div class="segmentado" role="group" aria-label="Tema">
+      <button type="button" data-tema="sistema" aria-pressed="true">Sistema</button>
+      <button type="button" data-tema="light" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="../dist/sistema/iconos.svg#sol"/></svg>Claro</button>
+      <button type="button" data-tema="dark" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="../dist/sistema/iconos.svg#luna"/></svg>Oscuro</button>
+    </div>
+  </header>
+
+  <main id="contenido" class="cat" tabindex="-1">
+    <nav class="cat-indice" aria-label="Índice">
+      <a href="#colores">Colores</a> · <a href="#tipografia">Tipografía</a> · <a href="#botones">Botones</a> ·
+      <a href="#campos">Campos</a> · <a href="#insignias">Insignias</a> · <a href="#tarjetas">Tarjetas</a> ·
+      <a href="#tabla">Tabla</a> · <a href="#avisos">Avisos</a> · <a href="#franjas">Franjas</a> ·
+      <a href="#aviso-linea">Aviso en línea</a> · <a href="#dialogo">Diálogo</a> · <a href="#vacio">Estado vacío</a> · <a href="#carga">Carga</a> ·
+      <a href="#pasos">Pasos</a> · <a href="#codigo">Código</a> · <a href="#diagrama">Diagrama</a> ·
+      <a href="#iconos">Iconos</a> · <a href="prototipo/alumnos.html">Prototipo</a>
+    </nav>
+
+    <section id="colores" aria-labelledby="h-colores">
+      <h2 id="h-colores">Colores</h2>
+      <p class="suave">Leídos de <code>tokens.css</code> con el tema actual. El contraste AA lo verifica <code>apps/teacher/sistema_test.go</code>.</p>
+      <ul class="cat-muestras" id="muestras"></ul>
+    </section>
+
+    <section id="tipografia" aria-labelledby="h-tipo">
+      <h2 id="h-tipo">Tipografía</h2>
+      <div class="cat-fila-vertical">
+        <p style="font-size: var(--t-2xl); font-weight: var(--peso-fuerte)">2xl · Estado vacío y asistentes</p>
+        <h1>xl · Título de vista (h1)</h1>
+        <h2>lg · Título de panel (h2)</h2>
+        <p>md · Texto base: claro, sin jerga y con el verbo de la acción.</p>
+        <p class="pequeno suave">sm · Ayudas y metadatos</p>
+        <p style="font-size: var(--t-xs)">xs · Insignias</p>
+        <p class="mono">mono · def factorial(n): return 1 if n &lt;= 1 else n * factorial(n - 1)</p>
+      </div>
+    </section>
+
+    <section id="botones" aria-labelledby="h-botones">
+      <h2 id="h-botones">Botones</h2>
+      <div class="grupo-botones">
+        <button class="btn btn--primario"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#enviar"/></svg>Primario</button>
+        <button class="btn">Secundario</button>
+        <button class="btn btn--peligro"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#energia"/></svg>Peligro</button>
+        <button class="btn btn--fantasma">Fantasma</button>
+        <button class="btn btn--primario" aria-busy="true">Trabajando…</button>
+        <button class="btn btn--primario" disabled>Deshabilitado</button>
+        <button class="btn" disabled>Deshabilitado</button>
+        <button class="btn btn--icono" aria-label="Cerrar"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#cerrar"/></svg></button>
+      </div>
+      <div class="grupo-botones">
+        <button class="btn btn--sm">Pequeño</button>
+        <button class="btn">Normal</button>
+        <button class="btn btn--lg">Grande</button>
+        <div class="segmentado" role="group" aria-label="Ejemplo">
+          <button type="button" aria-pressed="true"><svg class="icono icono--sm" aria-hidden="true"><use href="../dist/sistema/iconos.svg#lista"/></svg>Lista</button>
+          <button type="button" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="../dist/sistema/iconos.svg#miniaturas"/></svg>Miniaturas</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="campos" aria-labelledby="h-campos">
+      <h2 id="h-campos">Campos</h2>
+      <div class="cat-rejilla">
+        <label class="campo"><span class="campo__etiqueta">Con ayuda</span><input value="Prof. Ayala" aria-describedby="a1">
+          <span class="campo__ayuda" id="a1">Lo ven los alumnos en su ventana de Aula.</span></label>
+        <label class="campo"><span class="campo__etiqueta">Con error en línea</span><input value="16001" aria-invalid="true" aria-describedby="e1">
+          <span class="campo__error" id="e1"><svg class="icono icono--sm" aria-hidden="true"><use href="../dist/sistema/iconos.svg#error"/></svg>El canal va del 1 al 16000.</span></label>
+        <label class="campo"><span class="campo__etiqueta">Lista</span><select><option>Python</option><option>Java</option></select></label>
+        <label class="campo"><span class="campo__etiqueta">Texto largo</span><textarea rows="3">steam
+discord</textarea></label>
+        <fieldset class="campo"><legend class="campo__etiqueta">Opciones</legend>
+          <label class="opcion"><input type="radio" name="o" checked> Todos los conectados</label>
+          <label class="opcion"><input type="radio" name="o"> Solo los seleccionados</label>
+          <label class="opcion"><input type="checkbox" checked> Casilla</label>
+        </fieldset>
+      </div>
+    </section>
+
+    <section id="insignias" aria-labelledby="h-insignias">
+      <h2 id="h-insignias">Insignias de estado</h2>
+      <p class="suave">Siempre con icono y texto: el color nunca va solo.</p>
+      <div class="grupo-botones">
+        <span class="insignia insignia--conectado"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#conectado"/></svg>Conectado</span>
+        <span class="insignia insignia--desconectado"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#desconectado"/></svg>Desconectado</span>
+        <span class="insignia insignia--advertencia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#advertencia"/></svg>Sin confirmar</span>
+        <span class="insignia insignia--error"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#error"/></svg>Falló</span>
+        <span class="insignia insignia--simulado"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#simulado"/></svg>Simulado</span>
+        <span class="insignia insignia--info"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#info"/></svg>Información</span>
+        <span class="insignia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#info"/></svg>Neutra</span>
+      </div>
+    </section>
+
+    <section id="tarjetas" aria-labelledby="h-tarjetas">
+      <h2 id="h-tarjetas">Tarjetas</h2>
+      <div class="cat-rejilla">
+        <div class="tarjeta">
+          <div class="tarjeta__cabecera"><h3>Tarjeta con cabecera</h3><button class="btn btn--fantasma btn--sm">Acción</button></div>
+          <div class="tarjeta__cuerpo">Contenido de la tarjeta.</div>
+        </div>
+        <ul class="cuadricula-alumnos cat-alumnos">
+          <li class="alumno" data-seleccionado="true">
+            <input class="alumno__marca" type="checkbox" checked aria-label="Seleccionar LAB3-PC01">
+            <div class="alumno__pantalla"><img alt="Pantalla de LAB3-PC01" src="prototipo/miniaturas/0.svg"></div>
+            <div class="alumno__pie"><span class="alumno__nombre">LAB3-PC01</span><span class="insignia insignia--conectado"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#conectado"/></svg>Conectado</span></div>
+            <div class="alumno__sub">Ana López · Ejercicio 3</div>
+          </li>
+          <li class="alumno alumno--desconectado">
+            <input class="alumno__marca" type="checkbox" aria-label="Seleccionar LAB3-PC03">
+            <div class="alumno__pantalla"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#desconectado"/></svg><span>Desconectado</span></div>
+            <div class="alumno__pie"><span class="alumno__nombre">LAB3-PC03</span><span class="insignia insignia--desconectado"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#desconectado"/></svg>Desconectado</span></div>
+            <div class="alumno__sub">Dejó de responder a las 10:31</div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="tabla" aria-labelledby="h-tabla">
+      <h2 id="h-tabla">Tabla que pasa a tarjetas</h2>
+      <p class="suave">Ancha: tabla. Contenedor angosto (menos de 40rem): tarjetas con etiquetas.</p>
+      <div class="cat-rejilla cat-rejilla--tabla">
+        <div class="tabla-adaptable"><table class="tabla" aria-label="Ejemplo ancho"></table></div>
+        <div class="tabla-adaptable cat-angosta"><table class="tabla" aria-label="Ejemplo angosto"></table></div>
+      </div>
+    </section>
+
+    <section id="avisos" aria-labelledby="h-avisos">
+      <h2 id="h-avisos">Avisos flotantes</h2>
+      <p class="suave">Los de error se quedan hasta que se cierran; los demás se van a los 6 s.</p>
+      <div class="cat-rejilla">
+        <div class="toast toast--exito" role="status"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#conectado"/></svg><div class="toast__texto"><span class="toast__titulo">Ejercicio 4 enviado a 7 alumnos</span><span class="pequeno">Abajo ves quién ya lo tiene en pantalla.</span></div></div>
+        <div class="toast toast--info" role="status"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#info"/></svg><div class="toast__texto"><span class="toast__titulo">Código cargado del portapapeles</span><span class="pequeno">6 líneas, Python. Revisa y pulsa Emitir.</span></div></div>
+        <div class="toast toast--advertencia" role="status"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#advertencia"/></svg><div class="toast__texto"><span class="toast__titulo">2 alumnos no pueden recibirlo</span><span class="pequeno">Equipos Linux: aún no comparten pantalla.</span></div></div>
+        <div class="toast toast--error" role="alert"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#error"/></svg>
+          <div class="toast__texto"><span class="toast__titulo">No se pudo abrir la clase</span>
+            <span class="pequeno">Otra copia de Aula Consola ya está abierta en este equipo. Ciérrala y pulsa Reintentar.</span>
+            <details class="detalles"><summary>Ver detalles</summary><pre>listen tcp :47830: bind: Only one usage of each socket address…</pre></details>
+            <div class="grupo-botones"><button class="btn btn--sm">Reintentar</button><a href="#">Manual › La consola no abre</a></div>
+          </div>
+          <button class="btn btn--fantasma btn--icono btn--sm" aria-label="Cerrar"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#cerrar"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="franjas" aria-labelledby="h-franjas">
+      <h2 id="h-franjas">Franjas globales</h2>
+      <div class="cat-fila-vertical cat-franjas">
+        <p class="franja franja--transmitiendo"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#transmitir"/></svg><span class="franja__texto">Transmitiendo tu pantalla a 7 de 7 alumnos <span class="franja__nota">La ventana de Aula no aparece en la transmisión.</span></span><button class="btn btn--sm">Detener</button></p>
+        <p class="franja franja--energia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#energia"/></svg><span class="franja__texto">Reinicio pendiente en 2 equipos · el primero en 0:24</span><button class="btn btn--sm">Cancelar</button></p>
+        <p class="franja franja--simulada"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#simulado"/></svg><span class="franja__texto">Aula simulada activa: 2 alumnos de prueba</span><button class="btn btn--sm">Salir</button></p>
+        <p class="franja franja--advertencia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#llave"/></svg><span class="franja__texto">Este equipo no tiene la clave del centro: los alumnos no reconocerán esta consola.</span><a href="#">¿Qué hago?</a></p>
+      </div>
+    </section>
+
+    <section id="aviso-linea" aria-labelledby="h-aviso-linea">
+      <h2 id="h-aviso-linea">Aviso en línea</h2>
+      <p class="suave">Dentro del contenido, con márgenes y esquinas redondeadas (p. ej., el aviso de privacidad de las miniaturas).</p>
+      <p class="aviso-en-linea"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#info"/></svg>Información en línea.</p>
+      <p class="aviso-en-linea aviso-en-linea--advertencia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#info"/></svg>Mientras ves las miniaturas, cada alumno tiene en su pantalla el aviso «Tu pantalla está siendo vista por el profesor».</p>
+      <p class="aviso-en-linea aviso-en-linea--simulado"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#simulado"/></svg>Estos alumnos son de prueba.</p>
+    </section>
+
+    <section id="dialogo" aria-labelledby="h-dialogo">
+      <h2 id="h-dialogo">Diálogo de confirmación</h2>
+      <p class="suave">Título con verbo y número, consecuencia y botón con el mismo verbo. El foco empieza en «Volver».</p>
+      <div class="grupo-botones">
+        <button class="btn" data-dialogo="d-normal">Abrir confirmación</button>
+        <button class="btn btn--peligro" data-dialogo="d-peligro">Abrir confirmación de peligro</button>
+      </div>
+    </section>
+
+    <section id="vacio" aria-labelledby="h-vacio">
+      <h2 id="h-vacio">Estado vacío con acción sugerida</h2>
+      <div class="tarjeta vacio">
+        <svg class="icono icono--xl" aria-hidden="true"><use href="../dist/sistema/iconos.svg#alumnos"/></svg>
+        <h2>Aún no hay alumnos en el canal 1</h2>
+        <p>Los equipos del laboratorio aparecen aquí solos al encender Aula. Si en 1 minuto no aparece ninguno, revisemos juntos.</p>
+        <div class="grupo-botones"><button class="btn btn--primario">¿Falta un alumno?</button><button class="btn"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#simulado"/></svg>Probar con alumnos simulados</button></div>
+      </div>
+    </section>
+
+    <section id="carga" aria-labelledby="h-carga">
+      <h2 id="h-carga">Carga</h2>
+      <div class="cat-rejilla">
+        <p class="grupo-botones" role="status"><span class="cargador" aria-hidden="true"></span>Abriendo el canal 1…</p>
+        <div class="cat-fila-vertical" aria-hidden="true"><span class="esqueleto" style="width: 60%"></span><span class="esqueleto" style="width: 85%"></span><span class="esqueleto" style="width: 40%"></span></div>
+      </div>
+    </section>
+
+    <section id="pasos" aria-labelledby="h-pasos">
+      <h2 id="h-pasos">Pasos de asistente</h2>
+      <ol class="pasos">
+        <li class="paso paso--hecho"><span class="paso__titulo">Hecho</span></li>
+        <li class="paso paso--fallo"><span class="paso__titulo">Falló: la red es Pública</span><span class="suave pequeno">Cámbiala a Privada en Configuración de Windows.</span></li>
+        <li class="paso paso--actual" aria-current="step"><span class="paso__titulo">Paso actual</span></li>
+        <li class="paso"><span class="paso__titulo">Pendiente</span></li>
+      </ol>
+    </section>
+
+    <section id="codigo" aria-labelledby="h-codigo">
+      <h2 id="h-codigo">Bloque de código con «Copiar»</h2>
+      <div class="bloque-codigo">
+        <div class="bloque-codigo__cabecera"><span>Python</span>
+          <button type="button" class="btn btn--fantasma btn--sm" data-copiar="#ej-codigo"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#copiar"/></svg>Copiar</button></div>
+<pre id="ej-codigo">def factorial(n):
+    return 1 if n &lt;= 1 else n * factorial(n - 1)</pre>
+      </div>
+    </section>
+
+    <section id="diagrama" aria-labelledby="h-diagrama">
+      <h2 id="h-diagrama">Visor de diagramas</h2>
+      <figure class="tarjeta tarjeta__cuerpo visor-diagrama">
+        <div class="visor-diagrama__barra">
+          <h3>Diagnóstico: «Mi alumno no conecta»</h3>
+          <button type="button" class="btn btn--fantasma btn--icono btn--sm" data-zoom="menos" aria-label="Alejar"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#alejar"/></svg></button>
+          <button type="button" class="btn btn--fantasma btn--icono btn--sm" data-zoom="ajustar" aria-label="Ajustar al ancho"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#expandir"/></svg></button>
+          <button type="button" class="btn btn--fantasma btn--icono btn--sm" data-zoom="mas" aria-label="Acercar"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#acercar"/></svg></button>
+        </div>
+        <div class="visor-diagrama__lienzo" tabindex="0" role="region" aria-label="Diagrama, se puede desplazar">
+          <img class="tema-claro" src="prototipo/diagramas/12-diagnostico-conexion.claro.svg" alt="Diagrama: Diagnóstico «Mi alumno no conecta». Preguntas en orden para averiguar por qué un equipo de alumno no aparece en la consola.">
+          <img class="tema-oscuro" src="prototipo/diagramas/12-diagnostico-conexion.oscuro.svg" alt="">
+        </div>
+        <figcaption>Diagrama 12 · Para profesor e instalador</figcaption>
+      </figure>
+    </section>
+
+    <section id="iconos" aria-labelledby="h-iconos">
+      <h2 id="h-iconos">Iconos</h2>
+      <p class="suave">Leídos de <code>iconos.svg</code>. Uso: <code>&lt;svg class="icono"&gt;&lt;use href="sistema/iconos.svg#id"/&gt;&lt;/svg&gt;</code></p>
+      <ul class="cat-iconos" id="lista-iconos"></ul>
+    </section>
+  </main>
+
+  <dialog class="dialogo" id="d-normal" aria-labelledby="dn-t">
+    <div class="dialogo__cuerpo">
+      <h2 id="dn-t">¿Limpiar las pantallas de 7 alumnos?</h2>
+      <p>Se borra el código que ven en Aula. Lo que ya copiaron a su editor no se toca.</p>
+      <p class="dialogo__consecuencia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#info"/></svg>Puedes volver a enviarlo desde el historial.</p>
+    </div>
+    <div class="dialogo__acciones"><button class="btn" data-cerrar-dialogo autofocus>Volver</button><button class="btn btn--primario" data-cerrar-dialogo>Limpiar 7 pantallas</button></div>
+  </dialog>
+  <dialog class="dialogo dialogo--peligro" id="d-peligro" aria-labelledby="dp-t">
+    <div class="dialogo__cuerpo">
+      <h2 id="dp-t">¿Apagar 7 equipos ahora?</h2>
+      <p>Sin cuenta regresiva.</p>
+      <p class="dialogo__consecuencia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#advertencia"/></svg>Se cerrarán sus aplicaciones sin guardar.</p>
+    </div>
+    <div class="dialogo__acciones"><button class="btn" data-cerrar-dialogo autofocus>Volver</button><button class="btn btn--peligro" data-cerrar-dialogo>Apagar 7 equipos</button></div>
+  </dialog>
+  <div class="avisos-flotantes" id="avisos" aria-live="polite"></div>
+  <script src="prototipo/proto.js"></script>
+  <script src="catalogo.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+/* Solo para el prototipo: lo que la consola real resolverá con sus propios
+   componentes (p. ej., Monaco en lugar del editor simulado). */
+
+.editor-simulado {
+  min-height: 15rem;
+  margin: 0;
+  padding: var(--e-3) var(--e-3) var(--e-3) 3.25rem;
+  border: 1px solid var(--c-borde-fuerte);
+  border-radius: var(--r-md);
+  background: var(--c-superficie);
+  font: var(--t-md) / 1.6 var(--f-mono);
+  counter-reset: linea;
+  white-space: pre;
+  overflow: auto;
+}
+.editor-simulado span { display: block; position: relative; counter-increment: linea; min-height: 1.6em; }
+.editor-simulado span::before {
+  content: counter(linea);
+  position: absolute; left: -2.5rem; width: 1.75rem; text-align: right;
+  color: var(--c-texto-suave);
+}
+.tk-clave { color: var(--c-simulado); }
+.tk-func { color: var(--c-enlace); }
+.tk-num { color: var(--c-advertencia); }
+
+.codigo-rejilla { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: var(--e-4); align-items: stretch; }
+@media (max-width: 1100px) { .codigo-rejilla { grid-template-columns: minmax(0, 1fr); } }
+.pila { display: grid; gap: var(--e-3); align-content: start; }
+.fila { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-3); }
+.fila > .crece { flex: 1; min-width: 12rem; }
+.lista-limpia { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-2); }
+.envio { display: grid; gap: var(--e-2); padding: var(--e-3); border: 1px solid var(--c-borde); border-radius: var(--r-md); background: var(--c-superficie); }
+.envio__cabecera { display: flex; align-items: center; gap: var(--e-2); }
+.envio__cabecera strong { flex: 1; min-width: 0; }
+.desglose { display: grid; gap: var(--e-1); margin: 0; padding: var(--e-2) 0 0; border-top: 1px solid var(--c-borde); font-size: var(--t-sm); }
+.desglose dt { font-weight: var(--peso-medio); }
+.desglose dd { margin: 0 0 var(--e-2); }
+.envio > .btn { justify-self: start; }
+.historial-item { display: grid; grid-template-columns: 1fr auto; gap: var(--e-1) var(--e-2); padding: var(--e-3); border: 1px solid var(--c-borde); border-radius: var(--r-md); background: var(--c-superficie); }
+.historial-item .grupo-botones { grid-column: 1 / -1; }
+.datos-instalador { display: grid; grid-template-columns: auto 1fr; gap: var(--e-1) var(--e-4); margin: 0; }
+.datos-instalador dt { color: var(--c-texto-suave); }
+.datos-instalador dd { margin: 0; font-family: var(--f-mono); }
+.respuestas { display: flex; flex-wrap: wrap; gap: var(--e-2); }

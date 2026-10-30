@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <link rel="icon" href="data:,">
+  <title>Alumnos · Aula Consola (prototipo)</title>
+  <link rel="stylesheet" href="../../dist/sistema/tokens.css">
+  <link rel="stylesheet" href="../../dist/sistema/componentes.css">
+  <link rel="stylesheet" href="prototipo.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <div class="app">
+    <nav class="nav-lateral" id="nav" data-actual="alumnos" aria-label="Secciones"></nav>
+
+    <div class="principal">
+      <!-- Franjas globales: siempre visibles, arriba del contenido. -->
+      <p class="franja franja--simulada" role="status" data-solo-escena="simulada">
+        <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#simulado"/></svg>
+        <span class="franja__texto">Aula simulada activa: 2 alumnos de prueba al final de la lista. <span class="franja__nota">No son equipos reales y no cuentan en los acuses de la clase.</span></span>
+        <button type="button" class="btn btn--sm">Salir del aula simulada</button>
+      </p>
+      <p class="franja franja--energia" role="status" data-solo-escena="">
+        <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#energia"/></svg>
+        <span class="franja__texto">Reinicio pendiente en 2 equipos · el primero en 0:24</span>
+        <button type="button" class="btn btn--sm">Cancelar</button>
+      </p>
+
+      <div class="con-panel">
+        <main class="vista" id="contenido" tabindex="-1">
+          <header class="vista__cabecera">
+            <h1>Alumnos</h1>
+            <div class="resumen" id="resumen" aria-live="polite"></div>
+            <div class="segmentado" role="group" aria-label="Cómo ver a los alumnos">
+              <button type="button" data-modo="lista"><svg class="icono icono--sm" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#lista"/></svg>Lista</button>
+              <button type="button" data-modo="miniaturas"><svg class="icono icono--sm" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#miniaturas"/></svg>Miniaturas</button>
+            </div>
+            <button type="button" class="btn" id="seleccionar-todos" title="También con Ctrl+A"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#hecho"/></svg><span class="btn__texto">Seleccionar todos</span></button>
+            <a class="btn btn--fantasma" href="falta-alumno.html"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#ayuda"/></svg>¿Falta un alumno?</a>
+          </header>
+
+
+          <div class="vista__cuerpo">
+            <div id="vista-lista" class="tabla-adaptable">
+              <table class="tabla" aria-label="Alumnos del canal 1">
+                <thead>
+                  <tr>
+                    <th class="col-marca"><input type="checkbox" id="todos" aria-label="Seleccionar a todos"></th>
+                    <th>Equipo y alumno</th>
+                    <th>Estado</th>
+                    <th>Código en pantalla</th>
+                    <th>Notas</th>
+                  </tr>
+                </thead>
+                <tbody id="filas"></tbody>
+              </table>
+            </div>
+            <div id="vista-miniaturas" hidden>
+              <p class="aviso-en-linea aviso-en-linea--advertencia"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#info"/></svg>Mientras ves las miniaturas, cada alumno tiene en su pantalla el aviso «Tu pantalla está siendo vista por el profesor».</p>
+              <ul id="miniaturas" class="cuadricula-alumnos"></ul>
+            </div>
+          </div>
+
+          <div class="barra-acciones" role="toolbar" aria-label="Acciones sobre los alumnos seleccionados">
+            <div class="barra-acciones__dentro">
+              <span class="barra-acciones__seleccion" id="seleccion" aria-live="polite"></span>
+              <button type="button" class="btn" data-panel="pantalla" aria-expanded="false" title="Mostrar mi pantalla"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#transmitir"/></svg><span class="btn__texto">Mostrar mi pantalla</span></button>
+              <button type="button" class="btn" data-panel="aviso" aria-expanded="false" title="Aviso"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#aviso"/></svg><span class="btn__texto">Aviso</span></button>
+              <button type="button" class="btn" data-panel="restricciones" aria-expanded="false" title="Restricciones"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#candado"/></svg><span class="btn__texto">Restricciones</span></button>
+              <button type="button" class="btn" data-panel="energia" aria-expanded="false" title="Energía"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#energia"/></svg><span class="btn__texto">Energía</span></button>
+            </div>
+          </div>
+        </main>
+
+        <!-- Panel: Energía -->
+        <aside class="panel-lateral" id="panel-energia" hidden aria-labelledby="t-energia">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#energia"/></svg>
+            <h2 id="t-energia" tabindex="-1">Energía</h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel aria-label="Cerrar panel"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p>Para <strong data-destino></strong>.</p>
+            <fieldset class="campo">
+              <legend class="campo__etiqueta">¿Qué hacer?</legend>
+              <label class="opcion"><input type="radio" name="accion" checked> Reiniciar</label>
+              <label class="opcion"><input type="radio" name="accion"> Apagar</label>
+              <label class="opcion"><input type="radio" name="accion"> Cerrar la sesión del alumno</label>
+            </fieldset>
+            <label class="campo">
+              <span class="campo__etiqueta">Tiempo para guardar su trabajo</span>
+              <select><option>30 segundos</option><option selected>1 minuto</option><option>2 minutos</option><option>5 minutos</option></select>
+              <span class="campo__ayuda">Cada alumno ve una cuenta regresiva y puede posponerla 5 minutos, hasta 2 veces.</span>
+            </label>
+            <label class="opcion"><input type="checkbox"> Forzar ahora, sin cuenta regresiva</label>
+            <p class="insignia insignia--info insignia--bloque"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#info"/></svg>1 equipo seleccionado no puede recibirla (Linux).</p>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel>Cancelar</button>
+            <button type="button" class="btn btn--peligro" data-dialogo="confirmar-energia">Reiniciar…</button>
+          </div>
+        </aside>
+
+        <!-- Panel: Restricciones -->
+        <aside class="panel-lateral" id="panel-restricciones" hidden aria-labelledby="t-restr">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#candado"/></svg>
+            <h2 id="t-restr" tabindex="-1">Restricciones</h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel aria-label="Cerrar panel"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p>Para <strong data-destino></strong>.</p>
+            <label class="campo">
+              <span class="campo__etiqueta">Sitios web</span>
+              <select><option>Bloquear estos</option><option>Permitir solo estos</option></select>
+              <textarea rows="5" aria-invalid="true" aria-describedby="e-sitios">youtube.com
+tiktok .com</textarea>
+              <span class="campo__error" id="e-sitios"><svg class="icono icono--sm" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#error"/></svg>Línea 2: «tiktok .com» tiene un espacio. Escríbelo como tiktok.com.</span>
+              <span class="campo__ayuda">Uno por línea. Incluye sus subdominios: youtube.com también bloquea m.youtube.com.</span>
+            </label>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel>Cancelar</button>
+            <button type="button" class="btn btn--primario">Aplicar</button>
+          </div>
+        </aside>
+
+        <!-- Panel: Aviso -->
+        <aside class="panel-lateral" id="panel-aviso" hidden aria-labelledby="t-aviso">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#aviso"/></svg>
+            <h2 id="t-aviso" tabindex="-1">Aviso</h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel aria-label="Cerrar panel"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p>Para <strong data-destino></strong>.</p>
+            <label class="campo"><span class="campo__etiqueta">Mensaje</span><textarea rows="3">Guarden su trabajo: en 5 minutos cerramos.</textarea></label>
+            <fieldset class="campo"><legend class="campo__etiqueta">Tipo</legend>
+              <label class="opcion"><input type="radio" name="nivel" checked> Información</label>
+              <label class="opcion"><input type="radio" name="nivel"> Advertencia (en amarillo)</label>
+            </fieldset>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel>Cancelar</button>
+            <button type="button" class="btn btn--primario" data-toast="exito|Aviso enviado a 7 alumnos|Te avisamos aquí cuando lo vean.">Enviar aviso</button>
+          </div>
+        </aside>
+
+        <!-- Panel: Mostrar mi pantalla -->
+        <aside class="panel-lateral" id="panel-pantalla" hidden aria-labelledby="t-pantalla">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#transmitir"/></svg>
+            <h2 id="t-pantalla" tabindex="-1">Mostrar mi pantalla</h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel aria-label="Cerrar panel"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p>A <strong data-destino></strong>. Ven tu pantalla en grande, con tu nombre arriba.</p>
+            <label class="campo"><span class="campo__etiqueta">Monitor</span><select><option>Monitor 1 (principal) · 1920×1080</option><option>Monitor 2 · 1280×1024</option></select>
+              <span class="campo__ayuda">La ventana de Aula no aparece en la transmisión.</span></label>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel>Cancelar</button>
+            <button type="button" class="btn btn--primario">Empezar</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <dialog class="dialogo dialogo--peligro" id="confirmar-energia" aria-labelledby="d-titulo">
+    <div class="dialogo__cuerpo">
+      <h2 id="d-titulo">¿Reiniciar 2 equipos?</h2>
+      <p>LAB3-PC01 y LAB3-PC02 verán un aviso con 1 minuto para guardar su trabajo y podrán posponerlo.</p>
+      <p class="dialogo__consecuencia"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#advertencia"/></svg>Si un alumno no guarda a tiempo, Windows le pedirá guardar antes de reiniciar.</p>
+    </div>
+    <div class="dialogo__acciones">
+      <button type="button" class="btn" data-cerrar-dialogo autofocus>Volver</button>
+      <button type="button" class="btn btn--peligro" data-cerrar-dialogo>Reiniciar 2 equipos</button>
+    </div>
+  </dialog>
+
+  <div class="avisos-flotantes" id="avisos" aria-live="polite"></div>
+  <script src="proto.js"></script>
+</body>
+</html>

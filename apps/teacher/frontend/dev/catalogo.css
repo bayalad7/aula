@@ -1,0 +1,21 @@
+/* Solo para la página del catálogo. */
+.cat-cabecera {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3);
+  padding: var(--e-4) var(--e-5);
+  background: var(--c-superficie); border-bottom: 1px solid var(--c-borde);
+}
+.cat-cabecera h1 { flex: 1; }
+.cat { display: grid; gap: var(--e-6); max-width: 72rem; margin: 0 auto; padding: var(--e-5); }
+.cat > section { display: grid; gap: var(--e-3); }
+.cat-indice { font-size: var(--t-sm); }
+.cat-muestras { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--e-2); margin: 0; padding: 0; list-style: none; }
+.cat-muestras li { display: grid; grid-template-columns: 2.5rem 1fr; grid-template-rows: auto auto; column-gap: var(--e-2); align-items: center; }
+.cat-chip { grid-row: span 2; width: 2.5rem; height: 2.5rem; border-radius: var(--r-md); border: 1px solid var(--c-borde); }
+.cat-rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: var(--e-4); align-items: start; }
+.cat-rejilla--tabla { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.cat-angosta { max-width: 24rem; }
+.cat-fila-vertical { display: grid; gap: var(--e-2); }
+.cat-franjas { border: 1px solid var(--c-borde); border-radius: var(--r-md); overflow: hidden; }
+.cat-alumnos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cat-iconos { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: var(--e-2); margin: 0; padding: 0; list-style: none; }
+.cat-iconos li { display: grid; justify-items: center; gap: var(--e-1); padding: var(--e-3); border: 1px solid var(--c-borde); border-radius: var(--r-md); background: var(--c-superficie); font-size: var(--t-xs); }

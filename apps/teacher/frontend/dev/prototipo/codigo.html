@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <link rel="icon" href="data:,">
+  <title>Código · Aula Consola (prototipo)</title>
+  <link rel="stylesheet" href="../../dist/sistema/tokens.css">
+  <link rel="stylesheet" href="../../dist/sistema/componentes.css">
+  <link rel="stylesheet" href="prototipo.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <div class="app">
+    <nav class="nav-lateral" id="nav" data-actual="codigo" aria-label="Secciones"></nav>
+
+    <div class="principal">
+      <main class="vista" id="contenido" tabindex="-1">
+        <header class="vista__cabecera">
+          <h1>Código</h1>
+        </header>
+
+        <div class="vista__cuerpo pila">
+          <div class="codigo-rejilla">
+            <section class="tarjeta" aria-labelledby="t-editor">
+              <div class="tarjeta__cabecera">
+                <h2 id="t-editor">Ejercicio 4</h2>
+                <span class="insignia insignia--info"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#info"/></svg>Borrador: aún no se envía</span>
+              </div>
+              <div class="tarjeta__cuerpo pila">
+                <div class="fila">
+                  <label class="campo crece"><span class="campo__etiqueta">Título <span class="suave">(opcional)</span></span><input value="Factorial con ciclo"></label>
+                  <label class="campo"><span class="campo__etiqueta">Lenguaje</span><select><option selected>Python</option><option>Java</option><option>C</option></select></label>
+                </div>
+                <pre class="editor-simulado" aria-label="Editor de código"><span><b class="tk-clave">def</b> <b class="tk-func">factorial</b>(n):</span><span>    total = <b class="tk-num">1</b></span><span>    <b class="tk-clave">for</b> i <b class="tk-clave">in</b> <b class="tk-func">range</b>(<b class="tk-num">2</b>, n + <b class="tk-num">1</b>):</span><span>        total *= i</span><span>    <b class="tk-clave">return</b> total</span><span></span><span><b class="tk-func">print</b>(factorial(<b class="tk-num">5</b>))</span></pre>
+                <p class="pequeno suave">En el editor, <kbd>Tab</kbd> sangra el código. Para salir del editor con el teclado, pulsa <kbd>Ctrl+M</kbd> y después <kbd>Tab</kbd>.</p>
+                <fieldset class="campo">
+                  <legend class="campo__etiqueta">Enviar a</legend>
+                  <div class="fila">
+                    <label class="opcion"><input type="radio" name="destino" checked> Todos los conectados (7)</label>
+                    <label class="opcion"><input type="radio" name="destino"> Los 2 seleccionados en Alumnos</label>
+                  </div>
+                </fieldset>
+                <div class="grupo-botones">
+                  <button type="button" class="btn btn--primario" data-toast="exito|Ejercicio 4 enviado a 7 alumnos|A la derecha ves quién ya lo tiene en pantalla."><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#enviar"/></svg>Emitir (reemplaza lo que ven)</button>
+                  <button type="button" class="btn"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#mas"/></svg>Agregar debajo de lo que ven</button>
+                  <button type="button" class="btn" title="Carga en el editor lo que copiaste. También funciona desde cualquier programa con el atajo de Ajustes." data-toast="info|Código cargado del portapapeles|6 líneas, Python. Revisa y pulsa Emitir."><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#portapapeles"/></svg>Pegar del portapapeles</button>
+                  <button type="button" class="btn btn--fantasma" data-dialogo="confirmar-limpiar"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#limpiar"/></svg>Limpiar pantallas…</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Misma altura que el editor; si hay más envíos, se desplaza por dentro. -->
+            <section class="tarjeta tarjeta--estirada" aria-labelledby="t-envios">
+              <div class="tarjeta__cabecera"><h2 id="t-envios">Últimos envíos</h2></div>
+              <div class="tarjeta__cuerpo tarjeta__cuerpo--desplazable" tabindex="0" role="region" aria-label="Envíos recientes, se puede desplazar">
+                <ul class="lista-limpia">
+                  <li class="envio">
+                    <div class="envio__cabecera">
+                      <strong>Ejercicio 3 · Factorial recursivo</strong>
+                      <span class="insignia insignia--advertencia"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#pendiente"/></svg>5 de 7</span>
+                    </div>
+                    <button type="button" class="btn btn--fantasma btn--sm" data-desplegar="#desglose-3" aria-expanded="true" aria-controls="desglose-3">
+                      <svg class="icono icono--sm" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#flecha-abajo"/></svg>Quién falta
+                    </button>
+                    <dl class="desglose" id="desglose-3">
+                      <dt>LAB3-PC04 · Carla Ruiz</dt><dd><span class="insignia insignia--advertencia"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#pendiente"/></svg>Sin confirmar</span></dd>
+                      <dt>LAB3-PC03</dt><dd><span class="insignia insignia--desconectado"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#desconectado"/></svg>Desconectado</span></dd>
+                      <dt>LAB3-PC06</dt><dd><span class="insignia"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#info"/></svg>Sin sesión: no recibe código</span></dd>
+                    </dl>
+                    <div class="grupo-botones">
+                      <button type="button" class="btn btn--sm" data-toast="info|Reenviado a 1 alumno|LAB3-PC04. LAB3-PC03 lo recibirá al reconectarse."><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#reenviar"/></svg>Reenviar a los que faltan</button>
+                    </div>
+                  </li>
+                  <li class="envio">
+                    <div class="envio__cabecera">
+                      <strong>Aviso: Guarden su trabajo…</strong>
+                      <span class="insignia insignia--conectado"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#hecho"/></svg>7 de 7</span>
+                    </div>
+                  </li>
+                  <li class="envio">
+                    <div class="envio__cabecera">
+                      <strong>Ejercicio 2 · Suma de una lista (reemitido)</strong>
+                      <span class="insignia insignia--conectado"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#hecho"/></svg>7 de 7</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </section>
+          </div>
+
+          <section class="tarjeta" aria-labelledby="t-historial">
+            <div class="tarjeta__cabecera"><h2 id="t-historial">Historial de la clase</h2><span class="suave pequeno">Se conserva aunque cambies de canal o de nombre.</span></div>
+            <div class="tabla-adaptable">
+              <table class="tabla" aria-labelledby="t-historial">
+                <thead>
+                  <tr><th>#</th><th>Título</th><th>Lenguaje</th><th>Líneas</th><th>Emitido</th><th>Última vez</th><th><span class="solo-lector">Acciones</span></th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td data-etiqueta="Ejercicio">3</td><td class="celda-principal" data-etiqueta="Título">Factorial recursivo</td>
+                    <td data-etiqueta="Lenguaje">Python</td><td data-etiqueta="Líneas">6</td><td data-etiqueta="Emitido">1 vez</td><td data-etiqueta="Última vez">10:42</td>
+                    <td><div class="grupo-botones grupo-botones--fin">
+                      <button type="button" class="btn btn--sm"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#editar"/></svg>Abrir en el editor</button>
+                      <button type="button" class="btn btn--sm" data-toast="exito|Ejercicio 3 reemitido|Reemplaza lo que ven 7 alumnos.">Reemitir</button></div></td>
+                  </tr>
+                  <tr>
+                    <td data-etiqueta="Ejercicio">2</td><td class="celda-principal" data-etiqueta="Título">Suma de una lista</td>
+                    <td data-etiqueta="Lenguaje">Python</td><td data-etiqueta="Líneas">5</td><td data-etiqueta="Emitido">2 veces</td><td data-etiqueta="Última vez">10:39</td>
+                    <td><div class="grupo-botones grupo-botones--fin">
+                      <button type="button" class="btn btn--sm"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#editar"/></svg>Abrir en el editor</button>
+                      <button type="button" class="btn btn--sm">Reemitir</button></div></td>
+                  </tr>
+                  <tr>
+                    <td data-etiqueta="Ejercicio">1</td><td class="celda-principal" data-etiqueta="Título">Hola mundo</td>
+                    <td data-etiqueta="Lenguaje">Python</td><td data-etiqueta="Líneas">1</td><td data-etiqueta="Emitido">1 vez</td><td data-etiqueta="Última vez">10:31</td>
+                    <td><div class="grupo-botones grupo-botones--fin">
+                      <button type="button" class="btn btn--sm"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#editar"/></svg>Abrir en el editor</button>
+                      <button type="button" class="btn btn--sm">Reemitir</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="dialogo" id="confirmar-limpiar" aria-labelledby="d-limpiar">
+    <div class="dialogo__cuerpo">
+      <h2 id="d-limpiar">¿Limpiar las pantallas de 7 alumnos?</h2>
+      <p>Se borra el código que ven en Aula. Lo que ya copiaron a su editor no se toca.</p>
+      <p class="dialogo__consecuencia"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#info"/></svg>Puedes volver a enviarlo desde el historial.</p>
+    </div>
+    <div class="dialogo__acciones">
+      <button type="button" class="btn" data-cerrar-dialogo autofocus>Volver</button>
+      <button type="button" class="btn btn--primario" data-cerrar-dialogo>Limpiar 7 pantallas</button>
+    </div>
+  </dialog>
+
+  <div class="avisos-flotantes" id="avisos" aria-live="polite"></div>
+  <script src="proto.js"></script>
+</body>
+</html>

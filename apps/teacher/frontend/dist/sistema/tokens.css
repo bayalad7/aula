@@ -1,0 +1,176 @@
+/* Sistema de diseño de Aula: tokens.
+ *
+ * Fuente única de colores, tipografía, espaciado, radios y sombras de la
+ * consola (y, más adelante, del overlay del alumno). Los componentes solo usan
+ * estas variables. Tema: claro u oscuro según el sistema, o fijado con
+ * <html data-theme="light|dark">. Los pares de texto/fondo cumplen WCAG AA
+ * (4.5:1; 3:1 en bordes de controles); apps/teacher/sistema_test.go lo verifica.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Superficies y texto */
+  --c-fondo: #f4f5f7;
+  --c-superficie: #ffffff;
+  --c-superficie-2: #eef0f4;
+  --c-texto: #1a1f2b;
+  --c-texto-suave: #4f5869;
+  --c-borde: #d5dae2;
+  --c-borde-fuerte: #858fa0;
+  --c-velo: rgb(17 24 39 / 0.45);
+
+  /* Acción principal */
+  --c-acento: #1d4ed8;
+  --c-acento-hover: #1e40af;
+  --c-acento-texto: #ffffff;
+  --c-acento-suave: #e6edff;
+  --c-acento-sobre-suave: #1e3a8a;
+  --c-foco: #1d4ed8;
+  --c-enlace: #1d4ed8;
+
+  /* Estados: cada uno con texto, fondo suave y sólido (botones, puntos) */
+  --c-conectado: #146c34;
+  --c-conectado-fondo: #e3f4e8;
+  --c-conectado-solido: #1c8a44;
+  --c-desconectado: #4f5869;
+  --c-desconectado-fondo: #eceef2;
+  --c-desconectado-solido: #8a93a3;
+  --c-advertencia: #8a4600;
+  --c-advertencia-fondo: #fff1d6;
+  --c-advertencia-solido: #c26a00;
+  --c-error: #b42318;
+  --c-error-fondo: #fde8e6;
+  --c-error-solido: #c8322a;
+  --c-error-solido-texto: #ffffff;
+  --c-simulado: #6230c9;
+  --c-simulado-fondo: #efe8ff;
+  --c-simulado-solido: #7c4ae0;
+  --c-info: #1d4ed8;
+  --c-info-fondo: #e6edff;
+
+  /* Tipografía del sistema (sin fuentes descargadas) */
+  --f-texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Ubuntu", "Cantarell", sans-serif;
+  --f-titulo: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Ubuntu", sans-serif;
+  --f-mono: "Cascadia Mono", Consolas, "SF Mono", "DejaVu Sans Mono", monospace;
+  --t-xs: 0.75rem;   /* 12 px: insignias */
+  --t-sm: 0.8125rem; /* 13 px: ayudas, metadatos */
+  --t-md: 0.9375rem; /* 15 px: texto base */
+  --t-lg: 1.0625rem; /* 17 px: títulos de panel */
+  --t-xl: 1.375rem;  /* 22 px: título de vista */
+  --t-2xl: 1.75rem;  /* 28 px: pantallas vacías y asistentes */
+  --lh: 1.45;
+  --peso-normal: 400;
+  --peso-medio: 600;
+  --peso-fuerte: 700;
+
+  /* Espaciado (múltiplos de 4 px) */
+  --e-1: 0.25rem;
+  --e-2: 0.5rem;
+  --e-3: 0.75rem;
+  --e-4: 1rem;
+  --e-5: 1.5rem;
+  --e-6: 2rem;
+  --e-7: 3rem;
+
+  /* Radios y sombras */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-pill: 999px;
+  --sombra-1: 0 1px 2px rgb(17 24 39 / 0.08), 0 1px 1px rgb(17 24 39 / 0.04);
+  --sombra-2: 0 8px 24px rgb(17 24 39 / 0.16), 0 2px 6px rgb(17 24 39 / 0.08);
+
+  /* Medidas de la estructura */
+  --ancho-nav: 13.5rem;
+  --ancho-nav-compacta: 3.75rem;
+  --ancho-panel: 25rem;
+  --alto-control: 2.25rem;
+  --transicion: 140ms ease-out;
+}
+
+/* Oscuro: por el sistema, salvo que el usuario fije el claro. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --c-fondo: #12151c;
+    --c-superficie: #1a1f29;
+    --c-superficie-2: #232a37;
+    --c-texto: #e7eaf0;
+    --c-texto-suave: #a7b0bf;
+    --c-borde: #313949;
+    --c-borde-fuerte: #6f7a8c;
+    --c-velo: rgb(0 0 0 / 0.6);
+    --c-acento: #3a66dd;
+    --c-acento-hover: #2f5fd8;
+    --c-acento-texto: #ffffff;
+    --c-acento-suave: #1d2a4d;
+    --c-acento-sobre-suave: #b9ceff;
+    --c-foco: #8db4ff;
+    --c-enlace: #8db4ff;
+    --c-conectado: #6fd697;
+    --c-conectado-fondo: #12301e;
+    --c-conectado-solido: #3fae6a;
+    --c-desconectado: #a7b0bf;
+    --c-desconectado-fondo: #262d39;
+    --c-desconectado-solido: #6f7a8c;
+    --c-advertencia: #f3bc6a;
+    --c-advertencia-fondo: #3a2a10;
+    --c-advertencia-solido: #d58a1c;
+    --c-error: #ff9b91;
+    --c-error-fondo: #3d1715;
+    --c-error-solido: #c8322a;
+    --c-error-solido-texto: #ffffff;
+    --c-simulado: #c5b0ff;
+    --c-simulado-fondo: #2a1f47;
+    --c-simulado-solido: #8d63ee;
+    --c-info: #8db4ff;
+    --c-info-fondo: #1d2a4d;
+    --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --sombra-2: 0 8px 24px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.3);
+  }
+}
+
+/* Oscuro fijado a mano: los mismos valores. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-fondo: #12151c;
+  --c-superficie: #1a1f29;
+  --c-superficie-2: #232a37;
+  --c-texto: #e7eaf0;
+  --c-texto-suave: #a7b0bf;
+  --c-borde: #313949;
+  --c-borde-fuerte: #6f7a8c;
+  --c-velo: rgb(0 0 0 / 0.6);
+  --c-acento: #3a66dd;
+  --c-acento-hover: #2f5fd8;
+  --c-acento-texto: #ffffff;
+  --c-acento-suave: #1d2a4d;
+  --c-acento-sobre-suave: #b9ceff;
+  --c-foco: #8db4ff;
+  --c-enlace: #8db4ff;
+  --c-conectado: #6fd697;
+  --c-conectado-fondo: #12301e;
+  --c-conectado-solido: #3fae6a;
+  --c-desconectado: #a7b0bf;
+  --c-desconectado-fondo: #262d39;
+  --c-desconectado-solido: #6f7a8c;
+  --c-advertencia: #f3bc6a;
+  --c-advertencia-fondo: #3a2a10;
+  --c-advertencia-solido: #d58a1c;
+  --c-error: #ff9b91;
+  --c-error-fondo: #3d1715;
+  --c-error-solido: #c8322a;
+  --c-error-solido-texto: #ffffff;
+  --c-simulado: #c5b0ff;
+  --c-simulado-fondo: #2a1f47;
+  --c-simulado-solido: #8d63ee;
+  --c-info: #8db4ff;
+  --c-info-fondo: #1d2a4d;
+  --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --sombra-2: 0 8px 24px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --transicion: 0ms; }
+}

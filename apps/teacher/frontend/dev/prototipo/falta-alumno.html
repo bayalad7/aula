@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <link rel="icon" href="data:,">
+  <title>¿Falta un alumno? · Aula Consola (prototipo)</title>
+  <link rel="stylesheet" href="../../dist/sistema/tokens.css">
+  <link rel="stylesheet" href="../../dist/sistema/componentes.css">
+  <link rel="stylesheet" href="prototipo.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <div class="app">
+    <nav class="nav-lateral" id="nav" data-actual="ayuda" aria-label="Secciones"></nav>
+
+    <div class="principal">
+      <main class="vista" id="contenido" tabindex="-1">
+        <header class="vista__cabecera">
+          <nav aria-label="Estás en" style="width: 100%"><ol class="migas"><li><a href="ayuda.html">Ayuda</a></li><li><a href="ayuda.html#problemas">Solución de problemas</a></li><li aria-current="page">¿Falta un alumno?</li></ol></nav>
+          <h1>¿Falta un alumno?</h1>
+          <a class="btn btn--fantasma" href="alumnos.html"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#alumnos"/></svg>Volver a Alumnos</a>
+        </header>
+
+        <div class="vista__cuerpo codigo-rejilla">
+          <div class="pila">
+            <section class="tarjeta" aria-labelledby="t-pasos">
+              <div class="tarjeta__cabecera"><h2 id="t-pasos">Vamos paso a paso</h2><span class="suave pequeno">Paso 2 de 4</span></div>
+              <div class="tarjeta__cuerpo">
+                <ol class="pasos">
+                  <li class="paso paso--hecho">
+                    <span class="paso__titulo">Tu clase está abierta</span>
+                    <span class="suave pequeno">Canal 1, esperando alumnos en este equipo (192.168.1.20).</span>
+                  </li>
+                  <li class="paso paso--actual" aria-current="step">
+                    <span class="paso__titulo">¿Qué dice la barra de arriba de Aula en el equipo del alumno?</span>
+                    <span class="suave pequeno">Es la franja con el nombre «Aula» en la computadora que no aparece.</span>
+                    <div class="respuestas">
+                      <button type="button" class="btn btn--sm">«Buscando canal 1»</button>
+                      <button type="button" class="btn btn--sm">«Sin configurar»</button>
+                      <button type="button" class="btn btn--sm">«…no se pudo conectar»</button>
+                      <button type="button" class="btn btn--sm">«…su clave no es la de este centro»</button>
+                      <button type="button" class="btn btn--sm btn--fantasma">No veo la ventana de Aula</button>
+                    </div>
+                  </li>
+                  <li class="paso"><span class="paso__titulo">Revisar la causa</span></li>
+                  <li class="paso"><span class="paso__titulo">Comprobar que aparece</span></li>
+                </ol>
+              </div>
+            </section>
+
+            <figure class="tarjeta tarjeta__cuerpo visor-diagrama">
+              <div class="visor-diagrama__barra">
+                <h3>Cómo se busca la causa</h3>
+                <button type="button" class="btn btn--fantasma btn--icono btn--sm" data-zoom="menos" aria-label="Alejar"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#alejar"/></svg></button>
+                <button type="button" class="btn btn--fantasma btn--icono btn--sm" data-zoom="ajustar" aria-label="Ajustar al ancho"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#expandir"/></svg></button>
+                <button type="button" class="btn btn--fantasma btn--icono btn--sm" data-zoom="mas" aria-label="Acercar"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#acercar"/></svg></button>
+              </div>
+              <div class="visor-diagrama__lienzo" tabindex="0" role="region" aria-label="Diagrama, se puede desplazar">
+                <img class="tema-claro" src="diagramas/12-diagnostico-conexion.claro.svg"
+                     alt="Diagrama: Diagnóstico «Mi alumno no conecta». Preguntas en orden para averiguar por qué un equipo de alumno no aparece en la consola.">
+                <img class="tema-oscuro" src="diagramas/12-diagnostico-conexion.oscuro.svg" alt="">
+              </div>
+              <figcaption>Diagrama 12 · Para profesor e instalador · Fuente: docs/v1/diagramas/12-diagnostico-conexion.md</figcaption>
+            </figure>
+          </div>
+
+          <aside class="pila" aria-label="Datos y pruebas">
+            <section class="tarjeta" aria-labelledby="t-datos">
+              <div class="tarjeta__cabecera"><h2 id="t-datos">Datos para quien instala</h2></div>
+              <div class="tarjeta__cuerpo pila">
+                <p class="pequeno suave">Si llamas al responsable de TI, dale estos datos.</p>
+                <div class="bloque-codigo">
+                  <div class="bloque-codigo__cabecera"><span>Esta consola</span>
+                    <button type="button" class="btn btn--fantasma btn--sm" data-copiar="#datos"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#copiar"/></svg>Copiar</button>
+                  </div>
+<pre id="datos">Canal: 1
+Equipo: PROF-LAB3 (192.168.1.20)
+Puerto: TCP 47830, UDP 47831
+Red de Windows: Privada
+Clave del centro: K7QD-3MX2-9PLA-W4TZ
+Aula Consola 0.6.0-dev</pre>
+                </div>
+              </div>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-sim">
+              <div class="tarjeta__cuerpo vacio">
+                <svg class="icono icono--xl" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#simulado"/></svg>
+                <h2 id="t-sim">Prueba sin laboratorio</h2>
+                <p>Abre 2 alumnos de prueba en este equipo para comprobar que la consola funciona. Se ven marcados como «Simulado» y no afectan a los equipos reales.</p>
+                <a class="btn btn--primario" href="alumnos.html?escena=simulada"><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#simulado"/></svg>Probar con alumnos simulados</a>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="avisos-flotantes" id="avisos" aria-live="polite"></div>
+  <script src="proto.js"></script>
+</body>
+</html>

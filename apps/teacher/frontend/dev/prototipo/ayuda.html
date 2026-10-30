@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <link rel="icon" href="data:,">
+  <title>Ayuda · Aula Consola (prototipo)</title>
+  <link rel="stylesheet" href="../../dist/sistema/tokens.css">
+  <link rel="stylesheet" href="../../dist/sistema/componentes.css">
+  <link rel="stylesheet" href="prototipo.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <div class="app">
+    <nav class="nav-lateral" id="nav" data-actual="ayuda" aria-label="Secciones"></nav>
+
+    <div class="principal">
+      <main class="vista" id="contenido" tabindex="-1">
+        <header class="vista__cabecera">
+          <h1>Ayuda</h1>
+          <p class="suave pequeno">Manual de Aula Consola · funciona sin internet</p>
+        </header>
+
+        <div class="vista__cuerpo pila">
+          <div class="buscador">
+            <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#buscar"/></svg>
+            <input type="search" id="buscar-manual" placeholder="Buscar en el manual: canal, firewall, apagar, simulados…" aria-label="Buscar en el manual">
+          </div>
+          <p id="sin-resultados" class="suave" hidden>No encontramos nada con esas palabras. Prueba con otras o revisa <a href="#problemas">Solución de problemas</a>.</p>
+
+          <!-- Prototipo: el índice real se genera de docs/administracion/ (entrega E7). -->
+          <ul class="indice-manual">
+            <li class="tarjeta">
+              <h2>
+                <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#flecha-der"/></svg>Primeros pasos
+              </h2>
+              <ul>
+                <li><a href="#">Abrir tu primera clase</a></li>
+                <li><a href="#">Enviar código a tus alumnos</a></li>
+                <li><a href="#">Ver quién lo recibió</a></li>
+                <li><a href="#">Probar sin laboratorio (aula simulada)</a></li>
+              </ul>
+            </li>
+            <li class="tarjeta">
+              <h2><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#info"/></svg>Conceptos</h2>
+              <ul>
+                <li><a href="#">Qué es un canal</a></li>
+                <li><a href="#">Aula en el equipo del alumno</a></li>
+                <li><a href="#">La clave del centro</a></li>
+                <li><a href="#">Qué puede hacer cada equipo</a></li>
+                <li><a href="#">Conectado y desconectado</a></li>
+              </ul>
+            </li>
+            <li class="tarjeta">
+              <h2><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#miniaturas"/></svg>Guía por pantalla</h2>
+              <ul>
+                <li><a href="alumnos.html">Alumnos: lista, miniaturas y selección</a></li>
+                <li><a href="codigo.html">Código: emitir, reenviar e historial</a></li>
+                <li><a href="#">Aula simulada</a></li>
+                <li><a href="#">Ajustes</a></li>
+              </ul>
+            </li>
+            <li class="tarjeta">
+              <h2><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#hecho"/></svg>Tareas frecuentes</h2>
+              <ul>
+                <li><a href="#">Mostrar mi pantalla a la clase</a></li>
+                <li><a href="#">Mandar un aviso</a></li>
+                <li><a href="#">Bloquear apps o sitios durante la clase</a></li>
+                <li><a href="#">Apagar o reiniciar los equipos</a></li>
+                <li><a href="#">Cambiar de canal o de nombre</a></li>
+              </ul>
+            </li>
+            <li class="tarjeta" id="problemas">
+              <h2><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#advertencia"/></svg>Solución de problemas</h2>
+              <ul>
+                <li><a href="falta-alumno.html"><strong>¿Falta un alumno?</strong> (asistente paso a paso)</a></li>
+                <li><a href="#">La consola no abre</a></li>
+                <li><a href="#">El alumno está en otro canal</a></li>
+                <li><a href="#">El firewall o la red Pública</a></li>
+                <li><a href="#">La clave no coincide</a></li>
+              </ul>
+            </li>
+            <li class="tarjeta">
+              <h2><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#ayuda"/></svg>Preguntas frecuentes</h2>
+              <ul>
+                <li><a href="#">¿Los alumnos saben cuándo veo su pantalla?</a></li>
+                <li><a href="#">¿Se guarda algo de lo que ven o escriben?</a></li>
+                <li><a href="#">¿Qué pasa si se va la red a mitad de clase?</a></li>
+              </ul>
+            </li>
+            <li class="tarjeta">
+              <h2><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#lista"/></svg>Glosario</h2>
+              <ul>
+                <li><a href="#">Acuse · Agente · Canal · Clave del centro · Huella · Simulado</a></li>
+              </ul>
+            </li>
+            <li class="tarjeta">
+              <h2><svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#red"/></svg>Cómo funciona Aula</h2>
+              <ul>
+                <li><a href="#">Galería de diagramas (15)</a></li>
+                <li><a href="#">Qué ve el alumno en cada momento</a></li>
+                <li><a href="#">Seguridad y privacidad</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="avisos-flotantes" id="avisos" aria-live="polite"></div>
+  <script src="proto.js"></script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+# Probar la consola en local, sin laboratorio
+
+Para comprobar en la **ventana real** de Aula Consola (WebView2) lo que está en `develop`, sin
+VMs ni equipos de alumno: el **aula simulada** pone alumnos de prueba dentro de la propia
+consola. Para probar con alumnos reales, ver `instaladores-locales.md` y `docs/prueba-vms.md`.
+
+## Qué usar en cada caso
+
+| Quiero… | Usa | Necesita |
+|---|---|---|
+| Ver un componente o el sistema de diseño | `go run ./tools/vistaprevia` → `dev/catalogo.html` | Go |
+| Ver el prototipo aprobado | `go run ./tools/vistaprevia` → `dev/prototipo/alumnos.html` | Go |
+| Iterar en el frontend con recarga automática | `wails dev` en `apps\teacher` | Go y Wails |
+| Probar la consola tal como sale, con alumnos simulados | La consola portable (abajo) | Go y Wails |
+| Probar con alumnos reales | `instaladores-locales.md` | Además, Inno Setup y VMs |
+
+Las pruebas automáticas (`go test ./...`) ya cubren los bindings y el aula simulada de punta a
+punta. Esta guía cubre lo que solo se ve en la ventana: que se vea bien y que cada botón haga lo
+que dice.
+
+## Compilar y abrir la consola
+
+En PowerShell, desde `C:\aula`:
+
+```powershell
+Push-Location apps\teacher
+wails build -clean -ldflags "-X main.version=0.6.0-dev"
+Pop-Location
+& apps\teacher\build\bin\aula-consola.exe
+```
+
+Antes de abrirla:
+
+- **Cierra cualquier Aula Consola instalada.** Las dos usan el puerto 47830, y la segunda dirá
+  «Otra copia de Aula Consola ya está abierta». Eso es justo el caso C-01.
+- **Firewall:** Windows puede pedir permiso de red. Para el aula simulada puedes cancelar: los
+  simulados se conectan dentro del mismo equipo (`127.0.0.1`).
+- **Clave del centro:** si el equipo no la tiene, la consola usa una clave personal y muestra la
+  franja amarilla. Es lo esperado (caso C-14).
+- **Datos de la consola:** guarda canales recientes y nombre en `%AppData%\Aula\consola`. Para no
+  tocar los tuyos, ábrela con otro directorio:
+  `$env:AULA_CONSOLE_DIR = "$env:TEMP\aula-prueba"; & apps\teacher\build\bin\aula-consola.exe`.
+
+**Regla del proyecto:** estas pruebas las hace una persona. No se automatizan con clics o
+teclas sintéticas sobre el escritorio (ver la memoria del proyecto). Las capturas automáticas se
+hacen en el arnés web, no en la ventana de Wails.
+
+## Casos
+
+Anota el commit (`git log --oneline -1`) y el resultado de cada caso. Cada entrega que cambie la
+consola agrega aquí sus casos.
+
+### Arranque y clase
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-01 | Abre la consola con otra ya abierta | «No se pudo abrir la clase. Otra copia de Aula Consola ya está abierta…», con el detalle técnico plegado en «Ver detalles» |
+| C-02 | Ciérrala y pulsa «Abrir la clase» | Se abre en Alumnos, vacío, con «¿Falta un alumno?» y «Probar con alumnos simulados» |
+
+### Aula simulada
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-03 | En Alumnos, «Probar con alumnos simulados» | Aparecen «Simulado 1» y «Simulado 2» al final, en el grupo «Alumnos simulados», con la franja morada y «0 conectados · 2 simulados» |
+| C-04 | En Aula simulada, agrega uno con Linux y solo «recibir código» | Aparece «Simulado 3» en la tabla y en Alumnos |
+| C-05 | Alumnos → Miniaturas | Las pantallas dibujadas de los simulados, con la franja roja «Tu pantalla está siendo vista…» y el aviso en línea arriba. Clic en una: se ve en grande |
+| C-06 | «Cerrar el aula simulada» y confirma | Desaparecen los simulados y la franja |
+
+### Código, acuses y reenvío
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-07 | Con 2 simulados, pon a «Simulado 2» la falla «No confirma lo que recibe». En Código, pega código y pulsa Emitir | En «Últimos envíos»: «1 de 2» y «2 simulados» |
+| C-08 | Abre «Quién falta (1)» | Muestra a Simulado 2, «Sin confirmar» |
+| C-09 | Quítale la falla y pulsa «Reenviar a los que faltan» | Pasa a «2 de 2» |
+| C-10 | En el historial, «Reemitir» del ejercicio 1 | Pide confirmación con el número de alumnos y luego reemite |
+| C-11 | Selecciona 1 alumno en Alumnos, vuelve a Código y elige «El alumno seleccionado» | El envío dice «1 de 1» |
+
+### Canal, nombre y ajustes
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-12 | Pulsa la tarjeta «1 · Prof. Ayala», escribe 99999 | Error en línea «Escribe un número del 1 al 16000»; no se cierra |
+| C-13 | Elige otro canal y confirma | «Ahora estás en el canal N». **El historial de Código sigue ahí**; el aula simulada se cerró |
+| C-14 | Ajustes › Acerca de | Versión, clave del centro (o personal, con su explicación), atajo de captura y datos para quien instala con Copiar |
+| C-15 | Ajustes › Apariencia: Claro, Oscuro, Sistema | Toda la consola y el editor cambian; al reabrir la consola, recuerda la elección |
+| C-16 | Ajustes › Clase › Cambiar… el nombre | Confirma la consecuencia y luego muestra el nombre nuevo en el menú |
+
+### Ventana y teclado
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-17 | Encoge la ventana al mínimo (900×600) | El menú queda en iconos y el canal como «1»; los paneles se abren encima; la barra de acciones queda solo con iconos |
+| C-18 | Recorre con Tab desde el inicio | El primer Tab ofrece «Saltar al contenido». En el editor, Ctrl+M y luego Tab sale del editor |
+| C-19 | En Alumnos, Ctrl+A | Selecciona a todos; el botón cambia a «Quitar selección» |
+
+### Con alumnos reales (opcional, con `instaladores-locales.md`)
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-20 | Con 1 VM de alumno y los simulados abiertos | El real cuenta en «conectados» y los simulados aparte. Energía y Restricciones solo se ofrecen para el real |
+
+## Si algo falla
+
+- Log de la consola: `%LOCALAPPDATA%\Aula\consola\aula-consola.log`. Las líneas de los simulados
+  llevan `simulated=true`.
+- Anota el caso, la captura de la ventana (solo de la ventana de Aula) y el commit.

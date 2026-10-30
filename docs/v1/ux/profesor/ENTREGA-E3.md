@@ -69,7 +69,8 @@ funciones nuevas de aula y sin cambios al protocolo.
   - **sin violaciones de axe** (WCAG 2.1 A/AA y buenas prácticas), también a 900×600 y en
     oscuro.
 - `gofmt`, `go vet ./...`, `staticcheck ./...` y `go test -race ./...` sin errores.
-- **Falta tu prueba en la ventana real** (WebView2), que yo no hago con clics en tu escritorio:
+- **Falta tu prueba en la ventana real** (WebView2), que yo no hago con clics en tu escritorio.
+  Los pasos y casos están en `docs/desarrollo/probar-consola-local.md` (C-01 a C-19); en resumen:
   1. abre la consola;
   2. prueba «Probar con alumnos simulados»;
   3. emite código y mira «Quién falta»;

@@ -4,6 +4,9 @@ Para probar en VMs o en el laboratorio lo que está en `develop` **sin publicar 
 Genera los mismos instaladores que el workflow de release (`.github/workflows/release.yml`),
 pero en tu equipo, sin firma y sin subir nada. Para publicar una versión, ver `publicar.md`.
 
+Si solo quieres probar la consola (sin alumnos reales), no necesitas instaladores: ver
+`probar-consola-local.md`, que usa el aula simulada.
+
 ## Qué necesitas (una sola vez)
 
 - Go 1.26 o posterior y la CLI de Wails v2 (`wails doctor` debe terminar en *SUCCESS*; ver

@@ -17,10 +17,10 @@
 | 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
 | 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado; apagado con cuenta y posponer probado en el laboratorio (faltan los demás casos de `docs/prueba-vms.md` §15) |
-| 10 | Plantilla reutilizable para nuevas funciones | ⏳ Pendiente |
+| 10 | Plantilla reutilizable para nuevas funciones | ✅ Completada |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
-| 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 15 diagramas (falta el 10, aula simulada) |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Fases 1 y 2, aula simulada (6.1), E3, E2, E7 y pendientes de las Fases 3 y 4 aprobados |
+| 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 16 diagramas, con el 10 del aula simulada |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Falta el cierre: E12 `internal/ui`, E8 diagramas, E11 comprobador (6.3) y E10 verificación (ver «Etapa 18: plan de cierre») |
 
 ## Etapa 02: notas
 
@@ -770,7 +770,7 @@
   - el arnés web pasa al repo (`scripts/ux/`): recorrido con axe-core y capturas del manual;
   - propuestas que cambiarían el protocolo en `docs/v1/ux/PROPUESTAS.md`;
   - falta la prueba en la ventana real (C-26 a C-30).
-- **Salvaguardas para las funciones nuevas** (espera aprobación):
+- **Salvaguardas para las funciones nuevas** (commits `a4e42c6`, `c6bb241` y `32881a8`):
   - «Definición de terminado» en `CLAUDE.md`;
   - pruebas en `apps/teacher/guardrails_test.go`: el doble del arnés tiene todos los bindings,
     cada capacidad implementada sale en la ficha del alumno, y los simulados solo declaran
@@ -780,7 +780,156 @@
     alumno, selección y paneles).
   - comandos `/funcionalidad-nueva` y `/funcionalidad-mejora` en `.claude/commands/`, con su
     guía y ejemplos en `docs/desarrollo/comandos-claude.md`.
-- **`internal/ui`** ya está en `CLAUDE.md` (sistema de diseño compartido con la app del
-  alumno), pero el paquete no existe todavía: hay que mover `apps/teacher/frontend/dist/sistema/`.
-- **Siguiente:** diagramas en la consola (E8), comprobador de conexión (6.3) y verificación
-  final (E10).
+- **Siguiente:** el plan de cierre de abajo.
+
+## Etapa 18: plan de cierre
+
+Lo que falta para cerrar el prompt 18 (`docs/v1/prompts/18-pulido-consola-ux-manual-simulador.md`):
+las Fases 5, 6.3 y 7, y el paquete `internal/ui`, que `CLAUDE.md` ya describe pero que todavía no
+existe. Cada paso es una entrega: capturas del arnés, resumen, aprobación del usuario y commit en
+`develop`. Se sigue en orden. Para empezar una sesión nueva: «Lee docs/progreso.md y continúa con
+el plan de cierre de la etapa 18».
+
+Estado al escribir este plan (04/11/2026):
+- `develop` va 27 commits por delante de `origin/develop` (último push: `5af6107`), así que el job
+  `ux` del CI nunca ha corrido en GitHub.
+- No existen `internal/ui/`, `CHANGELOG.md`, `scripts/docs/` ni `docs/v1/ux/profesor/despues/`.
+- La evaluación de los diagramas ya está hecha y aprobada (`ANALISIS-CONSOLA.md` §9): SVG
+  pre-renderizados claro y oscuro con mermaid-cli y, si falta uno, el texto Mermaid. Pesan unos
+  270 KB comprimidos, frente a un ejecutable de 19,6 MB. La paleta oscura de los diagramas ya está
+  aprobada.
+- Versiones probadas en el arnés: mermaid-cli 11.17.1, Puppeteer 25.16.0 y axe-core 4.14.0.
+
+### Paso 0 — Antes de empezar (usuario)
+
+- Hacer push de `develop` y revisar en GitHub el primer run del job `ux`. El riesgo conocido es el
+  sandbox de Chromium en Ubuntu 24.04; `ci.yml` ya tiene el `sysctl` que suele hacer falta.
+- Probar en la ventana real los casos C-01 a C-30 de `docs/desarrollo/probar-consola-local.md`.
+  Se puede ir haciendo en paralelo con los pasos siguientes.
+
+### Paso 1 — E12: el paquete `internal/ui`
+
+- **Qué:**
+  - mover `apps/teacher/frontend/dist/sistema/` (`tokens.css`, `componentes.css`, `iconos.svg`)
+    a `internal/ui/`, con `go:embed`;
+  - mover también `apps/teacher/sistema_test.go` (`TestTokensContrast`);
+  - la consola sirve un solo sistema de archivos: `frontend/dist` más `internal/ui` bajo
+    `sistema/` (`assetserver.Options.Assets` en `apps/teacher/main.go`). Las rutas `sistema/…` del
+    HTML no cambian;
+  - la app del alumno solo queda preparada; su rediseño es del prompt 19.
+- **También cambian:** `scripts/ux/arnes.mjs` (servir `sistema/` desde `internal/ui`),
+  `tools/vistaprevia` y el catálogo de `apps/teacher/frontend/dev/`.
+- **Prueba:** la consola sirve `sistema/tokens.css` desde `internal/ui`, y no queda ninguna copia
+  de `sistema/` en `apps/`.
+- **Terminado:** el recorrido y las capturas del manual salen iguales, y `go build` funciona sin
+  Node.
+
+### Paso 2 — E8: los diagramas dibujados en la consola (Fase 5)
+
+- **Pipeline** `scripts/docs/generar-diagramas.{sh,ps1}`, con su propio `package.json` y
+  mermaid-cli 11.17.1 fijo. Por cada diagrama:
+  - un SVG claro y uno oscuro, con el tema según los tokens, en `docs/v1/diagramas/generados/`;
+  - su texto alternativo;
+  - una entrada en `manifiesto.json`: id, metadatos, hash del bloque Mermaid y rutas;
+  - limpieza con lista blanca: sin `script`, `on*`, `foreignObject` ni URLs externas.
+- **Prueba Go** (`docs/`):
+  - cada diagrama tiene sus dos SVG;
+  - el hash coincide con su bloque Mermaid; si no, falla con «Diagramas desactualizados: ejecuta
+    scripts/docs/generar-diagramas»;
+  - los SVG están limpios.
+
+  Compara el hash del texto Mermaid, no el SVG, así que da igual en los tres sistemas operativos.
+- **`internal/manual`:** `Diagram` agrega los SVG y la prosa «Lo que no es obvio», y `ManualView`
+  los manda a la interfaz.
+- **Visor** (componente del sistema de diseño, en `internal/ui`):
+  - se ajusta al ancho, con zoom y «ver en grande» en el diálogo `#diagrama`;
+  - cambia de SVG con el tema;
+  - muestra título, descripción, público y la explicación;
+  - se usa con el teclado;
+  - si falta el SVG, muestra el texto Mermaid, como hoy.
+- **Dónde aparecen:**
+  - la galería «Cómo funciona Aula», con filtro por público y búsqueda (la búsqueda ya incluye
+    los diagramas);
+  - las inclusiones `{{diagrama:…}}`;
+  - el «?» de cada vista, con los diagramas cuyo front-matter `pantallas` la nombra.
+- **También:**
+  - `scripts/ux/dobles.js` con los SVG;
+  - en `recorrido.mjs`, el visor, la galería y el tema oscuro;
+  - un paso en el CI;
+  - medir cuánto crece el binario.
+
+### Paso 3 — E11: comprobador de conexión (Fase 6.3)
+
+Lleva diseño aprobado antes de implementarlo.
+
+- **Qué:** recorre desde la consola el camino de un alumno y dice en qué paso fallaría:
+  1. el anuncio mDNS del canal se ve en la red (un `discovery.Browser` del propio canal);
+  2. el puerto TCP responde en cada dirección de la LAN (no en la de loopback);
+  3. TLS con `security.ClientTLS`, fijado a la huella anunciada;
+  4. el reto y la firma con la clave pública del centro, como lo haría un agente;
+  5. el perfil de red (Pública o Privada) y la regla del firewall, por una interfaz nueva en
+     `internal/platform` (Windows; en el resto, «no se puede comprobar aquí»).
+- **Límites, dichos con honestidad:** lo que solo se ve desde el equipo del alumno (el firewall
+  de entrada, un canal distinto) se explica como tal y remite a «¿Falta un alumno?» y a
+  `aula-cliente diagnostico`.
+- **Dónde va:**
+  - la lógica en `internal/*` (paquete nuevo, que se agrega a `CLAUDE.md`, o dentro de
+    `session`);
+  - la interfaz en «¿Falta un alumno?»: pasos con mensaje claro, sección del manual y enlace al
+    diagrama 12;
+  - cada fallo usa las mismas causas que `session.Agent.diagnose`.
+- **Prueba (Fase 7.3):** con fallas inducidas (sin anuncio, otra huella, otra clave), el
+  comprobador reporta la misma causa que el diagnóstico real del agente.
+- **Terminado:** cumple la definición de terminado de `CLAUDE.md` (errores con código, manual,
+  `dobles.js` y recorrido).
+
+### Paso 4 — Lo que queda de las Fases 3, 4 y 6
+
+Es revisión, sin funciones nuevas:
+- **Atajos de teclado (3.6):** su lista en el manual. Revisar Esc en paneles y diálogos y Ctrl+A,
+  y agregar solo los que falten.
+- **Formularios (3.5):** validación en línea y no perder lo escrito al fallar, en canal, nombre,
+  aviso, restricciones, energía y aula simulada.
+- **Rendimiento percibido (3.7):** estados de carga al abrir la clase, al cargar el manual y al
+  enviar.
+- **Primer uso (6.1):** el estado vacío ya ofrece el aula simulada; la prueba del usuario nuevo
+  dirá si alcanza.
+- **Fase 4.3:** el enlace con el diagnóstico de la etapa 15 queda anotado para esa etapa.
+
+### Paso 5 — E10: verificación y cierre (Fase 7)
+
+- **Teclado:** `scripts/ux/teclado.mjs` recorre cada vista con Tab, comprueba el foco visible, que
+  Esc cierra y que no hay trampas de foco. Va al CI.
+- **Capturas «después»** en `docs/v1/ux/profesor/despues/`: las mismas pantallas que `antes/`.
+- **`docs/v1/ux/profesor/RESULTADOS.md`:**
+  - antes y después por pantalla;
+  - pasos y clics de los flujos a–d, antes frente a después;
+  - cada hallazgo de `ANALISIS-CONSOLA.md` §4, resuelto o pendiente;
+  - resultados de axe.
+- **Usuario nuevo (meta: menos de 5 minutos):**
+  - Claude sigue «Primeros pasos» en el arnés y cuenta los pasos;
+  - el usuario lo hace en una VM o instalación limpia, con el instalador local
+    (`docs/desarrollo/instaladores-locales.md`) y solo el aula simulada, y anota lo que confunda.
+- **`CHANGELOG.md`** nuevo, con la etapa 18 bajo «Sin publicar».
+- **Binario:**
+  - su tamaño frente al commit anterior a la etapa 18;
+  - `go build` sin Node;
+  - `frontend/dist` sin URLs externas;
+  - `go test -race` verde en los tres sistemas operativos (CI).
+- **Cierre:** etapa 18 en ✅ en la tabla y la versión sugerida para el release (sube `y`:
+  funciones nuevas compatibles; la última etiqueta es `v0.3.0-rc.2`).
+
+### Después del cierre
+
+- Prompt 19 (app del alumno), que ya usará `internal/ui`.
+- Prompt 20 (auditoría y limpieza de `docs/v1/ux/`), después de publicar el release.
+- Las propuestas de `docs/v1/ux/PROPUESTAS.md` se deciden aparte.
+
+### Decisiones (tomadas el 04/11/2026)
+
+- **E8:** los SVG generados se versionan en `docs/v1/diagramas/generados/`, para que `go build`
+  no necesite Node.
+- **E11:** la lógica va en un paquete nuevo, `internal/connectcheck` (se agrega a `CLAUDE.md`).
+- **E10:** Claude hace la prueba del usuario nuevo en el arnés; el usuario la repite en una VM
+  limpia con el instalador local, cronometra y anota lo que confunda.
+- **Paso 0:** Claude hace el push de `develop` y revisa el CI.

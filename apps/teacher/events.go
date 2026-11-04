@@ -36,6 +36,9 @@ const (
 	// EventSimulation carries a SimulationView when the aula simulada opens,
 	// closes or one of its students changes.
 	EventSimulation = "aula:simulation"
+	// EventConnectCheck carries a connectcheck.Report whenever a step of
+	// CheckConnection starts or ends; the last one has done set.
+	EventConnectCheck = "aula:connectcheck"
 )
 
 // Setup is what the channel selection screen needs.

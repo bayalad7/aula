@@ -123,6 +123,14 @@ consola agrega aquí sus casos.
 | C-33 | Abre uno: pulsa + y − con el teclado en el dibujo; cambia el tema en Ajustes | Cambia el tamaño; el dibujo pasa a la paleta oscura sin recargar |
 | C-34 | En «¿Falta un alumno?», pulsa «?» | El panel muestra la página y, al final, «Diagramas de esta pantalla» |
 
+### Comprobar la conexión
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-35 | «¿Falta un alumno?» › **Comprobar la conexión** con la red del equipo como Privada | Los cuatro pasos salen bien (o con aviso) en unos segundos; no aparece ningún alumno nuevo en Alumnos; no se abre ninguna ventana de PowerShell |
+| C-36 | Marca la red del equipo como Pública y comprueba de nuevo | El paso 4 falla: «La red … es Pública y el firewall no deja entrar a los alumnos», con «Qué hacer» |
+| C-37 | Con el aula simulada abierta, comprueba | Los alumnos simulados no reciben nada y siguen igual; el resultado no cambia |
+
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 
 | # | Pasos | Esperado |

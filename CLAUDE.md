@@ -50,12 +50,15 @@ Dos aplicaciones, mismo monorepo:
     diagramas de `docs/v1/diagramas` a bloques sin HTML (sanitizado por construcción), lo valida,
     busca y genera el asistente «¿Falta un alumno?» del diagrama 12. El paquete `docs` los embebe
     (`docs.Files()`): `docs/` es la única fuente.
+  - `internal/connectcheck`: el comprobador de conexión de la consola: recorre el camino de un
+    alumno (anuncio mDNS, puerto, TLS y clave del centro) y lee la red y el firewall por
+    `platform`; da las mismas causas que el agente (`session.Cause`).
   - `internal/ui`: el sistema de diseño compartido por las dos apps (tokens CSS con modo claro y
     oscuro, componentes e iconos en un sprite SVG), embebido con `go:embed` y servido a cada
     frontend Wails bajo `sistema/`. Una sola copia: ninguna app guarda la suya. Su prueba de
     contraste (WCAG AA) vive con él.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `simclass`, `manual`, `ui` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `simclass`, `manual`, `connectcheck`, `ui` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

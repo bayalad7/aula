@@ -76,6 +76,8 @@ type App struct {
 
 	agentErrs agentErrors // the last error each student reported
 
+	checks *connectChecks // the connection checker (CheckConnection)
+
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
 	// with respect to acks, so a fast agent's ack is never counted as unknown.
 	sendMu sync.Mutex
@@ -98,6 +100,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.restr = policy.NewClassPolicy()
 	a.power = &power.Tracker{Now: func() time.Time { return a.now() }}
 	a.bc = a.newBroadcaster(broadcastKbps(m))
+	a.checks = newConnectChecks(log)
 	return a
 }
 

@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/bayalad7/aula/internal/connectcheck"
 )
 
 // Every text the console shows lives in frontend/dist/textos.es-MX.js
@@ -93,6 +95,18 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, code := range errorCodes {
 		need("error."+code+".titulo", "errores.go")
 		need("error."+code+".texto", "errores.go")
+	}
+
+	// The connection checker's texts: comprobar.<step>.titulo, one per outcome
+	// a step can end with, and one per status.
+	for id, outcomes := range connectcheck.Outcomes {
+		need("comprobar."+string(id)+".titulo", "connectcheck")
+		for _, o := range outcomes {
+			need("comprobar."+string(id)+"."+o, "connectcheck")
+		}
+	}
+	for _, st := range connectcheck.Statuses {
+		need("comprobar.estado."+string(st), "connectcheck")
 	}
 
 	// So are the texts of the students' protocol errors (agenterrors.go).

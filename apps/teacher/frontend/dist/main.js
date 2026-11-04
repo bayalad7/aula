@@ -1512,6 +1512,55 @@
   let falta1 = "";
   $("falta-reiniciar").addEventListener("click", () => { camino = []; pintarArbol(); });
 
+  // «Comprobar la conexión» (CheckConnection, internal/connectcheck): el camino de
+  // un alumno hasta esta consola, paso a paso. El texto de cada paso es
+  // comprobar.<paso>.<motivo | causa | estado>.
+  const COMPROBAR_AYUDA = {
+    announce: "solucion-de-problemas#el-firewall-o-la-red-pública",
+    port: "solucion-de-problemas#comprobar-la-conexión",
+    secure: "solucion-de-problemas#la-clave-no-coincide",
+    network: "solucion-de-problemas#el-firewall-o-la-red-pública",
+  };
+  const PASO_DE = { ok: "hecho", warn: "advertencia", fail: "fallo", unknown: "sin-dato", running: "actual" };
+  const CP = "comprobar."; // + <paso>.titulo, <paso>.<resultado>, estado.<estado>
+  function pintarComprobacion(r) {
+    const ol = $("comprobar-pasos");
+    ol.hidden = false;
+    ol.replaceChildren(...r.steps.map((s) => {
+      const li = el("li", "paso" + (PASO_DE[s.status] ? " paso--" + PASO_DE[s.status] : ""));
+      if (s.status === "running") li.setAttribute("aria-current", "step");
+      const titulo = el("span", "paso__titulo", T(CP + s.id + ".titulo"));
+      titulo.append(el("span", "solo-lector", " (" + T(CP + "estado." + s.status) + ")"));
+      li.append(titulo);
+      if (s.status !== "pending" && s.status !== "running") {
+        const clave = CP + s.id + "." + (s.reason || s.cause || s.status);
+        li.append(el("span", "suave pequeno", T(clave, { canal: r.channel, port: s.port, addrs: (s.addrs || []).join(", "),
+          otras: (s.others || []).map((n) => "«" + n + "»").join(", "), redes: (s.networks || []).map((n) => "«" + n + "»").join(", ") })));
+        if ((s.status === "fail" || s.status === "warn") && manual) {
+          li.append(Object.assign(el("a", "pequeno", T("comprobar.queHacer")), { href: rutaManual(COMPROBAR_AYUDA[s.id]) }));
+        }
+      }
+      return li;
+    }));
+    const falla = r.steps.findIndex((s) => s.status === "fail");
+    $("comprobar-estado").textContent = !r.done ? T("comprobar.comprobando")
+      : falla >= 0 ? T("comprobar.resumenFalla", { n: falla + 1, paso: T(CP + r.steps[falla].id + ".titulo") })
+        : r.steps.some((s) => s.status === "warn") ? T("comprobar.resumenAviso") : T("comprobar.resumenBien", { canal: r.channel });
+    $("comprobar-final").hidden = !r.done;
+  }
+  $("comprobar-iniciar").addEventListener("click", () => {
+    const b = $("comprobar-iniciar");
+    b.disabled = true;
+    b.setAttribute("aria-busy", "true");
+    $("comprobar-estado").textContent = T("comprobar.comprobando");
+    api.CheckConnection().then(pintarComprobacion).catch((e) => { $("comprobar-estado").textContent = ""; fallo(e); }).finally(() => {
+      b.disabled = false;
+      b.removeAttribute("aria-busy");
+      b.querySelector("span").textContent = T("comprobar.repetir");
+    });
+  });
+  $("comprobar-diagrama").addEventListener("click", () => verDiagrama("12-diagnostico-conexion"));
+
   function datosInstalador(i) {
     return [T("instalador.canal", { v: i.channel }), T("instalador.equipo", { v: i.hostname + (i.addresses.length ? " (" + i.addresses.join(", ") + ")" : "") }),
       T("instalador.puertos", { tcp: i.port, udp: i.mediaPort }), T("instalador.clave", { v: i.fingerprint }),
@@ -1647,6 +1696,7 @@
   rt.EventsOn(ev.BROADCAST, pintarTransmision);
   rt.EventsOn(ev.RESTRICTIONS, pintarRestricciones);
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);
+  rt.EventsOn(ev.CONNECT_CHECK, pintarComprobacion);
   rt.EventsOn(ev.CLASS, (v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
 
   // --- Arranque de la interfaz ---------------------------------------------------------------

@@ -336,6 +336,8 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
 .paso--actual::before { border-color: var(--c-acento); background: var(--c-acento); color: var(--c-acento-texto); }
 .paso--hecho::before { content: "✓"; border-color: var(--c-conectado-solido); background: var(--c-conectado-fondo); color: var(--c-conectado); }
 .paso--fallo::before { content: "!"; border-color: var(--c-error-solido); background: var(--c-error-fondo); color: var(--c-error); }
+.paso--advertencia::before { content: "!"; border-color: var(--c-advertencia-solido); background: var(--c-advertencia-fondo); color: var(--c-advertencia); }
+.paso--sin-dato::before { content: "?"; border-color: var(--c-desconectado-solido); background: var(--c-desconectado-fondo); color: var(--c-desconectado); }
 
 /* --- Bloque de código con «Copiar» ----------------------------------------------------------- */
 .bloque-codigo { border: 1px solid var(--c-borde); border-radius: var(--r-md); overflow: hidden; background: var(--c-superficie-2); }

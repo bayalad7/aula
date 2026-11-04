@@ -147,6 +147,16 @@
     Resend: call("Resend", () => deliveries[0]),
     InstallerInfo: call("InstallerInfo", () => ({ channel: "1", consoleName: "Prof. Ayala", hostname: "PROF-LAB3", addresses: ["192.168.1.20"],
       port: 47830, mediaPort: 47831, fingerprint: cls.fingerprint, keySource: cls.keySource, version: "0.6.0-dev" })),
+    CheckConnection: call("CheckConnection", () => {
+      const publica = scene === "red-publica";
+      return { channel: "1", done: true, cause: publica ? "noConsole" : "", steps: [
+        { id: "announce", status: "ok", addrs: ["192.168.1.20"] },
+        { id: "port", status: "ok", port: 47830, addrs: ["192.168.1.20"] },
+        { id: "secure", status: "ok" },
+        publica ? { id: "network", status: "fail", cause: "noConsole", reason: "publicBlocked", port: 47830, networks: ["Red 2"] }
+          : { id: "network", status: "ok", port: 47830 },
+      ] };
+    }),
     SetRestriction: call("SetRestriction", restrictions),
     ClearRestriction: call("ClearRestriction", restrictions),
     ClearAllRestrictions: call("ClearAllRestrictions", restrictions),

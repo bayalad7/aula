@@ -23,6 +23,27 @@ Las causas más comunes:
   [El firewall o la red Pública](#el-firewall-o-la-red-pública)).
 - **Otra clave del centro** (ver [La clave no coincide](#la-clave-no-coincide)).
 
+## Comprobar la conexión
+
+Arriba de [¿Falta un alumno?](pantalla:falta), **Comprobar la conexión** recorre desde tu equipo el
+camino que sigue un alumno hasta tu clase y dice en qué paso se atoraría. Tarda unos segundos y no
+envía nada a los alumnos, ni a los reales ni a los simulados.
+
+1. **Tu clase se anuncia en la red**: busca el anuncio de tu canal como lo haría un alumno. Si ve
+   otra consola en el mismo canal, te avisa: los alumnos de ese canal podrían llegar a cualquiera
+   de las dos.
+2. **El puerto de la consola responde**: se conecta al puerto TCP de cada dirección de red de tu
+   equipo.
+3. **Conexión segura y clave del centro**: hace lo mismo que un alumno, comprobar el certificado y
+   la firma con la clave del centro, y se desconecta antes de entrar, así que no aparece en la
+   lista.
+4. **La red y el firewall de este equipo**: revisa si la red es Pública y si el firewall deja
+   entrar a Aula Consola. En Linux y macOS este paso dice «No se puede comprobar».
+
+Cada paso que falla dice qué hacer. Desde tu equipo no se ve el del alumno: su canal, su clave, su
+red y su firewall. Si todo sale bien y aun así falta, sigue las preguntas de «Vamos paso a paso» o
+pide a TI que ejecute `aula-cliente diagnostico` en su equipo.
+
 ## El alumno está en otro canal
 
 Cada computadora de alumno tiene su canal fijo, que solo el administrador cambia. Si tu sala usa

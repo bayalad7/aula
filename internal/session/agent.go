@@ -89,6 +89,9 @@ type Agent struct {
 	// is not connected yet (no console found, wrong key, unreachable…); it is
 	// called with "" once connected.
 	OnDiagnostic func(msg string)
+	// OnCause receives the same diagnoses as OnDiagnostic, classified
+	// (CauseNone once connected).
+	OnCause func(Cause)
 	// SearchHint is how long to search before reporting that no console of
 	// the channel was found; 0 means DefaultSearchHint.
 	SearchHint time.Duration
@@ -152,7 +155,7 @@ func (a *Agent) Run(ctx context.Context) error {
 			}
 			var ok bool
 			known, updates, ok = waitConsole(ctx, known, updates, hint, func() {
-				a.diagnose(fmt.Sprintf("No se encontró ninguna consola del canal %s. Revisa que la consola "+
+				a.diagnose(CauseNoConsole, fmt.Sprintf("No se encontró ninguna consola del canal %s. Revisa que la consola "+
 					"del profesor esté abierta en ese canal, que la red de este equipo sea Privada o de "+
 					"Dominio (no Pública) y que el firewall permita Aula.", a.Channel))
 			})
@@ -209,58 +212,9 @@ func (a *Agent) Run(ctx context.Context) error {
 // it ends. It reports whether the session was established (hello sent) and
 // whether the console failed authentication.
 func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.Console) (established, authFailed bool) {
-	var (
-		cl      *transport.Client
-		certSHA [32]byte
-		tried   []string
-	)
-	name := target.Name
-	if name == "" {
-		name = target.Instance
-	}
-	for _, hp := range target.HostPorts() {
-		url := "wss://" + hp + transport.Path
-		var seen [32]byte
-		tlsConf, err := security.ClientTLS(target.CertFingerprint, &seen)
-		if err != nil {
-			log.Warn("bad console fingerprint", "console", target.Name, "err", err)
-			return false, true
-		}
-		opts := a.Conn
-		opts.TLS = tlsConf
-		c, err := transport.Dial(ctx, url, opts)
-		if err != nil {
-			if errors.Is(err, security.ErrFingerprintMismatch) {
-				log.Warn("console certificate does not match its announcement", "console", target.Name, "url", url)
-				a.diagnose(fmt.Sprintf("La consola «%s» (%s) presentó un certificado distinto del que anuncia; "+
-					"se ignora.", name, hp))
-				return false, true
-			}
-			log.Warn("dial failed", "url", url, "err", err)
-			tried = append(tried, hp)
-			continue
-		}
-		cl, certSHA = c, seen
-		break
-	}
+	cl, cause := a.connect(ctx, log, target)
 	if cl == nil {
-		a.diagnose(fmt.Sprintf("Se encontró la consola «%s» del canal %s, pero no se pudo conectar a %s. "+
-			"Revisa el firewall del equipo del profesor (TCP %d) y que ambos estén en la misma red.",
-			name, a.Channel, strings.Join(tried, ", "), target.Port))
-		return false, false
-	}
-	if err := a.authenticate(ctx, cl, certSHA); err != nil {
-		log.Warn("console rejected", "console", target.Name, "addr", cl.RemoteAddr(), "reason", err)
-		cl.Close(transport.ClosePolicyViolation, "authentication failed")
-		<-cl.Done()
-		if errors.Is(err, errBadProof) {
-			a.diagnose(fmt.Sprintf("Se encontró la consola «%s» del canal %s, pero su clave no es la de este "+
-				"centro: no se le obedece. Si es la consola de tu profesor, este equipo tiene otra clave del "+
-				"centro; avisa al administrador.", name, a.Channel))
-			return false, true
-		}
-		a.diagnose(fmt.Sprintf("La consola «%s» no completó la autenticación; se reintentará.", name))
-		return false, false
+		return false, cause == CauseCertMismatch || cause == CauseWrongKey
 	}
 	if _, err := cl.Send(ctx, a.Hello); err != nil {
 		log.Warn("cannot send hello", "err", err)
@@ -269,7 +223,7 @@ func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.
 		return false, false
 	}
 	cl.StartHeartbeat()
-	a.diagnose("")
+	a.diagnose(CauseNone, "")
 	a.state(AgentConnected, target)
 	log.Info("connected to console", "console", target.Name, "addr", cl.RemoteAddr())
 
@@ -285,6 +239,86 @@ func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.
 	a.state(AgentDisconnected, target)
 	log.Info("disconnected from console", "console", target.Name)
 	return true, false
+}
+
+// Probe runs what the agent does with target up to auth.ok (TLS pinned to the
+// announced fingerprint, challenge and proof checked against
+// ConsolePublicKey) and closes before hello, so no student shows up. It
+// returns the cause the agent would report, CauseNone if it would connect.
+// Hello, Source and the callbacks are not used.
+func (a *Agent) Probe(ctx context.Context, target discovery.Console) Cause {
+	log := a.Logger
+	if log == nil {
+		log = slog.Default()
+	}
+	quiet := *a
+	quiet.OnDiagnostic, quiet.OnCause = nil, nil
+	cl, cause := quiet.connect(ctx, log, target)
+	if cl != nil {
+		cl.Close(transport.CloseNormal, "probe")
+		<-cl.Done()
+	}
+	return cause
+}
+
+// connect dials target's addresses in order and authenticates the console.
+// On failure it diagnoses and returns a nil client with the cause.
+func (a *Agent) connect(ctx context.Context, log *slog.Logger, target discovery.Console) (*transport.Client, Cause) {
+	var (
+		cl      *transport.Client
+		certSHA [32]byte
+		tried   []string
+	)
+	name := target.Name
+	if name == "" {
+		name = target.Instance
+	}
+	for _, hp := range target.HostPorts() {
+		url := "wss://" + hp + transport.Path
+		var seen [32]byte
+		tlsConf, err := security.ClientTLS(target.CertFingerprint, &seen)
+		if err != nil {
+			log.Warn("bad console fingerprint", "console", target.Name, "err", err)
+			return nil, CauseCertMismatch
+		}
+		opts := a.Conn
+		opts.TLS = tlsConf
+		c, err := transport.Dial(ctx, url, opts)
+		if err != nil {
+			if errors.Is(err, security.ErrFingerprintMismatch) {
+				log.Warn("console certificate does not match its announcement", "console", target.Name, "url", url)
+				a.diagnose(CauseCertMismatch, fmt.Sprintf("La consola «%s» (%s) presentó un certificado "+
+					"distinto del que anuncia; se ignora.", name, hp))
+				return nil, CauseCertMismatch
+			}
+			log.Warn("dial failed", "url", url, "err", err)
+			tried = append(tried, hp)
+			continue
+		}
+		cl, certSHA = c, seen
+		break
+	}
+	if cl == nil {
+		a.diagnose(CauseUnreachable, fmt.Sprintf("Se encontró la consola «%s» del canal %s, pero no se pudo conectar a %s. "+
+			"Revisa el firewall del equipo del profesor (TCP %d) y que ambos estén en la misma red.",
+			name, a.Channel, strings.Join(tried, ", "), target.Port))
+		return nil, CauseUnreachable
+	}
+	if err := a.authenticate(ctx, cl, certSHA); err != nil {
+		log.Warn("console rejected", "console", target.Name, "addr", cl.RemoteAddr(), "reason", err)
+		cl.Close(transport.ClosePolicyViolation, "authentication failed")
+		<-cl.Done()
+		if errors.Is(err, errBadProof) {
+			a.diagnose(CauseWrongKey, fmt.Sprintf("Se encontró la consola «%s» del canal %s, pero su clave no es la de este "+
+				"centro: no se le obedece. Si es la consola de tu profesor, este equipo tiene otra clave del "+
+				"centro; avisa al administrador.", name, a.Channel))
+			return nil, CauseWrongKey
+		}
+		a.diagnose(CauseAuthIncomplete, fmt.Sprintf("La consola «%s» no completó la autenticación; "+
+			"se reintentará.", name))
+		return nil, CauseAuthIncomplete
+	}
+	return cl, CauseNone
 }
 
 var (
@@ -356,9 +390,12 @@ func (a *Agent) state(s AgentState, c discovery.Console) {
 	}
 }
 
-func (a *Agent) diagnose(msg string) {
+func (a *Agent) diagnose(cause Cause, msg string) {
 	if a.OnDiagnostic != nil {
 		a.OnDiagnostic(msg)
+	}
+	if a.OnCause != nil {
+		a.OnCause(cause)
 	}
 }
 

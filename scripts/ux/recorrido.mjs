@@ -94,6 +94,12 @@ await f("35-falta-arbol", "vacia", { ruta: "falta" });
 await f("36-falta-arbol-respondido", "vacia", { ruta: "falta", pasos: seq(click("#falta-pasos .paso--actual button:nth-child(2)"),
   click("#falta-pasos .paso--actual button:nth-child(2)")) });
 
+// Comprobar la conexión (connectcheck) en «¿Falta un alumno?»
+const comprobar = seq(click("#comprobar-iniciar"), async () => sleep(200));
+await f("48-comprobar-bien", "vacia", { ruta: "falta", pasos: comprobar });
+await f("49-comprobar-red-publica", "red-publica", { ruta: "falta", pasos: comprobar });
+await f("50-comprobar-red-publica-oscuro", "red-publica", { oscuro: true, w: 900, h: 600, ruta: "falta", pasos: comprobar });
+
 // Ventana angosta y tema oscuro
 await f("37-alumnos-900x600", "lab", { w: 900, h: 600, pasos: click(fila("LAB3-PC07")) });
 await f("38-codigo-900x600", "datos", { w: 900, h: 600, ruta: "codigo" });

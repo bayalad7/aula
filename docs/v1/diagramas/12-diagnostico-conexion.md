@@ -81,12 +81,17 @@ flowchart TD
 - `aula-cliente diagnostico` hace lo mismo que el agente durante unos 20 s y lo imprime, para
   distinguir un problema de red de uno de clave o canal. Los logs están en
   `LOCALAPPDATA\Aula\alumno\aula-cliente.log`.
-- Aún no existe el comprobador de conexión de la consola (etapa 18); hoy el diagnóstico es del
-  lado del alumno.
+- **Antes de preguntar, la consola puede comprobarse sola**: «Comprobar la conexión», arriba de
+  este asistente (`internal/connectcheck`), recorre desde el equipo del profesor el anuncio, el
+  puerto, la conexión segura con la clave del centro y la red y el firewall. Usa las mismas causas
+  que el agente (`session.Cause`; una prueba lo compara con un agente real), pero no ve el equipo
+  del alumno: su canal, su clave y su firewall siguen siendo estas preguntas.
 
 ## Fuentes en el código
 
-- `internal/session/agent.go` (`diagnose` y sus mensajes en `Run` y `session`)
+- `internal/session/agent.go` (`diagnose` y sus mensajes en `Run` y `connect`),
+  `internal/session/cause.go` (`Cause`)
+- `internal/connectcheck` (el comprobador de la consola), `apps/teacher/connectcheck.go`
 - `apps/student/diagnose.go` (`runDiagnose`)
 - `apps/student/app.go` (`onDiagnostic`, `setStatus`), `apps/student/config.go`
 - `internal/discovery/multicast.go` (D-015)

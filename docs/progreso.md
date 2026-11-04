@@ -843,7 +843,7 @@ Plan original:
 - **Terminado:** el recorrido y las capturas del manual salen iguales, y `go build` funciona sin
   Node.
 
-### Paso 2 — E8: los diagramas dibujados en la consola (Fase 5) — ✅ hecho (espera aprobación)
+### Paso 2 — E8: los diagramas dibujados en la consola (Fase 5) — ✅ hecho y aprobado (`5d8f59a`)
 
 Hecho el 04/11/2026 (`docs/v1/ux/profesor/ENTREGA-E8.md`):
 - `scripts/docs/generar-diagramas.{mjs,sh,ps1}`: SVG claro y oscuro de los 16 diagramas en
@@ -891,9 +891,27 @@ Plan original:
   - un paso en el CI;
   - medir cuánto crece el binario.
 
-### Paso 3 — E11: comprobador de conexión (Fase 6.3)
+### Paso 3 — E11: comprobador de conexión (Fase 6.3) — ✅ hecho (espera aprobación)
 
-Lleva diseño aprobado antes de implementarlo.
+Diseño aprobado el 04/11/2026 (`docs/v1/ux/profesor/DISENO-E11.md`); hecho el mismo día
+(`docs/v1/ux/profesor/ENTREGA-E11.md`):
+- `internal/connectcheck`: anuncio, puerto, conexión segura con `Agent.Probe` (cierra antes de
+  `hello`) y red y firewall. `Outcomes` lista los resultados de cada paso y la prueba de textos
+  exige uno por cada.
+- `internal/session`: `Cause`, que el agente emite con su diagnóstico (`OnCause`), y `Probe`, que
+  comparte con el agente el mismo `connect`.
+- `internal/platform`: `NetworkInspector`. En Windows usa PowerShell con `HNetCfg.FwPolicy2`
+  (las cmdlets `NetSecurity` piden administrador) y salida JSON, sin abrir ventana.
+- Consola: binding `CheckConnection`, evento `aula:connectcheck` y error `checkRunning`; tarjeta
+  «Comprobar la conexión» arriba de «Vamos paso a paso».
+- Prueba 7.3 (`TestCheckerAgreesWithTheAgent`): sin anuncio, otra huella, otra clave y puerto
+  cerrado dan la misma causa que un agente real. Se comprobó que detecta una mutación.
+- Probado en la red real de este equipo: la red «Wucol-2 2» es Pública y el paso 4 lo señala.
+- El árbol del diagrama 12 no cambió: el comprobador va antes que sus preguntas; solo cambió «Lo
+  que no es obvio».
+- Recorrido: 50 capturas sin errores.
+
+Plan original:
 
 - **Qué:** recorre desde la consola el camino de un alumno y dice en qué paso fallaría:
   1. el anuncio mDNS del canal se ve en la red (un `discovery.Browser` del propio canal);

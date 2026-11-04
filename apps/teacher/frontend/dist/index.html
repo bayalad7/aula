@@ -263,6 +263,22 @@
               <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
             </header>
             <div class="vista__cuerpo codigo-rejilla">
+              <div class="pila">
+              <section class="tarjeta" aria-labelledby="h-comprobar">
+                <div class="tarjeta__cabecera"><h2 id="h-comprobar" data-t="comprobar.titulo"></h2></div>
+                <div class="tarjeta__cuerpo pila">
+                  <p class="pequeno suave" data-t="comprobar.ayuda"></p>
+                  <div class="grupo-botones">
+                    <button type="button" class="btn btn--sm" id="comprobar-iniciar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#red"/></svg><span data-t="comprobar.iniciar"></span></button>
+                  </div>
+                  <p id="comprobar-estado" role="status"></p>
+                  <ol class="pasos" id="comprobar-pasos" hidden></ol>
+                  <div class="pila" id="comprobar-final" hidden>
+                    <p class="pequeno suave" data-t="comprobar.alumno"></p>
+                    <div class="grupo-botones"><button type="button" class="btn btn--sm btn--fantasma" id="comprobar-diagrama" data-t="comprobar.verDiagrama"></button></div>
+                  </div>
+                </div>
+              </section>
               <section class="tarjeta" aria-labelledby="h-falta-pasos">
                 <div class="tarjeta__cabecera"><h2 id="h-falta-pasos" data-t="falta.pasosTitulo"></h2></div>
                 <div class="tarjeta__cuerpo pila">
@@ -274,6 +290,7 @@
                   <p class="pequeno suave" data-t="falta.fuente"></p>
                 </div>
               </section>
+              </div>
               <aside class="pila" data-t-aria-label="falta.lateral">
                 <section class="tarjeta" aria-labelledby="h-falta-datos">
                   <div class="tarjeta__cabecera con-info"><h2 id="h-falta-datos" data-t="instalador.titulo"></h2><button type="button" class="info-boton" data-info="puertos" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></div>

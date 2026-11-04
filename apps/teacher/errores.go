@@ -48,6 +48,7 @@ const (
 	codeSimFault             = "simFault"
 	codeSimFailed            = "simFailed"
 	codeManualFailed         = "manualFailed"
+	codeCheckRunning         = "checkRunning"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -58,6 +59,7 @@ var errorCodes = []string{
 	codeClipboardTooLarge, codeNoH264, codeHideConsole, codeAlreadyBroadcasting, codeBroadcastFailed,
 	codeInvalidPower, codeNoPowerTargets, codeInvalidRestriction, codeInvalidApp, codeInvalidDomain,
 	codeSimUnavailable, codeSimClosed, codeSimFull, codeSimCapability, codeSimGone, codeSimFault, codeSimFailed, codeManualFailed,
+	codeCheckRunning,
 }
 
 // errorHelp is the section of the manual (docs/v1/administracion) that each
@@ -99,6 +101,7 @@ var errorHelp = map[string]string{
 	codeSimFault:             "probar-sin-laboratorio#agregar-alumnos-y-simular-fallas",
 	codeSimFailed:            "probar-sin-laboratorio#abrir-el-aula-simulada",
 	codeManualFailed:         "",
+	codeCheckRunning:         "solucion-de-problemas#comprobar-la-conexión",
 }
 
 // codedError is an error the UI can explain by its code.

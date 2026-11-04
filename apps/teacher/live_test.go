@@ -61,9 +61,11 @@ func TestLiveClassTwoAgentsAck(t *testing.T) {
 	}
 
 	waitUntil(t, "two students connected", func() bool { return app.View().Students.CanCode == 2 })
-	if s, ok := rec.last(EventStudents).(Students); !ok || s.Connected != 2 {
-		t.Fatalf("students event = %#v", rec.last(EventStudents))
-	}
+	// The event follows the registry change, maybe a moment after View sees it.
+	waitUntil(t, "the students event with both", func() bool {
+		s, ok := rec.last(EventStudents).(Students)
+		return ok && s.Connected == 2
+	})
 
 	d, err := app.Emit(EmitRequest{Title: "Factorial", Lang: "python", Content: pySnippet, Mode: "replace"})
 	if err != nil || d.Sent != 2 {

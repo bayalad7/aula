@@ -15,6 +15,8 @@ import puppeteer from "puppeteer";
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 export const raiz = path.resolve(aqui, "..", "..");
 const dist = path.join(raiz, "apps", "teacher", "frontend", "dist");
+// El sistema de diseño vive en internal/ui y la consola lo sirve en sistema/ (ui.Assets).
+const ui = path.join(raiz, "internal", "ui");
 const require = createRequire(import.meta.url);
 const axe = fs.readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
 const dobles = fs.readFileSync(path.join(aqui, "dobles.js"), "utf8");
@@ -43,9 +45,10 @@ const tipos = { ".html": "text/html", ".js": "text/javascript", ".css": "text/cs
 export async function abrir() {
   const manual = exportarManual();
   const srv = http.createServer((q, r) => {
-    const rel = decodeURIComponent(q.url === "/" ? "index.html" : q.url.split("?")[0].split("#")[0]);
-    const p = path.join(dist, rel);
-    if (!p.startsWith(dist)) { r.writeHead(403); r.end(); return; }
+    const rel = decodeURIComponent(q.url === "/" ? "index.html" : q.url.split("?")[0].split("#")[0]).replace(/^\/+/, "");
+    const [raizArchivo, relArchivo] = rel.startsWith("sistema/") ? [ui, rel.slice("sistema/".length)] : [dist, rel];
+    const p = path.join(raizArchivo, relArchivo);
+    if (!p.startsWith(raizArchivo + path.sep) || p.endsWith(".go")) { r.writeHead(403); r.end(); return; }
     fs.readFile(p, (e, d) => {
       if (e) { r.writeHead(404); r.end(); return; }
       r.writeHead(200, { "Content-Type": tipos[path.extname(p)] || "application/octet-stream" });

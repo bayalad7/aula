@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"embed"
 	"io"
 	"log/slog"
 	"os"
@@ -19,9 +18,6 @@ import (
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/security"
 )
-
-//go:embed all:frontend/dist
-var assets embed.FS
 
 func main() {
 	// "aula-consola keygen" and friends run in the terminal, without a window.
@@ -40,6 +36,11 @@ func main() {
 	if clipErr != nil {
 		log.Warn("no system clipboard", "err", clipErr)
 	}
+	files, err := frontend()
+	if err != nil {
+		log.Error("no frontend", "err", err)
+		os.Exit(1)
+	}
 	app := NewApp(dir, clip, clipErr, platform.SystemHotkeys(), log)
 	app.autoStart = true
 	if app.defaultName == "" {
@@ -55,7 +56,7 @@ func main() {
 		// Classroom projectors are often 1280×720: use the whole screen.
 		WindowStartState: options.Maximised,
 		AssetServer: &assetserver.Options{
-			Assets: assets,
+			Assets: files,
 		},
 		OnStartup: func(ctx context.Context) {
 			app.emit = func(event string, data any) { runtime.EventsEmit(ctx, event, data) }

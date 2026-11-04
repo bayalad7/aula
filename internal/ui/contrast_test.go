@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-const tokensFile = "frontend/dist/sistema/tokens.css"
+const tokensFile = "tokens.css"
 
 var (
 	tokenRe = regexp.MustCompile(`--([a-z0-9-]+):\s*([^;]+);`)

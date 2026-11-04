@@ -4,7 +4,7 @@
  * consola (y, más adelante, del overlay del alumno). Los componentes solo usan
  * estas variables. Tema: claro u oscuro según el sistema, o fijado con
  * <html data-theme="light|dark">. Los pares de texto/fondo cumplen WCAG AA
- * (4.5:1; 3:1 en bordes de controles); apps/teacher/sistema_test.go lo verifica.
+ * (4.5:1; 3:1 en bordes de controles); internal/ui/contrast_test.go lo verifica.
  */
 
 :root {

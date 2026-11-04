@@ -802,12 +802,31 @@ Estado al escribir este plan (04/11/2026):
 
 ### Paso 0 — Antes de empezar (usuario)
 
+- ✅ Push hecho (`eda8bc2`); el primer run del CI pasó completo, incluido el job `ux` (run
+  41896892640). El job `ux` tardó 25 min, casi todo en `npm ci`.
 - Hacer push de `develop` y revisar en GitHub el primer run del job `ux`. El riesgo conocido es el
   sandbox de Chromium en Ubuntu 24.04; `ci.yml` ya tiene el `sysctl` que suele hacer falta.
 - Probar en la ventana real los casos C-01 a C-30 de `docs/desarrollo/probar-consola-local.md`.
   Se puede ir haciendo en paralelo con los pasos siguientes.
 
-### Paso 1 — E12: el paquete `internal/ui`
+### Paso 1 — E12: el paquete `internal/ui` — ✅ hecho y aprobado
+
+Hecho el 04/11/2026:
+- `internal/ui` embebe `tokens.css`, `componentes.css` e `iconos.svg`; `ui.Assets(app)` los
+  monta bajo `sistema/` sobre el frontend de cada app, y oculta cualquier `sistema/` propio de la
+  app. `TestTokensContrast` vive en `internal/ui/contrast_test.go`.
+- Las dos apps sirven `frontend()` (`apps/*/assets.go`). La del alumno ya recibe `sistema/`,
+  aunque su HTML todavía no lo usa (prompt 19).
+- `tools/vistaprevia` sirve `dist/sistema/` desde `internal/ui` en disco, y el arnés
+  (`scripts/ux/arnes.mjs`) también.
+- Pruebas: `TestAssetsMountsTheDesignSystem` (`internal/ui`) y
+  `TestFrontendServesTheSharedDesignSystem` (`apps/teacher`), que falla si una app vuelve a
+  guardar su copia.
+- El recorrido pasa sin errores (41 capturas) y las capturas del manual salieron idénticas byte a
+  byte.
+
+Plan original:
+
 
 - **Qué:**
   - mover `apps/teacher/frontend/dist/sistema/` (`tokens.css`, `componentes.css`, `iconos.svg`)
@@ -924,6 +943,13 @@ Es revisión, sin funciones nuevas:
 - Prompt 19 (app del alumno), que ya usará `internal/ui`.
 - Prompt 20 (auditoría y limpieza de `docs/v1/ux/`), después de publicar el release.
 - Las propuestas de `docs/v1/ux/PROPUESTAS.md` se deciden aparte.
+
+### Problemas conocidos
+
+- En el equipo de desarrollo, `go test -race ./...` con todos los paquetes en paralelo a veces
+  falla en `internal/screen` («nothing sent», espera de 3 s) y en `internal/transport`
+  (`TestOversizedMessageClosesWith1009`). Solos pasan siempre, y con `-p 4` pasa la suite
+  completa: es la carga de la máquina, no el código. En CI pasan.
 
 ### Decisiones (tomadas el 04/11/2026)
 

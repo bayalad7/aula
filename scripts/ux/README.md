@@ -20,8 +20,9 @@ binario: `go build` no necesita Node.
 ## Cómo funciona
 
 - `arnes.mjs` corre `go test -run TestExportManualForUX ./apps/teacher` con `AULA_UX_MANUAL` para
-  sacar el manual tal como lo devuelve `Manual()`, sirve `dist/` en `127.0.0.1` y abre cada
-  escena en un contexto aislado del navegador (el tema guardado no pasa de una a otra).
+  sacar el manual tal como lo devuelve `Manual()`, sirve `dist/` en `127.0.0.1` (con el sistema de
+  diseño de `internal/ui` en `sistema/`, como la consola) y abre cada escena en un contexto
+  aislado del navegador (el tema guardado no pasa de una a otra).
 - `dobles.js` reemplaza `window.go.main.App` y `window.runtime`. La escena (`window.__SCENE`)
   elige los datos: `vacia`, `datos`, `lab`, `lab-errores`, `lab-restr-activa`,
   `lab-transmitiendo`, `lab-energia-pendiente`, `simulada`, `simulada-sola`, `clave-personal`,

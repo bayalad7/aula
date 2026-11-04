@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"crypto/ed25519"
-	"embed"
 	"fmt"
 	"io"
 	"log/slog"
@@ -21,9 +20,6 @@ import (
 	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/platform"
 )
-
-//go:embed all:frontend/dist
-var assets embed.FS
 
 // singleInstanceID keeps one agent per user session: opening the app again
 // (or the autostart plus a manual start) just brings the window forward.
@@ -99,6 +95,10 @@ func main() {
 // helper). onStartup runs once the window exists; raise and maximize are
 // wired here for both.
 func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func()) error {
+	files, err := frontend()
+	if err != nil {
+		return fmt.Errorf("frontend: %w", err)
+	}
 	return wails.Run(&options.App{
 		Title:     "Aula — Cliente",
 		Width:     900,
@@ -106,7 +106,7 @@ func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func())
 		MinWidth:  480,
 		MinHeight: 360,
 		AssetServer: &assetserver.Options{
-			Assets: assets,
+			Assets: files,
 		},
 		OnStartup: func(ctx context.Context) {
 			app.raise = func() { raiseWindow(ctx) }
@@ -136,7 +136,7 @@ func runLauncher(log *slog.Logger) {
 	err := wails.Run(&options.App{
 		Title:       "Aula — Cliente",
 		StartHidden: true,
-		AssetServer: &assetserver.Options{Assets: assets},
+		AssetServer: &assetserver.Options{Assets: assets}, // hidden: it never draws
 		OnStartup:   func(ctx context.Context) { runtime.Quit(ctx) },
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId:               singleInstanceID,

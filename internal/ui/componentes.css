@@ -368,6 +368,9 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
 :root[data-theme="dark"] .visor-diagrama .tema-claro { display: none; }
 :root[data-theme="dark"] .visor-diagrama .tema-oscuro { display: block; }
 .visor-diagrama figcaption { font-size: var(--t-sm); color: var(--c-texto-suave); }
+.visor-diagrama__zoom { min-width: 3.5rem; text-align: end; }
+/* En el diálogo «Ver en grande»: más alto, y el lienzo ocupa el ancho. */
+.visor-diagrama--grande .visor-diagrama__lienzo { max-height: 62vh; }
 
 /* --- Estructura de la consola -------------------------------------------------------------------- */
 .app { display: grid; grid-template-columns: var(--ancho-nav) minmax(0, 1fr); height: 100%; }

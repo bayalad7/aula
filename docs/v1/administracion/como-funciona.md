@@ -46,3 +46,10 @@ Cada acción tuya tiene un aviso visible en el equipo del alumno.
 - [Aula como servicio de Windows](diagrama:13-agente-servicio)
 - [Qué guarda Aula en cada equipo](diagrama:11-modelo-datos)
 - [Cómo está hecho Aula por dentro](diagrama:02-componentes)
+
+## Todos los diagramas
+
+Elige para quién quieres verlos o busca una palabra. Cada diagrama se abre en grande, con zoom y
+con lo que no es obvio de él; se ve igual con el tema claro y el oscuro.
+
+{{diagramas}}

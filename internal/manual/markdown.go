@@ -19,7 +19,7 @@ type Inline struct {
 
 // Block is one piece of a page.
 type Block struct {
-	Kind    string       `json:"kind"`              // heading | paragraph | list | code | note | table | image | diagram
+	Kind    string       `json:"kind"`              // heading | paragraph | list | code | note | table | image | diagram | gallery
 	Level   int          `json:"level,omitempty"`   // heading: 2 or 3
 	Anchor  string       `json:"anchor,omitempty"`  // heading: its id
 	Text    []Inline     `json:"text,omitempty"`    // heading, paragraph, note
@@ -52,6 +52,7 @@ var (
 	reBullet  = regexp.MustCompile(`^[-*]\s+(.*)$`)
 	reImage   = regexp.MustCompile(`^!\[([^\]]*)\]\(img/([A-Za-z0-9._-]+)\)\s*$`)
 	reInclude = regexp.MustCompile(`^\{\{diagrama:([a-z0-9-]+)\}\}\s*$`)
+	reGallery = regexp.MustCompile(`^\{\{diagramas\}\}\s*$`) // every diagram, with filters
 	reInline  = regexp.MustCompile("`([^`]+)`|\\*\\*(.+?)\\*\\*|\\[([^\\]]+)\\]\\(([^)\\s]+)\\)|(?:^|[^\\w*])\\*([^*\\s][^*]*?)\\*")
 )
 
@@ -157,6 +158,9 @@ func parseBlocks(body string) []Block {
 			flush()
 			m := reImage.FindStringSubmatch(t)
 			out = append(out, Block{Kind: "image", Alt: m[1], Src: m[2]})
+		case reGallery.MatchString(t):
+			flush()
+			out = append(out, Block{Kind: "gallery"})
 		case reInclude.MatchString(t):
 			flush()
 			out = append(out, Block{Kind: "diagram", Diagram: reInclude.FindStringSubmatch(t)[1]})

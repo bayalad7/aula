@@ -42,8 +42,8 @@
 .alumno__pantalla-texto:empty { display: none; }
 
 .dialogo--grande { width: min(72rem, calc(100vw - 2rem)); }
-.dialogo--grande img { display: block; width: 100%; max-height: 70vh; object-fit: contain; border-radius: var(--r-md); background: var(--c-superficie-2); }
-.dialogo--grande img:not([src]) { min-height: 12rem; }
+#pantalla-grande img { display: block; width: 100%; max-height: 70vh; object-fit: contain; border-radius: var(--r-md); background: var(--c-superficie-2); }
+#pantalla-grande img:not([src]) { min-height: 12rem; }
 
 /* --- Ajustes ----------------------------------------------------------------------------- */
 .ajuste__ancho { grid-column: 1 / -1; }
@@ -60,8 +60,7 @@
 .manual__imagen { margin: 0; display: grid; gap: var(--e-1); }
 .manual__imagen img { width: 100%; height: auto; border: 1px solid var(--c-borde); border-radius: var(--r-md); }
 .manual__codigo { margin: 0; padding: var(--e-3); overflow: auto; }
-.diagrama-manual { margin: 0; display: grid; gap: var(--e-2); }
-.diagrama-manual pre { max-height: 20rem; overflow: auto; font-size: var(--t-xs); }
+.visor-diagrama pre { max-height: 20rem; overflow: auto; font-size: var(--t-xs); }
 .panel-lateral .manual h2 { font-size: var(--t-md); }
 .enlace { padding: 0; border: 0; background: none; color: var(--c-enlace); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; text-align: left; }
 .resultado { display: grid; gap: 2px; padding: var(--e-2) 0; border-bottom: 1px solid var(--c-borde); }
@@ -79,3 +78,19 @@ body[data-panel] .col-sistema { display: none; }
 #ficha-puede .insignia { min-width: 3.25rem; justify-content: center; }
 .desglose dd.pila-mini { display: grid; }
 .celda-principal .equipo { white-space: nowrap; }
+
+/* --- Galería de diagramas («Cómo funciona Aula») ------------------------------------------- */
+.galeria-diagramas { display: grid; gap: var(--e-3); }
+.galeria-diagramas__lista { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-3);
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+.galeria-diagramas__tarjeta { display: grid; gap: var(--e-2); align-content: start; }
+.galeria-diagramas__tarjeta h3 { margin: 0; font-size: var(--t-md); }
+.galeria-diagramas__mini { height: 8rem; overflow: hidden; border: 1px solid var(--c-borde); border-radius: var(--r-md);
+  background: var(--c-superficie); padding: var(--e-2); }
+.galeria-diagramas__mini img { width: 100%; height: 100%; object-fit: contain; }
+.galeria-diagramas [aria-pressed="true"] { background: var(--c-acento-suave); color: var(--c-acento-sobre-suave); border-color: var(--c-acento); }
+.manual .galeria-diagramas__lista { padding: 0; }
+/* Respuestas largas del asistente: el texto baja de renglón en vez de cortarse. */
+#falta-pasos .btn { white-space: normal; height: auto; min-height: 1.875rem; padding-block: var(--e-1); text-align: start; }
+.tarjeta__cabecera.con-info { display: flex; }
+.manual .lista-limpia { padding: 0; }

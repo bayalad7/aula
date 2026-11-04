@@ -20,7 +20,7 @@ sequenceDiagram
     box rgb(219,234,254) Red local
         participant M as mDNS 224.0.0.251:5353
     end
-    box rgb(220,252,231) Equipo del alumno (canal 1)
+    box rgb(220,252,231) Equipo del alumno, canal 1
         participant B as Browser
         participant A as Agent
     end

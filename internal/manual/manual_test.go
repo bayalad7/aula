@@ -188,3 +188,55 @@ func TestParseTree(t *testing.T) {
 		}
 	}
 }
+
+// A diagram gets its SVGs only when the manifest says they were drawn from
+// its current Mermaid block; its explanation and screens come from the .md.
+func TestDiagramDrawings(t *testing.T) {
+	src := strings.Replace(diagram, "audiencia: [profesor]\n", "audiencia: [profesor]\npantallas: [falta]\n", 1) +
+		"\n## Lo que no es obvio\n\n- **Uno** y dos.\n\n## Fuentes en el código\n\n- `x.go`\n"
+	_, block, _ := strings.Cut(src, "```mermaid\n")
+	block, _, _ = strings.Cut(block, "\n```")
+	manifest := func(hash string) []byte {
+		return []byte(`{"generador":"t","diagramas":[{"id":"12-x","hash":"` + hash +
+			`","claro":"generados/12-x.claro.svg","oscuro":"generados/12-x.oscuro.svg"}]}`)
+	}
+	fsys := testFS()
+	fsys["diag/12-x.md"] = &fstest.MapFile{Data: []byte(src)}
+	fsys["diag/generados/12-x.claro.svg"] = &fstest.MapFile{Data: []byte("<svg>claro</svg>")}
+	fsys["diag/generados/12-x.oscuro.svg"] = &fstest.MapFile{Data: []byte("<svg>oscuro</svg>")}
+	fsys["diag/generados/manifiesto.json"] = &fstest.MapFile{Data: manifest(MermaidHash(block))}
+
+	m, err := Load(fsys, "man", "diag")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := m.Diagrams["12-x"]
+	if !strings.HasPrefix(d.Light, "data:image/svg+xml;base64,") || d.Dark == "" || d.Light == d.Dark {
+		t.Errorf("drawings not attached: light %.40q dark %.40q", d.Light, d.Dark)
+	}
+	if len(d.Screens) != 1 || d.Screens[0] != "falta" || d.Alt != "Diagnóstico: Qué revisar cuando un alumno no aparece" {
+		t.Errorf("screens %v, alt %q", d.Screens, d.Alt)
+	}
+	if len(d.Explanation) != 1 || d.Explanation[0].Kind != "list" {
+		t.Errorf("explanation = %+v, want the «Lo que no es obvio» list only", d.Explanation)
+	}
+
+	fsys["diag/generados/manifiesto.json"] = &fstest.MapFile{Data: manifest(MermaidHash(block + "\n    x --> y"))}
+	m, _ = Load(fsys, "man", "diag")
+	if d := m.Diagrams["12-x"]; d.Light != "" || d.Dark != "" {
+		t.Error("a stale drawing was attached; the console must show the Mermaid text instead")
+	}
+	if MermaidHash("a\r\nb") != MermaidHash("a\nb") {
+		t.Error("MermaidHash depends on line ends")
+	}
+}
+
+func TestGalleryInclude(t *testing.T) {
+	p, err := ParsePage("x", "---\ntitulo: \"X\"\ngrupo: \"G\"\n---\n\nAntes.\n\n{{diagramas}}\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Blocks) != 2 || p.Blocks[1].Kind != "gallery" {
+		t.Errorf("blocks = %+v", p.Blocks)
+	}
+}

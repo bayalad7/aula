@@ -102,7 +102,8 @@ lo exige `go test`; lo demás, la revisión.
 - **Manual y diagramas:**
   - Sección en `docs/v1/administracion/`: en la página de su pantalla o en Tareas frecuentes; una
     pantalla nueva lleva su página con `pantallas` (prueba).
-  - Si cambia un flujo, su diagrama en `docs/v1/diagramas/` con front-matter (prueba).
+  - Si cambia un flujo, su diagrama en `docs/v1/diagramas/` con front-matter, y sus SVG
+    regenerados con `scripts/docs/generar-diagramas` (prueba).
 - **Arnés web:**
   - Bindings y eventos en `docs/eventos-ui.md` y en `scripts/ux/dobles.js` (prueba).
   - Una escena y una captura en `scripts/ux/recorrido.mjs`, que pasa sin errores ni violaciones

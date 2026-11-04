@@ -1,0 +1,12 @@
+{
+  "name": "aula-diagramas",
+  "private": true,
+  "description": "Genera los SVG claro y oscuro de docs/v1/diagramas para la consola. No forma parte del build.",
+  "type": "module",
+  "scripts": {
+    "generar": "node generar-diagramas.mjs"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "11.17.1"
+  }
+}

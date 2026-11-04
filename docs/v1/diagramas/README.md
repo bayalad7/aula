@@ -105,16 +105,40 @@ diagrama.
 ## La consola los dibuja de antemano
 
 La consola del profesor muestra los diagramas como imágenes SVG embebidas, sin necesidad de
-conexión a Internet y sin incluir la librería JavaScript de Mermaid en el binario. Si cambias un
-bloque `mermaid` o su front-matter, vuelve a generarlos (requiere Node.js 18+ para el paso de
-compilación previa):
+conexión a Internet y sin incluir la librería JavaScript de Mermaid en el binario. Los SVG se
+generan de antemano y se versionan en `generados/`, así que `go build` no necesita Node. Si
+cambias un bloque `mermaid`, vuelve a generarlos (requiere Node.js 18+ y la letra Segoe UI, que
+viene en Windows):
 
 ```sh
 scripts/docs/generar-diagramas.sh        # o .\scripts\docs\generar-diagramas.ps1 en Windows
 ```
 
-El pipeline genera una variante clara y otra oscura de cada SVG, un texto alternativo a partir de
-`titulo` + `descripcion`, y un manifiesto con el hash de cada bloque `mermaid`. Si el hash de un
-diagrama no coincide con el del manifiesto, `go test ./docs` y el CI fallan con el mensaje
-«Diagramas desactualizados: ejecuta scripts/docs/generar-diagramas». Así el diagrama que ve la
-consola nunca queda desincronizado de este `docs/`.
+El pipeline (`scripts/docs/generar-diagramas.mjs`, con `@mermaid-js/mermaid-cli` fijo en su
+`package.json`) hace, por cada diagrama:
+
+- **Una variante clara y una oscura**, con los colores de superficie y texto de los tokens de la
+  consola (`internal/ui/tokens.css`). En la oscura cambia las cuatro clases de color y los
+  rellenos de `box` y `rect` por una paleta oscura propia, sin tocar los `.md`.
+- **La misma letra que la consola (Segoe UI).** Mermaid mide el texto al dibujar; si la letra no
+  está, el pipeline se niega a generar, porque el texto se saldría de sus cajas.
+- **SVG limpios:** sin `script`, manejadores `on*`, `foreignObject` ni referencias fuera del
+  archivo. La consola además los muestra como `<img>`, donde nada se ejecuta.
+- **Siempre los mismos bytes** para el mismo bloque (semilla fija), así que regenerar no ensucia
+  el diff.
+- **El manifiesto** `generados/manifiesto.json`, con el hash de cada bloque `mermaid` y las rutas
+  de sus SVG.
+
+`go test ./docs` falla con «Diagramas desactualizados: ejecuta scripts/docs/generar-diagramas» si
+el hash de un diagrama no coincide con el del manifiesto o le falta un SVG
+(`TestDiagramsAreDrawn`), y si un SVG no está limpio (`TestDrawingsAreSanitized`). Corre en el CI.
+Mientras tanto, la consola muestra el texto Mermaid de un diagrama sin dibujo vigente, nunca un
+dibujo viejo.
+
+En la consola, cada diagrama incluido con `{{diagrama:NN-nombre}}` sale en un visor con zoom,
+«ver en grande», su descripción, el público y «Lo que no es obvio». `{{diagramas}}` pone la
+galería de todos, con filtro por público y búsqueda («Cómo funciona Aula»). El «?» de cada vista
+muestra los diagramas cuyo `pantallas` la nombra.
+
+En un `box` de `sequenceDiagram` con color, el título no lleva paréntesis: Mermaid no reconoce el
+color y lo muestra como texto.

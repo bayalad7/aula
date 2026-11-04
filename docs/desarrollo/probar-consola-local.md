@@ -114,6 +114,15 @@ consola agrega aquí sus casos.
 | C-29 | Ajustes › Acerca de | «Certificado de la conexión: Vigente hasta el …» (10 años después de instalar) |
 | C-30 | Con un alumno real de otra versión o sin una capacidad, mándale lo que no soporta (opcional) | En su fila «No pudo: …»; en Código, «Quién falta» lo lista con el motivo y «Ver en el manual»; «Reenviar» lo reintenta |
 
+### Diagramas
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-31 | Ayuda › Cómo funciona Aula | Cada diagrama se ve dibujado, con zoom (−, ajustar, +), «Lo que no es obvio» y «Ver el diagrama (texto)» |
+| C-32 | Baja a «Todos los diagramas»: elige «Profesor» y escribe «canal» | Quedan los diagramas para el profesor que hablan del canal, con su conteo |
+| C-33 | Abre uno: pulsa + y − con el teclado en el dibujo; cambia el tema en Ajustes | Cambia el tamaño; el dibujo pasa a la paleta oscura sin recargar |
+| C-34 | En «¿Falta un alumno?», pulsa «?» | El panel muestra la página y, al final, «Diagramas de esta pantalla» |
+
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 
 | # | Pasos | Esperado |

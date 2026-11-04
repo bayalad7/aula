@@ -843,7 +843,21 @@ Plan original:
 - **Terminado:** el recorrido y las capturas del manual salen iguales, y `go build` funciona sin
   Node.
 
-### Paso 2 — E8: los diagramas dibujados en la consola (Fase 5)
+### Paso 2 — E8: los diagramas dibujados en la consola (Fase 5) — ✅ hecho (espera aprobación)
+
+Hecho el 04/11/2026 (`docs/v1/ux/profesor/ENTREGA-E8.md`):
+- `scripts/docs/generar-diagramas.{mjs,sh,ps1}`: SVG claro y oscuro de los 16 diagramas en
+  `docs/v1/diagramas/generados/`, versionados, con su manifiesto. Usa Segoe UI (se niega sin ella)
+  y semilla fija, así que regenerar da los mismos bytes.
+- `TestDiagramsAreDrawn` y `TestDrawingsAreSanitized` (`docs/dibujos_test.go`).
+- `internal/manual`: SVG como `data:` solo si el hash coincide, explicación, pantallas y
+  `{{diagramas}}`.
+- Consola: visor con zoom y «Ver en grande», galería con filtro y búsqueda, y diagramas en el «?».
+- El binario crece 1,79 MB (25,26 → 27,05 MB).
+- Recorrido: 47 capturas sin errores.
+
+Plan original:
+
 
 - **Pipeline** `scripts/docs/generar-diagramas.{sh,ps1}`, con su propio `package.json` y
   mermaid-cli 11.17.1 fijo. Por cada diagrama:

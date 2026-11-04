@@ -14,15 +14,20 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// Diagram is a diagram of docs/v1/diagramas, as the manual includes it. The
-// SVG comes later (pre-rendered); until then the console shows the Mermaid
-// source, as the design asks.
+// Diagram is a diagram of docs/v1/diagramas, as the manual includes it: its
+// metadata, the «Lo que no es obvio» prose, and the SVGs drawn beforehand
+// (diagrams.go). Without them the console shows the Mermaid text.
 type Diagram struct {
 	ID          string   `json:"id"` // file name without .md, e.g. "12-diagnostico-conexion"
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Audience    []string `json:"audience"`
+	Screens     []string `json:"screens"` // console views whose «?» shows it
+	Alt         string   `json:"alt"`     // text alternative of the drawing
+	Explanation []Block  `json:"explanation"`
 	Mermaid     string   `json:"mermaid"`
+	Light       string   `json:"light,omitempty"` // data: URI of the light SVG
+	Dark        string   `json:"dark,omitempty"`  // data: URI of the dark SVG
 }
 
 // Manual is the whole manual: pages in index order and the diagrams.
@@ -78,6 +83,9 @@ func Load(fsys fs.FS, pagesDir, diagramsDir string) (*Manual, error) {
 		}
 		m.Diagrams[d.ID] = d
 	}
+	if err := m.attachDrawings(fsys, diagramsDir); err != nil {
+		return nil, fmt.Errorf("manual: diagrams: %w", err)
+	}
 	return m, nil
 }
 
@@ -87,7 +95,9 @@ func parseDiagram(id, src string) (Diagram, error) {
 	if err != nil {
 		return Diagram{}, fmt.Errorf("%s: %w", id, err)
 	}
-	d := Diagram{ID: id, Title: fm["titulo"], Description: fm["descripcion"], Audience: list(fm["audiencia"])}
+	d := Diagram{ID: id, Title: fm["titulo"], Description: fm["descripcion"], Audience: list(fm["audiencia"]),
+		Screens: list(fm["pantallas"]), Explanation: section(body, "Lo que no es obvio")}
+	d.Alt = d.Title + ": " + d.Description
 	_, rest, ok := strings.Cut(body, "```mermaid\n")
 	if !ok {
 		return Diagram{}, fmt.Errorf("%s: no mermaid block", id)
@@ -236,7 +246,12 @@ func (m *Manual) Search(q string) []Result {
 		flush()
 	}
 	for _, d := range m.Diagrams {
-		consider(Result{Diagram: d.ID, Title: d.Title}, d.Title, d.Description)
+		var text strings.Builder
+		text.WriteString(d.Description + " ")
+		for _, b := range d.Explanation {
+			text.WriteString(blockText(b) + " ")
+		}
+		consider(Result{Diagram: d.ID, Title: d.Title}, d.Title, text.String())
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].score > out[j].score })
 	if len(out) > 12 {

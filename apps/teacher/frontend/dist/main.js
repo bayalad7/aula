@@ -1143,26 +1143,152 @@
       }
     });
   }
-  function bloqueDiagrama(id) {
+  // Diagramas: SVG claro y oscuro dibujados antes (scripts/docs/generar-diagramas),
+  // como <img>; sin dibujo, el texto Mermaid. Componente .visor-diagrama (internal/ui).
+  const PUBLICO = { profesor: T("diagrama.publicoProfesor"), alumno: T("diagrama.publicoAlumno"),
+    instalador: T("diagrama.publicoInstalador"), desarrollador: T("diagrama.publicoDesarrollador"), auditor: T("diagrama.publicoAuditor") };
+  const ZOOM = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+  function botonIcono(ic, etiqueta) {
+    const b = el("button", "btn btn--fantasma btn--icono btn--sm");
+    b.type = "button";
+    b.setAttribute("aria-label", etiqueta);
+    b.title = etiqueta;
+    b.append(icono(ic));
+    return b;
+  }
+  function visorDiagrama(id, grande) {
     const d = manual.diagrams[id];
-    const fig = el("figure", "diagrama-manual tarjeta tarjeta__cuerpo");
-    const cab = el("div", "fila");
-    cab.append(icono("red"), el("strong", "crece", d ? d.title : id));
-    fig.append(cab);
-    if (d) {
-      fig.append(el("p", "suave pequeno", d.description));
-      // El dibujo llega con la entrega de los diagramas; mientras, su fuente.
+    const fig = el("figure", "visor-diagrama" + (grande ? " visor-diagrama--grande" : " tarjeta tarjeta__cuerpo"));
+    if (!d) {
+      fig.append(el("p", "suave", id));
+      return fig;
+    }
+    const barra = el("div", "visor-diagrama__barra");
+    barra.append(grande ? el("span", "crece") : el("h3", "", d.title));
+    if (d.light) {
+      const lienzo = el("div", "visor-diagrama__lienzo");
+      lienzo.tabIndex = 0;
+      lienzo.setAttribute("role", "region");
+      lienzo.setAttribute("aria-label", T("diagrama.lienzo", { t: d.title }));
+      lienzo.append(Object.assign(el("img", "tema-claro"), { src: d.light, alt: d.alt }),
+        Object.assign(el("img", "tema-oscuro"), { src: d.dark, alt: d.alt }));
+      let nivel = ZOOM.indexOf(1);
+      const zoom = (n) => {
+        nivel = Math.max(0, Math.min(ZOOM.length - 1, n));
+        lienzo.style.setProperty("--zoom", ZOOM[nivel]);
+        porcentaje.textContent = T("diagrama.zoom", { n: Math.round(ZOOM[nivel] * 100) });
+      };
+      const menos = botonIcono("alejar", T("diagrama.alejar"));
+      const ajustar = botonIcono("expandir", T("diagrama.ajustar"));
+      const mas = botonIcono("acercar", T("diagrama.acercar"));
+      const porcentaje = el("span", "pequeno suave visor-diagrama__zoom");
+      porcentaje.setAttribute("aria-live", "polite");
+      menos.addEventListener("click", () => zoom(nivel - 1));
+      mas.addEventListener("click", () => zoom(nivel + 1));
+      ajustar.addEventListener("click", () => zoom(ZOOM.indexOf(1)));
+      lienzo.addEventListener("keydown", (e) => {
+        if (e.key === "+" || e.key === "=") { e.preventDefault(); zoom(nivel + 1); }
+        if (e.key === "-") { e.preventDefault(); zoom(nivel - 1); }
+        if (e.key === "0") { e.preventDefault(); zoom(ZOOM.indexOf(1)); }
+      });
+      barra.append(porcentaje, menos, ajustar, mas);
+      if (!grande) {
+        const ver = botonIcono("pantalla", T("diagrama.verEnGrande"));
+        ver.addEventListener("click", () => verDiagrama(id));
+        barra.append(ver);
+      }
+      zoom(nivel);
+      fig.append(barra, lienzo);
+    } else {
+      fig.append(barra);
+    }
+    fig.append(el("p", "suave pequeno", d.description));
+    if (d.explanation && d.explanation.length) {
       const det = el("details", "detalles");
-      // Bloques con desplazamiento: enfocables para leerlos con el teclado.
-      const pre = Object.assign(el("pre", "mono", d.mermaid), { tabIndex: 0 });
-      det.append(el("summary", "", T("ayuda.verFuenteDiagrama")), pre);
+      const cuerpo = el("div", "manual");
+      cuerpo.append(...bloques(d.explanation, ""));
+      det.append(el("summary", "", T("diagrama.loQueNoEsObvio")), cuerpo);
+      det.open = grande;
       fig.append(det);
     }
+    // El texto Mermaid siempre está a mano (y es lo único si falta el dibujo).
+    const fuente = el("details", "detalles");
+    const pre = Object.assign(el("pre", "mono", d.mermaid), { tabIndex: 0 }); // con desplazamiento: enfocable
+    fuente.append(el("summary", "", T("ayuda.verFuenteDiagrama")), pre);
+    fuente.open = !d.light;
+    fig.append(fuente);
+    const pie = el("figcaption");
+    pie.textContent = T("diagrama.pie", { n: id.slice(0, 2), publico: (d.audience || []).map((a) => PUBLICO[a] || a).join(", ") });
+    fig.append(pie);
     return fig;
   }
-  function dibujarPagina(p, destino) {
+
+  // Galería de todos los diagramas ({{diagramas}} en el manual): filtro por público y búsqueda.
+  const sinAcentos = (t) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  function galeriaDiagramas() {
+    const sec = el("section", "galeria-diagramas");
+    const filtros = el("div", "grupo-botones");
+    filtros.setAttribute("role", "group");
+    filtros.setAttribute("aria-label", T("diagrama.filtroPublico"));
+    let publico = "";
+    const opciones = [["", T("diagrama.todos")], ...Object.entries(PUBLICO)];
+    const botones = opciones.map(([k, texto]) => {
+      const b = el("button", "btn btn--sm", texto);
+      b.type = "button";
+      b.addEventListener("click", () => { publico = k; filtrar(); });
+      return [k, b];
+    });
+    filtros.append(...botones.map(([, b]) => b));
+    const buscador = el("div", "buscador");
+    buscador.setAttribute("role", "search");
+    buscador.setAttribute("aria-label", T("diagrama.buscarEtiqueta"));
+    const q = Object.assign(el("input"), { type: "search", autocomplete: "off", placeholder: T("diagrama.buscar") });
+    q.setAttribute("aria-label", T("diagrama.buscarEtiqueta"));
+    buscador.append(icono("buscar"), q);
+    const conteo = el("p", "pequeno suave");
+    conteo.setAttribute("aria-live", "polite");
+    const lista = el("ul", "galeria-diagramas__lista");
+    const ids = Object.keys(manual.diagrams).sort();
+    const tarjetas = ids.map((id) => {
+      const d = manual.diagrams[id];
+      const li = el("li", "tarjeta tarjeta__cuerpo galeria-diagramas__tarjeta");
+      if (d.light) {
+        const mini = el("div", "visor-diagrama galeria-diagramas__mini");
+        mini.append(Object.assign(el("img", "tema-claro"), { src: d.light, alt: "" }), Object.assign(el("img", "tema-oscuro"), { src: d.dark, alt: "" }));
+        li.append(mini);
+      }
+      const ver = el("button", "enlace galeria-diagramas__titulo", d.title);
+      ver.type = "button";
+      ver.addEventListener("click", () => verDiagrama(id));
+      const pub = el("div", "envio__conteo");
+      pub.append(...(d.audience || []).map((a) => insignia("", "", PUBLICO[a] || a)));
+      li.append(el("h3"), el("p", "pequeno suave", d.description), pub);
+      li.querySelector("h3").append(ver);
+      const texto = sinAcentos([d.title, d.description, ...(d.explanation || []).map((b) => JSON.stringify(b))].join(" "));
+      return { li, d, texto };
+    });
+    lista.append(...tarjetas.map((t) => t.li));
+    function filtrar() {
+      const palabras = sinAcentos(q.value).split(/\s+/).filter(Boolean);
+      let n = 0;
+      for (const t of tarjetas) {
+        const ok = (!publico || (t.d.audience || []).includes(publico)) && palabras.every((w) => t.texto.includes(w));
+        t.li.hidden = !ok;
+        if (ok) n++;
+      }
+      for (const [k, b] of botones) b.setAttribute("aria-pressed", String(k === publico));
+      conteo.textContent = n ? P("diagrama.conteo", n) : T("diagrama.ninguno");
+    }
+    q.addEventListener("input", filtrar);
+    filtrar();
+    sec.append(filtros, buscador, conteo, lista);
+    return sec;
+  }
+
+  function bloques(lista, slug) {
     const nodos = [];
-    for (const b of p.blocks) {
+    const p = { slug };
+    for (const b of lista) {
       switch (b.kind) {
         case "heading": {
           const h = el(b.level === 2 ? "h2" : "h3");
@@ -1215,22 +1341,23 @@
           nodos.push(fig);
           break;
         }
-        case "diagram": nodos.push(bloqueDiagrama(b.diagram)); break;
+        case "diagram": nodos.push(visorDiagrama(b.diagram, false)); break;
+        case "gallery": nodos.push(galeriaDiagramas()); break;
       }
     }
-    destino.replaceChildren(...nodos);
+    return nodos;
   }
+  function dibujarPagina(p, destino) {
+    destino.replaceChildren(...bloques(p.blocks, p.slug));
+  }
+  // «Ver en grande»: el mismo visor en el diálogo, con la explicación abierta.
   function verDiagrama(id) {
     const d = manual && manual.diagrams[id];
     $("dg-titulo").textContent = d ? d.title : id;
-    const fig = bloqueDiagrama(id);
-    // En el diálogo el título ya es el encabezado y no hay más que ver: fuente abierta.
-    fig.className = "diagrama-manual";
-    fig.firstChild.remove();
-    const det = fig.querySelector("details");
-    if (det) det.open = true;
-    $("dg-cuerpo").replaceChildren(fig);
+    $("dg-cuerpo").replaceChildren(visorDiagrama(id, true));
     $("diagrama").showModal();
+    const lienzo = $("dg-cuerpo").querySelector(".visor-diagrama__lienzo");
+    if (lienzo) lienzo.focus();
   }
 
   function cargarManual(m) {
@@ -1313,6 +1440,20 @@
       $("h-panel-ayuda").textContent = p.title;
       $("panel-ayuda-abrir").href = rutaManual(p.slug);
       dibujarPagina(p, $("panel-ayuda-cuerpo"));
+      // Y los diagramas cuyo front-matter «pantallas» nombra esta vista.
+      const ids = Object.keys(manual.diagrams).sort().filter((id) => (manual.diagrams[id].screens || []).includes(vista));
+      if (ids.length) {
+        const ul = el("ul", "lista-limpia");
+        ul.append(...ids.map((id) => {
+          const li = el("li", "pila-mini");
+          const b = el("button", "enlace", manual.diagrams[id].title);
+          b.type = "button";
+          b.addEventListener("click", () => verDiagrama(id));
+          li.append(b, el("span", "pequeno suave", manual.diagrams[id].description));
+          return li;
+        }));
+        $("panel-ayuda-cuerpo").append(el("h2", "", T("diagrama.deEstaPantalla")), ul);
+      }
       $("h-panel-ayuda").focus();
     });
   }

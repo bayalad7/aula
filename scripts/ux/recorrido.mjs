@@ -67,6 +67,28 @@ await f("33-diagrama", "datos", { ruta: "ayuda/como-funciona", pasos: async (p) 
 await f("34-error-con-manual", "datos", { pasos: async (p) => p.evaluate(() => window.__emit("aula:capture",
   { draft: null, error: "aula:clipboardEmpty: el portapapeles está vacío: copia el código primero (Ctrl+C)" })) });
 
+// Diagramas: visor, galería, «Ver en grande» y los del «?» de cada vista
+const galeria = "ayuda/como-funciona/todos-los-diagramas";
+await f("42-diagrama-en-pagina", "datos", { ruta: "ayuda/como-funciona" });
+await f("43-galeria", "datos", { ruta: galeria });
+await f("44-galeria-filtrada", "datos", { ruta: galeria, pasos: async (p) => {
+  await p.evaluate(() => [...document.querySelectorAll(".galeria-diagramas [aria-pressed]")].find((b) => b.textContent === "Profesor").click());
+  await p.type(".galeria-diagramas input[type=search]", "canal");
+  await sleep(200);
+} });
+await f("45-visor-grande", "datos", { ruta: galeria, pasos: async (p) => {
+  await p.evaluate(() => document.querySelector(".galeria-diagramas__titulo").click());
+  await sleep(200);
+  await p.keyboard.press("+");
+  await sleep(150);
+} });
+await f("46-visor-grande-oscuro", "datos", { oscuro: true, ruta: galeria, pasos: async (p) => {
+  await p.evaluate(() => [...document.querySelectorAll(".galeria-diagramas__titulo")].find((b) => b.textContent.startsWith("Energía")).click());
+  await sleep(200);
+} });
+await f("47-ayuda-contextual-falta", "vacia", { ruta: "falta", pasos: seq(click("[data-vista-de=falta] [data-ayuda-contextual]"),
+  async (p) => p.evaluate(() => { const c = document.getElementById("panel-ayuda-cuerpo"); c.scrollTop = c.scrollHeight; })) });
+
 // ¿Falta un alumno?
 await f("35-falta-arbol", "vacia", { ruta: "falta" });
 await f("36-falta-arbol-respondido", "vacia", { ruta: "falta", pasos: seq(click("#falta-pasos .paso--actual button:nth-child(2)"),

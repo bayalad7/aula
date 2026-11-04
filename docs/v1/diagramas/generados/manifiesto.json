@@ -1,0 +1,263 @@
+{
+  "generador": "@mermaid-js/mermaid-cli 11.17.1",
+  "diagramas": [
+    {
+      "id": "01-contexto",
+      "titulo": "Contexto del sistema",
+      "descripcion": "Qué piezas forman Aula en un centro de cómputo y quién se conecta con quién",
+      "audiencia": [
+        "profesor",
+        "instalador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "alumnos",
+        "ayuda"
+      ],
+      "hash": "sha256:f9fd5916155c52e5019df76fb58475b5fbe09c1a718756663d394ffe851c27c3",
+      "alt": "Contexto del sistema: Qué piezas forman Aula en un centro de cómputo y quién se conecta con quién",
+      "claro": "generados/01-contexto.claro.svg",
+      "oscuro": "generados/01-contexto.oscuro.svg"
+    },
+    {
+      "id": "02-componentes",
+      "titulo": "Componentes y dependencias",
+      "descripcion": "Cómo se reparten las dos aplicaciones en paquetes y por qué solo uno toca el sistema operativo",
+      "audiencia": [
+        "desarrollador"
+      ],
+      "pantallas": [],
+      "hash": "sha256:16387f200a062a4878cb333ffaa876a04eeb1f5973468ff4ff6f03c939f964a2",
+      "alt": "Componentes y dependencias: Cómo se reparten las dos aplicaciones en paquetes y por qué solo uno toca el sistema operativo",
+      "claro": "generados/02-componentes.claro.svg",
+      "oscuro": "generados/02-componentes.oscuro.svg"
+    },
+    {
+      "id": "03-descubrimiento-canal",
+      "titulo": "Descubrimiento de canal (mDNS)",
+      "descripcion": "Cómo un equipo de alumno encuentra la consola de su sala entre varias de la misma red",
+      "audiencia": [
+        "instalador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "falta"
+      ],
+      "hash": "sha256:c1b30fb5fe55502809074bd7b911eda98410d8caa52155dd46524b3b8c81671d",
+      "alt": "Descubrimiento de canal (mDNS): Cómo un equipo de alumno encuentra la consola de su sala entre varias de la misma red",
+      "claro": "generados/03-descubrimiento-canal.claro.svg",
+      "oscuro": "generados/03-descubrimiento-canal.oscuro.svg"
+    },
+    {
+      "id": "04-autenticacion-tls",
+      "titulo": "Autenticación y fijado de certificado",
+      "descripcion": "Cómo el agente comprueba que habla con la consola del profesor y no con un impostor",
+      "audiencia": [
+        "desarrollador",
+        "auditor"
+      ],
+      "pantallas": [
+        "ayuda"
+      ],
+      "hash": "sha256:8d01eacf36bfd340d5820ef0eb767399caf019493c9d6c1977853aae9c56ad93",
+      "alt": "Autenticación y fijado de certificado: Cómo el agente comprueba que habla con la consola del profesor y no con un impostor",
+      "claro": "generados/04-autenticacion-tls.claro.svg",
+      "oscuro": "generados/04-autenticacion-tls.oscuro.svg"
+    },
+    {
+      "id": "05-ciclo-sesion",
+      "titulo": "Ciclo de sesión y heartbeat",
+      "descripcion": "Por qué estados pasa la conexión de un alumno, cuándo se da por caída y cómo vuelve sola",
+      "audiencia": [
+        "desarrollador"
+      ],
+      "pantallas": [
+        "alumnos"
+      ],
+      "hash": "sha256:36d8632e3ba16aba1cbf55323dc8a4698b9d64f3d57959f51ba5fcc801f985d1",
+      "alt": "Ciclo de sesión y heartbeat: Por qué estados pasa la conexión de un alumno, cuándo se da por caída y cómo vuelve sola",
+      "claro": "generados/05-ciclo-sesion.claro.svg",
+      "oscuro": "generados/05-ciclo-sesion.oscuro.svg"
+    },
+    {
+      "id": "06-emision-codigo",
+      "titulo": "Emisión y recepción de código",
+      "descripcion": "Qué pasa desde que el profesor pulsa Emitir hasta que ve cuántos alumnos ya tienen el código en pantalla",
+      "audiencia": [
+        "profesor",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "codigo"
+      ],
+      "hash": "sha256:55ac8fe84d95964564a8bb135ed4976ef15ae4a002b0e461c4d5edb5c6eb5691",
+      "alt": "Emisión y recepción de código: Qué pasa desde que el profesor pulsa Emitir hasta que ve cuántos alumnos ya tienen el código en pantalla",
+      "claro": "generados/06-emision-codigo.claro.svg",
+      "oscuro": "generados/06-emision-codigo.oscuro.svg"
+    },
+    {
+      "id": "07-acuses-recoleccion",
+      "titulo": "Acuses y recolección de código/archivos",
+      "descripcion": "Cómo cuenta la consola quién recibió cada envío, y qué falta para recoger trabajos de los alumnos",
+      "audiencia": [
+        "desarrollador"
+      ],
+      "pantallas": [
+        "codigo"
+      ],
+      "hash": "sha256:d4738eed69dda2a622129a2254aa725da3e09fa62b7e2b9ae1d4a44b5f43f97d",
+      "alt": "Acuses y recolección de código/archivos: Cómo cuenta la consola quién recibió cada envío, y qué falta para recoger trabajos de los alumnos",
+      "claro": "generados/07-acuses-recoleccion.claro.svg",
+      "oscuro": "generados/07-acuses-recoleccion.oscuro.svg"
+    },
+    {
+      "id": "08-monitoreo-pantalla",
+      "titulo": "Monitoreo: miniaturas y pantalla",
+      "descripcion": "Cómo ve el profesor las pantallas de sus alumnos y cómo sabe cada alumno que lo están viendo",
+      "audiencia": [
+        "profesor",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "alumnos"
+      ],
+      "hash": "sha256:a4630b579351134ac4bec29bd3401933d1dd98f497eda9a46a1ef70d1bd66738",
+      "alt": "Monitoreo: miniaturas y pantalla: Cómo ve el profesor las pantallas de sus alumnos y cómo sabe cada alumno que lo están viendo",
+      "claro": "generados/08-monitoreo-pantalla.claro.svg",
+      "oscuro": "generados/08-monitoreo-pantalla.oscuro.svg"
+    },
+    {
+      "id": "09-transparencia-avisos",
+      "titulo": "Transparencia: avisos e indicadores al alumno",
+      "descripcion": "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le transmite, lo restringe o apaga su equipo",
+      "audiencia": [
+        "profesor",
+        "alumno",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "alumnos",
+        "ayuda"
+      ],
+      "hash": "sha256:926bc8b749fea3c182fc36c6cde40717b79d2cc33e908eb2e3a81ac7232a9226",
+      "alt": "Transparencia: avisos e indicadores al alumno: Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le transmite, lo restringe o apaga su equipo",
+      "claro": "generados/09-transparencia-avisos.claro.svg",
+      "oscuro": "generados/09-transparencia-avisos.oscuro.svg"
+    },
+    {
+      "id": "10-aula-simulada",
+      "titulo": "Aula simulada y simulación de fallas",
+      "descripcion": "Cómo prueba el profesor Aula sin laboratorio con alumnos de prueba que nunca se confunden con equipos reales",
+      "audiencia": [
+        "profesor",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "simulada"
+      ],
+      "hash": "sha256:d54955fc3590fdab311d9d59a1f2a7b5588756d19eecfab737a3770603115c55",
+      "alt": "Aula simulada y simulación de fallas: Cómo prueba el profesor Aula sin laboratorio con alumnos de prueba que nunca se confunden con equipos reales",
+      "claro": "generados/10-aula-simulada.claro.svg",
+      "oscuro": "generados/10-aula-simulada.oscuro.svg"
+    },
+    {
+      "id": "11-modelo-datos",
+      "titulo": "Modelo de datos local",
+      "descripcion": "Qué guarda Aula en el disco de cada equipo, qué solo vive en memoria y cómo se relacionan claves y configuración",
+      "audiencia": [
+        "desarrollador",
+        "auditor"
+      ],
+      "pantallas": [
+        "ayuda"
+      ],
+      "hash": "sha256:2d3dfdf95816df77080064bc8a8b5265a0e8d2a2ff801c4b4dc5512351f7b4a8",
+      "alt": "Modelo de datos local: Qué guarda Aula en el disco de cada equipo, qué solo vive en memoria y cómo se relacionan claves y configuración",
+      "claro": "generados/11-modelo-datos.claro.svg",
+      "oscuro": "generados/11-modelo-datos.oscuro.svg"
+    },
+    {
+      "id": "12-diagnostico-conexion",
+      "titulo": "Diagnóstico: «Mi alumno no conecta»",
+      "descripcion": "Preguntas en orden para averiguar por qué un equipo de alumno no aparece en la consola",
+      "audiencia": [
+        "profesor",
+        "instalador"
+      ],
+      "pantallas": [
+        "falta"
+      ],
+      "hash": "sha256:603c79e35e10267a8b7fefd68283bd4f4e987abad01a3a829e4b06312ff826df",
+      "alt": "Diagnóstico: «Mi alumno no conecta»: Preguntas en orden para averiguar por qué un equipo de alumno no aparece en la consola",
+      "claro": "generados/12-diagnostico-conexion.claro.svg",
+      "oscuro": "generados/12-diagnostico-conexion.oscuro.svg"
+    },
+    {
+      "id": "13-agente-servicio",
+      "titulo": "El agente como servicio de Windows",
+      "descripcion": "Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
+      "audiencia": [
+        "instalador",
+        "desarrollador",
+        "auditor"
+      ],
+      "pantallas": [
+        "falta"
+      ],
+      "hash": "sha256:673594528c6f8dd37e317fad2bc4c022e0bdec50308ba0aab21020d7a51846d0",
+      "alt": "El agente como servicio de Windows: Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
+      "claro": "generados/13-agente-servicio.claro.svg",
+      "oscuro": "generados/13-agente-servicio.oscuro.svg"
+    },
+    {
+      "id": "14-transmision-pantalla",
+      "titulo": "Transmisión de la pantalla del profesor",
+      "descripcion": "Cómo llega la pantalla del profesor como video a cada alumno y qué pasa si una conexión falla",
+      "audiencia": [
+        "profesor",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "alumnos"
+      ],
+      "hash": "sha256:d86c7f5590d83d39fd0d16d09e8b7a1a9dade290cb117ff8a1a11370a4350ddc",
+      "alt": "Transmisión de la pantalla del profesor: Cómo llega la pantalla del profesor como video a cada alumno y qué pasa si una conexión falla",
+      "claro": "generados/14-transmision-pantalla.claro.svg",
+      "oscuro": "generados/14-transmision-pantalla.oscuro.svg"
+    },
+    {
+      "id": "15-restricciones",
+      "titulo": "Restricciones de la clase: apps y filtro web",
+      "descripcion": "Cómo se aplican el bloqueo de aplicaciones y el filtro web, y por qué siempre se pueden deshacer",
+      "audiencia": [
+        "profesor",
+        "desarrollador",
+        "auditor"
+      ],
+      "pantallas": [
+        "alumnos"
+      ],
+      "hash": "sha256:525f57bc32be06fe62a099561ac68466f15895a1ad2124c5fed46ef9917e81d7",
+      "alt": "Restricciones de la clase: apps y filtro web: Cómo se aplican el bloqueo de aplicaciones y el filtro web, y por qué siempre se pueden deshacer",
+      "claro": "generados/15-restricciones.claro.svg",
+      "oscuro": "generados/15-restricciones.oscuro.svg"
+    },
+    {
+      "id": "16-energia",
+      "titulo": "Energía: apagar, reiniciar y cerrar sesión",
+      "descripcion": "Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que el equipo se apaga",
+      "audiencia": [
+        "profesor",
+        "alumno",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "alumnos"
+      ],
+      "hash": "sha256:e1360add405e901adc63c58e3aceb49825c93a20214966abbe567da7e6fd561c",
+      "alt": "Energía: apagar, reiniciar y cerrar sesión: Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que el equipo se apaga",
+      "claro": "generados/16-energia.claro.svg",
+      "oscuro": "generados/16-energia.oscuro.svg"
+    }
+  ]
+}

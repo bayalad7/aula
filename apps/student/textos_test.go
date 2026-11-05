@@ -82,6 +82,11 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, l := range []protocol.MsgLevel{protocol.LevelInfo, protocol.LevelWarning} {
 		need("aviso."+string(l), "codedist.Notice.Level")
 	}
+	// The agent's own notices: Go sends the Kind, the window words it.
+	for _, k := range []string{NoticeSnapshot} {
+		need("aviso."+k+".titulo", "codedist.Notice.Kind")
+		need("aviso."+k+".texto", "codedist.Notice.Kind")
+	}
 	for _, k := range []string{"appsDeny", "appsAllow", "webDeny", "webAllow", "separador"} {
 		need("banda.restricciones."+k, "policy.State (mode)")
 	}

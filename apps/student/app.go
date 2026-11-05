@@ -23,6 +23,7 @@ import (
 	"github.com/bayalad7/aula/internal/remote"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/session"
+	"github.com/bayalad7/aula/internal/snapshot"
 	"github.com/bayalad7/aula/internal/transport"
 )
 
@@ -42,6 +43,7 @@ type App struct {
 	power   *power.Countdown   // power.*; inert until enablePower
 	viewer  *broadcast.Viewer  // the teacher's screen; declared after ReportMedia
 	control *remote.Agent      // remote control; inert until enableRemote
+	snap    *snapshot.Taker    // still screenshots; inert until enableScreen
 	clip    platform.Clipboard // nil when the system has none
 	clipEr  error
 	log     *slog.Logger
@@ -116,6 +118,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a.viewer = &broadcast.Viewer{Logger: log, OnView: a.onBroadcastView, OnSignal: a.onBroadcastSignal}
 	a.power = &power.Countdown{OnChange: a.onPower, Logger: log}
 	a.control = &remote.Agent{Video: a.screen, OnState: a.onControl, Logger: log}
+	a.snap = &snapshot.Taker{Indicator: a.screen, Identity: a.identity, OnTaken: a.onSnapshot, Logger: log}
 	if cfgErr != nil {
 		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Detail: cfgErr.Error()}
 	} else {
@@ -266,14 +269,20 @@ func (a *App) stop() {
 	a.control.Stop()
 	a.screen.Stop()
 	a.viewer.Stop()
+	a.snap.Wait() // its connection is closed: it drops the image
 }
 
-// enableScreen lets the console see this screen in thumbnails, with the
-// always-visible indicator, and declares screen.thumb in hello. Call it
-// before start; without both pieces the agent does not declare it.
+// enableScreen lets the console see this screen in thumbnails and take a
+// still screenshot of it, with the always-visible indicator, and declares
+// screen.thumb and screen.snapshot in hello. Call it before start; without
+// both pieces the agent declares neither.
 func (a *App) enableScreen(c platform.ScreenCapture, i platform.ScreenIndicator) {
 	a.screen.Capture, a.screen.Indicator = c, i
 	a.hello.Capabilities = append(slices.Clone(a.hello.Capabilities), a.screen.Capabilities()...)
+	if a.screen.Available() {
+		a.snap.Capture = c
+		a.hello.Capabilities = append(a.hello.Capabilities, a.snap.Capabilities()...)
+	}
 }
 
 func (a *App) source() session.ConsoleSource {
@@ -382,6 +391,10 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 	if !ok {
 		// Only after auth.ok: the session rejects everything earlier.
 		reply, ok = a.power.Handle(ctx, power.Sender(send), env)
+	}
+	if !ok {
+		// Before the control: a screenshot does not end or pause it (§5.16).
+		reply, ok = a.snap.Handle(ctx, snapshot.Sender(send), env)
 	}
 	if !ok {
 		reply, ok = a.control.Handle(ctx, send, env)

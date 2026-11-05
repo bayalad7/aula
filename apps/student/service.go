@@ -279,6 +279,7 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	app := NewApp(cfg, pub, cfgErr, sa.base, agentsvc.Clipboard{Helper: sa.helper}, nil, log)
 	app.screen.Capture = agentsvc.Capture{Helper: sa.helper}
 	app.screen.Indicator = agentsvc.Indicator{Helper: sa.helper}
+	app.snap.Capture = agentsvc.Capture{Helper: sa.helper} // the helper captures; the service cannot
 	app.control.Input = agentsvc.Input{Helper: sa.helper}
 	app.emit = func(event string, data any) {
 		sa.helper.Notify(agentsvc.EventEmit, emitted{Event: event, Data: data})
@@ -318,7 +319,7 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	h.Username = sa.sess.User
 	h.Capabilities = append(h.Capabilities, protocol.CapCodeView, protocol.CapMsgShow)
 	if sa.ready.Capture {
-		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb)
+		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb, protocol.CapScreenSnapshot)
 	}
 	if sa.ready.Broadcast {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenBroadcast)

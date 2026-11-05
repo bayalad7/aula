@@ -60,6 +60,10 @@ await f("37-control-pausa", "control-pausa");
 await f("38-control-terminado", "control", { pasos: emitir("aula:status", { state: "connected", teacher: "Prof. Ayala", channel: "1",
   detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "" }) });
 await f("39-control-oscuro", "control", { oscuro: true });
+await f("41-captura-tomada", "captura");
+await f("42-captura-con-pantalla-vista", "captura-vista");
+await f("43-captura-oscuro", "captura", { oscuro: true });
+await f("44-captura-angosta", "captura", { w: 480, h: 360 });
 await f("20-energia-forzada", "energia-forzada");
 await f("21-energia-fallida", "energia-fallida");
 

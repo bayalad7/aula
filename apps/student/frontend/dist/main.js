@@ -307,6 +307,10 @@
   const noticesBox = $("notices");
   const noticeTpl = $("notice-template");
   const NIVEL = { info: ["info", ""], warning: ["advertencia", "toast--advertencia"] };
+  // Avisos que arma la ventana a partir del tipo que manda Go (regla 44: «Captura de pantalla»).
+  const TIPO = {
+    snapshot: { icono: "captura", titulo: "aviso.snapshot.titulo", texto: "aviso.snapshot.texto" },
+  };
 
   // En una esquina, sin mover el código; se ven los 3 más recientes y «Ver N
   // más» despliega el resto. Esc cierra el aviso que tiene el foco.
@@ -326,10 +330,18 @@
       const node = noticeTpl.content.firstElementChild.cloneNode(true);
       const [icono, clase] = NIVEL[n.level] || NIVEL.info;
       if (clase) node.classList.add(clase);
-      node.querySelector("use").setAttribute("href", "sistema/iconos.svg#" + icono);
+      const propio = TIPO[n.kind]; // un aviso del propio Aula (sin texto del profesor)
+      node.querySelector("use").setAttribute("href", "sistema/iconos.svg#" + (propio ? propio.icono : icono));
       const AV = "aviso."; // + nivel del aviso (info, warning)
-      node.querySelector(".toast__titulo").textContent = T(AV + (n.level === "warning" ? "warning" : "info"));
-      node.querySelector(".notice-text").textContent = n.text;
+      if (propio) {
+        node.dataset.kind = n.kind;
+        node.querySelector(".toast__titulo").textContent = T(propio.titulo);
+        node.querySelector(".notice-text").textContent = T(propio.texto, {
+          profesor: status.teacher, canal: status.channel, hora: hora(n.at) });
+      } else {
+        node.querySelector(".toast__titulo").textContent = T(AV + (n.level === "warning" ? "warning" : "info"));
+        node.querySelector(".notice-text").textContent = n.text;
+      }
       const b = node.querySelector(".dismiss");
       b.textContent = T("aviso.entendido");
       b.addEventListener("click", () => api.DismissNotice(n.id));

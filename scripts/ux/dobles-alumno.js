@@ -31,6 +31,8 @@
     restricciones: st("connected", { restricted: true }),
     // El control remoto implica la pantalla vista (docs/privacidad.md, regla 37).
     control: st("connected", { viewed: true, control: "active" }),
+    // Una captura durante las miniaturas: la banda de vista sigue, el aviso es aparte.
+    "captura-vista": st("connected", { viewed: true }),
     "control-pausa": st("connected", { viewed: true, control: "paused" }),
     todo: st("connected", { restricted: true, viewed: true, control: "active" }),
   }[scene] || conectado;
@@ -43,10 +45,11 @@
   const java = { id: "sn-3", exercise: "3", title: "", lang: "java", receivedAt: ahora,
     content: "public class Hola {\n    public static void main(String[] args) {\n        for (int i = 0; i < 3; i++) {\n            System.out.println(\"Hola \" + i);\n        }\n    }\n}\n" };
   const snippets = { "un-codigo": [py], "varios-codigos": [py, js, java], "pantalla-vista": [py], transmision: [],
-    control: [py], "control-pausa": [py],
+    control: [py], "control-pausa": [py], captura: [py], "captura-vista": [py],
     restricciones: [py], "aviso-info": [py], "aviso-warning": [py], "varios-avisos": [py, js, java], "muchos-avisos": [py] }[scene] || [];
 
   const aviso = (id, level, text) => ({ id, level, text, at: ahora });
+  const captura = (id) => ({ id, level: "warning", text: "", kind: "snapshot", at: "2026-11-05T10:42:06-06:00" });
   const notices = {
     "aviso-info": [aviso("m-1", "info", "En 10 minutos revisamos el ejercicio 1 todos juntos.")],
     "aviso-warning": [aviso("m-2", "warning", "Guarden su trabajo: en 5 minutos cerramos la sesión.")],
@@ -54,6 +57,9 @@
       aviso("m-2", "warning", "Guarden su trabajo: en 5 minutos cerramos la sesión."),
       aviso("m-3", "info", "Si terminaste, intenta la versión iterativa del factorial.")],
     "muchos-avisos": [1, 2, 3, 4, 5].map((i) => aviso("m-" + i, i === 5 ? "warning" : "info", `Aviso número ${i} de la clase.`)),
+    // El profesor tomó una captura (docs/privacidad.md regla 44): Go manda el tipo, no la frase.
+    captura: [captura("c-1")],
+    "captura-vista": [captura("c-1")],
   }[scene] || [];
 
   const restrictions = scene === "restricciones" || scene === "todo" ? {

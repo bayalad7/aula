@@ -174,6 +174,31 @@ await caso("avisos", "muchos-avisos", async (p) => {
   ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "DismissNotice" && c[1][0] === "m-5")), "Esc no cerró el aviso con foco");
 });
 
+// Captura de pantalla (docs/privacidad.md regla 44): un aviso en la esquina, no una
+// banda. La ventana arma la frase con el profesor y la hora; cuenta como «sin ver», no
+// quita el foco y se cierra con «Entendido» o Esc, como cualquier aviso.
+await caso("aviso-captura", "un-codigo", async (p) => {
+  await p.focus('#snippets > li .copy');
+  await emitir(p, "aula:notices", { notices: [{ id: "c-1", level: "warning", text: "", kind: "snapshot", at: ahora() }] });
+  await sleep(150);
+  const a = await p.evaluate(() => {
+    const t = document.querySelector('#notices .toast[data-kind="snapshot"]');
+    return t && { titulo: t.querySelector(".toast__titulo").textContent, texto: t.querySelector(".notice-text").textContent,
+      icono: t.querySelector("use").getAttribute("href"), enBandas: !!t.closest(".bandas"), foco: document.activeElement.className };
+  });
+  ok(a, "no apareció el aviso de captura");
+  ok(a.titulo === "Captura de pantalla", "título: " + a.titulo);
+  ok(a.texto.startsWith("Prof. Ayala (canal 1) tomó una captura de tu pantalla ("), "texto: " + a.texto);
+  ok(a.icono.endsWith("#captura"), "icono: " + a.icono);
+  ok(!a.enBandas, "el aviso de captura no es una banda");
+  ok(a.foco.includes("copy"), "el aviso le quitó el foco al alumno: " + a.foco);
+  ok((await p.evaluate(() => window.__title)).startsWith("(1) "), "el título no lo cuenta como sin ver");
+  await p.focus('#notices .toast[data-kind="snapshot"] .dismiss');
+  await p.keyboard.press("Escape");
+  await sleep(100);
+  ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "DismissNotice" && c[1][0] === "c-1")), "Esc no cerró el aviso de captura");
+});
+
 // A 480×360, un solo aviso a la vista.
 await caso("avisos-angosta", "muchos-avisos", async (p) => {
   ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 1), "a 480 se ve más de un aviso");

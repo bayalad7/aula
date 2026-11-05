@@ -318,3 +318,101 @@ func TestWall(t *testing.T) {
 		t.Fatal("frame accepted after Close")
 	}
 }
+
+// A remote control borrows the stream: its frames carry its ref_id, a
+// screen.thumb.start received meanwhile waits, and resumes at StopControl.
+func TestControlBorrowsTheStreamAndResumesThumbnails(t *testing.T) {
+	ev := &events{}
+	var viewed []bool
+	s := &Streamer{Capture: &fakeCapture{ev: ev, size: 1000}, Indicator: &fakeIndicator{ev: ev},
+		OnViewed: func(v bool) { viewed = append(viewed, v) }}
+	out := newSink()
+	thumb := startEnv(fast)
+	s.Handle(t.Context(), out.send, thumb)
+	if f := out.next(t).(protocol.ScreenThumbFrame); f.RefID != thumb.ID {
+		t.Fatalf("thumb frame %+v", f)
+	}
+	ctl := protocol.ScreenThumbStart{IntervalMS: 100, Quality: 60, MaxWidth: 1280}
+	if err := s.StartControl(t.Context(), out.send, "control-ref", ctl, "controlado"); err != nil {
+		t.Fatal(err)
+	}
+	var last int
+	for range 3 {
+		p := out.next(t)
+		f, ok := p.(protocol.ScreenThumbFrame)
+		if !ok {
+			t.Fatalf("got %T", p)
+		}
+		if f.RefID == thumb.ID {
+			continue // the thumbnail frame in flight before the control
+		}
+		if f.RefID != "control-ref" || f.Width != 1280 || f.Seq != last+1 {
+			t.Fatalf("control frame %+v after %d", f, last)
+		}
+		last = f.Seq
+	}
+	// A thumbnail start during the control does not take the stream.
+	thumb2 := startEnv(fast)
+	s.Handle(t.Context(), out.send, thumb2)
+	s.RetuneControl(protocol.ScreenThumbStart{IntervalMS: 1000, Quality: 50, MaxWidth: 640})
+	for {
+		f := out.next(t).(protocol.ScreenThumbFrame)
+		if f.RefID != "control-ref" {
+			t.Fatalf("frame of %s during the control", f.RefID)
+		}
+		if f.Width == 640 {
+			if f.Seq <= last {
+				t.Fatalf("retuned control restarted its numbering: %d after %d", f.Seq, last)
+			}
+			break
+		}
+		last = f.Seq
+	}
+	s.StopControl()
+	for {
+		f := out.next(t).(protocol.ScreenThumbFrame)
+		if f.RefID == thumb2.ID {
+			break
+		}
+		if f.RefID != "control-ref" {
+			t.Fatalf("unexpected frame of %s", f.RefID)
+		}
+	}
+	s.Stop()
+	if len(viewed) != 2 || !viewed[0] || viewed[1] {
+		t.Fatalf("viewed = %v, want one start and one end", viewed)
+	}
+	log := ev.list()
+	if !contains(log, "show:controlado") || log[len(log)-1] != "hide" {
+		t.Fatalf("indicator log %q", log)
+	}
+}
+
+// Without thumbnails, ending the control removes the indicator.
+func TestStopControlHidesTheIndicator(t *testing.T) {
+	ev := &events{}
+	s := &Streamer{Capture: &fakeCapture{ev: ev, size: 1000}, Indicator: &fakeIndicator{ev: ev}}
+	out := newSink()
+	if err := s.StartControl(t.Context(), out.send, "c", protocol.ScreenThumbStart{IntervalMS: 100, Quality: 60, MaxWidth: 1280}, "controlado"); err != nil {
+		t.Fatal(err)
+	}
+	out.next(t)
+	s.StopControl()
+	if log := ev.list(); log[len(log)-1] != "hide" {
+		t.Fatalf("indicator log %q", log)
+	}
+	s.StopControl() // idempotent
+	if err := (&Streamer{Capture: &fakeCapture{ev: ev}, Indicator: &fakeIndicator{ev: ev, showErr: errors.New("x")}}).
+		StartControl(t.Context(), out.send, "c", fast, "controlado"); err == nil {
+		t.Fatal("a control must not stream without its indicator")
+	}
+}
+
+func contains(list []string, s string) bool {
+	for _, x := range list {
+		if x == s {
+			return true
+		}
+	}
+	return false
+}

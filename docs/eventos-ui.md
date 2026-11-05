@@ -42,6 +42,7 @@ que no es parte de la página.
 | `aula:app-closed` | `AppClosed` | El agente cerró una app bloqueada: `{app: "steam.exe"}`, como mucho uno por app cada 30 s. |
 | `aula:compact` | `Compact` | Go sacó la ventana del modo compacto porque el profesor hizo algo que el alumno debe ver (energía, restricciones, transmisión): `{on: false}`. |
 | `aula:power` | `PowerView` | Llega, se pospone, se ejecuta, falla o se anula una orden de energía (`power.*`). Llega **antes** de que la consola reciba el `power.ack`. `notice` es `null` cuando no hay aviso. |
+| `aula:participation` | `participation.DeskView` | La mano del alumno sube o baja (también si la baja el profesor: `hand.lower`), o uno de sus mensajes se envía, llega a la consola (`msg.student.ack`) o se rechaza (docs/protocol.md §5.18). Con `notify`, nunca `raise`. |
 
 ```jsonc
 // Status
@@ -75,12 +76,24 @@ que no es parte de la página.
               "remaining_s": 30, "postpones_left": 2, "force": false },
   "teacher": "Lab 3 — Prof. Ayala", "channel": "1" }        // quién dio la orden
 
+// participation.DeskView: la mano del alumno y sus mensajes al profesor. Go manda
+// estados; la ventana arma «Tu mano está levantada…», «Tu profesor bajó tu mano.»,
+// «Enviando…», «Recibido» o «No se envió».
+{ "hand": "up",                      // down | up | lowered_by_teacher
+  "note": "No me compila el for",    // el motivo de la mano levantada, si lo hay
+  "messages": [ { "messageId": "8a2e…", "text": "¿Es para hoy?", "at": "…",
+                  "status": "received" } ],   // sending | received | failed; el más antiguo primero (máx. 20)
+  "unsupported": false }             // la consola no conoce estos mensajes (una versión anterior)
+
 // Notices: avisos no cerrados, el más antiguo primero (máx. 10). Los del profesor
 // (msg.show) traen su texto; los del propio agente traen kind y ningún texto, y la
 // ventana los arma: "snapshot" = «Captura de pantalla · <profesor> (canal X) tomó una
 // captura de tu pantalla (HH:MM)» (docs/privacidad.md regla 44). Cuentan como «sin ver».
+// "replyTo" (msg.show con reply_to): la respuesta del profesor a un mensaje del alumno;
+// la ventana la titula «Respuesta a tu mensaje» y cita el mensaje de DeskView.messages.
 { "notices": [ { "id": "5b0e…", "text": "Guarden su trabajo", "level": "warning", "at": "…" },
-               { "id": "9a3c…", "text": "", "level": "warning", "at": "…", "kind": "snapshot" } ] }
+               { "id": "9a3c…", "text": "", "level": "warning", "at": "…", "kind": "snapshot" },
+               { "id": "1f2e…", "text": "Sí, antes de las 12.", "level": "info", "at": "…", "replyTo": "8a2e…" } ] }
 ```
 
 Cada evento lleva la lista **completa**, no un cambio incremental: la interfaz redibuja sin
@@ -90,7 +103,7 @@ llevar estado propio.
 
 | Método | Devuelve | Uso |
 |---|---|---|
-| `App.View()` | `View` = `{status, snippets, notices, broadcast, restrictions, power}` | Estado completo para el primer dibujo. |
+| `App.View()` | `View` = `{status, snippets, notices, broadcast, restrictions, power, participation}` | Estado completo para el primer dibujo. |
 | `App.Copy(snippetId)` | error (promesa rechazada con texto en español) | Copia el fragmento al portapapeles del sistema. |
 | `App.DismissNotice(noticeId)` | — | Cierra un aviso; emite `aula:notices`. |
 | `App.ReportMedia(webrtc, h264)` | — | Al cargar: si hay `RTCPeerConnection` y decodificador H.264. Go espera este aviso (máx. 5 s) antes de conectarse y solo entonces declara `screen.broadcast`. |
@@ -101,6 +114,13 @@ llevar estado propio.
 | `App.DismissPower()` | — | Cierra el aviso de una orden de energía que falló. |
 | `App.SetCompact(on)` | error | Modo compacto: encoge la ventana a 380×112 en la esquina inferior derecha de su monitor, sin activarla ni dejarla encima, o la devuelve a su lugar. Actúa sobre la ventana de este proceso (también en el ayudante del servicio: no se reenvía). |
 | `App.ReportWindow(title)` | — | El título que escribió la página, para el texto del icono del área de notificación. Local, como `SetCompact`. |
+| `App.RaiseHand(note)` | `participation.DeskView` / error | **Levantar la mano** (botón de la tira, también en el modo compacto), con un motivo opcional (≤ 140). Con la mano arriba, solo cambia el motivo: conserva su lugar. En modo servicio se reenvía al servicio, que tiene la conexión. |
+| `App.LowerHand()` | `participation.DeskView` / error | **Bajar la mano**: `hand.lower {by: student}`. Se puede aun sin conexión. |
+| `App.SendTeacherMessage(text)` | `participation.DeskView` / error | **Mensaje al profesor** (la tarjeta de arriba de la lista: Enter envía, Esc cancela): `msg.student`, 1–500 caracteres, uno cada 3 s y como mucho 5 sin acuse. Si se corta la red, se reenvía al reconectar con el mismo `message_id`. |
+
+Los errores de `RaiseHand`, `LowerHand` y `SendTeacherMessage` llegan como `aula:<código>` y la
+ventana los dice con `mano.error.<código>` (`apps/student/participation.go`, `partErrorCodes`):
+`noConnection`, `empty`, `tooLong`, `tooSoon`, `waiting`, `unsupported` y `notSent`.
 
 `Copy` recibe solo el **ID**: el texto sale de la copia que guarda Go, no de la página. Así lo
 que se pega es exactamente lo que envió el profesor, sin depender de cómo lo dibujó el
@@ -122,6 +142,12 @@ navegador.
   llegan antes de aplicar la oferta se guardan y se aplican después. Al terminar (`active:
   false`) la interfaz cierra la conexión y Go restaura la ventana. La CSP permite
   `media-src mediastream: blob:` para el video.
+- **Manos y mensajes** (`docs/privacidad.md`, reglas 50–52): lo hace el alumno, así que nada
+  quita el foco ni trae la ventana, y no hay banda. «Levantar la mano» lleva `aria-pressed`; la
+  línea `#mano-estado` (arriba de la lista) dice que está levantada, con su motivo, o que el
+  profesor la bajó. «Mensaje al profesor» abre la tarjeta `#redactar`; en el modo compacto, la
+  ventana vuelve a su tamaño porque lo pidió el alumno. Sin conexión, los botones se desactivan
+  y su `title` dice por qué.
 - **Control remoto** (`docs/privacidad.md`, reglas 36–41): con `status.control` (`active` o
   `paused`), Go trae la ventana al frente al empezar y la interfaz sale del modo compacto, muestra
   la banda roja `#banda-control` después de la de energía (sin botón para cerrarla ni para cortar
@@ -178,6 +204,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:connectcheck` | `connectcheck.Report` | Mientras corre `CheckConnection()`, cada vez que un paso empieza o termina; el último trae `done: true`. |
 | `aula:remote` | `remote.Control` | El control remoto empieza (`starting`), el agente muestra su banda (`active`), se pausa porque el alumno usa su equipo (`paused`), sigue (`active`) o termina: `ended` con `reason` `teacher`, `replaced`, `idle`, `session` o `error`; `gone` si el alumno se desconectó; `failed` si el agente no pudo mostrar su aviso. `{sessionID, hostname, controlID, status, reason, viewing}`. |
 | `aula:snapshots` | `Snapshots` | Una captura de un alumno se pide, llega (`ready`), falla (`failed` con `reason` `timeout`, `capture`, `busy`, `unsupported`, `tooLarge`, `corrupt` o `gone`), se guarda (`path`) o se descarta. Lista completa `{snapshots: [{id, sessionId, hostname, username, simulated, status, reason, width, height, size, requestedAt, takenAt, path}]}`, **sin la imagen** (`SnapshotImage`). |
+| `aula:participation` | `Participation` | Un alumno (real o simulado) levanta o baja la mano, llega o se responde un mensaje, el profesor baja una mano o marca un mensaje como atendido, o la clase se cierra (docs/protocol.md §5.18). `arrival` solo viene en el evento que anuncia una mano o un mensaje recién llegado, para el aviso flotante (sin el texto). Las insignias de cada alumno llegan también en `aula:students` (`hand`, `newMessages`). |
 | `aula:remote-frame` | `Thumb` | Cada imagen de la pantalla controlada (hasta 8 por segundo con la vista abierta, 1 con la vista cerrada). No pasa por `aula:frame` ni se guarda. |
 
 ```jsonc
@@ -193,6 +220,9 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
                   "lastCodeAck": "0c9a…", "ackedAt": "10:00:05",
                   "connectedAt": "09:58",          // hora en que abrió esta sesión
                   "lastError": { "code": "unsupported_capability", "at": "10:03:12" },  // null si no ha mandado ninguno
+                  "canHand": true, "canMessage": true,   // hand y msg.student
+                  "hand": 2,                       // su lugar en la fila de manos (0: abajo): «Mano levantada · 2»
+                  "newMessages": 1,                // sus mensajes sin responder: «1 mensaje»
                   "simulated": false } ],          // true: alumno del aula simulada, siempre con su insignia
   "connected": 1,                      // solo alumnos reales
   "simulated": 0,                      // alumnos simulados conectados, aparte
@@ -219,7 +249,22 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
                   "delayMs": 0,                         // solo con slow
                   "viewed": false,                      // el profesor está viendo su pantalla
                   "snippets": [ { "exercise": "1", "title": "Factorial", "lang": "python", "lines": 6 } ],
-                  "notices": 1, "lastNotice": "Guarden su trabajo" } ] }
+                  "notices": 1, "lastNotice": "Guarden su trabajo",
+                  "hand": "down",                       // down | up | lowered_by_teacher (participation.HandState)
+                  "sent": 0 } ] }                       // mensajes que escribió al profesor
+
+// Participation: la vista «Participación». Los alumnos se identifican por equipo,
+// usuario y simulated (sobreviven a una reconexión); sessionId es la sesión vigente,
+// "" si está desconectado (no se le puede responder).
+{ "hands": [ { "hostname": "LAB3-PC12", "username": "alumno12", "simulated": false,
+               "handId": "3f1c…", "note": "No me compila el for", "raisedAt": "…",
+               "position": 1, "sessionId": "…" } ],             // en orden de llegada
+  "messages": [ { "hostname": "lab-ubuntu-02", "username": "maria", "simulated": false,
+                  "messageId": "8a2e…", "text": "¿Es para hoy?", "at": "…",
+                  "status": "new",                               // new | replied | done
+                  "reply": "", "repliedAt": "…", "sessionId": "…" } ],  // el más nuevo primero
+  "pending": 2,                       // manos + mensajes nuevos: el número del menú
+  "arrival": { "kind": "hand", "hostname": "LAB3-PC12", "username": "alumno12", "simulated": false } }  // o null
 
 // Capture: o draft o error
 { "draft": { "content": "…", "lang": "python", "lines": 9, "source": "hotkey", "capturedAt": "…" },
@@ -295,7 +340,7 @@ cada código tenga su enlace y que la sección exista.
 | `PowerCancel(hosts)` | `PowerResult` | **Cancelar.** `power.cancel` a quien tiene una orden en cuenta regresiva (`sent`, `countdown`, `postponed`); `hosts` vacío: todo el canal. |
 | `Simulation()` | `SimulationView` | Estado del aula simulada. |
 | `SimulationStart(n)` | `SimulationView` / error | Abre el aula simulada con `n` alumnos (0 = 2), o agrega `n` si ya está abierta. Los alumnos simulados corren dentro de la consola y se conectan por un puerto local (`127.0.0.1`) que no se anuncia: ningún alumno real lo alcanza. Error si no hay clase. |
-| `SimulationAdd({os, capabilities})` | `SimulationView` / error | Agrega un alumno simulado: `os` `windows`, `linux` o `darwin`; `capabilities` entre `code.view`, `msg.show`, `screen.thumb` y `screen.snapshot` (vacío: las cuatro). Máximo 40. |
+| `SimulationAdd({os, capabilities})` | `SimulationView` / error | Agrega un alumno simulado: `os` `windows`, `linux` o `darwin`; `capabilities` entre `code.view`, `msg.show`, `screen.thumb`, `screen.snapshot`, `hand` y `msg.student` (vacío: todas). Máximo 40. |
 | `SimulationRemove(id)` | `SimulationView` / error | Quita uno. |
 | `SimulationFault(id, fault, delayMs)` | `SimulationView` / error | Hace fallar a uno: `slow` (contesta con `delayMs` de retraso, 500–10 000), `noack` (muestra pero no confirma), `disconnected` (se va hasta volver a `none`). |
 | `Manual()` | `ManualView` / error | El manual embebido (`docs/v1/administracion`), ya leído y validado: `{pages, diagrams, images, errors, diagnosis}`. `pages[]` = `{slug, title, summary, group, order, screens, blocks, headings}`; los bloques no traen HTML (la interfaz los dibuja con el DOM). `diagrams[id]` = `{id, title, description, audience, screens, alt, explanation, mermaid, light, dark}`: `light` y `dark` son los SVG claro y oscuro como data URI para un `<img>` (vacíos si el dibujo no está vigente: la interfaz muestra `mermaid`), `explanation` son los bloques de «Lo que no es obvio» y `screens` las vistas cuyo «?» lo muestra. `images`: `img/x.png` → data URI. `errors`: código de error → `página#sección`; `agentErrors`, lo mismo para los códigos del protocolo que mandan los alumnos. `diagnosis`: el árbol de «¿Falta un alumno?» sacado del diagrama 12 (`{start, nodes}`). |
@@ -312,6 +357,13 @@ cada código tenga su enlace y que la sección exista.
 | `OpenSnapshotFolder(path)` | error | **Abrir carpeta**: la de capturas (`""`) o la de una captura guardada (su `path`). Nada fuera de `capturas`. `snapshotFolder` si aún no existe. |
 | `ManualSearch(q)` | `Result[]` | Búsqueda local, sin distinguir acentos ni mayúsculas, en títulos, secciones y texto de las páginas y en los títulos y descripciones de los diagramas. Hasta 12 `{slug, anchor, diagram, title, snippet}`. |
 | `CheckConnection()` | `connectcheck.Report` / error | **Comprobar la conexión** (`internal/connectcheck`): recorre desde este equipo el camino de un alumno y dice en qué paso fallaría. `{channel, steps, cause, done}`; cada paso `{id, status, cause, reason, addrs, port, others, networks}` con `id` `announce`, `port`, `secure` o `network` y `status` `pending`, `running`, `ok`, `warn`, `fail` o `unknown`. El texto de un paso es `comprobar.<id>.<reason \| cause \| status>` (`connectcheck.Outcomes` los lista, y la prueba de textos exige uno por cada). `cause` es la del primer paso que falla, con los mismos valores que `session.Cause` del agente. Tarda unos segundos; no llega a ningún alumno, ni real ni simulado (la conexión de prueba se cierra antes de `hello`). Error `noClass` sin clase y `checkRunning` si ya hay una en curso. |
+| `Participation()` | `Participation` | La vista «Participación» (también en `View().participation`). |
+| `LowerHand({hostname, username, simulated})` | error | **Bajar la mano**: la quita de la fila y manda `hand.lower {by: teacher}` si el alumno está conectado (si no, se entera al reconectar). `handGone` si ya estaba abajo. |
+| `LowerAllHands()` | int / error | **Bajar todas** (tras confirmar): devuelve cuántas bajó. |
+| `ReplyToStudent({hostname, username, simulated, messageId, text})` | `Delivery` / error | **Responder**: `msg.show` (`info`) solo a ese alumno, con `reply_to` si `messageId` no está vacío (responder a un mensaje; vacío: a una mano). Se cuenta como cualquier aviso en `aula:deliveries` y el mensaje pasa a `replied`. `studentGone` si no está conectado, `messageGone` si el mensaje ya no está, `invalidNotice` si el texto no vale. |
+| `MarkMessageDone({hostname, username, simulated}, messageId)` | error | **Marcar como atendido**: el mensaje deja de contar como pendiente, sin responderlo. |
+| `SimulationHand(id, up)` | `SimulationView` / error | Hace que un alumno simulado levante (`true`) o baje la mano, como uno real. `simTooSoon` si lo repite antes de 1 s. |
+| `SimulationMessage(id, text)` | `SimulationView` / error | Hace que un alumno simulado escriba al profesor (`""`: una pregunta de ejemplo). `simTooSoon` antes de 3 s. |
 | `SimulationStop()` | `SimulationView` | Cierra el aula simulada: sus alumnos se van y se olvidan. También ocurre al cambiar de canal o de nombre, o al cerrar la clase. Los alumnos reales no se tocan. |
 
 ### Reglas
@@ -338,6 +390,12 @@ cada código tenga su enlace y que la sección exista.
   control, antes de pedirla se sueltan las teclas y botones presionados, y el teclado no vuelve
   solo a la imagen al cerrar la vista previa. El lote es el panel `#panel-captura`, con una
   miniatura por alumno y casillas para elegir cuáles guardar.
+- **Participación es la vista de lo que responden los alumnos en vivo** (`#participacion`, con
+  el contador `#nav-participacion-contador` en el menú). Cada función que recoge respuestas
+  agrega su sección; la primera es «Manos y mensajes». Las manos van en orden de llegada y los
+  mensajes del más nuevo al más viejo; «Responder» abre un campo en la tarjeta (Enter envía,
+  Shift+Enter otra línea, Esc cancela) que sobrevive a los repintados. Al llegar una mano o un
+  mensaje, un aviso flotante dice quién, nunca qué (`docs/privacidad.md` regla 50).
 - **Los cuadros solo viven en memoria:** Go guarda el último de cada alumno mientras la vista
   está abierta y la interfaz solo los tiene en sus `<img>`. Nada se escribe en disco
   (`docs/privacidad.md`, regla 7). La CSP permite `img-src data:` para mostrarlos.

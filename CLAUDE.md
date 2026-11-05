@@ -57,6 +57,10 @@ Dos aplicaciones, mismo monorepo:
     diagramas de `docs/v1/diagramas` a bloques sin HTML (sanitizado por construcción), lo valida,
     busca y genera el asistente «¿Falta un alumno?» del diagrama 12. El paquete `docs` los embebe
     (`docs.Files()`): `docs/` es la única fuente.
+  - `internal/participation`: lo que responden los alumnos en vivo (vista «Participación»): la
+    fila de manos levantadas y la bandeja de mensajes de la consola (`Board`), y la mano y los
+    mensajes pendientes del agente (`Desk`), con su ritmo. Solo en memoria; nunca registra el
+    texto.
   - `internal/connectcheck`: el comprobador de conexión de la consola: recorre el camino de un
     alumno (anuncio mDNS, puerto, TLS y clave del centro) y lee la red y el firewall por
     `platform`; da las mismas causas que el agente (`session.Cause`).
@@ -65,7 +69,7 @@ Dos aplicaciones, mismo monorepo:
     frontend Wails bajo `sistema/`. Una sola copia: ninguna app guarda la suya. Su prueba de
     contraste (WCAG AA) vive con él.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `ui` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `ui` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se
@@ -102,10 +106,11 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
   - Lo que se aplica a alumnos va sobre la selección de Alumnos, con un panel de la barra de
     acciones o en la ficha del alumno. Nada de pantallas a pantalla completa nuevas.
   - Lo que **responden** los alumnos en vivo (manos y mensajes, encuestas, recolecciones,
-    asistencia y bitácora, temporizador) va en la vista **«Clase»** del menú, una sección por
-    función. La crea la primera función que la necesite, con su página del manual
-    (`pantallas: [clase]`); las siguientes agregan su sección. Se lanza desde la barra de
-    acciones y, si conviene, deja una insignia en la lista de Alumnos.
+    asistencia y bitácora, temporizador) va en la vista **«Participación»** del menú (grupo
+    Clase), una sección por función. La creó 10.6 (manos y mensajes), con su página del manual
+    `participacion.md` (`pantallas: [participacion]`); las siguientes agregan su sección a la
+    vista y a esa página. Se lanza desde la barra de acciones y, si conviene, deja una insignia
+    en la lista de Alumnos y suma al contador del menú.
   - Lo que sigue activo mientras la clase corre (transmitir, energía pendiente, control remoto,
     temporizador) tiene su franja global arriba del contenido, con la acción para detenerlo.
   - Solo componentes, tokens e iconos de `sistema/`, sin colores sueltos. Funciona en claro y

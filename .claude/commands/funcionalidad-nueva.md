@@ -33,7 +33,7 @@ Arma esta ficha con lo que dice el pedido y lo que deduces del código y la docu
 | **Descripción** | Qué logra, contado desde quien la usa | Obligatorio: pregunta si falta |
 | **Para quién** | `profesor` (la usa en la consola), `alumno` (la usa en su app) o `ambos` | Dedúcelo: si la dispara el profesor y la ve el alumno, es `ambos` |
 | **Destino** | A quién llega: `todos` (el canal), `selección` (los marcados en Alumnos), `un alumno` (desde su ficha) o `ninguno` | Dedúcelo; si dudas, pregunta |
-| **Dónde vive en la consola** | Panel de la barra de acciones, ficha del alumno, sección de la vista «Clase» (lo que responden los alumnos) y/o franja global (lo que sigue activo) | El encaje del prompt; si no hay, la «Definición de terminado» |
+| **Dónde vive en la consola** | Panel de la barra de acciones, ficha del alumno, sección de la vista «Participación» (lo que responden los alumnos) y/o franja global (lo que sigue activo) | El encaje del prompt; si no hay, la «Definición de terminado» |
 | **Dónde vive en el alumno** | Tarjeta en la lista, aviso en la esquina, botón o insignia en la tira de identidad, o banda de transparencia | El encaje del prompt |
 | **¿Actúa sobre el equipo?** | Sí: usa `raise` (trae la ventana, sale del modo compacto) y lleva banda. No: usa `notify` (nunca quita el foco) | No, salvo que cambie o controle el equipo |
 | **Observa o controla al alumno** | Ve su pantalla o actividad, o cambia su equipo | Dedúcelo; si es sí, la privacidad es crítica |

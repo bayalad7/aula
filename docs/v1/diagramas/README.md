@@ -51,6 +51,7 @@ lleve `foreignObject`.
 | 15 | [Restricciones de la clase: apps y filtro web](15-restricciones.md) | `flowchart` | profesor, desarrollador, auditor |
 | 16 | [Energía: apagar, reiniciar y cerrar sesión](16-energia.md) | `stateDiagram-v2` | profesor, alumno, desarrollador |
 | 17 | [Control remoto de un alumno](17-control-remoto.md) | `sequenceDiagram` | profesor, alumno, desarrollador |
+| 18 | [Manos y mensajes del alumno](18-manos-mensajes.md) | `sequenceDiagram` | profesor, alumno, desarrollador |
 
 Una fila sin enlace debe decir «(pendiente)»: así se lista un diagrama cuya función aún no
 existe.

@@ -37,7 +37,7 @@ respeta lo que ya existe sin repetir la lista de reglas en cada prompt.
 Además decide, y te lo muestra antes de diseñar:
 - si la función observa o controla al alumno (entonces lleva aviso visible y regla en
   `docs/privacidad.md`);
-- dónde vive en la consola (barra de acciones, ficha, vista «Clase», franja global) y en la app
+- dónde vive en la consola (barra de acciones, ficha, vista «Participación», franja global) y en la app
   del alumno (tarjeta, aviso, tira, banda), y si actúa sobre el equipo del alumno (`raise`) o solo
   le avisa sin quitarle el foco (`notify`);
 - si les llega a los alumnos simulados (nunca, si controla o cambia el equipo);

@@ -15,7 +15,7 @@ enlaces: [reglas=privacidad#aula-simulada-consola-del-profesor]
 %%{init: {"htmlLabels": false, "flowchart": {"htmlLabels": false}}}%%
 flowchart LR
     subgraph equipo["Equipo del profesor: un solo proceso, aula-consola.exe"]
-        app["App de la consola<br/>SimulationStart, Add,<br/>Fault, Stop"]
+        app["App de la consola<br/>SimulationStart, Add,<br/>Fault, Hand, Message, Stop"]
         subgraph sims["internal/simclass"]
             s1["Simulado 1<br/>session.Agent real"]
             s2["Simulado 2<br/>falla: lento, no acusa<br/>o desconectado"]
@@ -30,7 +30,7 @@ flowchart LR
     nunca["Energía, restricciones<br/>y transmisión: nunca"]
 
     app --> sims
-    s1 & s2 -- "TLS, firma Ed25519, hello,<br/>code.ack, msg.ack, miniaturas" --> simsrv
+    s1 & s2 -- "TLS, firma Ed25519, hello,<br/>code.ack, msg.ack, miniaturas,<br/>hand.raise, msg.student" --> simsrv
     simsrv --> simreg
     reales -- "wss://" --> realsrv
     realsrv --> realreg
@@ -62,9 +62,13 @@ flowchart LR
 - **No se anuncian.** El puerto de los simulados no viaja por mDNS y solo escucha en el propio
   equipo: ningún alumno del laboratorio puede llegar a él. No hay mensajes nuevos en el
   protocolo.
-- **Solo reciben lo que no tiene efecto en un equipo:** código, avisos y miniaturas. Solo pueden
-  declarar `code.view`, `msg.show` y `screen.thumb`, y la consola calcula energía, restricciones y
-  transmisión solo sobre el registro real.
+- **Solo reciben lo que no tiene efecto en un equipo:** código, avisos, miniaturas y capturas.
+  Solo pueden declarar `code.view`, `msg.show`, `screen.thumb`, `screen.snapshot`, `hand` y
+  `msg.student`, y la consola calcula energía, restricciones y transmisión solo sobre el registro
+  real.
+- **Levantan la mano y escriben cuando el profesor se lo pide** («Levantar la mano» y «Escribir»
+  en su fila): usan el mismo `participation.Desk` que un alumno real, y lo que mandan llega a
+  Participación marcado como simulado y se borra al cerrar el aula simulada (diagrama 18).
 - **Las fallas usan estados que la consola ya conoce:**
   - «lento» contesta tarde (de 0,5 a 10 s, menos que los 15 s de silencio que tumban una sesión);
   - «no acusa» muestra el código pero no manda `code.ack`, y el envío queda incompleto;

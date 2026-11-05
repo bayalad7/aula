@@ -59,6 +59,9 @@ sequenceDiagram
   actualizado, no uno duplicado. Reemitir siempre usa `replace`.
 - **`code.clear`** sigue el mismo camino (acuse con `snippet_id` vacío) y **`msg.show`** también,
   con `msg.ack`. Los tres se cuentan en `Deliveries` (diagrama 07).
+- **«Responder» en Participación es un `msg.show`** a un solo alumno, con el campo opcional
+  `reply_to` (el `message_id` del mensaje que contesta): sigue este mismo camino y su acuse, y la
+  ventana del alumno lo muestra como «Respuesta a tu mensaje» (diagrama 18).
 - **Capacidades**: la consola nunca envía `code.share` a un agente que no declaró `code.view` en
   `hello`; lo cuenta como «sin capacidad» y desactiva el botón si nadie la tiene. Si llegara de
   todos modos, el agente respondería `error unsupported_capability`.
@@ -75,4 +78,5 @@ sequenceDiagram
 - `internal/session/console.go` (`Send`, `Broadcast`), `internal/session/registry.go`
 - `internal/codedist/receiver.go`, `internal/codedist/board.go`
 - `apps/student/app.go` (`onMessage`, `onBoard`, `Copy`), `internal/platform/clipboard.go`
-- `docs/protocol.md` §5.1–5.5, `docs/eventos-ui.md`
+- `apps/teacher/participation.go` (`ReplyToStudent`)
+- `docs/protocol.md` §5.1–5.5 y §5.18, `docs/eventos-ui.md`

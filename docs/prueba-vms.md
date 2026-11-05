@@ -1128,3 +1128,30 @@ quiere y sabe dónde quedó, y que el alumno lo sabe en el momento (`docs/privac
 | **SN-G** Resolución alta | Si la VM permite 2560×1440 o más, cámbiala y toma una captura. | Llega completa (en varias partes) y la vista previa dice esa resolución. |
 
 **Para aceptar** bastan SN-A, SN-B y SN-C en ✅.
+
+## 18. Manos y mensajes del alumno (10.6)
+
+Comprueba que un alumno levanta la mano y escribe al profesor, que el profesor lo ve en orden en
+«Participación» y le responde, y que nada de esto le quita el foco al alumno ni queda en un
+registro (`docs/privacidad.md`, reglas 50–52). Se prueba en VMs: nunca con clics ni teclas
+sintéticas en el escritorio de quien prueba.
+
+### 18.1 Preparación
+
+- Consola en el equipo del profesor y dos VMs de alumno (una con el agente como servicio, §13, y
+  otra en modo ventana), ambas conectadas y con el Bloc de notas al frente.
+- En la ficha de cada alumno, «Qué puede hacer su equipo» dice Sí en «Levantar la mano» y
+  «Escribirte mensajes».
+
+### 18.2 Casos
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **HM-A** Manos en orden (**aceptación**) | En la VM 2 pulsa «Levantar la mano»; luego en la VM 1, con un motivo. | La consola avisa «… levantó la mano» dos veces y el menú dice «Participación 2». En Participación, la VM 2 es la 1 y la VM 1 la 2, con su motivo. En Alumnos, Notas: «Mano levantada · 1» y «· 2». |
+| **HM-B** Mensaje y respuesta (**aceptación**) | En la VM 1, «Mensaje al profesor», escribe y Enter; vuelve al Bloc de notas. En la consola, «Responder» con Enter. | En la VM 1 el mensaje pasa a «Recibido»; la respuesta aparece en la esquina de Aula como «Respuesta a tu mensaje» con la cita, **sin quitarle el foco al Bloc de notas**. La VM 2 no recibe nada. En la consola, el mensaje queda «Respondido» y el envío aparece en Código › Últimos envíos con su confirmación. |
+| **HM-C** Bajar la mano en los dos lados (**aceptación**) | En la consola, «Bajar la mano» de la VM 2. En la VM 1, «Bajar la mano» desde el alumno. | La VM 2 ve «Tu profesor bajó tu mano.» y el botón vuelve a «Levantar la mano»; la ventana no sale al frente ni de compacto. La mano de la VM 1 desaparece sola de la fila. |
+| **HM-D** Reconexión | Con la mano levantada en la VM 1, desconecta su red 30 s y reconéctala. | Mientras tanto la fila la muestra «Desconectado» en su lugar; al volver sigue en su lugar. Un mensaje escrito sin red queda «Enviando…» y llega al reconectar, una sola vez. |
+| **HM-E** Sin registros del texto | Revisa `aula-agente.log` de ambas VMs y el log de la consola. | Aparecen «hand raised», «student message», «reply to a student» con IDs, equipo y longitudes; **nunca** el texto del mensaje, el motivo ni la respuesta. |
+| **HM-F** Modo servicio | En la VM con servicio, cierra la ventana de Aula con la X y vuelve a abrirla desde el área de notificación; levanta la mano. | Funciona igual: el botón llega al servicio por el canal local. Con la ventana cerrada, la respuesta del profesor solo marca el icono. |
+
+**Para aceptar** bastan HM-A, HM-B y HM-C en ✅.

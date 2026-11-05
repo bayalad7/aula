@@ -233,7 +233,9 @@ Alumnos de prueba que la consola crea dentro de sí misma para probar Aula sin l
     transmisión, ni el control remoto: un simulado no puede declararlo, y la consola no se lo
     envía. Así nadie cree que funcionó en un equipo real cuando solo fue una prueba. La captura
     de pantalla sí les llega, porque no cambia ningún equipo: es su pantalla dibujada, que dice
-    «alumno simulado», y se guarda aparte (regla 46).
+    «alumno simulado», y se guarda aparte (regla 46). Tampoco cambia un equipo levantar la mano
+    o escribir al profesor (reglas 50–52): un simulado lo hace solo cuando el profesor lo pulsa
+    en su fila, y llega a Participación marcado «Simulado».
 35. **No guarda nada.** Los simulados viven en memoria y desaparecen al cerrar el aula simulada,
     al cambiar de canal o de nombre y al cerrar la clase. Su «pantalla» se dibuja en memoria y,
     como la de un equipo real, muestra «Tu pantalla está siendo vista por el profesor» mientras
@@ -346,6 +348,26 @@ hará falta el permiso de **Grabación de pantalla**; en Linux, X11 lo permite s
 **Wayland** la captura pasa por el portal `Screenshot`, que pide la aprobación del alumno en cada
 captura o sesión. Linux y macOS no declaran `screen.snapshot` hasta que se documente aquí su
 aviso.
+
+## Manos y mensajes del alumno (v0.8, todos los sistemas)
+
+El alumno levanta la mano (con un motivo breve opcional) o escribe un mensaje corto al profesor,
+que lo ve en la vista «Participación» de la consola y le responde (`docs/protocol.md` §5.18). Lo
+inicia siempre el alumno y no observa ni controla su equipo: no lleva banda ni aviso fijo, y
+nada de esto trae su ventana al frente ni le quita el foco (prompt 19). Lo que llega del profesor
+(la respuesta, «Tu profesor bajó tu mano») usa `notify`, como cualquier aviso.
+
+50. **El contenido no se registra.** Los registros de la consola y del agente llevan `hand_id`,
+    `message_id`, quién y la longitud; **nunca** el texto del mensaje, el motivo de la mano ni la
+    respuesta del profesor. El aviso flotante de la consola dice quién levantó la mano o
+    escribió, no qué escribió.
+51. **Solo en memoria, solo durante la clase.** La consola guarda la fila de manos y los mensajes
+    en memoria y los borra al cerrar la clase o cambiar de canal; lo de los alumnos simulados se
+    borra al cerrar el aula simulada. Nadie los escribe en disco. Exportarlos será parte de la
+    asistencia y bitácora (prompt 10.13), con su propia regla.
+52. **Solo lo ve el profesor.** La mano y el mensaje de un alumno van solo a la consola; los demás
+    alumnos nunca los ven. La respuesta va solo a ese alumno (`msg.show` con `reply_to`), y el
+    acuse dice «llegó a la consola», no «el profesor lo leyó».
 
 ## Pendiente para etapas futuras
 

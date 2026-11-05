@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-05 (10.5 captura de pantalla de un alumno implementada, falta la
+Última actualización: 2026-11-05 (10.6 manos y mensajes del alumno implementada, con la vista
+«Participación»; falta la prueba en VM; 10.5 captura de pantalla de un alumno implementada, falta la
 prueba en VM; 10.4 control remoto implementado, falta la prueba en VM; etapa 19 cerrada).
 
 La columna «Etapa» es el número del prompt en `docs/v1/prompts/`. Entre paréntesis, el número con
@@ -23,7 +24,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado; apagado con cuenta y posponer probado en el laboratorio (faltan los demás casos de `docs/prueba-vms.md` §15) |
 | 10.4 | Control remoto del alumno | ✅ Implementado y probado en CI con dobles (falta la prueba en VM, `docs/prueba-vms.md` §16, y los casos C-44 a C-48 y A-09 a A-11) |
 | 10.5 | Captura de pantalla de un alumno | ✅ Implementado y probado en CI con dobles (falta la prueba en VM, `docs/prueba-vms.md` §17, y los casos C-49 a C-53 y A-12 y A-13) |
-| 10.6 | Mensajería del alumno y «levantar la mano» | ⏳ Pendiente (crea la vista «Clase» si es la primera) |
+| 10.6 | Mensajería del alumno y «levantar la mano» | ✅ Implementado y probado en CI con dobles y alumnos simulados; creó la vista «Participación» (falta la prueba en VM, `docs/prueba-vms.md` §18, y los casos C-54 a C-58 y A-14 a A-16) |
 | 10.7 | Mensaje directo a un alumno | ⏳ Pendiente (casi todo existe: el aviso a una selección; quizá es una mejora) |
 | 10.8 | Temporizador compartido | ⏳ Pendiente |
 | 10.9 | Enviar archivos y plantillas de ejercicio | ⏳ Pendiente |
@@ -45,14 +46,15 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
 
 **Siguiente:**
-1. Probar en la ventana real los casos C-01 a C-53 y A-01 a A-13, el control remoto en VM
-   (`docs/prueba-vms.md` §16: RC-A, RC-B y RC-C para aceptar) y la captura (§17: SN-A, SN-B y
-   SN-C).
+1. Probar en la ventana real los casos C-01 a C-58 y A-01 a A-16, el control remoto en VM
+   (`docs/prueba-vms.md` §16: RC-A, RC-B y RC-C para aceptar), la captura (§17: SN-A, SN-B y
+   SN-C) y las manos y mensajes (§18: HM-A, HM-B y HM-C).
 2. La revisión 11.
 3. ~~Publicar `v0.6.0-rc.1`~~: publicado el 05/11/2026 (etapas 10.2, 10.3, 18, 19 y 10.4, instaladores
    de Windows y checksums firmados). Las 0.x son borradores: al integrar todas las funciones se
    borran y empieza la versión 1 oficial. Probar sus instaladores en las VMs (§14 a §16).
-4. Cualquier función de 10.5 a 10.13 con `/funcionalidad-nueva <número>`.
+4. Cualquier función de 10.7 a 10.13 con `/funcionalidad-nueva <número>`. Las que recogen
+   respuestas (10.8, 10.10, 10.12, 10.13) agregan su sección a la vista «Participación».
 
 ## Etapa 02: notas
 
@@ -1121,6 +1123,62 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.6: manos y mensajes del alumno — notas
+
+- **Diseño aprobado** (2026-11-05) con un cambio del usuario: la vista se llama **«Participación»**
+  y no «Clase», porque «Clase» ya es el grupo del menú. Se renombró en `CLAUDE.md` (Definición de
+  terminado), en los prompts 00, 10, 10.6, 10.8, 10.10, 10.12, 10.13 y 14 y en el comando
+  `/funcionalidad-nueva`. Decisiones: «pedir ayuda» es `hand.raise` con un motivo opcional (sin
+  `help.request` aparte); la respuesta es `msg.show` con `reply_to`; sección de privacidad corta
+  (reglas 50–52); paquete `internal/participation` (el nombre `classroom` chocaba con la interfaz
+  `classroom` de la consola).
+- **Protocolo** (`docs/protocol.md` §5.18): `hand.raise` (`hand_id`, `note` ≤ 140), `hand.lower`
+  en los dos sentidos (`by` `student` o `teacher`), `msg.student` (`message_id`, `text` 1–500) y
+  `msg.student.ack`; `msg.show` gana `reply_to` opcional. Capacidades `hand` y `msg.student`,
+  que **inicia el agente**: `protocol.AgentCapability` y `session.Console` responden
+  `unsupported_capability` a quien no las declaró. `session.Agent.OnConnect` da la conexión al
+  agente para mandar lo que inicia él. Sin cambio de versión del protocolo (todo es agregado).
+- **`internal/participation`** (nuevo, sin APIs del SO): `Board` de la consola (fila por orden de
+  llegada, una mano por alumno que conserva su lugar al repetirse, recuerda la mano que bajó el
+  profesor para no volver a ponerla al reconectar, mensajes deduplicados por `message_id`, ritmo
+  por alumno —ráfaga 5 y 1 cada 3 s; manos 3 y 1 por s—, 20 mensajes por alumno, estados
+  `new`/`replied`/`done`, `Reset` y `ForgetSimulated`) y `Desk` del agente (su mano, los mensajes
+  sin acuse —máximo 5—, el ritmo propio, el reenvío con los mismos IDs al reconectar y la consola
+  anterior que responde `unknown_type`).
+- **Consola:** la vista **«Participación»** en el menú (grupo Clase) con el contador de pendientes
+  (`.nav-lateral__contador`, nuevo en `internal/ui`) y la sección «Manos y mensajes» (fila con su
+  número, mensajes con su estado, «Responder» en la tarjeta con Enter/Shift+Enter/Esc y «Bajar
+  también su mano», «Bajar la mano», «Bajar todas» con confirmación, «Marcar como atendido»);
+  insignias «Mano levantada · N» y «N mensajes» en Notas que llevan a la vista; aviso flotante al
+  llegar (quién, nunca qué); «Levantar la mano» y «Escribirte mensajes» en la ficha. Bindings
+  `Participation`, `LowerHand`, `LowerAllHands`, `ReplyToStudent`, `MarkMessageDone`,
+  `SimulationHand`, `SimulationMessage`; evento `aula:participation`; errores `handGone`,
+  `messageGone`, `studentGone` y `simTooSoon`. Iconos `mano`, `mensaje` y `participacion`.
+- **Alumno:** «Levantar la mano» (`aria-pressed`) y «Mensaje al profesor» en la tira y en el modo
+  compacto; la línea de estado de la mano (con «Agregar un motivo») y la tarjeta para escribir
+  arriba de la lista; «Tus mensajes» con «Enviando…/Recibido/No se envió»; la respuesta como
+  «Respuesta a tu mensaje» con la cita. `notify`, nunca `raise`; sin banda. Bindings `RaiseHand`,
+  `LowerHand`, `SendTeacherMessage` (en modo servicio, por `CallBinding`); evento
+  `aula:participation`; errores `aula:<código>` con `mano.error.*`. Declara `hand` y `msg.student`
+  en modo ventana y, como servicio, con el ayudante.
+- **Simulados:** declaran `hand` y `msg.student` y, en su fila de Aula simulada, «Levantar la
+  mano» y «Escribir» (preguntas de ejemplo); lo que mandan se borra al cerrar el aula simulada.
+- **Documentación:** `docs/privacidad.md` reglas 50–52 y regla 34; manual `participacion.md`
+  (`pantallas: [participacion]`) con su captura; diagrama nuevo 18 y 06 y 10 actualizados, con sus
+  SVG; `docs/eventos-ui.md`; casos C-54 a C-58 y A-14 a A-16; `docs/prueba-vms.md` §18;
+  `CLAUDE.md` lista `internal/participation`.
+- **Pruebas:** protocolo (validación, `testdata`, capacidades del agente); `participation` (orden,
+  levantar y bajar, la mano que bajó el profesor, deduplicación, ritmo, tope, reenvío, rechazos);
+  `session` (la capacidad de lo que inicia el agente y `OnConnect`); la consola (fila, insignias,
+  acuse, respuesta con `reply_to` a un solo alumno, ritmo, cierre de clase, **el texto nunca en el
+  log**); el alumno contra una consola real (mano, mensaje, acuse, respuesta, mano bajada por el
+  profesor, sin `raise`, sin texto en el log, reenvío al reconectar); simulados de punta a punta.
+- **Arnés:** escena `lab-participacion` y capturas 72–80 en `recorrido.mjs`; escenas `mano`,
+  `mano-bajada`, `mensajes` y `sin-soporte` y capturas 45–56 en `recorrido-alumno.mjs`; casos de
+  mano, motivo, mensaje (Enter/Esc/vacío), respuesta, sin conexión y compacto en
+  `pruebas-alumno.mjs`.
+- **Falta de tu lado:** la prueba en VM (§18) y los casos manuales.
 
 ## Etapa 10.5: captura de pantalla de un alumno — notas
 

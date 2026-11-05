@@ -124,6 +124,18 @@ consola agrega aquí sus casos.
 | C-52 | Selecciona dos simulados, panel «Captura» › «Tomar captura de 2 alumnos»; desmarca uno y pulsa «Guardar 1» | Aparece una miniatura por alumno con «Lista»; se guarda solo la marcada, el panel dice «1 captura guardada en …» con «Abrir carpeta» y la otra sigue en la lista hasta «Descartar todas» |
 | C-53 | Toma el control de un alumno real y, en la vista del control, pulsa «Tomar captura»; con la vista previa abierta escribe algo; ciérrala | Lo que escribes no llega al alumno; al cerrar vuelves a «Controlando …» (la franja nunca se fue) y, tras un clic en su pantalla, tu teclado vuelve a manejar su equipo |
 
+### Participación: manos y mensajes (10.6)
+
+Con el aula simulada abierta (C-03): cada simulado tiene «Levantar la mano» y «Escribir» en su fila.
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-54 | En Aula simulada, «Levantar la mano» en Simulado 2 y luego en Simulado 1 | Aparece abajo a la derecha «Simulado 2 levantó la mano» con «Ver en Participación» (sin el texto); el menú muestra «Participación 2»; en Alumnos, Notas dice «Mano levantada · 1» en Simulado 2 y «· 2» en Simulado 1 |
+| C-55 | Abre «Participación» | «2 manos levantadas» en orden de llegada (Simulado 2 primero, con el 1); cada una con «Responder» y «Bajar la mano»; marcadas «Simulado» |
+| C-56 | «Escribir» en Simulado 1; en Participación, «Responder» al mensaje, escribe y pulsa Enter | El mensaje aparece arriba de «Mensajes» como «Nuevo»; al enviar: «Respuesta enviada a Simulado 1», el mensaje pasa a «Respondido» con tu respuesta debajo, el contador baja y en Aula simulada Simulado 1 suma un aviso recibido. Esc en el campo cancela sin enviar |
+| C-57 | «Bajar la mano» en Simulado 2; luego «Bajar todas» y confirma | Simulado 2 sale de la fila y Simulado 1 pasa a ser el 1; en Aula simulada el botón de Simulado 2 vuelve a «Levantar la mano». «Bajar todas» deja la fila vacía y el contador sin número |
+| C-58 | Cierra el aula simulada | Participación queda vacía («Nadie ha levantado la mano…»); a 900×600 y en oscuro se lee completa, sin barras horizontales |
+
 ### Diagramas
 
 | # | Pasos | Esperado |
@@ -172,6 +184,9 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-11 | Pulsa «Soltar» en la consola con el foco en tu editor | La banda y el distintivo se van; en la esquina aparece «… dejó de controlar tu equipo» sin quitarle el foco a tu editor |
 | A-12 | Con tu editor al frente, toma una captura desde la ficha del alumno en la consola | Arriba de la pantalla, 5 s, «● Tu profesor está tomando una captura de tu pantalla» (sale también en la imagen de la consola); en la esquina de Aula, «Captura de pantalla · Prof. … tomó una captura de tu pantalla (HH:MM)», sin quitarle el foco a tu editor; el título dice «(1) Aula — …» |
 | A-13 | Cierra Aula y vuelve a tomar una captura; busca archivos nuevos en el equipo del alumno | La ventana no aparece: el icono del área de notificación se marca y al abrirla está el aviso. En `%TEMP%`, Documentos y `C:\ProgramData\Aula` no hay ninguna imagen nueva, y `aula-agente.log` solo dice «screenshot sent» con partes y tamaños |
+| A-14 | En el alumno, pulsa «Levantar la mano» (en la tira) y luego «Agregar un motivo», escribe y Enter | El botón queda pulsado («Bajar la mano») y arriba de la lista: «Tu mano está levantada…» con el motivo; en la consola, la mano en Participación con «Motivo: …». La ventana no cambia de tamaño ni de lugar |
+| A-15 | «Mensaje al profesor», escribe y pulsa Enter; responde desde la consola con tu editor al frente | El mensaje queda en «Tus mensajes» como «Enviando…» y en seguida «Recibido»; la respuesta aparece en la esquina como «Respuesta a tu mensaje» con «Tú escribiste: «…»», sin quitarle el foco a tu editor. En compacto, el botón de mensaje devuelve la ventana a su tamaño |
+| A-16 | Con la mano levantada, cierra la consola y vuelve a abrirla; luego «Bajar la mano» desde la consola | Al reconectar, la mano vuelve a la fila de Participación sola; al bajarla, el alumno ve «Tu profesor bajó tu mano.» sin que la ventana salga al frente. `aula-agente.log` y el log de la consola dicen «hand raised»/«student message» con IDs y longitudes, nunca el texto |
 
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 

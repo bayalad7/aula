@@ -48,7 +48,7 @@ Actualiza docs/progreso.md y docs/seguridad-sandbox.md.
 ## Encaje con lo implementado (no lo cambies sin decirlo)
 Aplica la «Definición de terminado» de CLAUDE.md (consola, app del alumno, transparencia, arnés,
 manual y diagramas). Para esta etapa en concreto:
-- Lo recogido llega por 10.10 (`code.collect`, la sección «Recolecciones» de la vista «Clase»):
+- Lo recogido llega por 10.10 (`code.collect`, la sección «Recolecciones» de la vista «Participación»):
   «Ejecutar pruebas» va ahí, y la tabla de resultados por alumno es parte de esa sección, no una
   pantalla aparte. El ejercicio (código base y pruebas) se arma en el módulo Código.
 - Errores con código (por ejemplo, Docker no disponible: «qué pasó + qué hacer» y su sección del

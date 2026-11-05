@@ -23,7 +23,7 @@ plataforma, luego Windows, después la UI de la app que corresponda, y Linux/mac
   docs/privacidad.md.
 - Dónde vive en cada app, con un boceto en texto (sigue la «Definición de terminado» de CLAUDE.md
   y el «Encaje con lo implementado» del prompt):
-  - consola: panel de la barra de acciones, ficha del alumno, sección de la vista «Clase» o
+  - consola: panel de la barra de acciones, ficha del alumno, sección de la vista «Participación» o
     franja global;
   - alumno: tarjeta en la lista, aviso en la esquina, botón o insignia en la tira, o banda; con
     `notify` (no quita el foco) salvo que actúe sobre el equipo (`raise`, con banda).
@@ -37,7 +37,7 @@ Espera mi aprobación.
   evento Wails). No metas lógica de SO fuera de `platform`.
 - En la consola, dentro de la navegación actual: lo que se aplica a alumnos va sobre la
   selección de Alumnos (panel de la barra de acciones) o en la ficha del alumno; lo que
-  responden los alumnos, en la vista «Clase»; con el sistema de diseño de `sistema/` y los
+  responden los alumnos, en la vista «Participación»; con el sistema de diseño de `sistema/` y los
   textos en `textos.es-MX.js`.
 - En la app del alumno: componentes de `internal/ui`, textos en su `textos.es-MX.js` y Go que
   manda estados; si pasa por el SO del alumno en modo servicio, por el ayudante

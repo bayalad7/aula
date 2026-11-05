@@ -60,7 +60,7 @@ restricciones, 10.3 energía).
 > Usa la plantilla `10` para las funciones del backlog que no tengan prompt propio.
 > **Desde las etapas 18 y 19**, cada prompt de función (10.4 en adelante, 11 a 16) trae una
 > sección **«Encaje con lo implementado»** dentro del bloque del prompt: dónde va en la consola
-> (barra de acciones, ficha, vista «Clase», franja global) y en la app del alumno (tarjeta, aviso,
+> (barra de acciones, ficha, vista «Participación», franja global) y en la app del alumno (tarjeta, aviso,
 > tira, banda), qué diagramas actualiza y si llega a los simulados. Las reglas generales están en
 > la «Definición de terminado» de `CLAUDE.md`; el encaje, en cada prompt. Si cambias de idea en
 > una de esas decisiones, dilo al pedir la función: lo que digas manda sobre el prompt.

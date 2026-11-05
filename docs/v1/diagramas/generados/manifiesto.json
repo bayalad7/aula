@@ -155,7 +155,7 @@
       "pantallas": [
         "simulada"
       ],
-      "hash": "sha256:d54955fc3590fdab311d9d59a1f2a7b5588756d19eecfab737a3770603115c55",
+      "hash": "sha256:d89872625e859982acb399e05160c030be102ed560e6d448786c33bd6a09d505",
       "alt": "Aula simulada y simulación de fallas: Cómo prueba el profesor Aula sin laboratorio con alumnos de prueba que nunca se confunden con equipos reales",
       "claro": "generados/10-aula-simulada.claro.svg",
       "oscuro": "generados/10-aula-simulada.oscuro.svg"
@@ -275,6 +275,23 @@
       "alt": "Control remoto de un alumno: Cómo toma el profesor el teclado y el mouse de un alumno, cómo lo sabe el alumno y cómo termina",
       "claro": "generados/17-control-remoto.claro.svg",
       "oscuro": "generados/17-control-remoto.oscuro.svg"
+    },
+    {
+      "id": "18-manos-mensajes",
+      "titulo": "Manos y mensajes del alumno",
+      "descripcion": "Cómo llega al profesor una mano levantada o un mensaje del alumno, y cómo vuelven la respuesta y «Bajar la mano»",
+      "audiencia": [
+        "profesor",
+        "alumno",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "participacion"
+      ],
+      "hash": "sha256:a66813f649aca3d8972bbc834eef497b8a72a567d83b0db6379511dadafc1c39",
+      "alt": "Manos y mensajes del alumno: Cómo llega al profesor una mano levantada o un mensaje del alumno, y cómo vuelven la respuesta y «Bajar la mano»",
+      "claro": "generados/18-manos-mensajes.claro.svg",
+      "oscuro": "generados/18-manos-mensajes.oscuro.svg"
     }
   ]
 }

@@ -39,19 +39,31 @@ Sistema multiplataforma de gestión de aula (estilo LanSchool / Veyon) con un m�
 | 09 | `09-monitoreo-miniaturas-y-freeze.md` | Miniaturas y pantalla en blanco (con aviso visible) | Módulo B |
 | 10 | `10-plantilla-nueva-funcion.md` | Plantilla reutilizable por función | Fases 2–3 |
 | 11 | `11-revision-y-auditoria.md` | Revisión de seguridad/privacidad al cerrar cada fase | Siempre |
-| 12 | `12-broadcast-pantalla-webrtc.md` | Transmitir tu pantalla a los alumnos (WebRTC) | Fase 2 |
+| 12 | `12-broadcast-pantalla-webrtc.md` | Transmitir tu pantalla a los alumnos (WebRTC) ✅ | Fase 2 |
+| 12.1 | `12.1-proyectar-pantalla-de-un-alumno.md` | Proyectar la pantalla de un alumno a la clase | Fase 2 |
+| 12.2 | `12.2-transmision-seleccion-y-modos.md` | Mejora: transmitir a una selección; modos ventana y pantalla completa | Fase 2 |
 | 13 | `13-portabilidad-linux-macos-y-empaquetado.md` | Linux/macOS + empaquetado multiplataforma | Fase 2 |
 | 14 | `14-sandbox-ejecucion-entregas.md` | Correr entregas del alumno en sandbox Docker | Fase 3 |
 | 15 | `15-flota-despliegue-actualizacion-diagnostico.md` | Despliegue masivo, auto-actualización y diagnóstico | Fase 3 |
 | 16 | `16-comercializacion-y-licenciamiento.md` | Modelo de negocio (licencia vs. renta) + licenciamiento | Negocio |
 | 17 | `17-documentacion-diagramas-iniciales.md` | Escribir los diagramas de `docs/v1/diagramas/` (ver su README) | Docs |
 | 18 | `18-pulido-consola-ux-manual-simulador.md` | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | Pulido |
-| 19 | `19-pulido-app-alumno-ux.md` | Pulido de la app del alumno: overlay de código, avisos y transparencia | Pulido |
+| 19 | `19-pulido-app-alumno-ux.md` | Pulido de la app del alumno: overlay de código, avisos y transparencia ✅ | Pulido |
+| 20 | `20-auditoria-limpieza-artefactos.md` | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | Docs |
+
+Las funciones del backlog con prompt propio son `10.1` a `10.13` (hechas: 10.1 servicio, 10.2
+restricciones, 10.3 energía).
 
 > Las etapas 12 a 19 son ampliaciones posteriores al Hito 1; no tienen un orden estricto entre sí.
 > La `17` puede correrse temprano (tras el protocolo, etapa 03) para los diagramas base.
 > Las etapas 18 y 19 comparten sistema de diseño: córrelas juntas o una tras otra, no por separado.
 > Usa la plantilla `10` para las funciones del backlog que no tengan prompt propio.
+> **Desde las etapas 18 y 19**, cada prompt de función (10.4 en adelante, 11 a 16) trae una
+> sección **«Encaje con lo implementado»** dentro del bloque del prompt: dónde va en la consola
+> (barra de acciones, ficha, vista «Clase», franja global) y en la app del alumno (tarjeta, aviso,
+> tira, banda), qué diagramas actualiza y si llega a los simulados. Las reglas generales están en
+> la «Definición de terminado» de `CLAUDE.md`; el encaje, en cada prompt. Si cambias de idea en
+> una de esas decisiones, dilo al pedir la función: lo que digas manda sobre el prompt.
 > En Claude Code, `/funcionalidad-nueva` y `/funcionalidad-mejora` hacen ese proceso por ti; ver
 > `docs/desarrollo/comandos-claude.md`.
 

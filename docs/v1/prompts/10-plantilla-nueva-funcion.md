@@ -21,6 +21,13 @@ plataforma, luego Windows, después la UI de la app que corresponda, y Linux/mac
 - Di qué `capability` declara el agente y en qué SO estará disponible.
 - Si <FUNCIÓN> observa o controla al alumno, describe el indicador/aviso visible y agrégalo a
   docs/privacidad.md.
+- Dónde vive en cada app, con un boceto en texto (sigue la «Definición de terminado» de CLAUDE.md
+  y el «Encaje con lo implementado» del prompt):
+  - consola: panel de la barra de acciones, ficha del alumno, sección de la vista «Clase» o
+    franja global;
+  - alumno: tarjeta en la lista, aviso en la esquina, botón o insignia en la tira, o banda; con
+    `notify` (no quita el foco) salvo que actúe sobre el equipo (`raise`, con banda).
+- Qué diagramas de docs/v1/diagramas/ se actualizan y si hace falta uno nuevo.
 Espera mi aprobación.
 
 ## 2. Implementación (cuando apruebe)
@@ -29,8 +36,12 @@ Espera mi aprobación.
 - Conecta la lógica en los paquetes `internal/*` que correspondan y la UI en la app (binding +
   evento Wails). No metas lógica de SO fuera de `platform`.
 - En la consola, dentro de la navegación actual: lo que se aplica a alumnos va sobre la
-  selección de Alumnos (panel de la barra de acciones) o en la ficha del alumno; con el sistema
-  de diseño de `sistema/` y los textos en `textos.es-MX.js`.
+  selección de Alumnos (panel de la barra de acciones) o en la ficha del alumno; lo que
+  responden los alumnos, en la vista «Clase»; con el sistema de diseño de `sistema/` y los
+  textos en `textos.es-MX.js`.
+- En la app del alumno: componentes de `internal/ui`, textos en su `textos.es-MX.js` y Go que
+  manda estados; si pasa por el SO del alumno en modo servicio, por el ayudante
+  (`internal/agentsvc`).
 - Decide si llega a los alumnos simulados; si controla o cambia el equipo, nunca.
 - Respeta la transparencia: nada de funciones ocultas; el alumno siempre puede saber qué pasa
   en su equipo.
@@ -40,9 +51,11 @@ Espera mi aprobación.
 - Prueba manual descrita paso a paso para verificar en VMs, y sus casos en
   docs/desarrollo/probar-consola-local.md.
 - Cumple la «Definición de terminado» de CLAUDE.md: errores con código y texto, sección del
-  manual, diagrama si cambia un flujo, `scripts/ux/dobles.js` y una captura en
-  `scripts/ux/recorrido.mjs`.
-- `gofmt`, `go vet`, `staticcheck ./...`, `go test -race ./...`, `node scripts/ux/recorrido.mjs`.
+  manual, diagrama si cambia un flujo (con sus SVG regenerados), `scripts/ux/dobles.js` y una
+  captura en `scripts/ux/recorrido.mjs`; en el alumno, `dobles-alumno.js`,
+  `recorrido-alumno.mjs` y `pruebas-alumno.mjs` (no quita el foco; su banda no se cierra).
+- `gofmt`, `go vet`, `staticcheck ./...`, `go test -race ./...`, `node scripts/ux/recorrido.mjs`,
+  `node scripts/ux/recorrido-alumno.mjs` y `node scripts/ux/pruebas-alumno.mjs`.
 - Actualiza docs/eventos-ui.md y docs/progreso.md.
 
 ## Restricciones
@@ -52,6 +65,9 @@ Espera mi aprobación.
 ~~~~
 
 ## Backlog sugerido (orden recomendado)
+
+Estado: hechos el 1 (prompt 12), el 4 (10.1), el 5 (10.2) y el 6 (10.3). Lo que
+falta tiene su prompt en `docs/v1/prompts/10.4` a `10.13`, `12.1`, `12.2`, `13` y `14`.
 
 **Fase 2**
 1. Transmitir la pantalla del profesor a los alumnos (WebRTC con `pion/webrtc`; señalización

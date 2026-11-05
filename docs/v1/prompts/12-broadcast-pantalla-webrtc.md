@@ -1,5 +1,11 @@
 # 12 · Transmisión de la pantalla del profesor a los alumnos (WebRTC)
 
+> **Estado: implementado** (v0.4: `internal/broadcast`, «Mostrar mi pantalla»,
+> diagrama 14, reglas 12 a 16 de privacidad). Lo que pide el punto 5 de la Parte A y no se
+> hizo (transmitir solo a una selección, y los modos de pantalla completa sin cerrar y de
+> ventana redimensionable) pasa a **`12.2-transmision-seleccion-y-modos.md`**, como mejora. Este
+> prompt queda como referencia de cómo se construyó; no lo vuelvas a correr.
+
 **Prerrequisitos:** Hito 1 cerrado (08); conviene tener ya la etapa 09 (miniaturas) para reutilizar la captura.
 **Duración estimada:** 3–5 sesiones. Es la función más exigente en red del proyecto.
 **Marco:** la transmisión es una acción del profesor y visible para el alumno (overlay con aviso de que está viendo la pantalla del profesor). Nada oculto.

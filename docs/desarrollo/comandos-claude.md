@@ -37,9 +37,16 @@ respeta lo que ya existe sin repetir la lista de reglas en cada prompt.
 Además decide, y te lo muestra antes de diseñar:
 - si la función observa o controla al alumno (entonces lleva aviso visible y regla en
   `docs/privacidad.md`);
+- dónde vive en la consola (barra de acciones, ficha, vista «Clase», franja global) y en la app
+  del alumno (tarjeta, aviso, tira, banda), y si actúa sobre el equipo del alumno (`raise`) o solo
+  le avisa sin quitarle el foco (`notify`);
 - si les llega a los alumnos simulados (nunca, si controla o cambia el equipo);
+- qué diagramas actualiza;
 - qué permisos necesita;
 - qué versión sugiere.
+
+Si el pedido es un prompt de `docs/v1/prompts/` (10.4 en adelante, 11 a 16), su sección «Encaje
+con lo implementado» ya trae esas decisiones; el comando las sigue salvo que digas otra cosa.
 
 ### Ejemplos
 
@@ -121,6 +128,19 @@ Cambios de comportamiento (se detiene para que apruebes el diseño):
 /funcionalidad-mejora Energía: que la cuenta regresiva por omisión sea de 2 minutos en vez de 1 tipo: cambio
 /funcionalidad-mejora Restricciones: que se mantengan al cambiar de canal en vez de quitarse tipo: cambio
 /funcionalidad-mejora Aula simulada: permitir hasta 60 alumnos simulados
+```
+
+Mejoras con su prompt ya escrito (el bloque del prompt empieza con el comando):
+
+```
+/funcionalidad-mejora 12.2
+```
+
+Mejoras de la app del alumno (respetan sus reglas: no quitar el foco, bandas que no se cierran):
+
+```
+/funcionalidad-mejora App del alumno: que al llegar código con la ventana minimizada aparezca sin tomar el foco en vez de solo parpadear tipo: cambio para:alumno
+/funcionalidad-mejora App del alumno: que el modo compacto recuerde su posición si el alumno la mueve para:alumno
 ```
 
 ### Qué pasa después

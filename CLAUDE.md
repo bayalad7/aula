@@ -85,16 +85,39 @@ misma LAN.
 - Antes de terminar: `gofmt -l` (sin salida), `go vet ./...`, `staticcheck ./...`, `go test -race ./...`.
 
 ## Definición de terminado (toda función nueva o cambio visible)
-Vale para cualquier prompt, aunque se haya escrito antes de la etapa 18. Lo marcado con (prueba)
-lo exige `go test`; lo demás, la revisión.
+Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. Lo marcado con
+(prueba) lo exige `go test`; lo demás, la revisión. Cada prompt de función trae además su sección
+«Encaje con lo implementado», con dónde va en cada app y qué diagramas toca.
 - **Protocolo:** mensajes nuevos primero en `docs/protocol.md`. Una capacidad implementada
   aparece en la ficha del alumno, «Qué puede hacer su equipo» (prueba). Un código de error nuevo
   lleva texto `errorAlumno.*` y sección del manual en `agentErrorHelp` (prueba).
 - **Consola, dentro de la navegación actual:**
   - Lo que se aplica a alumnos va sobre la selección de Alumnos, con un panel de la barra de
     acciones o en la ficha del alumno. Nada de pantallas a pantalla completa nuevas.
+  - Lo que **responden** los alumnos en vivo (manos y mensajes, encuestas, recolecciones,
+    asistencia y bitácora, temporizador) va en la vista **«Clase»** del menú, una sección por
+    función. La crea la primera función que la necesite, con su página del manual
+    (`pantallas: [clase]`); las siguientes agregan su sección. Se lanza desde la barra de
+    acciones y, si conviene, deja una insignia en la lista de Alumnos.
+  - Lo que sigue activo mientras la clase corre (transmitir, energía pendiente, control remoto,
+    temporizador) tiene su franja global arriba del contenido, con la acción para detenerlo.
   - Solo componentes, tokens e iconos de `sistema/`, sin colores sueltos. Funciona en claro y
     oscuro y a 900×600.
+- **App del alumno (`apps/student`, prompt 19):**
+  - Mismo sistema de diseño (`internal/ui`); textos en `apps/student/frontend/dist/textos.es-MX.js`
+    (prueba). **Go manda estados, no frases**: la ventana arma el texto y su título.
+  - **No quita el foco.** Lo que llega del profesor (código, avisos, encuestas, archivos) usa
+    `notify` y nunca `raise` (prueba): tarjeta en la lista con «Nuevo», aviso en la esquina o
+    insignia en la tira; si la ventana está cerrada, solo se marca el icono del área de
+    notificación. Solo una acción del profesor **sobre el equipo** (energía, restricciones,
+    transmisión, control remoto, pausa) usa `raise`, saca la ventana del modo compacto y lo
+    justifica en su regla de privacidad.
+  - Lo que el **alumno** hace (levantar la mano, mandar un mensaje, votar) son botones de la tira
+    de identidad (también en el modo compacto) o de la tarjeta que llegó, con teclado.
+  - **Transparencia:** lo que observa o controla el equipo agrega su banda a `.bandas`, en el
+    orden fijo de `docs/privacidad.md`, sin botón de cerrar, y entra en las pruebas de bandas de
+    `scripts/ux/pruebas-alumno.mjs`. Todo binding nuevo de la ventana se revisa en
+    `TestNoBindingTurnsOffTransparency` (prueba).
 - **Textos y errores:**
   - Todo texto en `textos.es-MX.js`, sin `innerHTML` (prueba).
   - Cada error de un binding con código en `errores.go`, mensaje «qué pasó + qué hacer» y su
@@ -108,11 +131,15 @@ lo exige `go test`; lo demás, la revisión.
   - Si cambia un flujo, su diagrama en `docs/v1/diagramas/` con front-matter, y sus SVG
     regenerados con `scripts/docs/generar-diagramas` (prueba).
 - **Arnés web:**
-  - Bindings y eventos en `docs/eventos-ui.md` y en `scripts/ux/dobles.js` (prueba).
-  - Una escena y una captura en `scripts/ux/recorrido.mjs`, que pasa sin errores ni violaciones
-    serias (CI).
+  - Bindings y eventos en `docs/eventos-ui.md` y en `scripts/ux/dobles.js` (consola) o
+    `scripts/ux/dobles-alumno.js` (alumno) (prueba).
+  - Una escena y una captura en `scripts/ux/recorrido.mjs` (consola) o
+    `scripts/ux/recorrido-alumno.mjs` (alumno), sin errores ni violaciones serias (CI). Lo que
+    cambie el comportamiento del alumno, también en `scripts/ux/pruebas-alumno.mjs` (CI).
   - Si cambia una pantalla del manual, `node scripts/ux/capturas-manual.mjs`.
-- **Cierre:** casos manuales en `docs/desarrollo/probar-consola-local.md` y `docs/progreso.md`.
+- **Cierre:** casos manuales en `docs/desarrollo/probar-consola-local.md` (C-xx de la consola,
+  A-xx del alumno) y `docs/progreso.md`; lo nativo que el arnés no ve (ventana, icono, SO) queda
+  como caso manual, sin clics sintéticos en el escritorio del usuario.
 
 ## Integración continua (GitHub Actions)
 - Remoto: `origin` = `https://github.com/bayalad7/aula.git`.

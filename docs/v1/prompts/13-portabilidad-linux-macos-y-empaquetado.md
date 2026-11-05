@@ -53,6 +53,27 @@ y anótalo en una tabla de compatibilidad en docs/compatibilidad.md.
 - docs/compatibilidad.md refleja qué función funciona en cada SO.
 
 Actualiza docs/progreso.md y docs/compatibilidad.md.
+
+## Encaje con lo implementado (no lo cambies sin decirlo)
+Aplica la «Definición de terminado» de CLAUDE.md (consola, app del alumno, transparencia, arnés,
+manual y diagramas). Para esta etapa en concreto:
+- Las interfaces de `internal/platform` que hoy solo tienen implementación de Windows son más que
+  las de este prompt:
+  - `ScreenCapture`, `ScreenIndicator` y `Clipboard`;
+  - `Hotkeys`, el servicio (`service_*`) y su canal local (named pipe → socket Unix);
+  - `Power`, las restricciones (`policy_*`: bloqueo de apps, DNS local);
+  - `DisplayCapture`, H.264 y `ExcludeFromCapture`;
+  - `NetworkInspector`, `AppWindow` y `Tray`.
+
+  Recórrelas todas y anota cada una en `docs/compatibilidad.md`.
+- La app del alumno se comporta igual en todos los SO (prompt 19): nunca quita el foco y cerrar
+  no la termina. Sin `Tray`, cerrar minimiza; con `Tray` en Linux (StatusNotifierItem por DBus),
+  se oculta como en Windows. Sin `AppWindow`, el modo compacto usa solo Wails. Pruébalo con
+  `tools/medir-alumno -ventana` cuando su medición exista en ese SO.
+- El arnés web (`scripts/ux`) ya corre en Linux en el CI; las pruebas de plataforma con escritorio
+  (icono, portapapeles) se saltan sin sesión gráfica, como las de Windows.
+- Diagramas: actualizar 02-componentes (implementaciones por SO) y 13-agente-servicio si el
+  servicio se porta.
 ~~~~
 
 ## Verificación manual

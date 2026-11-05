@@ -44,6 +44,19 @@ Espera mi aprobación.
 - `staticcheck ./...` y `go test ./...` pasan.
 
 Actualiza docs/progreso.md y docs/seguridad-sandbox.md.
+
+## Encaje con lo implementado (no lo cambies sin decirlo)
+Aplica la «Definición de terminado» de CLAUDE.md (consola, app del alumno, transparencia, arnés,
+manual y diagramas). Para esta etapa en concreto:
+- Lo recogido llega por 10.10 (`code.collect`, la sección «Recolecciones» de la vista «Clase»):
+  «Ejecutar pruebas» va ahí, y la tabla de resultados por alumno es parte de esa sección, no una
+  pantalla aparte. El ejercicio (código base y pruebas) se arma en el módulo Código.
+- Errores con código (por ejemplo, Docker no disponible: «qué pasó + qué hacer» y su sección del
+  manual). Mientras corre un lote, una franja global con el avance y «Detener».
+- Alumno: nada nuevo, salvo que se decida devolverle sus resultados (sería otra función).
+- Simulados: su código recogido sí se puede ejecutar (sirve para probar el sandbox sin
+  laboratorio), marcado como simulado.
+- Diagramas: uno nuevo «Ejecutar entregas en el sandbox» y actualizar 07-acuses-recoleccion.
 ~~~~
 
 ## Verificación manual

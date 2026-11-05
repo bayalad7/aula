@@ -35,6 +35,31 @@ luego arreglamos por prioridad.
 - Informe en docs/auditoria-<fecha>.md con hallazgos clasificados: crítico / importante / menor.
 - Por hallazgo: archivo, línea, por qué importa y arreglo propuesto.
 - Al final, una lista priorizada. Espera mi visto bueno antes de corregir.
+
+## Encaje con lo implementado (no lo cambies sin decirlo)
+Aplica la «Definición de terminado» de CLAUDE.md (consola, app del alumno, transparencia, arnés,
+manual y diagramas). Para esta etapa en concreto:
+- **Arquitectura:** la lista de paquetes sin llamadas al SO es la de la «regla de oro» de
+  CLAUDE.md (hoy también `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `simclass`,
+  `manual`, `connectcheck` y `ui`), no la de este prompt.
+- **Transparencia, con las pruebas que ya existen:**
+  - `scripts/ux/pruebas-alumno.mjs`: cada banda aparece, no se cierra ni con Esc, y se va sola;
+  - `TestNoBindingTurnsOffTransparency`;
+  - la salvaguarda de capacidades de los simulados.
+
+  Revisa además que cada `raise` del alumno sea una acción del profesor sobre el equipo y que
+  todo lo demás use `notify`, y que el distintivo nativo y las bandas digan lo mismo que
+  `docs/privacidad.md`, regla por regla.
+- **Definición de terminado:** por cada función entregada desde la última auditoría:
+  - su sección del manual y sus diagramas al día (`go test ./docs`, SVG regenerados);
+  - sus escenas en el arnés de cada app;
+  - sus casos C-xx/A-xx;
+  - sus errores con código y texto.
+- **UX en verde:** `recorrido.mjs`, `teclado.mjs`, `usuario-nuevo.mjs`, `recorrido-alumno.mjs` y
+  `pruebas-alumno.mjs` sin errores de JS ni violaciones serias; las pruebas de textos de las dos
+  apps.
+- **Recursos del alumno:** `go run ./tools/medir-alumno` (CPU y RAM frente a
+  `docs/v1/ux/alumno/RESULTADOS.md`) y `-ventana` (sin quitar el foco).
 ~~~~
 
 ## Nota

@@ -1,6 +1,10 @@
 # Progreso
 
-Última actualización: 2026-10-29 (etapa 18: análisis de UX y sistema de diseño de la consola).
+Última actualización: 2026-11-05 (etapa 19 cerrada; prompts y comandos al día con las etapas
+18 y 19).
+
+La columna «Etapa» es el número del prompt en `docs/v1/prompts/`. Entre paréntesis, el número con
+el que se trabajó antes; las notas de abajo lo conservan.
 
 | Etapa | Descripción | Estado |
 |---|---|---|
@@ -12,16 +16,40 @@
 | 07 | App profesor: lista, hotkey de captura, emisión | ✅ Completada (falta prueba en VMs) |
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ✅ **Hito 1 completado** (falta validación en laboratorio) |
 | 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
-| 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 En curso (miniaturas; pantalla en blanco documentada y pendiente) |
-| 09.2 | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
-| 09.3 | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
+| 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 Miniaturas hechas. La pantalla en blanco está documentada (protocolo §5.9, reglas 9-10) y diseñada (prototipo `alumno-pausa.html`); falta implementarla |
+| 10 | Plantilla reutilizable para nuevas funciones | ✅ Completada (al día con las etapas 18 y 19) |
+| 10.1 (09.3) | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
 | 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado; apagado con cuenta y posponer probado en el laboratorio (faltan los demás casos de `docs/prueba-vms.md` §15) |
-| 10 | Plantilla reutilizable para nuevas funciones | ✅ Completada |
-| 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
+| 10.4 | Control remoto del alumno | ⏳ Pendiente (banda diseñada: `alumno-control.html`) |
+| 10.5 | Captura de pantalla de un alumno | ⏳ Pendiente |
+| 10.6 | Mensajería del alumno y «levantar la mano» | ⏳ Pendiente (crea la vista «Clase» si es la primera) |
+| 10.7 | Mensaje directo a un alumno | ⏳ Pendiente (casi todo existe: el aviso a una selección; quizá es una mejora) |
+| 10.8 | Temporizador compartido | ⏳ Pendiente |
+| 10.9 | Enviar archivos y plantillas de ejercicio | ⏳ Pendiente |
+| 10.10 | Recoger código y archivos | ⏳ Pendiente |
+| 10.11 | Enviar una URL o abrir una app | ⏳ Pendiente |
+| 10.12 | Encuestas en vivo | ⏳ Pendiente |
+| 10.13 | Asistencia y bitácora | ⏳ Pendiente |
+| 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.4.0-rc.1`) |
+| 12 (09.2) | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
+| 12.1 | Proyectar la pantalla de un alumno a la clase | ⏳ Pendiente |
+| 12.2 | Mejora de la transmisión: a una selección; modos ventana y pantalla completa | ⏳ Pendiente (`/funcionalidad-mejora 12.2`) |
+| 13 | Portabilidad Linux/macOS y empaquetado | ⏳ Pendiente |
+| 14 | Sandbox para ejecutar entregas | ⏳ Pendiente (después de 10.10) |
+| 15 | Flota: despliegue, auto-actualización y diagnóstico | 🚧 El diagnóstico está casi todo hecho (`aula-cliente diagnostico`, comprobador de conexión, ficha del alumno); faltan la auto-actualización, la guía de despliegue y marcar a los desactualizados |
+| 16 | Comercialización y licenciamiento | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 16 diagramas, con el 10 del aula simulada |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 de `docs\desarrollo\probar-consola-local.md` en la ventana real. Release sugerido: `v0.4.0-rc.1` |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
 | 19 | Pulido de la app del alumno: UX/UI, transparencia y no intrusión | ✅ Cerrada el 05/11/2026 (`docs/v1/ux/alumno/RESULTADOS.md`). Falta de tu lado: los casos A-01 a A-08 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
+| 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
+
+**Siguiente:**
+1. Probar en la ventana real los casos C-01 a C-43 y A-01 a A-08.
+2. La revisión 11.
+3. Publicar `v0.4.0-rc.1` (etapas 18 y 19: funciones nuevas compatibles, sin cambios de
+   protocolo ni de configuración).
+4. Cualquier función de 10.4 a 10.13 con `/funcionalidad-nueva <número>`.
 
 ## Etapa 02: notas
 
@@ -1061,3 +1089,32 @@ Cifras: CPU 0,0–0,1 % de un núcleo; RAM 187–191 MB (+9 MB, casi toda de Web
 14,30 → 14,56 MB.
 
 Pendiente de tu lado: los casos A-01 a A-08 en la ventana real (icono, modo compacto, parpadeo).
+
+## Prompts y comandos al día con las etapas 18 y 19 (05/11/2026)
+
+Para que cada función pendiente respete lo implementado:
+- **`CLAUDE.md`, «Definición de terminado»:**
+  - reglas de la app del alumno: sistema de diseño, textos, `notify` frente a `raise`, bandas
+    que no se cierran, arnés del alumno;
+  - la vista «Clase» de la consola para lo que responden los alumnos, y las franjas globales
+    para lo que sigue activo;
+  - los casos A-xx.
+- **`.claude/commands/funcionalidad-nueva.md` y `funcionalidad-mejora.md`:** la ficha pregunta
+  dónde vive en cada app y si actúa sobre el equipo; leen el «Encaje» del prompt; prueban con el
+  arnés del alumno. La plantilla 10 se actualizó igual.
+- **Prompts 10.4 a 10.13, 11, 12.1 y 13 a 16:** cada uno trae «Encaje con lo implementado»
+  dentro del bloque del prompt: dónde va en consola y alumno, qué componentes, qué diagramas
+  actualiza, simulados y privacidad.
+- **Correcciones:**
+  - prerrequisitos de 10.4 (el servicio es 10.1);
+  - el troceo de 10.9 (es el de 10.10);
+  - el título del 12.1;
+  - el estado del 15 (el diagnóstico ya está casi todo).
+- **12** marcado como hecho; su punto 5 pendiente pasa a **`12.2-transmision-seleccion-y-modos.md`**,
+  una mejora (`/funcionalidad-mejora 12.2`).
+- Decisiones (05/11/2026):
+  - una vista «Clase» nueva en el menú;
+  - en el alumno, acciones en la tira y tarjetas en la lista;
+  - el 12 como mejora;
+  - una base común más el encaje por prompt.
+

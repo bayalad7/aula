@@ -65,6 +65,17 @@ Diseña para el modelo aprobado; estas reglas aplican a casi todos:
 - `staticcheck ./...` y `go test ./...` pasan.
 
 Actualiza docs/progreso.md y docs/comercializacion.md.
+
+## Encaje con lo implementado (no lo cambies sin decirlo)
+Aplica la «Definición de terminado» de CLAUDE.md (consola, app del alumno, transparencia, arnés,
+manual y diagramas). Para esta etapa en concreto:
+- La licencia vive solo en la consola: pestaña «Licencia» en Ajustes (el modal de Ajustes, no
+  una pantalla nueva). «Por expirar» o «expirada» van como franja global (`franja--advertencia`),
+  sin cortar la clase en curso. La app del alumno no cambia.
+- Errores con código (licencia inválida, expirada…) con «qué pasó + qué hacer» y su sección del
+  manual (página de Ajustes).
+- El periodo de prueba no limita el aula simulada: es la forma de evaluar Aula sin laboratorio.
+- Diagramas: actualizar 11-modelo-datos (dónde se guarda el token).
 ~~~~
 
 ## Verificación manual

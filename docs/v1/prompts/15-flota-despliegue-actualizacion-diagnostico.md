@@ -1,5 +1,9 @@
 # 15 · Despliegue en flota, auto-actualización y diagnóstico
 
+> **Estado:** el diagnóstico ya está casi todo hecho (ver «Encaje con lo
+> implementado», al final del prompt). Faltan la auto-actualización, la guía de despliegue
+> masivo y marcar a los equipos desactualizados.
+
 **Prerrequisitos:** Hito 1 cerrado (08). Mejor aún tras portar a los SO del laboratorio (13).
 **Duración estimada:** 2–4 sesiones.
 **Por qué su propio prompt:** es lo que más pesa al operar 40 equipos y es transversal (no es "una función"). Bien resuelto, te ahorra horas cada semestre.
@@ -56,6 +60,27 @@ Espera mi aprobación.
 - `staticcheck ./...` y `go test ./...` pasan.
 
 Actualiza docs/progreso.md, docs/despliegue.md y docs/protocol.md si agregas mensajes.
+
+## Encaje con lo implementado (no lo cambies sin decirlo)
+Aplica la «Definición de terminado» de CLAUDE.md (consola, app del alumno, transparencia, arnés,
+manual y diagramas). Para esta etapa en concreto:
+- **Ya existe, no lo rehagas:**
+  - el diagnóstico del agente (`aula-cliente diagnostico`, etapa 08);
+  - el comprobador de conexión de la consola (`internal/connectcheck`, en «¿Falta un alumno?»,
+    con las mismas causas que el agente, `session.Cause`);
+  - la ficha del alumno (versión, sistema, capacidades, último error);
+  - el diagrama 12 y el asistente «¿Falta un alumno?»;
+  - la configuración por archivo del instalador (`docs/configuracion.md`);
+  - el workflow de release con `checksums.txt` firmado y `empaquetado/llave-releases.pub`.
+
+  El Bloque 3 queda en lo que falta: marcar en Alumnos (insignia y filtro) a los equipos
+  desactualizados, y la latencia del heartbeat en la ficha.
+- **Auto-actualización:** reiniciar el agente es una acción sobre el equipo del alumno. Lleva un
+  aviso previo en su ventana y su regla de privacidad; nunca a media clase sin avisar, y nunca a
+  los simulados. En la consola, la flota se ve en la ficha y en una franja global «3 equipos
+  desactualizados · Ver».
+- Diagramas: actualizar 12-diagnostico-conexion si cambia el diagnóstico, y uno nuevo
+  «Actualización firmada» (descargar, verificar firma y sha256, aplicar o rechazar).
 ~~~~
 
 ## Verificación manual

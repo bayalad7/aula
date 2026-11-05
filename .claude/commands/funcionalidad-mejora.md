@@ -12,7 +12,10 @@ Lo que pidió el usuario: **$ARGUMENTS**
 
 ## 0. Entiende el pedido
 
-Lee `CLAUDE.md` (sobre todo «Definición de terminado») y `docs/progreso.md`.
+Lee `CLAUDE.md` (sobre todo «Definición de terminado») y `docs/progreso.md`. Si el pedido
+nombra un prompt de `docs/v1/prompts/` («12.2») o su ruta, léelo: es la especificación (hoy,
+deseado, diseño y pruebas), con su «Encaje con lo implementado» si lo trae. Lo que diga el
+usuario en este comando manda sobre el prompt.
 
 Arma esta ficha con lo que dice el pedido y lo que deduces del código. **Pregunta solo lo que no
 puedas deducir y cambie lo que harás**, en una sola tanda (AskUserQuestion, máximo 4 preguntas,
@@ -25,6 +28,7 @@ con tu recomendación primero):
 | **Deseado** | Cómo debe comportarse | Obligatorio: pregunta si falta |
 | **Tipo** | `corrección` (no hace lo que debía), `mejora` (UX, textos, rendimiento sin cambiar qué hace) o `cambio` (hace otra cosa) | Dedúcelo |
 | **Para quién** | `profesor`, `alumno` o `ambos` | Dedúcelo de dónde vive la función |
+| **¿Cambia lo que ve o recibe el alumno?** | Texto, aviso, banda, foco, ventana | Dedúcelo; si sí, revisa las reglas de la app del alumno en «Definición de terminado» |
 | **Cómo reproducirlo** | Pasos, captura o mensaje de error (en una corrección) | Pide los pasos si no puedes reproducirlo |
 | **Alcance** | ¿Toca el protocolo, la configuración guardada, la privacidad o lo que ve el alumno? | Dedúcelo |
 | **Versión** | `corrección` sin cambio externo → `z`; mejora o cambio compatible → `y`; rompe el protocolo o la configuración → `x` | Dedúcelo y dilo |
@@ -39,8 +43,13 @@ Antes de cambiar nada, haz el inventario:
 - el manual (`docs/v1/administracion/`, busca la función y sus capturas);
 - los diagramas (`docs/v1/diagramas/`, sus `pantallas` y «Fuentes en el código»);
 - `docs/protocol.md`, `docs/eventos-ui.md` y `docs/privacidad.md`;
-- el arnés (`scripts/ux/dobles.js`, `recorrido.mjs`);
-- los casos de `docs/desarrollo/probar-consola-local.md`.
+- el arnés de la consola (`scripts/ux/dobles.js`, `recorrido.mjs`) y el del alumno
+  (`dobles-alumno.js`, `recorrido-alumno.mjs`, `pruebas-alumno.mjs`);
+- la app del alumno (`apps/student`, su `textos.es-MX.js`, `window.go` si toca la ventana) y el
+  ayudante del servicio (`internal/agentsvc`) si la función pasa por él;
+- el prompt de la función en `docs/v1/prompts/` (su «Encaje con lo implementado») y su nota de
+  entrega en `docs/v1/ux/`;
+- los casos de `docs/desarrollo/probar-consola-local.md` (C-xx y A-xx).
 
 Lo que diga algo distinto después del cambio también se actualiza.
 
@@ -66,16 +75,19 @@ Una `corrección` o una `mejora` pequeña y local no necesita esta pausa: dilo y
 - Cambios pequeños y solo en lo necesario; no refactorices lo que no pide la tarea.
 - Las reglas de siempre:
   - regla de oro (nada de APIs del SO fuera de `platform`);
-  - textos en `textos.es-MX.js`, sin `innerHTML`;
+  - textos en `textos.es-MX.js` (de cada app), sin `innerHTML`; en el alumno, Go manda estados;
   - errores con código;
-  - los alumnos simulados nunca reciben lo que controla un equipo.
+  - los alumnos simulados nunca reciben lo que controla un equipo;
+  - en el alumno, lo que llega no quita el foco (`notify`), y una banda de transparencia nunca
+    se puede cerrar.
 
 ## 4. Pruebas y cierre
 
 - Recorre la «Definición de terminado» de `CLAUDE.md` en lo que el cambio toque, y actualiza
   todo lo del inventario del paso 1 que haya quedado distinto.
-- `node scripts/ux/recorrido.mjs` sin errores de JS ni violaciones serias. Si cambió una pantalla
-  del manual, `node scripts/ux/capturas-manual.mjs`.
+- `node scripts/ux/recorrido.mjs` sin errores de JS ni violaciones serias; si tocó al alumno,
+  también `recorrido-alumno.mjs` y `pruebas-alumno.mjs`. Si cambió una pantalla del manual,
+  `node scripts/ux/capturas-manual.mjs`; si cambió un diagrama, `scripts/docs/generar-diagramas`.
 - Ajusta o agrega los casos manuales de `docs/desarrollo/probar-consola-local.md`.
 - `gofmt -l .` sin salida, `go vet ./...`,
   `go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...` y `go test -race ./...`.

@@ -309,7 +309,13 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `code.collect` | `code.collect` | Reservada |
 | `power` | `power.action`, `power.cancel` | v0.5 (§5.15). Windows, en modo ventana y como servicio (también sin sesión iniciada). Linux y macOS no la declaran. |
 | `remote` | `remote.start`, `remote.input`, `remote.stop` | v0.6 (§5.16). Windows, en modo ventana y como servicio con su ayudante (la entrada se inyecta en la sesión del alumno). Linux y macOS no la declaran. |
+| `hand` | `hand.raise`, `hand.lower` | v0.8 (§5.18). Todos los SO: no toca el sistema, solo la ventana del alumno. Se declara cuando hay ventana (en modo servicio, con el ayudante en la sesión del alumno); también los alumnos simulados. |
+| `msg.student` | `msg.student`, `msg.student.ack` | v0.8 (§5.18). Igual que `hand`. |
 | `poll` | `poll.*` | Reservada |
+
+Las dos últimas habilitan mensajes que **inicia el agente**: la consola acepta `hand.*` y
+`msg.student` solo de un agente que declaró la capacidad (si no, responde `error`
+`unsupported_capability`), y solo le envía `hand.lower` y `msg.student.ack` a ese agente.
 
 Las capacidades desconocidas en `hello` se ignoran (un agente más nuevo puede declarar cosas
 que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 caracteres.
@@ -329,7 +335,7 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `code.share` | P → A | `code.view` | `snippet_id`, `exercise`?, `title`, `lang`, `content`, `mode` | `code.ack` o `error` |
 | `code.ack` | A → P | — | `ref_id`, `snippet_id` | — |
 | `code.clear` | P → A | `code.view` | `{}` | `code.ack` o `error` |
-| `msg.show` | P → A | `msg.show` | `text`, `level` | `msg.ack` o `error` |
+| `msg.show` | P → A | `msg.show` | `text`, `level`, `reply_to`? | `msg.ack` o `error` |
 | `msg.ack` | A → P | — | `ref_id` | — |
 | `screen.thumb.start` | P → A | `screen.thumb` | `interval_ms`, `quality`, `max_width` | `screen.thumb.frame` periódicos o `error` |
 | `screen.thumb.frame` | A → P | — | `ref_id`, `seq`, `width`, `height`, `jpeg` | — |
@@ -354,6 +360,10 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `remote.ack` | A → P | — | `ref_id`, `control_id`, `status`, `reason`? | — |
 | `screen.snapshot.request` | P → A | `screen.snapshot` | `snapshot_id`, `quality`, `max_width` | `screen.snapshot.response` (1 a 32 partes) o `error` |
 | `screen.snapshot.response` | A → P | — | `ref_id`, `snapshot_id`, `part`, `parts`, `data`; la parte 1 además `taken_at`, `hostname`, `username`, `width`, `height`, `size`, `sha256` | — |
+| `hand.raise` | A → P | `hand` | `hand_id`, `note`? | — (solo `error`) |
+| `hand.lower` | A ↔ P | `hand` | `hand_id`, `by` | — |
+| `msg.student` | A → P | `msg.student` | `message_id`, `text` | `msg.student.ack` o `error` |
+| `msg.student.ack` | P → A | `msg.student` | `ref_id`, `message_id` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -402,6 +412,7 @@ Payload `{}`. El agente vacía el overlay de código y responde `code.ack`.
 |---|---|---|
 | `text` | string | 1–2000 caracteres, texto plano (el agente no interpreta HTML ni Markdown). |
 | `level` | string | `info` o `warning`. |
+| `reply_to` | string | Opcional (v0.8, §5.18). `message_id` del `msg.student` al que responde. La consola solo lo pone en un aviso a **un** alumno, el autor de ese mensaje. El agente muestra el aviso como «Respuesta a tu mensaje» con la cita de lo que escribió; si no conoce ese `message_id`, lo muestra como un aviso normal. Un agente anterior lo ignora. |
 
 ### 5.5 `msg.ack` (A → P)
 
@@ -987,6 +998,98 @@ Reglas de la consola:
 | Linux (pendiente) | X11: `XGetImage` del root window. | Sin permiso en X11. En **Wayland** un cliente no puede capturar la pantalla: haría falta el portal `org.freedesktop.portal.Screenshot`, que pide la aprobación del alumno en cada captura o sesión. No se declara. |
 | macOS (pendiente) | `CGDisplayCreateImage` / ScreenCaptureKit. | Permiso de **Grabación de pantalla** (TCC), que concede el usuario o un perfil MDM. No se declara. |
 
+### 5.18 Manos y mensajes del alumno (`hand.*`, `msg.student*`)
+
+> Aprobado el 2026-11-05 (prompt 10.6), para v0.8. Implementación en `internal/participation`;
+> reglas en `docs/privacidad.md` 50–52. En la consola, la vista «Participación».
+
+El canal de regreso de `msg.show`: el alumno **levanta la mano** (con un motivo breve opcional,
+«pedir ayuda») o **escribe un mensaje corto** al profesor. La consola los ordena por llegada; el
+profesor baja la mano o responde con `msg.show` y `reply_to` (§5.4) a ese alumno. Lo inicia
+siempre el alumno; nada de esto toca su equipo.
+
+```
+Agente (A)                                         Consola (P)
+   |-- hand.raise (hand_id, note?) ----------------->|  cola de manos: posición por llegada
+   |-- msg.student (message_id, text) -------------->|  bandeja: «nuevo»
+   |<-- msg.student.ack (message_id) ----------------|
+   |<-- msg.show (text, reply_to = message_id) ------|  «Responder»
+   |-- msg.ack ------------------------------------->|
+   |<-- hand.lower (hand_id, by = teacher) ----------|  «Bajar la mano»
+   |-- hand.lower (hand_id, by = student) ---------->|  o la baja el alumno
+```
+
+**`hand.raise` (A → P)**
+
+```json
+{ "hand_id": "3f1c…", "note": "No me compila el for" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `hand_id` | string | UUID v4 del agente. Uno nuevo cada vez que el alumno levanta la mano. |
+| `note` | string | Opcional: 0–140 caracteres, texto plano. Es el «pedir ayuda» con un motivo. |
+
+**`hand.lower` (A ↔ P)**
+
+```json
+{ "hand_id": "3f1c…", "by": "teacher" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `hand_id` | string | El de la mano levantada. Si no es la mano vigente, se ignora sin error. |
+| `by` | string | `student` (A → P) o `teacher` (P → A). Otro valor, o el que no corresponde al sentido → `error` `invalid_message`. |
+
+**`msg.student` (A → P)**
+
+```json
+{ "message_id": "8a2e…", "text": "¿El ejercicio 3 es para hoy?" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `message_id` | string | UUID v4 del agente; identifica el mensaje en el acuse y en `reply_to`. |
+| `text` | string | 1–500 caracteres, texto plano (nadie interpreta HTML ni Markdown). |
+
+**`msg.student.ack` (P → A)**
+
+```json
+{ "ref_id": "<id del msg.student>", "message_id": "8a2e…" }
+```
+
+Confirma que el mensaje **llegó a la consola**; no que el profesor lo leyó.
+
+Reglas del agente:
+
+- Una sola mano a la vez. Mientras está levantada, el botón la baja (`hand.lower` `student`).
+- Si se pierde la conexión, la mano sigue levantada en su ventana: al reconectar reenvía
+  `hand.raise` con el **mismo** `hand_id` y los `msg.student` que no tuvieron acuse, con su mismo
+  `message_id`. Como máximo **5** mensajes esperan acuse; la ventana no deja escribir otro.
+- Ritmo: como máximo un `msg.student` cada **3 s** y un `hand.*` por segundo (salvo los
+  reenvíos al reconectar).
+- `hand.lower` `teacher` con la mano vigente la baja y la ventana lo dice, sin quitar el foco.
+- Si la consola responde `unknown_type` (una consola anterior), la ventana dice que esa consola
+  no recibe manos ni mensajes y baja la mano.
+
+Reglas de la consola:
+
+- **Una mano por alumno**, identificado como en el resto de la consola (equipo y usuario). La
+  cola se ordena por la llegada del primer `hand.raise`; un `hand.raise` repetido (mismo alumno,
+  mano vigente) **conserva el lugar** y actualiza `note`. Si el alumno se desconecta, su mano
+  se queda en la cola, marcada.
+- Recuerda el último `hand_id` que bajó el profesor por alumno: si llega un `hand.raise` con ese
+  `hand_id` (el agente lo reenvió al reconectar sin saber que se bajó), responde `hand.lower`
+  `teacher` y no lo pone en la cola.
+- Deduplica `msg.student` por `message_id`: un reenvío se vuelve a acusar sin duplicarse.
+- **Ritmo por agente:** ráfaga de 5 `msg.student` y uno cada 3 s después; ráfaga de 3 `hand.*` y
+  uno por segundo después. Lo que excede se descarta y se responde `error` `invalid_message`
+  («demasiado seguido»), sin acuse.
+- Guarda como máximo **20** mensajes por alumno: al pasar, descarta primero el respondido más
+  viejo y, si no hay, el más viejo.
+- Todo vive **en memoria**: se descarta al cerrar la clase o cambiar de canal
+  (`docs/privacidad.md` reglas 50–52).
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -1011,6 +1114,10 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `code.share.title` | 200 caracteres | `error` `invalid_message` |
 | `code.share.exercise` | 16 caracteres | `error` `invalid_message` |
 | `msg.show.text` | 2000 caracteres | `error` `invalid_message` |
+| `msg.student.text` | 1–500 caracteres | `error` `invalid_message` |
+| `hand.raise.note` | 140 caracteres | `error` `invalid_message` |
+| `msg.student` / `hand.*` por agente | ráfaga 5 y 1 cada 3 s / ráfaga 3 y 1 por s | `error` `invalid_message`; se descarta |
+| Mensajes guardados por alumno en la consola | 20 | Se descarta el respondido más viejo |
 | `screen.thumb.start.interval_ms` | 500–10 000 ms (≤ 2 cuadros/s) | `error` `invalid_message` |
 | `screen.thumb.frame.jpeg` | 640 KiB antes de Base64 | `error` `message_too_large`; la sesión sigue. |
 | `screen.snapshot.request.quality` / `max_width` | 50–95 / 0 o 640–7680 | `error` `invalid_message` |
@@ -1060,6 +1167,8 @@ emisor verifica el tamaño final de la envoltura.
   causó una pausa (el agente solo sabe *que* la hubo).
 - De `screen.snapshot.*` se registran `snapshot_id`, `part`/`parts`, tamaños, dimensiones y el
   resultado. **Nunca** `data`, ni la ruta donde la consola guardó la imagen.
+- De `hand.*` y `msg.student*` se registran `hand_id`, `message_id`, `by`, la longitud y el
+  equipo. **Nunca** `text` ni `note`, ni el `text` de la respuesta (`msg.show`).
 - `hello` revela al profesor el usuario y el equipo del alumno. Es intencional (monitoreo
   transparente) y se explica en `docs/privacidad.md`.
 

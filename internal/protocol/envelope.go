@@ -60,6 +60,11 @@ const (
 	// Still screenshot of one student (docs/protocol.md §5.17).
 	TypeScreenSnapshotRequest  Type = "screen.snapshot.request"
 	TypeScreenSnapshotResponse Type = "screen.snapshot.response"
+	// Hands and messages from the student (docs/protocol.md §5.18).
+	TypeHandRaise     Type = "hand.raise"
+	TypeHandLower     Type = "hand.lower"
+	TypeMsgStudent    Type = "msg.student"
+	TypeMsgStudentAck Type = "msg.student.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -258,6 +263,11 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 
 	TypeScreenSnapshotRequest:  decodeAs[ScreenSnapshotRequest],
 	TypeScreenSnapshotResponse: decodeAs[ScreenSnapshotResponse],
+
+	TypeHandRaise:     decodeAs[HandRaise],
+	TypeHandLower:     decodeAs[HandLower],
+	TypeMsgStudent:    decodeAs[MsgStudent],
+	TypeMsgStudentAck: decodeAs[MsgStudentAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

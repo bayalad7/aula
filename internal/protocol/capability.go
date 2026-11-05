@@ -22,6 +22,10 @@ const (
 	// CapScreenSnapshot sends one still image of the screen (§5.17). Windows,
 	// with the same capture and indicator as screen.thumb.
 	CapScreenSnapshot Capability = "screen.snapshot"
+	// CapHand and CapMsgStudent let the student raise a hand and write to the
+	// teacher (§5.18). Every OS, whenever the agent has a window.
+	CapHand       Capability = "hand"
+	CapMsgStudent Capability = "msg.student"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -60,6 +64,24 @@ var requiredCapability = map[Type]Capability{
 	TypeRemoteStop:  CapRemote,
 
 	TypeScreenSnapshotRequest: CapScreenSnapshot,
+
+	TypeHandLower:     CapHand, // only when sent P → A
+	TypeMsgStudentAck: CapMsgStudent,
+}
+
+// agentCapability lists the capability an agent must have declared before the
+// console accepts a message it starts (docs/protocol.md §4).
+var agentCapability = map[Type]Capability{
+	TypeHandRaise:  CapHand,
+	TypeHandLower:  CapHand,
+	TypeMsgStudent: CapMsgStudent,
+}
+
+// AgentCapability reports the capability an agent must have declared for the
+// console to accept a message of type t that the agent starts, if any.
+func AgentCapability(t Type) (Capability, bool) {
+	c, ok := agentCapability[t]
+	return c, ok
 }
 
 // RequiredCapability reports the capability needed to receive a message of

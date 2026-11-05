@@ -78,6 +78,13 @@ func samplePayloads() []Payload {
 			TakenAt: 1792771200300, Hostname: "LAB3-PC07", Username: "alumno07", Width: 1920, Height: 1080, Size: 4,
 			SHA256: strings.Repeat("ab", 32)},
 		ScreenSnapshotResponse{RefID: testSnippetID, SnapshotID: testRefID, Part: 2, Parts: 3, Data: []byte{1, 2, 3}},
+		HandRaise{HandID: testRefID},
+		HandRaise{HandID: testRefID, Note: "No me compila el for"},
+		HandLower{HandID: testRefID, By: HandByStudent},
+		HandLower{HandID: testRefID, By: HandByTeacher},
+		MsgStudent{MessageID: testRefID, Text: "¿El ejercicio 3 es para hoy?"},
+		MsgStudentAck{RefID: testSnippetID, MessageID: testRefID},
+		MsgShow{Text: "Sí, antes de las 12.", Level: LevelInfo, ReplyTo: testRefID},
 	}
 }
 
@@ -375,6 +382,7 @@ func TestRequiredCapability(t *testing.T) {
 		TypePowerAction: CapPower, TypePowerCancel: CapPower,
 		TypeRemoteStart: CapRemote, TypeRemoteInput: CapRemote, TypeRemoteStop: CapRemote,
 		TypeScreenSnapshotRequest: CapScreenSnapshot,
+		TypeHandLower:             CapHand, TypeMsgStudentAck: CapMsgStudent,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
@@ -384,6 +392,14 @@ func TestRequiredCapability(t *testing.T) {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}
+	}
+	for typ, want := range map[Type]Capability{TypeHandRaise: CapHand, TypeHandLower: CapHand, TypeMsgStudent: CapMsgStudent} {
+		if c, ok := AgentCapability(typ); !ok || c != want {
+			t.Errorf("agent-started %s requires %q, %v; want %q", typ, c, ok, want)
+		}
+	}
+	if _, ok := AgentCapability(TypeCodeAck); ok {
+		t.Error("code.ack answers the console and must not require an agent capability")
 	}
 	if _, ok := RequiredCapability(TypeHeartbeat); ok {
 		t.Fatal("heartbeat must not require a capability")
@@ -529,5 +545,30 @@ func TestRemoteValidation(t *testing.T) {
 		if !ValidKeyCode(c) {
 			t.Fatalf("%s must be valid", c)
 		}
+	}
+}
+
+func TestHandAndStudentMessageLimits(t *testing.T) {
+	for _, p := range []Payload{
+		HandRaise{HandID: "nope"},
+		HandRaise{HandID: testRefID, Note: strings.Repeat("a", MaxHandNote+1)},
+		HandLower{HandID: testRefID, By: "nobody"},
+		HandLower{HandID: "", By: HandByStudent},
+		MsgStudent{MessageID: testRefID, Text: ""},
+		MsgStudent{MessageID: testRefID, Text: strings.Repeat("ñ", MaxStudentMsgText+1)},
+		MsgStudent{MessageID: "x", Text: "hola"},
+		MsgStudentAck{RefID: testRefID, MessageID: "x"},
+		MsgShow{Text: "hola", Level: LevelInfo, ReplyTo: "x"},
+	} {
+		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
+		}
+	}
+	if err := (MsgStudent{MessageID: testRefID, Text: strings.Repeat("ñ", MaxStudentMsgText)}).Validate(); err != nil {
+		t.Errorf("500 characters rejected: %v", err)
+	}
+	low := HandLower{HandID: testRefID, By: HandByTeacher}
+	if low.ValidFrom(HandByTeacher) != nil || !errors.Is(low.ValidFrom(HandByStudent), ErrInvalidMessage) {
+		t.Error("ValidFrom does not check the direction")
 	}
 }

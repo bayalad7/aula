@@ -278,6 +278,9 @@ const (
 type MsgShow struct {
 	Text  string   `json:"text"`
 	Level MsgLevel `json:"level"`
+	// ReplyTo is the message_id of the msg.student this notice answers
+	// (§5.18). Only in a notice to that message's author.
+	ReplyTo string `json:"reply_to,omitempty"`
 }
 
 // MessageType implements Payload.
@@ -292,6 +295,9 @@ func (p MsgShow) Validate() error {
 	case LevelInfo, LevelWarning:
 	default:
 		return invalid(TypeMsgShow, "level must be info or warning")
+	}
+	if p.ReplyTo != "" && !isUUIDv4(p.ReplyTo) {
+		return invalid(TypeMsgShow, "reply_to is not a UUID v4")
 	}
 	return nil
 }

@@ -10,7 +10,7 @@
 Lee CLAUDE.md, docs/protocol.md, docs/privacidad.md, docs/progreso.md y TODO el código de la app
 del alumno (apps/student: frontend embebido, bindings Go) y los paquetes que consume
 (internal/transport, internal/session, internal/codedist y, si existen, internal/broadcast y los
-de monitoreo/control de Fase 2/3). Revisa el sistema de diseño de la etapa 17 si ya existe.
+de monitoreo/control). Revisa el sistema de diseño de la etapa 18 si ya existe.
 
 # Objetivo
 Pulir la interfaz de la app del alumno para los primeros usuarios reales, sin agregar funciones de
@@ -22,20 +22,19 @@ aula nuevas. Tres metas:
    recursos en equipos modestos.
 
 # Para quién diseñamos
-El alumno: puede no ser muy técnico, a veces usa solo teclado, y está concentrado programando.
-La app no debe distraerlo salvo cuando el profesor realmente le envía algo.
+El alumno: puede no ser muy técnico, a veces usa solo teclado y mouse, y está concentrado programando.
+La app no debe distraerlo salvo cuando el profesor realmente le envía, transmite, bloquea, etc. algo.
 Meta medible: cuando el profesor emite código, el alumno lo ve y lo copia intacto en menos de 5
 segundos, sin perder lo que estaba escribiendo en su editor.
 
 # Restricciones (no las rompas)
 - Arquitectura Wails: frontend embebido con go:embed, sin CDNs externos, funcionando sin internet.
-- Reutiliza el sistema de diseño de la etapa 17 (tokens, componentes, modo oscuro). Si no existe
+- Reutiliza el sistema de diseño de la etapa 18 (tokens, componentes, modo oscuro). Si no existe
   aún, define aquí los tokens compartidos en un lugar que la consola pueda reutilizar después; no
   dupliques estilos entre las dos apps.
 - No cambies el protocolo ni el modelo de seguridad. Esta etapa es de interfaz.
 - Transparencia (no negociable): todo indicador de que el profesor observa o controla el equipo es
-  SIEMPRE visible y NO se puede ocultar ni desactivar desde la app del alumno. Nada de ejecución
-  oculta.
+  SIEMPRE visible y NO se puede ocultar ni desactivar desde la app del alumno.
 - Español de México, claro y sin jerga. Textos externalizados en un solo archivo para i18n futura.
 - Huella mínima: mide y reporta CPU y RAM en reposo y mientras recibe; apunta a que sea ligera en
   equipos modestos.
@@ -59,7 +58,7 @@ segundos, sin perder lo que estaba escribiendo en su editor.
    reconectando) son claros?
 5. Punto clave a evaluar: ¿el overlay de código roba el foco del teclado y le interrumpe lo que
    escribe? Documenta el comportamiento actual y propón cómo notificar sin arrebatar el foco.
-6. Entrega docs/ux/v1/alumno/ANALISIS-ALUMNO.md con hallazgos priorizados (cada uno con captura, heurística,
+6. Entrega docs/ux/v1/alumno/ANALISIS.md con hallazgos priorizados (cada uno con captura, heurística,
    impacto y propuesta), flujos actuales vs propuestos, y la lista de cambios en entregas pequeñas.
    Espera mi aprobación antes de seguir.
 
@@ -113,7 +112,7 @@ Evalúa e implementa lo que corresponda:
    correspondiente está activa.
 3. Prueba de que un snippet nuevo no arrebata el foco del editor del alumno.
 4. Prueba del portapapeles con un fragmento multilínea con sangría.
-5. Capturas "después" en docs/ux/v1/alumno/despues/ y un informe docs/ux/v1/alumno/RESULTADOS-ALUMNO.md
+5. Capturas "después" en docs/ux/v1/alumno/despues/ y un informe docs/ux/v1/alumno/RESULTADOS.md
    (antes/después por estado, hallazgos resueltos, cifras de CPU/RAM).
 6. `go build` sin Node, `go test -race ./...` en los tres sistemas, binario autocontenido y tamaño
    agregado reportado. Actualiza docs/progreso.md y docs/privacidad.md si cambió algún texto de

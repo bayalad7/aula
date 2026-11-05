@@ -20,7 +20,7 @@
 | 10 | Plantilla reutilizable para nuevas funciones | ✅ Completada |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 16 diagramas, con el 10 del aula simulada |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 en la ventana real. Release sugerido: `v0.4.0-rc.1` |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 de `docs\desarrollo\probar-consola-local.md` en la ventana real. Release sugerido: `v0.4.0-rc.1` |
 
 ## Etapa 02: notas
 

@@ -70,6 +70,25 @@ await f("71-ajustes-carpeta-capturas", "datos", { pasos: seq(ajustes("acerca"), 
   await sleep(200);
 }) });
 
+// Participación: manos y mensajes (docs/protocol.md §5.18): la fila, la insignia en Alumnos,
+// responder, el aviso al llegar una mano, la ventana angosta y oscura, y los simulados.
+const responder = seq(click("#mensajes-lista .responder"), async (p) => { await p.type("#mensajes-lista .respuesta-texto", "Es para hoy, antes de las 12."); });
+await f("72-participacion", "lab-participacion", { ruta: "participacion" });
+await f("73-participacion-insignias-alumnos", "lab-participacion");
+await f("74-participacion-respondiendo", "lab-participacion", { ruta: "participacion", pasos: responder });
+await f("75-participacion-respondido", "lab-participacion", { ruta: "participacion", pasos: seq(responder, async (p) => {
+  await p.keyboard.press("Enter");
+  await sleep(300);
+}) });
+await f("76-participacion-llega-mano", "lab-participacion", { pasos: async (p) => {
+  await p.evaluate(() => window.__llegaMano("lab-ubuntu-02"));
+  await sleep(200);
+} });
+await f("77-participacion-vacia", "lab", { ruta: "participacion" });
+await f("78-participacion-oscuro-900x600", "lab-participacion", { oscuro: true, w: 900, h: 600, ruta: "participacion" });
+await f("79-participacion-ficha", "lab-participacion", { pasos: click(`${fila("LAB3-PC12")} .ficha`) });
+await f("80-simulada-mano-y-mensaje", "simulada", { ruta: "simulada", pasos: seq(click("#sim-filas .mano"), async () => { await sleep(200); }) });
+
 // Código
 await f("16-codigo", "datos", { ruta: "codigo", pasos: async (p) => {
   await p.evaluate(() => window.monaco && window.monaco.editor.getEditors()[0].setValue(

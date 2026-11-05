@@ -57,6 +57,10 @@ const (
 	codeSnapshotGone         = "snapshotGone"
 	codeSnapshotSaveFailed   = "snapshotSaveFailed"
 	codeSnapshotFolder       = "snapshotFolder"
+	codeHandGone             = "handGone"
+	codeMessageGone          = "messageGone"
+	codeStudentGone          = "studentGone"
+	codeSimTooSoon           = "simTooSoon"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -69,6 +73,7 @@ var errorCodes = []string{
 	codeSimUnavailable, codeSimClosed, codeSimFull, codeSimCapability, codeSimGone, codeSimFault, codeSimFailed, codeManualFailed,
 	codeCheckRunning, codeAlreadyControlling, codeRemoteUnsupported, codeRemoteGone,
 	codeSnapshotUnsupported, codeSnapshotTooMany, codeSnapshotGone, codeSnapshotSaveFailed, codeSnapshotFolder,
+	codeHandGone, codeMessageGone, codeStudentGone, codeSimTooSoon,
 }
 
 // errorHelp is the section of the manual (docs/v1/administracion) that each
@@ -119,6 +124,10 @@ var errorHelp = map[string]string{
 	codeSnapshotGone:         "tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno",
 	codeSnapshotSaveFailed:   "ajustes#capturas-de-pantalla",
 	codeSnapshotFolder:       "ajustes#capturas-de-pantalla",
+	codeHandGone:             "participacion#manos-levantadas",
+	codeMessageGone:          "participacion#mensajes-de-los-alumnos",
+	codeStudentGone:          "participacion#responder-a-un-alumno",
+	codeSimTooSoon:           "probar-sin-laboratorio#qué-hacen-los-alumnos-simulados",
 }
 
 // codedError is an error the UI can explain by its code.

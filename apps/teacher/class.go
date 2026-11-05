@@ -48,6 +48,9 @@ type classHooks struct {
 	// onSnapshot receives screen.snapshot.response parts and the errors
 	// (which may answer a screen.snapshot.request). Simulated students too.
 	onSnapshot func(sessionID string, env protocol.Envelope)
+	// onClassroom receives hand.raise, hand.lower and msg.student, from real
+	// and simulated students (docs/protocol.md §5.18).
+	onClassroom func(sessionID string, env protocol.Envelope)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
 }
@@ -236,8 +239,8 @@ func (l *liveClass) SimBroadcast(ctx context.Context, p protocol.Payload) (map[s
 	return map[string]string{}, map[string]error{}
 }
 
-// simulatedMessages routes what simulated students send: acks and screen
-// thumbnails only. They never get power, restrictions or the broadcast, so
+// simulatedMessages routes what simulated students send: acks, screen
+// thumbnails, screenshots, and raised hands and messages. They never get power, restrictions or the broadcast, so
 // any other answer is ignored.
 func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, protocol.Envelope) {
 	return func(_ context.Context, conn *transport.Conn, env protocol.Envelope) {
@@ -253,6 +256,10 @@ func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, prot
 		case protocol.ScreenSnapshotResponse:
 			if h.onSnapshot != nil {
 				h.onSnapshot(conn.ID(), env)
+			}
+		case protocol.HandRaise, protocol.HandLower, protocol.MsgStudent:
+			if h.onClassroom != nil {
+				h.onClassroom(conn.ID(), env)
 			}
 		case protocol.ErrorPayload:
 			if h.onSnapshot != nil {
@@ -315,6 +322,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 			case protocol.ScreenSnapshotResponse:
 				if hooks.onSnapshot != nil {
 					hooks.onSnapshot(conn.ID(), env)
+				}
+			case protocol.HandRaise, protocol.HandLower, protocol.MsgStudent:
+				if hooks.onClassroom != nil {
+					hooks.onClassroom(conn.ID(), env)
 				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {

@@ -139,6 +139,7 @@ func (a *App) studentsIn(class classroom) Students {
 	st.CanNotice += sims.CanNotice
 	st.CanThumb += sims.CanThumb
 	st.CanSnapshot += sims.CanSnapshot
+	a.markParticipation(st.Students)
 	present := map[string]bool{}
 	for i := range st.Students {
 		s := &st.Students[i]
@@ -170,6 +171,8 @@ func (a *App) stopSimulationOf(class classroom) {
 	if host, ok := class.(simulationHost); ok {
 		host.StopSimulation()
 	}
+	a.board.ForgetSimulated() // what they sent goes with them (rule 35)
+	a.emit(EventParticipation, a.participation(class, nil))
 }
 
 // cleanApps takes app names as a teacher types them: one per line, with or

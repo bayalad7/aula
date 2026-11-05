@@ -53,6 +53,7 @@
       <p class="nav-lateral__grupo" data-t="nav.grupoClase"></p>
       <a href="#alumnos" data-vista="alumnos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span class="nav-lateral__texto" data-t="nav.alumnos"></span></a>
       <a href="#codigo" data-vista="codigo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#codigo"/></svg><span class="nav-lateral__texto" data-t="nav.codigo"></span></a>
+      <a href="#participacion" data-vista="participacion"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#participacion"/></svg><span class="nav-lateral__texto"><span data-t="nav.participacion"></span><span class="solo-lector" id="nav-participacion-lector"></span></span><span class="nav-lateral__contador" id="nav-participacion-contador" aria-hidden="true"></span></a>
       <p class="nav-lateral__grupo" data-t="nav.grupoPruebas"></p>
       <a href="#simulada" data-vista="simulada"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg><span class="nav-lateral__texto" data-t="nav.simulada"></span></a>
       <div class="nav-lateral__pie">
@@ -200,6 +201,37 @@
                     </tr></thead>
                     <tbody id="historial-filas"></tbody>
                   </table>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <!-- ============ Participación: lo que responden los alumnos en vivo ============ -->
+          <section data-vista-de="participacion" aria-labelledby="h-participacion" class="vista__seccion" hidden>
+            <header class="vista__cabecera">
+              <h1 id="h-participacion" data-t="participacion.titulo"></h1>
+              <div class="resumen" id="participacion-resumen" aria-live="polite"></div>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
+            </header>
+            <div class="vista__cuerpo pila">
+              <!-- Manos y mensajes (prompt 10.6). Las siguientes funciones agregan su sección. -->
+              <section class="tarjeta" aria-labelledby="h-manos-mensajes">
+                <div class="tarjeta__cabecera"><h2 id="h-manos-mensajes" data-t="participacion.manosMensajes"></h2>
+                  <button type="button" class="btn btn--sm" id="bajar-todas" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span data-t="participacion.bajarTodas"></span></button></div>
+                <div class="tarjeta__cuerpo pila">
+                  <div id="participacion-vacio" class="vacio">
+                    <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg>
+                    <p data-t="participacion.vacio"></p>
+                    <p class="pequeno suave" data-t="participacion.vacioNota"></p>
+                  </div>
+                  <div id="manos" class="pila-mini" hidden>
+                    <h3 id="h-manos"></h3>
+                    <ol class="lista-limpia" id="manos-lista" aria-labelledby="h-manos"></ol>
+                  </div>
+                  <div id="mensajes" class="pila-mini" hidden>
+                    <h3 id="h-mensajes"></h3>
+                    <ul class="lista-limpia" id="mensajes-lista" aria-labelledby="h-mensajes"></ul>
+                  </div>
                 </div>
               </section>
             </div>
@@ -701,8 +733,39 @@
       <td class="estado"></td>
       <td class="pantalla"></td>
       <td><select class="falla control control--sm"></select></td>
-      <td><button type="button" class="btn btn--sm btn--fantasma quitar"></button></td>
+      <td><div class="grupo-botones grupo-botones--fin">
+        <button type="button" class="btn btn--sm mano" aria-pressed="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span></span></button>
+        <button type="button" class="btn btn--sm escribir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg><span></span></button>
+        <button type="button" class="btn btn--sm btn--fantasma quitar"></button></div></td>
     </tr>
+  </template>
+  <template id="t-participa">
+    <li class="participa">
+      <div class="participa__cabecera">
+        <span class="participa__orden" hidden></span>
+        <span class="participa__quien"><strong class="equipo"></strong><span class="celda-sub usuario"></span></span>
+        <span class="participa__estado"></span>
+        <span class="suave pequeno hora"></span>
+      </div>
+      <p class="participa__texto" hidden></p>
+      <p class="participa__respondido pequeno suave" hidden></p>
+      <div class="grupo-botones participa__acciones">
+        <button type="button" class="btn btn--sm responder"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#aviso"/></svg><span data-t="participacion.responder"></span></button>
+        <button type="button" class="btn btn--sm bajar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span data-t="participacion.bajar"></span></button>
+        <button type="button" class="btn btn--sm btn--fantasma atendido" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#hecho"/></svg><span data-t="participacion.atendido"></span></button>
+      </div>
+      <form class="participa__respuesta pila-mini" hidden>
+        <label class="campo"><span class="campo__etiqueta respuesta-etiqueta"></span>
+          <textarea class="respuesta-texto" rows="2" maxlength="2000"></textarea>
+          <span class="campo__ayuda" data-t="participacion.respuestaAyuda"></span>
+          <span class="campo__error respuesta-error" role="alert" hidden></span></label>
+        <label class="opcion bajar-tambien" hidden><input type="checkbox" class="bajar-tambien-marca" checked> <span data-t="participacion.bajarTambien"></span></label>
+        <div class="grupo-botones">
+          <button type="submit" class="btn btn--sm btn--primario"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="participacion.enviar"></span></button>
+          <button type="button" class="btn btn--sm btn--fantasma cancelar" data-t="comun.cancelar"></button>
+        </div>
+      </form>
+    </li>
   </template>
 
   <script src="events.js"></script>

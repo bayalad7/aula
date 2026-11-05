@@ -50,6 +50,10 @@ const (
 	// asked for, arrives, fails, is saved or discarded (docs/protocol.md
 	// §5.17). Never the image: the window asks for it with SnapshotImage.
 	EventSnapshots = "aula:snapshots"
+	// EventParticipation carries Participation whenever a hand is raised or
+	// lowered, a student's message arrives or is answered (docs/protocol.md
+	// §5.18). Arrival is set only when a hand or a message just arrived.
+	EventParticipation = "aula:participation"
 )
 
 // Setup is what the channel selection screen needs.
@@ -96,6 +100,12 @@ type Student struct {
 	CanPower     bool     `json:"canPower"`     // power (Windows agents)
 	CanRemote    bool     `json:"canRemote"`    // remote (Windows agents with their screen)
 	CanSnapshot  bool     `json:"canSnapshot"`  // screen.snapshot (Windows agents and simulated students)
+	CanHand      bool     `json:"canHand"`      // hand (every OS with a window, simulated students)
+	CanMessage   bool     `json:"canMessage"`   // msg.student (the same)
+	// Hand is this student's place in the line of raised hands (0: down);
+	// NewMessages, their messages not answered yet. The badge in Notas.
+	Hand        int `json:"hand"`
+	NewMessages int `json:"newMessages"`
 	// Power is the last power order sent to this session and its state.
 	Power       *power.Entry `json:"power"`
 	AppsActive  bool         `json:"appsActive"`  // acknowledged the class's app policy
@@ -208,6 +218,8 @@ type View struct {
 	Remote remote.Control `json:"remote"`
 	// Snapshots are the screenshots in memory (pending, ready or failed).
 	Snapshots []snapshot.Snapshot `json:"snapshots"`
+	// Participation is the «Participación» view: hands and messages.
+	Participation Participation `json:"participation"`
 }
 
 // Snapshots is the list of screenshots in memory, oldest request first.

@@ -114,3 +114,16 @@ body[data-panel] .col-sistema { display: none; }
 
 /* --- Control remoto: la imagen en vivo recibe el mouse y el teclado ---------------------- */
 #pantalla-grande img.pg-control { cursor: crosshair; touch-action: none; user-select: none; }
+
+/* --- Participación: manos y mensajes de los alumnos ------------------------------------ */
+.participa { display: grid; gap: var(--e-2); padding: var(--e-3); border: 1px solid var(--c-borde); border-radius: var(--r-md); background: var(--c-superficie); }
+.participa__cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-1) var(--e-3); }
+.participa__orden { display: grid; place-items: center; min-width: 1.75rem; height: 1.75rem; border-radius: 999px;
+  background: var(--c-advertencia-fondo); color: var(--c-advertencia); font-weight: var(--peso-fuerte); }
+.participa__orden[hidden] { display: none; }
+.participa__quien { display: grid; flex: 1; min-width: 10rem; }
+.participa__estado { display: flex; flex-wrap: wrap; gap: var(--e-1); }
+.participa__texto, .participa__respondido { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.participa .campo textarea { font-family: inherit; }
+a.insignia { text-decoration: none; }
+a.insignia:hover { text-decoration: underline; }

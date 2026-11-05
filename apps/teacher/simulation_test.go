@@ -159,3 +159,57 @@ func TestSimulationNeedsAClass(t *testing.T) {
 		t.Error("SimulationStop without a class reported an active simulation")
 	}
 }
+
+// «Participación» without a lab: a simulated student raises its hand and
+// writes through the real stack; the teacher answers and lowers the hand;
+// closing the aula simulada forgets what it sent.
+func TestSimulatedStudentRaisesHandAndWrites(t *testing.T) {
+	rec := &recorder{}
+	app := NewApp(t.TempDir(), nil, nil, &fakeHotkeys{}, quiet)
+	app.port = 0
+	app.emit = rec.emit
+	if _, err := app.StartClass("7", "Prueba"); err != nil {
+		t.Fatal(err)
+	}
+	defer app.EndClass()
+	if _, err := app.SimulationStart(1); err != nil {
+		t.Fatal(err)
+	}
+	waitUntil(t, "a simulated student", func() bool { return app.View().Students.Simulated == 1 })
+	sim := app.Simulation().Students[0]
+	if _, err := app.SimulationHand(sim.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := app.SimulationMessage(sim.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	waitUntil(t, "hand and message", func() bool {
+		p := app.Participation()
+		return len(p.Hands) == 1 && len(p.Messages) == 1
+	})
+	p := app.Participation()
+	if !p.Hands[0].Simulated || p.Hands[0].SessionID == "" || p.Pending != 2 {
+		t.Fatalf("participation = %+v", p)
+	}
+	if row := app.View().Students.Students[0]; row.Hand != 1 || row.NewMessages != 1 {
+		t.Errorf("badge = hand %d, messages %d", row.Hand, row.NewMessages)
+	}
+	waitUntil(t, "the ack", func() bool {
+		s := app.Simulation().Students[0]
+		return s.Sent == 1
+	})
+	d, err := app.ReplyToStudent(ReplyRequest{Student: p.Messages[0].Student, MessageID: p.Messages[0].MessageID, Text: "Sí"})
+	if err != nil || d.SimSent != 1 {
+		t.Fatalf("reply = %+v, %v", d, err)
+	}
+	waitUntil(t, "the reply on its screen", func() bool { return app.Simulation().Students[0].Notices == 1 })
+	if err := app.LowerHand(p.Hands[0].Student); err != nil {
+		t.Fatal(err)
+	}
+	waitUntil(t, "its hand down", func() bool { return app.Simulation().Students[0].Hand == "lowered_by_teacher" })
+
+	app.SimulationStop()
+	if p := app.Participation(); len(p.Messages) != 0 {
+		t.Errorf("simulated messages outlived the aula simulada: %+v", p.Messages)
+	}
+}

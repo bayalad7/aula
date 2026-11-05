@@ -21,12 +21,14 @@
     canAppBlock: s.capabilities.includes("app.block"), canWebFilter: s.capabilities.includes("web.filter"),
     canPower: s.capabilities.includes("power"), canRemote: s.capabilities.includes("remote"),
     canSnapshot: s.capabilities.includes("screen.snapshot"),
+    canHand: s.capabilities.includes("hand"), canMessage: s.capabilities.includes("msg.student"),
   });
-  const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot"];
+  const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
+    "hand", "msg.student"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
-    lastCodeAck: "", ackedAt: "", simulated: false, connectedAt: "10:31", lastError: null,
+    lastCodeAck: "", ackedAt: "", simulated: false, connectedAt: "10:31", lastError: null, hand: 0, newMessages: 0,
   }, o, caps(o));
 
   // muchos_alumnos -n 2: SIM-01, SIM-02 (code.view y msg.show).
@@ -42,7 +44,7 @@
       lastCodeAck: "sn-3", ackedAt: "10:42:08" }),
     student({ hostname: "LAB3-PC15", username: "", capabilities: ["power"] }),
     student({ hostname: "lab-ubuntu-02", username: "maria", os: "linux", osVersion: "Ubuntu 24.04",
-      capabilities: ["code.view", "msg.show"], lastCodeAck: "sn-2", ackedAt: "10:39:50",
+      capabilities: ["code.view", "msg.show", "hand", "msg.student"], lastCodeAck: "sn-2", ackedAt: "10:39:50",
       lastError: scene === "lab-errores" ? { code: "unsupported_capability", at: "10:43:12" } : null }),
     student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL }),
   ];
@@ -57,6 +59,44 @@
     lab[1].power = { action_id: "p1", action: "reboot", force: false, status: "postponed", deadline_ms: now + 318000, postpones_left: 1 };
     lab[2].power = { action_id: "p1", action: "reboot", force: false, status: "executing", deadline_ms: 0, postpones_left: 2 };
   }
+  // Participación (apps/teacher/participation.go): en lab-participacion, dos manos en la
+  // fila y dos mensajes, uno nuevo y uno respondido. Los alumnos llevan su insignia.
+  const quien = (s) => ({ hostname: s.hostname, username: s.username, simulated: !!s.simulated });
+  const minutos = (m) => new Date(now - m * 60000).toISOString();
+  let part = { hands: [], messages: [], pending: 0, arrival: null };
+  if (scene === "lab-participacion") {
+    part.hands = [
+      Object.assign(quien(lab[1]), { handId: "h1", note: "No me compila el for de la línea 12", raisedAt: minutos(3), position: 1, sessionId: lab[1].id }),
+      Object.assign(quien(lab[0]), { handId: "h2", note: "", raisedAt: minutos(1), position: 2, sessionId: lab[0].id }),
+    ];
+    part.messages = [
+      Object.assign(quien(lab[3]), { messageId: "m2", text: "¿El ejercicio 3 es para hoy o para la próxima clase?", at: minutos(2), status: "new", sessionId: lab[3].id }),
+      Object.assign(quien(lab[0]), { messageId: "m1", text: "Ya terminé el ejercicio 2", at: minutos(9), status: "replied",
+        reply: "¡Bien! Sigue con el 3.", repliedAt: minutos(8), sessionId: lab[0].id }),
+    ];
+  }
+  const marcarParticipacion = () => {
+    part.pending = part.hands.length + part.messages.filter((m) => m.status === "new").length;
+    for (const s of list) {
+      const h = part.hands.find((x) => x.hostname === s.hostname && x.simulated === !!s.simulated);
+      s.hand = h ? h.position : 0;
+      s.newMessages = part.messages.filter((m) => m.hostname === s.hostname && m.status === "new").length;
+    }
+  };
+  marcarParticipacion();
+  const emitPart = (arrival) => {
+    part.hands.forEach((h, i) => { h.position = i + 1; });
+    marcarParticipacion();
+    window.__emit("aula:participation", Object.assign({}, part, { arrival: arrival || null }));
+    window.__emit("aula:students", studentsView());
+  };
+  // Para el recorrido: llega una mano como si un alumno la levantara.
+  window.__llegaMano = (host) => {
+    const s = list.find((x) => x.hostname === host);
+    part.hands.push(Object.assign(quien(s), { handId: "h" + Date.now(), note: "", raisedAt: new Date().toISOString(), position: 0, sessionId: s.id }));
+    emitPart(Object.assign({ kind: "hand" }, quien(s)));
+  };
+  const mismo = (a, b) => a.hostname === b.hostname && a.username === b.username && !!a.simulated === !!b.simulated;
   const studentsView = () => {
     const c = list.filter((s) => s.state === "connected");
     const real = c.filter((s) => !s.simulated);
@@ -126,16 +166,20 @@
       ? { combo: "Ctrl+Alt+Shift+C", active: false, reason: "InUse", error: "" }
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true },
-    restrictions, remote, snapshots: snaps,
+    restrictions, remote, snapshots: snaps, participation: Object.assign({}, part, { arrival: null }),
   });
 
 
-  const simView = () => ({ active: scene.startsWith("simulada"), max: 40, capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot"],
+  let simHand = "down";
+  let simSent = 0;
+  const simView = () => ({ active: scene.startsWith("simulada"), max: 40,
+    capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "hand", "msg.student"],
     students: scene.startsWith("simulada") ? [
-      { id: "x1", name: "Simulado 1", os: "windows", capabilities: ["code.view", "msg.show", "screen.thumb"], connected: true, fault: "none", delayMs: 0, viewed: false,
-        snippets: [{ exercise: "3", title: "Factorial recursivo", lang: "python", lines: 6 }], notices: 1, lastNotice: "Guarden su trabajo" },
+      { id: "x1", name: "Simulado 1", os: "windows", capabilities: ["code.view", "msg.show", "screen.thumb", "hand", "msg.student"], connected: true, fault: "none", delayMs: 0, viewed: false,
+        snippets: [{ exercise: "3", title: "Factorial recursivo", lang: "python", lines: 6 }], notices: 1, lastNotice: "Guarden su trabajo",
+        hand: simHand, sent: simSent },
       { id: "x2", name: "Simulado 2", os: "linux", capabilities: ["code.view", "msg.show"], connected: true, fault: "noack", delayMs: 0, viewed: false,
-        snippets: [], notices: 0, lastNotice: "" }] : [] });
+        snippets: [], notices: 0, lastNotice: "", hand: "down", sent: 0 }] : [] });
   const ok = (v) => new Promise((r) => setTimeout(() => r(v), 5));
   // Un doble que devuelve un Error rechaza la promesa con su texto, como Wails.
   const call = (name, v) => (...args) => {
@@ -178,6 +222,23 @@
     SimulationAdd: call("SimulationAdd", simView),
     SimulationRemove: call("SimulationRemove", simView),
     SimulationFault: call("SimulationFault", simView),
+    SimulationHand: call("SimulationHand", (id, up) => { simHand = up ? "up" : "down"; return simView(); }),
+    SimulationMessage: call("SimulationMessage", () => { simSent++; return simView(); }),
+    Participation: call("Participation", () => Object.assign({}, part, { arrival: null })),
+    LowerHand: call("LowerHand", (w) => { part.hands = part.hands.filter((h) => !mismo(h, w)); despues(() => emitPart()); return null; }),
+    LowerAllHands: call("LowerAllHands", () => { const n = part.hands.length; part.hands = []; despues(() => emitPart()); return n; }),
+    MarkMessageDone: call("MarkMessageDone", (w, id) => {
+      const m = part.messages.find((x) => x.messageId === id);
+      if (m) m.status = "done";
+      despues(() => emitPart());
+      return null;
+    }),
+    ReplyToStudent: call("ReplyToStudent", (r) => {
+      const m = part.messages.find((x) => x.messageId === r.messageId);
+      if (m) Object.assign(m, { status: "replied", reply: r.text, repliedAt: new Date().toISOString() });
+      despues(() => emitPart());
+      return Object.assign({}, deliveries[1], { id: "d-r", label: "Respuesta a " + r.hostname, sent: 1, acked: 0 });
+    }),
     SendNoticeTo: call("SendNoticeTo", () => deliveries[1]),
     Manual: call("Manual", () => window.__MANUAL.manual),
     ManualSearch: call("ManualSearch", () => window.__MANUAL.search),

@@ -18,6 +18,7 @@ const capturas = {
     await click(".envio__desplegar")(p);
   } }],
   "simulada.png": ["simulada", { ruta: "simulada" }],
+  "participacion.png": ["lab-participacion", { ruta: "participacion" }],
 };
 
 let mal = 0;

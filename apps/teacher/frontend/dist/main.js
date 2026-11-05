@@ -105,7 +105,8 @@
   }
 
   // --- Avisos flotantes ------------------------------------------------------------------
-  function toast(tipo, titulo, texto, detalle, ayuda) {
+  // ir: {texto, href} lleva a una vista (p. ej. «Ver en Participación»).
+  function toast(tipo, titulo, texto, detalle, ayuda, ir) {
     const ic = { exito: "conectado", error: "error", advertencia: "advertencia", info: "info" }[tipo];
     const t = el("div", "toast toast--" + tipo);
     t.setAttribute("role", tipo === "error" ? "alert" : "status");
@@ -120,6 +121,11 @@
     }
     if (ayuda) {
       const a = Object.assign(el("a", "pequeno", T("ayuda.verEnManual")), { href: rutaManual(ayuda) });
+      a.addEventListener("click", () => t.remove());
+      cuerpo.append(a);
+    }
+    if (ir) {
+      const a = Object.assign(el("a", "pequeno", ir.texto), { href: ir.href });
       a.addEventListener("click", () => t.remove());
       cuerpo.append(a);
     }
@@ -217,6 +223,7 @@
   let bc = { active: false, display: -1, receivers: 0, eligible: 0, available: false };
   let restricciones = { apps: null, web: null };
   let simulada = { active: false, students: [], capabilities: [] };
+  let participacion = { hands: [], messages: [], pending: 0 };
   let modo = "lista";
   let vista = "alumnos";
   // La selección se guarda por equipo (sobrevive a las reconexiones, que
@@ -232,7 +239,7 @@
   const equiposReales = () => seleccionados().filter((s) => !s.simulated).map((s) => s.hostname);
 
   // --- Navegación ------------------------------------------------------------------------
-  const VISTAS = ["alumnos", "codigo", "simulada", "ayuda", "falta"];
+  const VISTAS = ["alumnos", "codigo", "participacion", "simulada", "ayuda", "falta"];
   function irA(ruta) {
     // «ayuda/pagina/seccion» abre una página del manual en una sección.
     const [base, pagina, seccion] = ruta.split("/");
@@ -253,6 +260,7 @@
     if (nueva === "codigo" && editor) editor.layout();
     if (nueva === "falta") pintarFalta();
     if (nueva === "simulada") pintarSimulada();
+    if (nueva === "participacion") pintarParticipacion(participacion);
     $("contenido").scrollTop = 0;
     if (nueva === "ayuda") mostrarAyuda(pagina ? decodeURIComponent(pagina) : "", seccion ? decodeURIComponent(seccion) : "");
   }
@@ -321,6 +329,7 @@
     pintarRestricciones(v.restrictions);
     if (v.remote) pintarControl(v.remote);
     alCapturas(v.snapshots || []);
+    pintarParticipacion(v.participation || participacion);
     pintarHistorial(v.history);
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
@@ -336,6 +345,9 @@
   function notasDe(s) {
     const n = [];
     if (s.simulated) n.push(insignia("simulado", "simulado", T("alumnos.simulado")));
+    // La mano y los mensajes se quedan aunque se desconecte: un clic lleva a Participación.
+    if (s.hand) n.push(insigniaParticipacion("advertencia", "mano", T("alumnos.mano", { n: s.hand }), T("alumnos.manoAyuda", { n: s.hand })));
+    if (s.newMessages) n.push(insigniaParticipacion("info", "mensaje", P("alumnos.mensajes", s.newMessages), T("participacion.ver")));
     if (s.state !== "connected") return n;
     if (s.lastError) n.push(insignia("error", "error", T("alumnos.noPudo", { r: errorAlumno(s.lastError.code).titulo })));
     if (s.appsActive || s.webActive) n.push(insignia("advertencia", "candado", T("alumnos.conRestricciones")));
@@ -343,6 +355,11 @@
     if (!s.canCode) n.push(insignia("", "info", s.username ? T("alumnos.noRecibeCodigo") : T("alumnos.sinSesion")));
     else if (!s.canThumb && !s.simulated) n.push(insignia("", "info", T("alumnos.noComparte")));
     return n;
+  }
+  function insigniaParticipacion(tipo, ic, texto, ayuda) {
+    const a = Object.assign(el("a", "insignia insignia--" + tipo), { href: "#participacion", title: ayuda });
+    a.append(icono(ic), document.createTextNode(texto));
+    return a;
   }
   function codigoDe(s) {
     if (!s.ackedAt) return [el("span", "suave", "—")];
@@ -449,7 +466,7 @@
     }));
     const puede = [["canCode", "ficha.codigo"], ["canNotice", "ficha.avisos"], ["canThumb", "ficha.miniaturas"],
       ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"], ["canRemote", "ficha.control"],
-      ["canSnapshot", "ficha.captura"]];
+      ["canSnapshot", "ficha.captura"], ["canHand", "ficha.mano"], ["canMessage", "ficha.mensajes"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k]) => {
       const li = el("li", "fila");
       li.append(s[c] ? insignia("conectado", "hecho", T("ficha.si")) : insignia("", "cerrar", T("ficha.no")), el("span", "", T(k)));
@@ -1514,7 +1531,8 @@
 
   // --- Aula simulada ---------------------------------------------------------------------
   const FALLAS = [["none", "simulada.fallaNinguna"], ["slow", "simulada.fallaLenta"], ["noack", "simulada.fallaNoAcusa"], ["disconnected", "simulada.fallaDesconectado"]];
-  const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla", "screen.snapshot": "simulada.capCaptura" };
+  const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla", "screen.snapshot": "simulada.capCaptura",
+    "hand": "simulada.capMano", "msg.student": "simulada.capMensajes" };
   function pintarSimulacion(v) {
     simulada = v;
     $("f-simulada").hidden = !v.active;
@@ -1546,6 +1564,25 @@
         p.append(document.createTextNode(s.snippets.map((sn) => T("codigo.ejercicio", { n: sn.exercise }) + (sn.title ? " · " + sn.title : "")).join(", ")));
       } else p.append(el("span", "suave", T("simulada.nada")));
       if (s.notices) p.append(el("span", "celda-sub", P("simulada.avisos", s.notices)));
+      if (s.hand === "up") tr.querySelector(".estado").append(" ", insignia("advertencia", "mano", T("simulada.manoArriba")));
+      if (s.sent) p.append(el("span", "celda-sub", P("simulada.escritos", s.sent)));
+      // Levantar la mano y escribir: lo que haría un alumno real (Participación).
+      const arriba = s.hand === "up";
+      const mano = tr.querySelector(".mano");
+      mano.hidden = !s.capabilities.includes("hand");
+      mano.disabled = !s.connected;
+      mano.setAttribute("aria-pressed", String(arriba));
+      mano.querySelector("span").textContent = T(arriba ? "simulada.bajar" : "simulada.levantar");
+      mano.setAttribute("aria-label", arriba ? T("simulada.bajarA", { nombre: s.name }) : T("simulada.levantarA", { nombre: s.name }));
+      mano.title = T("simulada.levantarAyuda", { nombre: s.name });
+      mano.addEventListener("click", () => api.SimulationHand(s.id, !arriba).then(pintarSimulacion, fallo));
+      const esc = tr.querySelector(".escribir");
+      esc.hidden = !s.capabilities.includes("msg.student");
+      esc.disabled = !s.connected;
+      esc.querySelector("span").textContent = T("simulada.escribir");
+      esc.setAttribute("aria-label", T("simulada.escribirA", { nombre: s.name }));
+      esc.title = T("simulada.escribirAyuda", { nombre: s.name });
+      esc.addEventListener("click", () => api.SimulationMessage(s.id, "").then(pintarSimulacion, fallo));
       const f = tr.querySelector(".falla");
       f.setAttribute("aria-label", T("simulada.fallaDe", { nombre: s.name }));
       f.replaceChildren(...FALLAS.map(([val, k]) => Object.assign(el("option", "", T(k)), { value: val })));
@@ -1579,6 +1616,156 @@
     .then((si) => { if (si) api.SimulationStop().then(pintarSimulacion, fallo); });
   $("sim-cerrar").addEventListener("click", cerrarSimulada);
   $("f-simulada-salir").addEventListener("click", cerrarSimulada);
+
+  // --- Participación: manos y mensajes de los alumnos (docs/protocol.md §5.18) -----------------
+  // Go guarda la fila y la bandeja; aquí solo se dibujan. Los textos de los
+  // alumnos entran con textContent. Una respuesta a medio escribir sobrevive a
+  // los repintados (llega otra mano mientras el profesor escribe).
+  const quienDe = (x) => ({ hostname: x.hostname, username: x.username, simulated: x.simulated });
+  const claveDe = (x, id) => (x.simulated ? "s:" : "r:") + x.hostname + "|" + x.username + "|" + (id || "");
+  let respondiendo = "";        // claveDe de la tarjeta con la respuesta abierta
+  const borradores = new Map(); // claveDe → texto escrito
+  const horaCorta = (iso) => new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+
+  function alParticipar(p) {
+    pintarParticipacion(p);
+    if (p.arrival) {
+      const a = p.arrival;
+      const titulo = T(a.kind === "hand" ? "participacion.llegoMano" : "participacion.llegoMensaje", { equipo: a.hostname });
+      toast("info", titulo, T("participacion.llegoTexto"), "", "",
+        vista === "participacion" ? null : { texto: T("participacion.ver"), href: "#participacion" });
+    }
+  }
+
+  function pintarParticipacion(p) {
+    participacion = p;
+    const n = p.pending || 0;
+    $("nav-participacion-contador").textContent = n ? String(n) : "";
+    $("nav-participacion-lector").textContent = n ? P("nav.pendientes", n) : "";
+    const nuevos = p.messages.filter((m) => m.status === "new").length;
+    const res = [];
+    if (p.hands.length) res.push(insignia("advertencia", "mano", P("participacion.manos", p.hands.length)));
+    if (nuevos) res.push(insignia("info", "mensaje", P("participacion.nuevos", nuevos)));
+    $("participacion-resumen").replaceChildren(...res);
+    if (vista !== "participacion") return;
+
+    const activo = document.activeElement;
+    const enRespuesta = !!(activo && activo.classList && activo.classList.contains("respuesta-texto"));
+    $("participacion-vacio").hidden = p.hands.length + p.messages.length > 0;
+    $("manos").hidden = !p.hands.length;
+    $("mensajes").hidden = !p.messages.length;
+    $("bajar-todas").hidden = !p.hands.length;
+    $("h-manos").textContent = P("participacion.manos", p.hands.length);
+    $("h-mensajes").textContent = T("participacion.mensajesTitulo");
+    $("manos-lista").replaceChildren(...p.hands.map((h) => tarjetaParticipa(h, true)));
+    $("mensajes-lista").replaceChildren(...p.messages.map((m) => tarjetaParticipa(m, false)));
+    if (enRespuesta && respondiendo) {
+      const t = document.querySelector('[data-clave="' + CSS.escape(respondiendo) + '"] .respuesta-texto');
+      if (t) t.focus();
+    }
+  }
+
+  function tarjetaParticipa(x, esMano) {
+    const li = $("t-participa").content.firstElementChild.cloneNode(true);
+    const k = claveDe(x, esMano ? "" : x.messageId);
+    li.dataset.clave = k;
+    const conectado = !!x.sessionId;
+    const orden = li.querySelector(".participa__orden");
+    if (esMano) {
+      orden.hidden = false;
+      orden.textContent = String(x.position);
+      orden.title = T("participacion.orden", { n: x.position });
+    }
+    li.querySelector(".equipo").textContent = x.hostname;
+    li.querySelector(".usuario").textContent = x.username || "";
+    const estado = li.querySelector(".participa__estado");
+    if (x.simulated) estado.append(insignia("simulado", "simulado", T("alumnos.simulado")));
+    if (!conectado) estado.append(insignia("desconectado", "desconectado", T("participacion.desconectado")));
+    if (!esMano) {
+      estado.append({
+        new: insignia("info", "mensaje", T("participacion.nuevo")),
+        replied: insignia("conectado", "hecho", T("participacion.respondido")),
+        done: insignia("", "hecho", T("participacion.atendidoEstado")),
+      }[x.status]);
+    }
+    li.querySelector(".hora").textContent = horaCorta(esMano ? x.raisedAt : x.at);
+    const texto = li.querySelector(".participa__texto");
+    const dicho = esMano ? (x.note ? T("participacion.motivo", { texto: x.note }) : "") : x.text;
+    texto.hidden = !dicho;
+    texto.textContent = dicho;
+    if (!esMano && x.status === "replied") {
+      const r = li.querySelector(".participa__respondido");
+      r.hidden = false;
+      r.textContent = T("participacion.tuRespuesta", { hora: horaCorta(x.repliedAt), texto: x.reply });
+    }
+    const quien = quienDe(x);
+    const responder = li.querySelector(".responder");
+    responder.disabled = !conectado;
+    responder.addEventListener("click", () => abrirRespuesta(k));
+    const bajar = li.querySelector(".bajar");
+    bajar.hidden = !esMano;
+    bajar.addEventListener("click", () => {
+      ocupado(bajar, true);
+      api.LowerHand(quien).catch(fallo).finally(() => ocupado(bajar, false));
+    });
+    const atendido = li.querySelector(".atendido");
+    atendido.hidden = esMano || x.status !== "new";
+    atendido.addEventListener("click", () => api.MarkMessageDone(quien, x.messageId).catch(fallo));
+
+    const form = li.querySelector(".participa__respuesta");
+    const area = li.querySelector(".respuesta-texto");
+    const caja = li.querySelector(".respuesta-error");
+    li.querySelector(".respuesta-etiqueta").textContent = T("participacion.respuestaA", { equipo: x.hostname });
+    li.querySelector(".bajar-tambien").hidden = !esMano;
+    area.value = borradores.get(k) || "";
+    area.addEventListener("input", () => { borradores.set(k, area.value); limpiarCampo(area, caja); });
+    area.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cerrarRespuesta(k); }
+    });
+    li.querySelector(".cancelar").addEventListener("click", () => cerrarRespuesta(k));
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const txt = area.value.trim();
+      if (!txt) { errorEnCampo(area, caja, T("participacion.respuestaVacia")); area.focus(); return; }
+      const b = form.querySelector('button[type="submit"]');
+      ocupado(b, true);
+      const bajarTambien = esMano && li.querySelector(".bajar-tambien-marca").checked;
+      api.ReplyToStudent(Object.assign(quienDe(x), { messageId: esMano ? "" : x.messageId, text: txt })).then(() => {
+        borradores.delete(k);
+        respondiendo = "";
+        toast("exito", T("participacion.enviada", { equipo: x.hostname }), T("participacion.enviadaTexto"));
+        if (bajarTambien) return api.LowerHand(quien);
+        pintarParticipacion(participacion);
+        return null;
+      }).catch((err) => {
+        const m = amable(err);
+        if (m.codigo === "invalidNotice") errorEnCampo(area, caja, m.texto);
+        else fallo(err);
+      }).finally(() => ocupado(b, false));
+    });
+    const abierta = respondiendo === k && conectado;
+    form.hidden = !abierta;
+    li.querySelector(".participa__acciones").hidden = abierta;
+    return li;
+  }
+  const tarjetaDe = (k) => document.querySelector('[data-clave="' + CSS.escape(k) + '"]');
+  function abrirRespuesta(k) {
+    respondiendo = k;
+    pintarParticipacion(participacion);
+    const t = tarjetaDe(k);
+    if (t) t.querySelector(".respuesta-texto").focus();
+  }
+  function cerrarRespuesta(k) {
+    respondiendo = "";
+    pintarParticipacion(participacion);
+    const t = tarjetaDe(k);
+    if (t) t.querySelector(".responder").focus();
+  }
+  $("bajar-todas").addEventListener("click", () => confirmar({
+    titulo: T("participacion.bajarTodasTitulo"), texto: T("participacion.bajarTodasTexto"), si: T("participacion.bajarTodas"),
+  }).then((si) => { if (si) api.LowerAllHands().catch(fallo); }));
+
 
   // --- Manual (docs/v1/administracion) --------------------------------------------------------
   // Las páginas llegan como datos (bloques e incisos), no como HTML: aquí se
@@ -2180,6 +2367,7 @@
   rt.EventsOn(ev.BROADCAST, pintarTransmision);
   rt.EventsOn(ev.RESTRICTIONS, pintarRestricciones);
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);
+  rt.EventsOn(ev.PARTICIPATION, alParticipar);
   rt.EventsOn(ev.CONNECT_CHECK, pintarComprobacion);
   rt.EventsOn(ev.CLASS, (v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
 

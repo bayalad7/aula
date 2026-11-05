@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/simclass"
 )
@@ -86,7 +87,7 @@ func (a *App) SimulationAdd(req SimRequest) (SimulationView, error) {
 		case errors.Is(err, simclass.ErrFull):
 			err = codedf(codeSimFull, "ya hay %d alumnos simulados, el máximo", simclass.MaxStudents)
 		case errors.Is(err, simclass.ErrBadCapability):
-			err = codedf(codeSimCapability, "un alumno simulado solo puede recibir código, avisos y mostrar su pantalla")
+			err = codedf(codeSimCapability, "un alumno simulado solo puede recibir código y avisos, mostrar su pantalla, levantar la mano y escribir")
 		}
 		return a.Simulation(), err
 	}
@@ -165,3 +166,37 @@ func (a *App) ensureSimulation() (*simclass.Class, error) {
 }
 
 func (a *App) emitSimulation() { a.emit(EventSimulation, a.Simulation()) }
+
+// SimulationHand makes a simulated student raise its hand (up) or lower it,
+// to try «Participación» without a lab (docs/protocol.md §5.18).
+func (a *App) SimulationHand(id string, up bool) (SimulationView, error) {
+	return a.simParticipation(func(sim *simclass.Class) error { return sim.Raise(id, up) })
+}
+
+// SimulationMessage makes a simulated student write to the teacher; an empty
+// text picks a sample question.
+func (a *App) SimulationMessage(id, text string) (SimulationView, error) {
+	return a.simParticipation(func(sim *simclass.Class) error { return sim.Write(id, text) })
+}
+
+func (a *App) simParticipation(do func(*simclass.Class) error) (SimulationView, error) {
+	a.mu.Lock()
+	sim := a.sim
+	a.mu.Unlock()
+	if sim == nil {
+		return a.Simulation(), errSimNotActive
+	}
+	err := do(sim)
+	switch {
+	case err == nil:
+	case errors.Is(err, simclass.ErrUnknownStudent):
+		err = codedf(codeSimGone, "ese alumno simulado ya no existe")
+	case errors.Is(err, simclass.ErrBadCapability):
+		err = codedf(codeSimCapability, "ese alumno simulado no levanta la mano ni escribe")
+	case errors.Is(err, simclass.ErrNotConnected):
+		err = codedf(codeStudentGone, "ese alumno simulado no está conectado")
+	case errors.Is(err, participation.ErrTooSoon), errors.Is(err, participation.ErrWaiting):
+		err = codedf(codeSimTooSoon, "espera unos segundos antes de repetirlo")
+	}
+	return a.Simulation(), err
+}

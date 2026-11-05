@@ -123,7 +123,10 @@ func TestStudentFileShowsEveryCapability(t *testing.T) {
 // adding one here is a deliberate decision, with its privacy rule.
 func TestSimulatedStudentsOnlyDeclareHarmlessCapabilities(t *testing.T) {
 	// screen.snapshot only reads the drawn screen (rule 46: filed apart).
-	allowed := []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot}
+	// hand and msg.student start on the student's side and change nothing on
+	// a computer (rules 34 and 50-52; prompt 10.6).
+	allowed := []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
+		protocol.CapHand, protocol.CapMsgStudent}
 	for _, c := range simclass.Capabilities {
 		if !slices.Contains(allowed, c) {
 			t.Errorf("simulated students may declare %q; review docs/privacidad.md (rules 32–35) before allowing it", c)

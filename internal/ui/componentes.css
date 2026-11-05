@@ -441,7 +441,7 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-weight: var(--peso-medio);
 }
-@container (max-width: 46rem) {
+@container (max-width: 54rem) {
   .barra-acciones .btn__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .barra-acciones .btn { width: var(--alto-control); padding: 0; }
   .barra-acciones__dentro { padding-left: var(--e-4); padding-right: var(--e-4); }
@@ -512,6 +512,7 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
 .aviso-en-linea .icono { margin-top: 1px; }
 .aviso-en-linea--advertencia { background: var(--c-advertencia-fondo); color: var(--c-advertencia); }
 .aviso-en-linea--simulado { background: var(--c-simulado-fondo); color: var(--c-simulado); }
+.aviso-en-linea--exito { background: var(--c-conectado-fondo); color: var(--c-conectado); }
 
 /* --- Modal de ajustes (pestañas a la izquierda) ------------------------------------------------- */
 .modal-ajustes {

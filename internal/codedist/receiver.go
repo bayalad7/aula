@@ -16,6 +16,10 @@ type Notice struct {
 	// its own with a Kind and no Text, and the window words them
 	// ("snapshot": the teacher took a screenshot, docs/privacidad.md rule 44).
 	Kind string `json:"kind,omitempty"`
+	// ReplyTo is the message_id of the student's own message this notice
+	// answers (msg.show reply_to, docs/protocol.md §5.18); the window quotes
+	// that message under «Respuesta a tu mensaje».
+	ReplyTo string `json:"replyTo,omitempty"`
 }
 
 // Receiver applies the console's messages on the student side.
@@ -52,7 +56,7 @@ func (r *Receiver) Handle(env protocol.Envelope) protocol.Payload {
 		return protocol.CodeAck{RefID: env.ID}
 	case protocol.MsgShow:
 		if r.OnNotice != nil {
-			r.OnNotice(Notice{ID: env.ID, Text: p.Text, Level: p.Level, At: now()})
+			r.OnNotice(Notice{ID: env.ID, Text: p.Text, Level: p.Level, At: now(), ReplyTo: p.ReplyTo})
 		}
 		return protocol.MsgAck{RefID: env.ID}
 	case protocol.ErrorPayload, protocol.Heartbeat:

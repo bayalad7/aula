@@ -10,9 +10,10 @@ import (
 	"sync"
 )
 
-// maxFrame bounds one line of the channel: a screen frame is at most 640 KiB
-// of JPEG, ~860 KiB in Base64.
-const maxFrame = 4 << 20
+// maxFrame bounds one line of the channel. The largest is a still screenshot
+// at native resolution (docs/protocol.md §5.17): up to 16 MiB of JPEG, which
+// is ~21.4 MiB in Base64.
+const maxFrame = 24 << 20
 
 // Frame kinds.
 const (

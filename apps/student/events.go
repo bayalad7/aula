@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/bayalad7/aula/internal/codedist"
+	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/policy"
 	"github.com/bayalad7/aula/internal/power"
 )
@@ -13,7 +14,8 @@ import (
 // Backend → frontend: runtime.EventsEmit with one of the events below.
 // Frontend → backend: the bound methods of App (View, Copy, DismissNotice,
 // ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed,
-// PowerPostpone, DismissPower, SetCompact, ReportWindow).
+// PowerPostpone, DismissPower, SetCompact, ReportWindow, RaiseHand, LowerHand,
+// SendTeacherMessage). EventParticipation is in participation.go.
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -125,4 +127,6 @@ type View struct {
 	Restrictions policy.State `json:"restrictions"`
 	// Power is the power notice in force, if any.
 	Power PowerView `json:"power"`
+	// Participation is the student's hand and their messages to the teacher.
+	Participation participation.DeskView `json:"participation"`
 }

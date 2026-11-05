@@ -53,6 +53,9 @@ func TestNoBindingTurnsOffTransparency(t *testing.T) {
 		"DismissPower":       "closes only a failed order's notice (power.Countdown.Dismiss)",
 		"SetCompact":         "shrinks the window; the screen-viewed and controlled marks stay in the strip and the native indicator",
 		"ReportWindow":       "the notification area icon's text",
+		"RaiseHand":          "the student raises their own hand (§5.18); no indicator involved",
+		"LowerHand":          "the student lowers their own hand; no indicator involved",
+		"SendTeacherMessage": "sends a message to the teacher; no indicator involved",
 	}
 	app := reflect.TypeOf(&App{})
 	for i := range app.NumMethod() {

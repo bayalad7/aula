@@ -16,6 +16,7 @@ import (
 	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
+	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
 	"github.com/bayalad7/aula/internal/power"
@@ -39,12 +40,13 @@ type App struct {
 	hello   protocol.HelloInfo
 	board   *codedist.Board
 	recv    *codedist.Receiver
-	screen  *screen.Streamer   // screen thumbnails; inert until enableScreen
-	power   *power.Countdown   // power.*; inert until enablePower
-	viewer  *broadcast.Viewer  // the teacher's screen; declared after ReportMedia
-	control *remote.Agent      // remote control; inert until enableRemote
-	snap    *snapshot.Taker    // still screenshots; inert until enableScreen
-	clip    platform.Clipboard // nil when the system has none
+	screen  *screen.Streamer    // screen thumbnails; inert until enableScreen
+	power   *power.Countdown    // power.*; inert until enablePower
+	viewer  *broadcast.Viewer   // the teacher's screen; declared after ReportMedia
+	control *remote.Agent       // remote control; inert until enableRemote
+	snap    *snapshot.Taker     // still screenshots; inert until enableScreen
+	desk    *participation.Desk // the student's hand and messages to the teacher (§5.18)
+	clip    platform.Clipboard  // nil when the system has none
 	clipEr  error
 	log     *slog.Logger
 
@@ -92,13 +94,14 @@ type App struct {
 	mu       sync.Mutex
 	status   Status
 	notices  []codedist.Notice
-	diag     string        // why the agent is not connected (session.Agent.OnDiagnostic)
-	cause    session.Cause // the same, classified (session.Agent.OnCause)
-	viewed   bool          // the console is receiving this screen (docs/privacidad.md rule 6)
-	restrict policy.State  // class restrictions in force (rules 20-21)
-	watching bool          // this screen shows the teacher's broadcast (rule 12)
-	powerV   PowerView     // power notice in force (rules 26-28)
-	ctrl     remote.State  // remote control in force (rules 36-41)
+	diag     string            // why the agent is not connected (session.Agent.OnDiagnostic)
+	cause    session.Cause     // the same, classified (session.Agent.OnCause)
+	viewed   bool              // the console is receiving this screen (docs/privacidad.md rule 6)
+	restrict policy.State      // class restrictions in force (rules 20-21)
+	watching bool              // this screen shows the teacher's broadcast (rule 12)
+	powerV   PowerView         // power notice in force (rules 26-28)
+	ctrl     remote.State      // remote control in force (rules 36-41)
+	cl       *transport.Client // the connection with the console; nil while not connected
 	cancel   context.CancelFunc
 	done     chan struct{}
 }
@@ -109,7 +112,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	clip platform.Clipboard, clipErr error, log *slog.Logger) *App {
 	a := &App{
 		cfg: cfg, pub: pub, cfgErr: cfgErr, hello: hello,
-		board: codedist.NewBoard(0), clip: clip, clipEr: clipErr, log: log,
+		board: codedist.NewBoard(0), desk: participation.NewDesk(), clip: clip, clipEr: clipErr, log: log,
 		emit: func(string, any) {}, raise: func() {}, notify: func() {}, maximize: func(bool) {}, onTop: func(bool) {},
 		mediaReady: make(chan struct{}), restart: make(chan struct{}, 1),
 	}
@@ -202,6 +205,7 @@ func (a *App) runAgent(ctx context.Context) (stop func()) {
 		Hello:            a.currentHello(),
 		Source:           a.source(),
 		OnMessage:        a.onMessage,
+		OnConnect:        a.onConnect,
 		OnState:          a.onState,
 		OnDiagnostic:     a.onDiagnostic,
 		OnCause:          a.onCause,
@@ -314,6 +318,9 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 		st = statusFor(StateSearching, a.cfg.Channel, "")
 	}
 	if s != session.AgentConnected {
+		a.mu.Lock()
+		a.cl = nil // a raised hand waits, up, for the next connection
+		a.mu.Unlock()
 		// The streams belong to the connection: no console, no capture and
 		// no broadcast view, and no restrictions.
 		a.control.Stop() // first: it releases the keys and gives the stream back
@@ -382,6 +389,9 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 	send := func(ctx context.Context, p protocol.Payload) error {
 		_, err := cl.Send(ctx, p)
 		return err
+	}
+	if a.handleParticipation(env) {
+		return
 	}
 	var reply protocol.Payload
 	ok := false
@@ -478,7 +488,8 @@ func (a *App) View() View {
 		snippets = []codedist.Snippet{}
 	}
 	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...),
-		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV}
+		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
+		Participation: a.desk.View()}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

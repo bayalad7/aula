@@ -80,6 +80,32 @@
     "energia-fallida": potencia("failed", "logoff", { remaining_s: 0 }),
   }[scene] || { notice: null, teacher: "", channel: "" };
 
+  // La mano y los mensajes al profesor (participation.DeskView). Escenas: mano (levantada
+  // con motivo), mano-bajada (la bajó el profesor), mensajes (uno recibido y una respuesta),
+  // sin-soporte (consola anterior). En «buscando» los botones están desactivados.
+  const enviado = (id, text, status, min) => ({ messageId: id, text, status, at: new Date(Date.now() - min * 60000).toISOString() });
+  let part = { hand: "down", note: "", messages: [], unsupported: false };
+  if (scene === "mano") part = Object.assign(part, { hand: "up", note: "No me compila el for de la línea 12" });
+  if (scene === "mano-bajada") part.hand = "lowered_by_teacher";
+  if (scene === "mensajes") part.messages = [enviado("pm-1", "Ya terminé el ejercicio 1", "received", 6),
+    enviado("pm-2", "¿El ejercicio 2 es para hoy?", "received", 2)];
+  if (scene === "sin-soporte") part.unsupported = true;
+  if (scene === "mensajes") notices.push({ id: "m-r", level: "info", text: "Sí, antes de las 12. Si te atoras, levanta la mano.",
+    at: ahora, replyTo: "pm-2" });
+  const copia = () => Object.assign({}, part, { messages: part.messages.slice() });
+  // Lo que Go contestaría: el acuse llega poco después («Enviando…» → «Recibido»).
+  let nMsg = 0;
+  let ultimo = 0;
+  const escribir = (text) => {
+    if (!text.trim()) return new Error("aula:empty");
+    if (Date.now() - ultimo < 3000) return new Error("aula:tooSoon");
+    ultimo = Date.now();
+    const m = enviado("pm-n" + ++nMsg, text.trim(), "sending", 0);
+    part.messages.push(m);
+    setTimeout(() => { m.status = "received"; window.__emit("aula:participation", copia()); }, 400);
+    return copia();
+  };
+
   const ok = (v) => new Promise((r) => setTimeout(() => r(v), 5));
   // Un doble que devuelve un Error rechaza la promesa con su texto, como Wails.
   const call = (name, v) => (...args) => {
@@ -88,7 +114,7 @@
     return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
   };
   window.go = { main: { App: {
-    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power })),
+    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia() })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
     ReportMedia: call("ReportMedia"),
@@ -99,5 +125,8 @@
     DismissPower: call("DismissPower"),
     SetCompact: call("SetCompact"),
     ReportWindow: call("ReportWindow"),
+    RaiseHand: call("RaiseHand", (note) => { part.hand = "up"; part.note = (note || "").trim(); return copia(); }),
+    LowerHand: call("LowerHand", () => { part.hand = "down"; part.note = ""; return copia(); }),
+    SendTeacherMessage: call("SendTeacherMessage", escribir),
   } } };
 })();

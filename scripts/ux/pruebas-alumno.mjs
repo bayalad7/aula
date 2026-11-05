@@ -199,6 +199,105 @@ await caso("aviso-captura", "un-codigo", async (p) => {
   ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "DismissNotice" && c[1][0] === "c-1")), "Esc no cerró el aviso de captura");
 });
 
+// Levantar la mano y escribir al profesor (prompt 10.6): lo hace el alumno, con el teclado;
+// nada de esto es una banda ni le quita el foco, y lo que llega del profesor tampoco.
+const bandasVisibles = (p) => p.evaluate(() => [...document.querySelectorAll("#bandas > *")].filter((b) => !b.hidden).length);
+await caso("mano-levantar-y-bajar", "conectado", async (p) => {
+  await p.focus("#mano");
+  await p.keyboard.press("Enter");
+  await sleep(150);
+  let m = await p.evaluate(() => ({ pulsado: document.getElementById("mano").getAttribute("aria-pressed"), foco: document.activeElement.id,
+    linea: !document.getElementById("mano-estado").hidden, compacto: document.getElementById("compacto-mano").getAttribute("aria-pressed") }));
+  ok(m.pulsado === "true" && m.compacto === "true", "aria-pressed no cambió: " + JSON.stringify(m));
+  ok(m.foco === "mano", "el foco se fue de «Levantar la mano»: " + m.foco);
+  ok(m.linea, "no dice que la mano está levantada");
+  ok(await bandasVisibles(p) === 0, "levantar la mano mostró una banda");
+  ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "RaiseHand")), "no llamó a RaiseHand");
+  await p.keyboard.press("Enter");
+  await sleep(150);
+  ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "LowerHand")), "no llamó a LowerHand");
+  ok(await p.evaluate(() => document.getElementById("mano").getAttribute("aria-pressed") === "false"), "la mano no bajó");
+});
+await caso("mano-bajada-por-profesor", "mano", async (p) => {
+  await p.focus("#escribir");
+  await emitir(p, "aula:participation", { hand: "lowered_by_teacher", note: "", messages: [], unsupported: false });
+  await sleep(150);
+  const m = await p.evaluate(() => ({ pulsado: document.getElementById("mano").getAttribute("aria-pressed"),
+    texto: document.getElementById("mano-estado-texto").textContent, foco: document.activeElement.id }));
+  ok(m.pulsado === "false", "el botón sigue pulsado");
+  ok(m.texto === "Tu profesor bajó tu mano.", "texto: " + m.texto);
+  ok(m.foco === "escribir", "le quitó el foco al alumno: " + m.foco);
+  ok(await bandasVisibles(p) === 0, "bajar la mano mostró una banda");
+});
+await caso("mano-motivo", "mano", async (p) => {
+  await p.click("#motivo-abrir");
+  ok(await p.evaluate(() => document.activeElement.id === "motivo-texto"), "el foco no pasó al motivo");
+  ok(await p.evaluate(() => document.activeElement.value === "No me compila el for de la línea 12"), "el campo no trae el motivo actual");
+  await p.evaluate(() => { document.activeElement.value = ""; });
+  await p.keyboard.type("Necesito ayuda con el for");
+  await p.keyboard.press("Enter");
+  await sleep(150);
+  const c = await p.evaluate(() => window.__calls.filter((x) => x[0] === "RaiseHand").pop());
+  ok(c && c[1][0] === "Necesito ayuda con el for", "RaiseHand con el motivo: " + JSON.stringify(c));
+});
+await caso("mensaje-enter-y-esc", "conectado", async (p) => {
+  await p.click("#escribir");
+  ok(await p.evaluate(() => document.activeElement.id === "redactar-texto"), "el foco no pasó al mensaje");
+  await p.keyboard.type("borrador");
+  await p.keyboard.press("Escape");
+  await sleep(100);
+  let m = await p.evaluate(() => ({ abierta: !document.getElementById("redactar").hidden, foco: document.activeElement.id,
+    enviados: window.__calls.filter((c) => c[0] === "SendTeacherMessage").length }));
+  ok(!m.abierta && m.foco === "escribir" && m.enviados === 0, "Esc no canceló: " + JSON.stringify(m));
+  await p.click("#escribir");
+  await p.evaluate(() => { document.getElementById("redactar-texto").value = ""; });
+  await p.keyboard.type("¿Puede repetir el último paso?");
+  await p.keyboard.press("Enter");
+  await sleep(150);
+  m = await p.evaluate(() => ({ abierta: !document.getElementById("redactar").hidden, foco: document.activeElement.id,
+    estado: document.querySelector("#enviados-lista .insignia").textContent,
+    llamada: window.__calls.filter((c) => c[0] === "SendTeacherMessage").pop() }));
+  ok(m.llamada && m.llamada[1][0] === "¿Puede repetir el último paso?", "Enter no envió: " + JSON.stringify(m.llamada));
+  ok(!m.abierta && m.foco === "escribir", "tras enviar la tarjeta sigue abierta o el foco se perdió: " + m.foco);
+  ok(m.estado === "Enviando…", "estado: " + m.estado);
+  await sleep(600);
+  ok(await p.evaluate(() => document.querySelector("#enviados-lista .insignia").textContent === "Recibido"), "no pasó a «Recibido»");
+});
+await caso("mensaje-vacio", "conectado", async (p) => {
+  await p.click("#escribir");
+  await p.keyboard.press("Enter");
+  await sleep(150);
+  const e = await p.evaluate(() => [document.getElementById("redactar-error").hidden, document.getElementById("redactar-error").textContent,
+    document.activeElement.id]);
+  ok(!e[0] && e[1] === "Escribe tu mensaje antes de enviarlo." && e[2] === "redactar-texto", "error: " + e.join(" / "));
+});
+await caso("respuesta-del-profesor", "mensajes", async (p) => {
+  const a = await p.evaluate(() => {
+    const t = [...document.querySelectorAll("#notices .toast")].find((x) => x.querySelector(".toast__titulo").textContent === "Respuesta a tu mensaje");
+    return t && { cita: t.querySelector(".notice-cita").textContent, oculta: t.querySelector(".notice-cita").hidden, enBandas: !!t.closest(".bandas") };
+  });
+  ok(a, "no apareció «Respuesta a tu mensaje»");
+  ok(!a.oculta && a.cita === "Tú escribiste: «¿El ejercicio 2 es para hoy?»", "cita: " + a.cita);
+  ok(!a.enBandas, "la respuesta es una banda");
+});
+await caso("mano-sin-conexion", "buscando", async (p) => {
+  const d = await p.evaluate(() => [document.getElementById("mano").disabled, document.getElementById("escribir").disabled,
+    document.getElementById("mano").title]);
+  ok(d[0] && d[1], "los botones no se desactivan sin conexión");
+  ok(d[2].startsWith("Podrás levantar la mano"), "no dice por qué: " + d[2]);
+});
+await caso("mano-compacto", "conectado", async (p) => {
+  await p.click("#compactar");
+  await p.click("#compacto-mano");
+  await sleep(150);
+  ok(await p.evaluate(() => document.body.classList.contains("compacto")), "levantar la mano sacó la ventana del modo compacto");
+  ok(await p.evaluate(() => document.getElementById("compacto-mano").getAttribute("aria-pressed") === "true"), "la mano no se levantó en compacto");
+  await p.click("#compacto-escribir");
+  await sleep(150);
+  const m = await p.evaluate(() => [document.body.classList.contains("compacto"), document.activeElement.id]);
+  ok(!m[0] && m[1] === "redactar-texto", "«Mensaje al profesor» no abrió la tarjeta: " + m.join());
+}, { w: 380, h: 80 });
+
 // A 480×360, un solo aviso a la vista.
 await caso("avisos-angosta", "muchos-avisos", async (p) => {
   ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 1), "a 480 se ve más de un aviso");

@@ -1,7 +1,8 @@
 // Interfaz de la app del alumno. Recibe el estado del backend Go por eventos
 // de Wails y llama a sus métodos (View, Copy, DismissNotice y los de la
 // transmisión del profesor: ReportMedia, BroadcastAnswer, BroadcastCandidate,
-// BroadcastFailed; y los del aviso de energía: PowerPostpone, DismissPower).
+// BroadcastFailed; los del aviso de energía: PowerPostpone, DismissPower; y los
+// de la mano y los mensajes al profesor: RaiseHand, LowerHand, SendTeacherMessage).
 // Go manda estados; los textos salen de textos.es-MX.js (T) y el título de la
 // ventana lo pone esta página (docs/privacidad.md, regla 1).
 // Seguridad: todo texto recibido se inserta con textContent; el único HTML es
@@ -79,6 +80,7 @@
     pintarVacio();
     title();
     pintarCompacto();
+    pintarMano();
   }
 
   // El estado vacío dice qué pasa y que no hay nada que hacer, sin alarmar: lo
@@ -112,6 +114,7 @@
     $("compacto-control").hidden = !status.control;
     // El control implica la pantalla vista: una insignia basta.
     $("compacto-vista").hidden = !status.viewed || !!status.control;
+    pintarMano();
   }
   function ponerCompacto(on, avisarAGo) {
     compacto = on;
@@ -338,6 +341,15 @@
         node.querySelector(".toast__titulo").textContent = T(propio.titulo);
         node.querySelector(".notice-text").textContent = T(propio.texto, {
           profesor: status.teacher, canal: status.channel, hora: hora(n.at) });
+      } else if (n.replyTo) {
+        // La respuesta del profesor a un mensaje del alumno, con su cita.
+        node.querySelector("use").setAttribute("href", "sistema/iconos.svg#mensaje");
+        node.querySelector(".toast__titulo").textContent = T("aviso.respuesta");
+        node.querySelector(".notice-text").textContent = n.text;
+        const propio = participacion.messages.find((m) => m.messageId === n.replyTo);
+        const cita = node.querySelector(".notice-cita");
+        cita.hidden = !propio;
+        cita.textContent = propio ? T("aviso.tuMensaje", { texto: propio.text }) : "";
       } else {
         node.querySelector(".toast__titulo").textContent = T(AV + (n.level === "warning" ? "warning" : "info"));
         node.querySelector(".notice-text").textContent = n.text;
@@ -368,6 +380,158 @@
   }
   $("control-fin-ok").addEventListener("click", ocultarFinControl);
   $("control-fin").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); ocultarFinControl(); } });
+
+  // --- Levantar la mano y escribir al profesor (docs/protocol.md §5.18) -----------------------------
+  // Lo hace el alumno: nada de esto quita el foco ni trae la ventana, y no hay
+  // banda. Go manda el estado (participation.DeskView) y aquí se arma el texto.
+  // Los errores llegan como «aula:<código>» y se dicen con mano.error.<código>.
+  let participacion = { hand: "down", note: "", messages: [], unsupported: false };
+  const ME = "mano.error."; // + código de apps/student/participation.go
+  const EM = "mensaje.estado."; // + participation.SentStatus
+  const errorDe = (err) => {
+    const m = /aula:(\w+)/.exec(String(err && err.message ? err.message : err));
+    return m && typeof TX[ME + m[1]] === "string" ? T(ME + m[1]) : String(err);
+  };
+  const conectado = () => status.state === "connected";
+  // participation.HandState → clave: «lowered_by_teacher» → «loweredByTeacher».
+  const estadoMano = (h) => "mano.estado." + String(h).replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+  const maxEnviados = 3;
+
+  function pintarMano() {
+    const arriba = participacion.hand === "up";
+    const puede = conectado() && !participacion.unsupported;
+    const ayuda = !conectado() ? T("mano.ayudaSinConexion") : participacion.unsupported ? T("mano.ayudaSinSoporte") : "";
+    const etiqueta = arriba ? T("mano.bajar") : T("mano.levantar");
+    for (const b of [$("mano"), $("compacto-mano")]) {
+      b.setAttribute("aria-pressed", String(arriba));
+      // Bajar la mano siempre se puede, aun sin conexión: es del alumno.
+      b.disabled = !puede && !arriba;
+      b.title = ayuda || etiqueta;
+    }
+    $("mano-texto").textContent = etiqueta;
+    $("compacto-mano").setAttribute("aria-label", etiqueta);
+    for (const b of [$("escribir"), $("compacto-escribir")]) {
+      b.disabled = !puede;
+      b.title = ayuda || T("mensaje.boton");
+    }
+    if (!puede && !$("redactar").hidden) cerrarRedactar(false);
+  }
+
+  function renderParticipacion(v) {
+    const antes = participacion.hand;
+    participacion = v;
+    pintarMano();
+    // La línea de estado: la mano levantada (con su motivo) o que el profesor la bajó.
+    const linea = $("mano-estado");
+    const visible = v.hand === "up" || v.hand === "lowered_by_teacher" || v.unsupported;
+    linea.hidden = !visible;
+    linea.dataset.estado = v.unsupported ? "unsupported" : v.hand;
+    let texto = v.unsupported ? T("mano.sinSoporte") : visible ? T(estadoMano(v.hand)) : "";
+    if (v.hand === "up" && v.note) texto += " " + T("mano.motivo", { texto: v.note });
+    $("mano-estado-texto").textContent = texto;
+    $("motivo-abrir").hidden = v.hand !== "up" || !$("motivo").hidden;
+    $("motivo-abrir").textContent = v.note ? T("mano.cambiarMotivo") : T("mano.agregarMotivo");
+    if (v.hand !== "up") $("motivo").hidden = true;
+    if (antes !== v.hand) anunciar(v.hand === "up" ? T("mano.anuncioArriba") : v.hand === "lowered_by_teacher" ? T(estadoMano(v.hand)) : T("mano.anuncioAbajo"));
+    // Los últimos mensajes del alumno y si ya llegaron.
+    const ultimos = v.messages.slice(-maxEnviados).reverse();
+    $("enviados").hidden = ultimos.length === 0;
+    $("enviados-lista").replaceChildren(...ultimos.map((m) => {
+      const li = document.createElement("li");
+      li.className = "enviado";
+      const t = document.createElement("span");
+      t.className = "enviado__texto";
+      t.textContent = m.text;
+      const e = document.createElement("span");
+      e.className = "insignia" + (m.status === "received" ? " insignia--conectado" : m.status === "failed" ? " insignia--error" : "");
+      e.textContent = T(EM + m.status);
+      const h = document.createElement("span");
+      h.className = "codigo-recibido__meta";
+      h.textContent = hora(m.at);
+      li.append(t, h, e);
+      return li;
+    }));
+    renderNotices(avisos); // una respuesta cita el mensaje: ya se conoce
+  }
+
+  function alternarMano() {
+    const arriba = participacion.hand === "up";
+    (arriba ? api.LowerHand() : api.RaiseHand("")).then(renderParticipacion, (err) => {
+      anunciar(errorDe(err));
+      $("mano-estado").hidden = false;
+      $("mano-estado").dataset.estado = "error";
+      $("mano-estado-texto").textContent = errorDe(err);
+    });
+  }
+  $("mano").addEventListener("click", alternarMano);
+  $("compacto-mano").addEventListener("click", alternarMano);
+
+  // El motivo («pedir ayuda»): levanta otra vez la misma mano, que conserva su lugar.
+  $("motivo-abrir").addEventListener("click", () => {
+    $("motivo").hidden = false;
+    $("motivo-abrir").hidden = true;
+    $("motivo-texto").value = participacion.note || "";
+    $("motivo-texto").focus();
+  });
+  const cerrarMotivo = () => {
+    $("motivo").hidden = true;
+    $("motivo-abrir").hidden = participacion.hand !== "up";
+    $("motivo-abrir").focus();
+  };
+  $("motivo-texto").addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cerrarMotivo(); }
+  });
+  $("motivo").addEventListener("submit", (e) => {
+    e.preventDefault();
+    api.RaiseHand($("motivo-texto").value).then((v) => { renderParticipacion(v); cerrarMotivo(); },
+      (err) => { $("mano-estado-texto").textContent = errorDe(err); });
+  });
+
+  // El mensaje se escribe en una tarjeta arriba de la lista: Enter envía, Esc cancela.
+  const area = $("redactar-texto");
+  const pintarAyuda = () => {
+    $("redactar-ayuda").textContent = T("mensaje.ayuda", { n: [...area.value].length });
+  };
+  function abrirRedactar() {
+    if (compacto) ponerCompacto(false, true); // lo pide el alumno: necesita la ventana
+    $("redactar").hidden = false;
+    $("redactar-titulo").textContent = T("mensaje.titulo", { profesor: status.teacher || T("energia.profesor") });
+    $("escribir").setAttribute("aria-expanded", "true");
+    pintarAyuda();
+    window.scrollTo(0, 0);
+    area.focus();
+  }
+  function cerrarRedactar(foco) {
+    $("redactar").hidden = true;
+    $("redactar-error").hidden = true;
+    $("escribir").setAttribute("aria-expanded", "false");
+    if (foco) $("escribir").focus();
+  }
+  $("escribir").addEventListener("click", () => ($("redactar").hidden ? abrirRedactar() : cerrarRedactar(true)));
+  $("compacto-escribir").addEventListener("click", abrirRedactar);
+  $("redactar-cancelar").addEventListener("click", () => cerrarRedactar(true));
+  area.addEventListener("input", () => { $("redactar-error").hidden = true; area.removeAttribute("aria-invalid"); pintarAyuda(); });
+  area.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("redactar").requestSubmit(); }
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cerrarRedactar(true); }
+  });
+  $("redactar").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const b = $("redactar-enviar");
+    b.disabled = true;
+    api.SendTeacherMessage(area.value).then((v) => {
+      area.value = "";
+      renderParticipacion(v);
+      anunciar(T("mensaje.anuncioEnviado"));
+      cerrarRedactar(true);
+    }, (err) => {
+      $("redactar-error").textContent = errorDe(err);
+      $("redactar-error").hidden = false;
+      area.setAttribute("aria-invalid", "true");
+      area.focus();
+    }).finally(() => { b.disabled = false; });
+  });
+
 
   // --- Transmisión de la pantalla del profesor ------------------------------------------------------
   // El backend ya revisó la oferta (video solo de recepción) y mostró esta
@@ -586,6 +750,7 @@
   rt.EventsOn(ev.NOTICES, (n) => renderNotices(n.notices));
   // Go sale del modo compacto cuando el profesor hace algo que el alumno debe ver.
   rt.EventsOn(ev.COMPACT, (c) => { if (!c.on && compacto) ponerCompacto(false, false); });
+  rt.EventsOn(ev.PARTICIPATION, renderParticipacion);
   api.View().then((v) => {
     renderStatus(v.status);
     renderBoard(v.snippets);
@@ -593,6 +758,7 @@
     renderBroadcast(v.broadcast);
     renderRestrictions(v.restrictions);
     renderPower(v.power);
+    if (v.participation) renderParticipacion(v.participation);
   });
   probeMedia();
 })();

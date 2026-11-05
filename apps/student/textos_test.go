@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/session"
 )
@@ -89,6 +90,17 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 	for _, k := range []string{"appsDeny", "appsAllow", "webDeny", "webAllow", "separador"} {
 		need("banda.restricciones."+k, "policy.State (mode)")
+	}
+	// The hand and the messages to the teacher (participation.DeskView), and the
+	// errors of their bindings (aula:<code>).
+	for _, h := range []string{"up", "loweredByTeacher"} { // participation.HandUp, HandLoweredByTeacher
+		need("mano.estado."+h, "participation.HandState")
+	}
+	for _, s := range []participation.SentStatus{participation.SentSending, participation.SentReceived, participation.SentFailed} {
+		need("mensaje.estado."+string(s), "participation.SentStatus")
+	}
+	for _, c := range partErrorCodes {
+		need("mano.error."+c, "participation.go (partErrorCodes)")
 	}
 	for _, c := range []string{ControlActive, ControlPaused} {
 		need("banda.control."+c, "events.go (Status.Control)")

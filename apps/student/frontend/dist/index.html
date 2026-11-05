@@ -20,6 +20,9 @@
     <span class="estado-conexion__punto" aria-hidden="true"></span>
     <span id="estado-texto" class="estado-conexion__texto" role="status"></span>
     <span class="estado-conexion__acciones">
+      <!-- Lo que hace el alumno (prompt 10.6): no quita el foco a nadie. -->
+      <button type="button" id="mano" class="btn btn--sm mano-boton" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span id="mano-texto"></span></button>
+      <button type="button" id="escribir" class="btn btn--sm" aria-expanded="false" aria-controls="redactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg><span data-t="mensaje.boton"></span></button>
       <button type="button" id="compactar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.compactar" data-t-title="ventana.compactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#contraer"/></svg></button>
     </span>
     <details id="estado-detalles" class="detalles estado-conexion__detalles" hidden>
@@ -76,6 +79,8 @@
     <span id="compacto-nuevos" class="insignia insignia--info" hidden></span>
     <span id="compacto-control" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span data-t="compacto.control"></span></span>
     <span id="compacto-vista" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg><span data-t="compacto.vista"></span></span>
+    <button type="button" id="compacto-mano" class="btn btn--sm btn--icono mano-boton" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg></button>
+    <button type="button" id="compacto-escribir" class="btn btn--sm btn--icono" data-t-aria-label="mensaje.boton" data-t-title="mensaje.boton"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg></button>
     <button type="button" id="restaurar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.restaurar" data-t-title="ventana.restaurar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#expandir"/></svg></button>
   </main>
 
@@ -93,6 +98,34 @@
   </section>
 
   <main id="contenido" data-t-aria-label="app.contenido">
+    <!-- La mano y los mensajes al profesor (prompt 10.6): arriba de la lista. -->
+    <section id="mano-estado" class="mano-estado" role="status" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg>
+      <span id="mano-estado-texto" class="mano-estado__texto"></span>
+      <button type="button" id="motivo-abrir" class="btn btn--sm btn--fantasma" data-t="mano.agregarMotivo" hidden></button>
+      <form id="motivo" class="mano-estado__motivo" hidden>
+        <label class="campo"><span class="campo__etiqueta" data-t="mano.motivoEtiqueta"></span>
+          <input id="motivo-texto" maxlength="140" autocomplete="off">
+          <span class="campo__ayuda" data-t="mano.motivoAyuda"></span></label>
+      </form>
+    </section>
+    <form id="redactar" class="tarjeta redactar" aria-labelledby="redactar-titulo" hidden>
+      <div class="tarjeta__cabecera"><h2 id="redactar-titulo" data-t="mensaje.titulo"></h2></div>
+      <div class="tarjeta__cuerpo redactar__cuerpo">
+        <label class="campo"><span class="campo__etiqueta" data-t="mensaje.etiqueta"></span>
+          <textarea id="redactar-texto" rows="3" maxlength="500" aria-describedby="redactar-ayuda"></textarea>
+          <span class="campo__ayuda" id="redactar-ayuda"></span>
+          <span class="campo__error" id="redactar-error" role="alert" hidden></span></label>
+        <div class="grupo-botones">
+          <button type="submit" id="redactar-enviar" class="btn btn--primario btn--sm"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="mensaje.enviar"></span></button>
+          <button type="button" id="redactar-cancelar" class="btn btn--sm btn--fantasma" data-t="mensaje.cancelar"></button>
+        </div>
+      </div>
+    </form>
+    <section id="enviados" class="enviados" aria-labelledby="enviados-titulo" hidden>
+      <h2 id="enviados-titulo" class="enviados__titulo" data-t="mensaje.enviados"></h2>
+      <ol id="enviados-lista" class="enviados__lista"></ol>
+    </section>
     <div id="empty" class="vacio">
       <svg class="icono icono--xl" aria-hidden="true"><use id="vacio-icono" href="sistema/iconos.svg#codigo"/></svg>
       <h2 id="vacio-titulo"></h2>
@@ -140,6 +173,7 @@
       <div class="toast__texto">
         <span class="toast__titulo"></span>
         <span class="notice-text"></span>
+        <span class="notice-cita" hidden></span>
       </div>
       <button type="button" class="btn btn--sm dismiss"></button>
     </div>

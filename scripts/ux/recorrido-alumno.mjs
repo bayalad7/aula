@@ -67,6 +67,24 @@ await f("44-captura-angosta", "captura", { w: 480, h: 360 });
 await f("20-energia-forzada", "energia-forzada");
 await f("21-energia-fallida", "energia-fallida");
 
+// Levantar la mano y escribir al profesor (prompt 10.6)
+const escribe = (texto) => seq(click("#escribir"), async (p) => { await p.type("#redactar-texto", texto); });
+await f("45-mano-levantada", "mano");
+await f("46-mano-motivo", "mano", { pasos: click("#motivo-abrir") });
+await f("47-mano-bajada-por-profesor", "mano-bajada");
+await f("48-mensaje-escribiendo", "conectado", { pasos: escribe("¿Puede repetir el último paso?") });
+await f("49-mensaje-enviado", "conectado", { pasos: seq(escribe("¿Puede repetir el último paso?"), async (p) => {
+  await p.keyboard.press("Enter");
+  await sleep(700);
+}) });
+await f("50-mensaje-vacio", "conectado", { pasos: seq(click("#escribir"), async (p) => { await p.keyboard.press("Enter"); await sleep(200); }) });
+await f("51-respuesta-del-profesor", "mensajes");
+await f("52-sin-conexion-botones", "buscando");
+await f("53-consola-sin-soporte", "sin-soporte");
+await f("54-mano-oscuro", "mano", { oscuro: true });
+await f("55-mano-angosta", "mano", { w: 480, h: 360 });
+await f("56-compacto-mano", "mano", { w: 380, h: 80, pasos: click("#compactar") });
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

@@ -50,3 +50,21 @@ body.watching #contenido { display: none; }
 .bc-stage[data-fit="real"] video { width: auto; height: auto; max-width: none; object-fit: none; }
 .bc-wait { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--c-video-texto); }
 .bc-wait[hidden] { display: none; }
+
+/* Levantar la mano y escribir al profesor (prompt 10.6). */
+.mano-boton[aria-pressed="true"] { background: var(--c-advertencia-fondo); color: var(--c-advertencia); border-color: var(--c-advertencia-solido); }
+.mano-estado { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-3); padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--c-advertencia-solido); border-radius: var(--r-md); background: var(--c-advertencia-fondo); color: var(--c-advertencia); }
+.mano-estado[hidden], .mano-estado__motivo[hidden], .redactar[hidden], .enviados[hidden], .notice-cita[hidden] { display: none; }
+.mano-estado[data-estado="lowered_by_teacher"] { border-color: var(--c-borde); background: var(--c-superficie-2); color: var(--c-texto); }
+.mano-estado__texto { flex: 1; min-width: 12rem; overflow-wrap: anywhere; }
+.mano-estado__motivo { flex-basis: 100%; }
+.mano-estado__motivo .campo__etiqueta, .mano-estado__motivo .campo__ayuda { color: var(--c-texto); }
+.redactar__cuerpo { display: grid; gap: var(--e-2); }
+.redactar textarea { font-family: inherit; }
+.enviados { display: grid; gap: var(--e-1); }
+.enviados__titulo { margin: 0; font-size: var(--t-sm); color: var(--c-texto-suave); }
+.enviados__lista { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-1); }
+.enviado { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--e-1) var(--e-2); font-size: var(--t-sm); }
+.enviado__texto { flex: 1; min-width: 10rem; overflow-wrap: anywhere; }
+.notice-cita { font-size: var(--t-sm); color: var(--c-texto-suave); overflow-wrap: anywhere; }

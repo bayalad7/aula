@@ -318,6 +318,8 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	}
 	h.Username = sa.sess.User
 	h.Capabilities = append(h.Capabilities, protocol.CapCodeView, protocol.CapMsgShow)
+	// The helper's window has the buttons to raise the hand and write (§5.18).
+	h.Capabilities = append(h.Capabilities, protocol.CapHand, protocol.CapMsgStudent)
 	if sa.ready.Capture {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb, protocol.CapScreenSnapshot)
 	}
@@ -439,6 +441,18 @@ func (sa *serviceAgent) binding(_ context.Context, name string, data json.RawMes
 			return nil, err
 		}
 		return nil, a.BroadcastFailed(id, attempt)
+	case "RaiseHand":
+		if err := b.Arg(0, &s1); err != nil {
+			return nil, err
+		}
+		return a.RaiseHand(s1)
+	case "LowerHand":
+		return a.LowerHand()
+	case "SendTeacherMessage":
+		if err := b.Arg(0, &s1); err != nil {
+			return nil, err
+		}
+		return a.SendTeacherMessage(s1)
 	case "PowerPostpone":
 		return nil, a.PowerPostpone()
 	case "DismissPower":

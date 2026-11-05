@@ -40,6 +40,7 @@ type Streamer struct {
 	viewed  bool
 	thumb   *request // the screen.thumb.start in force, kept during a control
 	control *request // the remote control that owns the stream, if any
+	notice  int      // how many Announce calls showed the indicator (the last one hides it)
 }
 
 // request is a stream asked by the console: its connection and parameters.
@@ -114,6 +115,39 @@ func (s *Streamer) unview() {
 		s.OnViewed(false)
 	}
 	s.log().Info("screen stream stopped")
+}
+
+// Announce shows text on the indicator for d, for a one-off capture (a still
+// screenshot, docs/privacidad.md rule 44). While a stream runs (thumbnails
+// or a remote control) the indicator is already on screen and keeps its
+// text: Announce changes nothing. It fails, and the caller must not capture,
+// if the indicator cannot be shown.
+func (s *Streamer) Announce(text string, d time.Duration) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.Available() {
+		return errors.New("screen indicator unavailable")
+	}
+	if s.viewed {
+		return nil
+	}
+	if err := s.Indicator.Show(text); err != nil {
+		return err
+	}
+	s.notice++
+	n := s.notice
+	time.AfterFunc(d, func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		// A later Announce extends it; a stream that started owns it now.
+		if s.notice != n || s.viewed {
+			return
+		}
+		if err := s.Indicator.Hide(); err != nil {
+			s.log().Warn("cannot hide the screen indicator", "err", err)
+		}
+	})
+	return nil
 }
 
 // StartControl streams the screen for a remote control (docs/protocol.md

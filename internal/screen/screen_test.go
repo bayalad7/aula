@@ -416,3 +416,83 @@ func contains(list []string, s string) bool {
 	}
 	return false
 }
+
+func waitFor(t *testing.T, cond func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(3 * time.Second)
+	for !cond() {
+		if time.Now().After(deadline) {
+			t.Fatal("condition not met")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+func TestAnnounceShowsThenHides(t *testing.T) {
+	ev := &events{}
+	viewed := 0
+	s := &Streamer{Capture: &fakeCapture{ev: ev}, Indicator: &fakeIndicator{ev: ev}, OnViewed: func(bool) { viewed++ }}
+	if err := s.Announce("captura", 30*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, func() bool { return len(ev.list()) == 2 })
+	if got := ev.list(); got[0] != "show:captura" || got[1] != "hide" {
+		t.Fatalf("events = %v", got)
+	}
+	if viewed != 0 {
+		t.Fatal("an announcement is not a stream: the window must not say «viewed»")
+	}
+}
+
+// While the screen is already viewed (thumbnails or a control), the
+// indicator keeps its text and is not hidden when the announcement ends.
+func TestAnnounceDuringStreamKeepsIndicator(t *testing.T) {
+	ev := &events{}
+	s := &Streamer{Capture: &fakeCapture{ev: ev}, Indicator: &fakeIndicator{ev: ev}}
+	out := newSink()
+	if _, ok := s.Handle(context.Background(), out.send, startEnv(fast)); !ok {
+		t.Fatal("not handled")
+	}
+	out.next(t)
+	if err := s.Announce("captura", 10*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(50 * time.Millisecond)
+	for _, e := range ev.list() {
+		if e == "show:captura" || e == "hide" {
+			t.Fatalf("indicator changed during a stream: %v", ev.list())
+		}
+	}
+	s.Stop()
+}
+
+// A stream that starts during the announcement owns the indicator: the
+// announcement's timer must not hide it.
+func TestStreamStartedDuringAnnounceKeepsIndicator(t *testing.T) {
+	ev := &events{}
+	s := &Streamer{Capture: &fakeCapture{ev: ev}, Indicator: &fakeIndicator{ev: ev}}
+	if err := s.Announce("captura", 20*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	out := newSink()
+	s.Handle(context.Background(), out.send, startEnv(fast))
+	out.next(t)
+	time.Sleep(60 * time.Millisecond)
+	for _, e := range ev.list() {
+		if e == "hide" {
+			t.Fatalf("the announcement hid a running stream's indicator: %v", ev.list())
+		}
+	}
+	s.Stop()
+}
+
+func TestAnnounceFailsWithoutIndicator(t *testing.T) {
+	ev := &events{}
+	if err := (&Streamer{Capture: &fakeCapture{ev: ev}}).Announce("x", time.Second); err == nil {
+		t.Fatal("Announce without an indicator must fail")
+	}
+	s := &Streamer{Capture: &fakeCapture{ev: ev}, Indicator: &fakeIndicator{ev: ev, showErr: errors.New("no desktop")}}
+	if err := s.Announce("x", time.Second); err == nil {
+		t.Fatal("Announce must fail when the indicator cannot be shown")
+	}
+}

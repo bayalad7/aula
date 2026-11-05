@@ -247,6 +247,49 @@ await caso("compacto-sale", "conectado", async (p) => {
     "las restricciones no sacaron la ventana del modo compacto");
 });
 
+// Teclado (Fase 4.1): con Tab se recorre la ventana entera y se vuelve al
+// principio (sin trampas), el foco nunca se pierde y siempre se ve.
+async function cicloTab(p, nombre) {
+  let primero = "", fuera = false;
+  for (let i = 0; i < 80; i++) {
+    await p.keyboard.press("Tab");
+    const f = await p.evaluate(() => {
+      const e = document.activeElement;
+      if (!e || e === document.body) return null;
+      const cs = getComputedStyle(e);
+      return { k: (e.id || e.className) + "|" + (e.textContent || "").trim().slice(0, 20),
+        ve: (cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== "none" };
+    });
+    if (!f) { ok(!fuera, nombre + ": el foco se perdió"); fuera = true; continue; }
+    fuera = false;
+    if (f.k === primero) return;
+    if (!primero) primero = f.k;
+    ok(f.ve, nombre + ": el foco en " + f.k + " no se ve");
+  }
+  throw new Error(nombre + ": tras 80 Tab no volvió al principio");
+}
+await caso("teclado-codigos", "varios-codigos", (p) => cicloTab(p, "códigos"));
+await caso("teclado-bandas", "todo", (p) => cicloTab(p, "bandas"));
+await caso("teclado-avisos", "muchos-avisos", (p) => cicloTab(p, "avisos"));
+await caso("teclado-compacto", "conectado", async (p) => {
+  await p.click("#compactar");
+  ok(await p.evaluate(() => document.activeElement.id === "restaurar"), "al compactar, el foco no pasó a «Volver al tamaño normal»");
+  await cicloTab(p, "compacto");
+});
+
+// Rendimiento (Fase 4.2): en reposo no corre ninguna animación ni temporizador
+// visible; con «reducir movimiento», las transiciones duran 0.
+await caso("sin-animaciones", "varios-codigos", async (p) => {
+  await sleep(500);
+  const n = await p.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length);
+  ok(n === 0, n + " animaciones corriendo en reposo");
+});
+await caso("reducir-movimiento", "conectado", async (p) => {
+  await p.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
+  const t = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--transicion").trim());
+  ok(t === "0ms", "--transicion con reducir movimiento: " + t);
+});
+
 await cerrar();
 pasaron.forEach((n) => console.log("✓ " + n));
 fallas.forEach((n) => console.error("✗ " + n));

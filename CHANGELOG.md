@@ -7,7 +7,26 @@ y `docs/progreso.md`.
 ## Sin publicar
 
 Etapa 18: la consola del profesor rediseñada, con su manual, sus diagramas y el aula simulada.
-Sin cambios al protocolo ni a la configuración: los alumnos instalados siguen funcionando igual.
+Etapa 19: la app del alumno pulida, sobre el mismo sistema de diseño. Sin cambios al protocolo ni
+a la configuración: los alumnos instalados siguen funcionando igual.
+
+### App del alumno (etapa 19)
+
+- **No interrumpe:** el código y los avisos llegan sin quitarle el teclado al alumno ni poner la
+  ventana encima de su editor. Minimizada, parpadea en la barra de tareas; el título dice cuántos
+  hay nuevos.
+- **Cerrar ya no la quita:** la ventana se oculta y Aula sigue con su icono en el área de
+  notificación (antes, cerrar terminaba el agente, o la ventana reaparecía sola en modo
+  servicio).
+- **Modo compacto:** una tira pequeña en una esquina con el estado y lo nuevo.
+- **Código:** lo más nuevo arriba, sin saltos; **Ctrl+Mayús+C** copia el seleccionado; ↑/↓
+  cambian de código; nombre del lenguaje y hora de llegada.
+- **Avisos** en una esquina, con icono y nivel, sin empujar el código.
+- **Transparencia:** bandas permanentes con orden fijo (energía, pantalla vista, restricciones,
+  transmisión) que no se pueden cerrar; «Aula cerró…» se queda hasta leerlo.
+- **Textos para el alumno:** estado tranquilo («Esperando a tu profesor») y por qué no conecta,
+  en palabras llanas; lo técnico, plegado en «Detalles para TI».
+- Modo oscuro y accesibilidad (WCAG AA, teclado) con el sistema de diseño de la consola.
 
 ### Nuevo
 

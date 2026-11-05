@@ -142,6 +142,22 @@ consola agrega aquí sus casos.
 | C-42 | Ayuda › Tareas frecuentes › Atajos de teclado (desde el índice de la página) | La página baja hasta la tabla de atajos, aunque haya diagramas arriba |
 | C-43 | Con otro programa usando Ctrl+Alt+Mayús+C, abre la consola y ve a Ajustes › Acerca de | «Otro programa ya usa Ctrl+Alt+Shift+C. Usa «Pegar del portapapeles» en Código.» |
 
+### App del alumno (prompt 19)
+
+Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave <clave> -directo
+127.0.0.1:47830`), o con `go run ./tools/medir-alumno -ventana` para la parte automática.
+
+| # | Pasos | Esperado |
+|---|---|---|
+| A-01 | Con tu editor al frente, emite código desde la consola | Sigues escribiendo en tu editor: Aula no se pone encima ni toma el teclado; si está visible, el código aparece arriba con «Nuevo» |
+| A-02 | Minimiza Aula y emite código | Aula se queda minimizada; su botón de la barra de tareas parpadea y el título dice «(1) Aula — …» |
+| A-03 | Cierra Aula con la X | El agente sigue: el icono de Aula queda en «Mostrar iconos ocultos» y al pasar el puntero dice «Aula — conectado (canal …)» |
+| A-04 | Con Aula cerrada, emite código; luego haz clic en el icono | El icono se marca con un punto azul y la ventana no aparece; al hacer clic, vuelve y el punto se quita. Clic derecho: «Abrir Aula» |
+| A-05 | Pulsa el botón de compactar (junto al estado) y emite código | La ventana queda como una tira abajo a la derecha, sin quedar encima de las demás; resalta «1 nuevo»; «Volver al tamaño normal» la regresa |
+| A-06 | Sin tocar la ventana, pulsa Ctrl+Mayús+C con Aula al frente y pega en el Bloc de notas | Se pega el último código, con su sangría y sus saltos de línea |
+| A-07 | En compacto, manda una orden de energía de 10 min y cancélala en seguida | La ventana vuelve a su tamaño y al frente con la banda roja; al cancelar, la banda se va |
+| A-08 | Abre «Miniaturas» en la consola con el alumno en la lista | El distintivo nativo arriba de la pantalla y la banda «Tu pantalla la está viendo…» en Aula; al cerrar, ambos se van |
+
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 
 | # | Pasos | Esperado |

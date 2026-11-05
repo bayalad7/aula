@@ -21,6 +21,7 @@
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 16 diagramas, con el 10 del aula simulada |
 | 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 de `docs\desarrollo\probar-consola-local.md` en la ventana real. Release sugerido: `v0.4.0-rc.1` |
+| 19 | Pulido de la app del alumno: UX/UI, transparencia y no intrusión | ✅ Cerrada el 05/11/2026 (`docs/v1/ux/alumno/RESULTADOS.md`). Falta de tu lado: los casos A-01 a A-08 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
 
 ## Etapa 02: notas
 
@@ -1031,3 +1032,32 @@ Plan original:
 - **E10:** Claude hace la prueba del usuario nuevo en el arnés; el usuario la repite en una VM
   limpia con el instalador local, cronometra y anota lo que confunda.
 - **Paso 0:** Claude hace el push de `develop` y revisa el CI.
+
+## Etapa 19: pulido de la app del alumno — notas
+
+Prompt `docs/v1/prompts/19-pulido-app-alumno-ux.md`, en 7 entregas con aprobación y commit cada una:
+
+| Entrega | Qué | Commit |
+|---|---|---|
+| A | Análisis: arnés del alumno (`dobles-alumno.js`, `recorrido-alumno.mjs`), `tools/medir-alumno`, `docs/v1/ux/alumno/ANALISIS.md` | `6611a49` |
+| B | Sistema de diseño (`internal/ui`), `textos.es-MX.js`, Go manda estados y no frases | `ccfc067` |
+| C | Lista de código: lo nuevo arriba, sin saltos, Ctrl+Mayús+C, `pruebas-alumno.mjs` | `2626f30` |
+| D | Avisar sin foco, modo compacto, cerrar al área de notificación (`platform.AppWindow`, `platform.Tray`) | `42cabe4` |
+| E | Avisos en una esquina, estados vacíos, `Status.Cause` en palabras llanas | `1381683` |
+| F | Bandas de transparencia permanentes; pausa y control diseñados | `a6b1175` |
+| G | Teclado, rendimiento, `despues/` y `RESULTADOS.md` | (este) |
+
+Decisiones (04/11/2026):
+- código y avisos sin quitar el foco; energía, restricciones y transmisión sí traen la ventana;
+- pausa y control solo diseñados;
+- modo compacto en la ventana, y cerrar al área de notificación;
+- `docs/v1/ux/alumno/`, con las propuestas en el mismo `PROPUESTAS.md`, separadas por app.
+
+En la entrega D, «mostrar sin activar» se interpretó así: una ventana minimizada se queda
+minimizada y parpadea, porque restaurarla la pondría encima del editor. Es una línea en
+`window.go` (`notify`) si se prefiere lo contrario.
+
+Cifras: CPU 0,0–0,1 % de un núcleo; RAM 187–191 MB (+9 MB, casi toda de WebView2); ejecutable
+14,30 → 14,56 MB.
+
+Pendiente de tu lado: los casos A-01 a A-08 en la ventana real (icono, modo compacto, parpadeo).

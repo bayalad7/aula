@@ -1,0 +1,142 @@
+{
+  "01-sin-configurar": {
+    "errores": [],
+    "violaciones": []
+  },
+  "02-buscando-clase": {
+    "errores": [],
+    "violaciones": []
+  },
+  "03-sin-conexion-diagnostico": {
+    "errores": [],
+    "violaciones": []
+  },
+  "04-reconectando": {
+    "errores": [],
+    "violaciones": []
+  },
+  "05-conectado-reposo": {
+    "errores": [],
+    "violaciones": []
+  },
+  "06-un-codigo": {
+    "errores": [],
+    "violaciones": []
+  },
+  "07-varios-codigos": {
+    "errores": [],
+    "violaciones": []
+  },
+  "08-codigo-copiado": {
+    "errores": [],
+    "violaciones": []
+  },
+  "09-copia-falla": {
+    "errores": [],
+    "violaciones": []
+  },
+  "10-tras-limpiar": {
+    "errores": [],
+    "violaciones": []
+  },
+  "26-codigo-nuevo-arriba": {
+    "errores": [],
+    "violaciones": []
+  },
+  "27-seleccion-con-teclado": {
+    "errores": [],
+    "violaciones": []
+  },
+  "11-aviso-info": {
+    "errores": [],
+    "violaciones": []
+  },
+  "12-aviso-warning": {
+    "errores": [],
+    "violaciones": []
+  },
+  "13-varios-avisos": {
+    "errores": [],
+    "violaciones": []
+  },
+  "30-muchos-avisos": {
+    "errores": [],
+    "violaciones": []
+  },
+  "31-muchos-avisos-todos": {
+    "errores": [],
+    "violaciones": []
+  },
+  "32-otra-clave": {
+    "errores": [],
+    "violaciones": []
+  },
+  "33-otra-clave-detalles": {
+    "errores": [],
+    "violaciones": []
+  },
+  "14-pantalla-vista": {
+    "errores": [],
+    "violaciones": []
+  },
+  "15-transmision": {
+    "errores": [],
+    "violaciones": []
+  },
+  "16-restricciones": {
+    "errores": [],
+    "violaciones": []
+  },
+  "17-restricciones-detalles": {
+    "errores": [],
+    "violaciones": []
+  },
+  "18-app-cerrada": {
+    "errores": [],
+    "violaciones": []
+  },
+  "34-todas-las-bandas": {
+    "errores": [],
+    "violaciones": []
+  },
+  "35-todas-las-bandas-oscuro": {
+    "errores": [],
+    "violaciones": []
+  },
+  "19-energia-cuenta": {
+    "errores": [],
+    "violaciones": []
+  },
+  "20-energia-forzada": {
+    "errores": [],
+    "violaciones": []
+  },
+  "21-energia-fallida": {
+    "errores": [],
+    "violaciones": []
+  },
+  "28-compacto": {
+    "errores": [],
+    "violaciones": []
+  },
+  "29-compacto-nuevos-y-vista": {
+    "errores": [],
+    "violaciones": []
+  },
+  "22-oscuro-varios-codigos": {
+    "errores": [],
+    "violaciones": []
+  },
+  "23-oscuro-aviso-y-restricciones": {
+    "errores": [],
+    "violaciones": []
+  },
+  "24-ventana-minima-480x360": {
+    "errores": [],
+    "violaciones": []
+  },
+  "25-ventana-minima-aviso": {
+    "errores": [],
+    "violaciones": []
+  }
+}

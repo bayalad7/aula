@@ -18,12 +18,14 @@ const (
 	CallScreenCapture  = "screen.capture"
 	CallIndicatorShow  = "indicator.show"
 	CallIndicatorHide  = "indicator.hide"
-	CallPower          = "power.run" // shut down, reboot or log off from the student's session: PowerArgs
-	EventEmit          = "emit"      // a Wails event for the window
-	EventRaise         = "raise"     // bring the window forward
-	EventNotify        = "notify"    // something arrived: tell without taking the focus
-	EventMaximize      = "maximize"  // maximize (true) or restore (false)
-	EventOnTop         = "ontop"     // keep the window above the others (true) or not
+	CallPower          = "power.run"    // shut down, reboot or log off from the student's session: PowerArgs
+	CallInputInject    = "input.inject" // remote control: []platform.InputEvent, injected in the session
+	CallInputLocal     = "input.local"  // remote control: time of the student's last own input
+	EventEmit          = "emit"         // a Wails event for the window
+	EventRaise         = "raise"        // bring the window forward
+	EventNotify        = "notify"       // something arrived: tell without taking the focus
+	EventMaximize      = "maximize"     // maximize (true) or restore (false)
+	EventOnTop         = "ontop"        // keep the window above the others (true) or not
 )
 
 // Helper → service.
@@ -40,6 +42,7 @@ type Ready struct {
 	Capture   bool `json:"capture"`   // screen capture and the "being viewed" notice
 	Clipboard bool `json:"clipboard"` // system clipboard
 	Broadcast bool `json:"broadcast"` // WebRTC with H.264 in the window
+	Input     bool `json:"input"`     // keyboard and mouse injection, for remote control
 }
 
 // Binding is a call of the window (View, Copy…) forwarded to the agent.
@@ -189,4 +192,21 @@ func (p Power) Logoff(session uint32, force bool) error { return p.run("logoff",
 
 func (p Power) run(action string, session uint32, force bool) error {
 	return p.Helper.call(context.Background(), CallPower, PowerArgs{Action: action, Session: session, Force: force}, nil)
+}
+
+// Input injects the teacher's keyboard and mouse in the student's session
+// through the helper during a remote control (docs/protocol.md §5.16): the
+// service, in session 0, cannot reach the student's desktop.
+type Input struct{ Helper *Current }
+
+// Inject implements platform.InputInjector.
+func (i Input) Inject(events []platform.InputEvent) error {
+	return i.Helper.call(context.Background(), CallInputInject, events, nil)
+}
+
+// LocalInput implements platform.InputInjector.
+func (i Input) LocalInput() (time.Time, error) {
+	var t time.Time
+	err := i.Helper.call(context.Background(), CallInputLocal, nil, &t)
+	return t, err
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -395,4 +396,33 @@ func TestSupervisorEndsTheHelperWhenItsChannelCloses(t *testing.T) {
 	close(h.endServe)
 	waitUntil(t, "helper ended", func() bool { return !procs[0].alive() })
 	waitUntil(t, "helper started again", func() bool { p, _ := h.sessions.procs(); return len(p) == 2 })
+}
+
+func TestInputProxy(t *testing.T) {
+	cur := &Current{}
+	if err := (Input{Helper: cur}).Inject([]platform.InputEvent{{Kind: platform.InputMove}}); !errors.Is(err, ErrNoHelper) {
+		t.Fatalf("inject without helper = %v", err)
+	}
+	at := time.Date(2026, 11, 5, 10, 0, 0, 0, time.UTC)
+	var got []platform.InputEvent
+	service, _ := linkPair(t, nil, func(_ context.Context, name string, data json.RawMessage) (any, error) {
+		switch name {
+		case CallInputInject:
+			return nil, json.Unmarshal(data, &got)
+		case CallInputLocal:
+			return at, nil
+		}
+		return nil, errors.New("unexpected " + name)
+	}, nil)
+	cur.Set(service)
+	in := []platform.InputEvent{{Kind: platform.InputKey, Code: "KeyA", Down: true}, {Kind: platform.InputButton, Button: platform.ButtonLeft, X: 0.5, Y: 0.25}}
+	if err := (Input{Helper: cur}).Inject(in); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, in) {
+		t.Fatalf("helper got %+v", got)
+	}
+	if l, err := (Input{Helper: cur}).LocalInput(); err != nil || !l.Equal(at) {
+		t.Fatalf("local input = %v, %v", l, err)
+	}
 }

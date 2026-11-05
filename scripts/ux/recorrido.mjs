@@ -15,6 +15,13 @@ const ajustes = (pestana) => seq(click("#nav-ajustes"), click("#tab-" + pestana)
 // Arranque y Alumnos
 await f("01-arranque-abriendo", "setup-cargando");
 await f("02-arranque-error-puerto", "setup-error");
+await f("51-arranque-canal-invalido", "setup-error", { pasos: async (p) => {
+  await p.evaluate(() => { document.getElementById("arranque-canal").value = ""; document.getElementById("arranque-nombre").value = ""; });
+  await p.type("#arranque-canal", "20000");
+  await p.type("#arranque-nombre", "Mtra. López");
+  await click("#arranque-abrir")(p);
+  await sleep(200);
+} });
 await f("03-alumnos-vacio", "vacia");
 await f("04-alumnos-lista-seleccion", "lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12"))) });
 await f("05-alumnos-miniaturas", "lab", { pasos: seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB3-PC12"])) });
@@ -57,6 +64,7 @@ await f("26-cambiar-canal-error", "datos", { pasos: seq(click("#nav-clase"), asy
 await f("27-ayuda-indice", "datos", { ruta: "ayuda" });
 await f("28-ayuda-pagina", "datos", { ruta: "ayuda/primeros-pasos" });
 await f("29-ayuda-seccion", "datos", { ruta: "ayuda/solucion-de-problemas/el-firewall-o-la-red-pública" });
+await f("52-ayuda-atajos", "datos", { h: 1100, ruta: "ayuda/tareas-frecuentes/atajos-de-teclado" });
 await f("30-ayuda-busqueda", "datos", { ruta: "ayuda", pasos: async (p) => { await p.type("#ayuda-buscar", "firewall"); await sleep(600); } });
 await f("31-ayuda-contextual-alumnos", "lab", { pasos: click("[data-vista-de=alumnos] [data-ayuda-contextual]") });
 await f("32-ayuda-contextual-codigo", "datos", { ruta: "codigo", pasos: click("[data-vista-de=codigo] [data-ayuda-contextual]") });

@@ -107,7 +107,12 @@
       { id: "x2", name: "Simulado 2", os: "linux", capabilities: ["code.view", "msg.show"], connected: true, fault: "noack", delayMs: 0, viewed: false,
         snippets: [], notices: 0, lastNotice: "" }] : [] });
   const ok = (v) => new Promise((r) => setTimeout(() => r(v), 5));
-  const call = (name, v) => (...args) => { window.__calls.push([name, args]); return ok(typeof v === "function" ? v(...args) : v); };
+  // Un doble que devuelve un Error rechaza la promesa con su texto, como Wails.
+  const call = (name, v) => (...args) => {
+    window.__calls.push([name, args]);
+    const r = typeof v === "function" ? v(...args) : v;
+    return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
+  };
   window.go = { main: { App: {
     Setup: call("Setup", () => ({
       recentChannels: ["1", "2", "14"], consoleName: "Prof. Ayala", publicKey: cls.publicKey, fingerprint: cls.fingerprint,
@@ -115,7 +120,9 @@
       startError: scene === "setup-error" ? "aula:portInUse: el puerto 47830 está ocupado (¿hay otra consola abierta?): listen tcp :47830: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted." : "",
     })),
     View: call("View", view),
-    StartClass: call("StartClass", view),
+    // En setup-error, el canal escrito no es válido: Go lo rechaza (invalidChannel).
+    StartClass: call("StartClass", () => (scene === "setup-error"
+      ? new Error("aula:invalidChannel: el canal debe ser un número del 1 al 16000") : view())),
     EndClass: call("EndClass"),
     Emit: call("Emit", () => deliveries[0]),
     Reemit: call("Reemit", () => deliveries[2]),

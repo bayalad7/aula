@@ -65,3 +65,17 @@ marcas **Forzar ahora**, no hay cuenta y las aplicaciones se cierran sin guardar
 Toca la tarjeta «Clase abierta · canal» del menú (o ve a [Ajustes](ajustes#clase)), escribe el
 canal y confirma. Los alumnos del canal anterior dejan de verte, se quitan las restricciones y se
 detiene la transmisión; tu historial de código se conserva.
+
+## Atajos de teclado
+
+Toda la consola se usa con el teclado: **Tab** y **Mayús+Tab** van de un control al siguiente, y
+**Enter** o **Espacio** lo activan. Además:
+
+| Atajo | Dónde | Qué hace |
+|---|---|---|
+| **Ctrl+Alt+Mayús+C** | En cualquier programa | Carga en el editor de Código lo que copiaste. Si otro programa lo ocupa, [Ajustes](ajustes#acerca-de) lo dice. |
+| **Ctrl+A** | Alumnos, fuera de un campo de texto | Selecciona a todos los alumnos de la lista. |
+| **Esc** | Paneles, ventanas y globos de información | Cierra lo que está abierto y vuelve al botón que lo abrió. |
+| **Tab** | Dentro del editor de código | Sangra el código. Para salir del editor, pulsa **Ctrl+M** y después **Tab**. |
+| **+ − 0** | Sobre un diagrama | Acercan, alejan y vuelven al tamaño original. |
+| **↑ ↓** | Pestañas de Ajustes | Cambian de pestaña. |

@@ -493,6 +493,7 @@ window.AulaTextos = Object.freeze({
   "simulada.quitarA": "Quitar a {nombre}",
 
   // Ayuda
+  "ayuda.cargando": "Cargando el manual…",
   "ayuda.titulo": "Ayuda",
   "ayuda.subtitulo": "Manual de Aula Consola · funciona sin internet",
   "ayuda.problemas": "Solución de problemas",

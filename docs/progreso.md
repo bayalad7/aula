@@ -934,9 +934,22 @@ Plan original:
 - **Terminado:** cumple la definición de terminado de `CLAUDE.md` (errores con código, manual,
   `dobles.js` y recorrido).
 
-### Paso 4 — Lo que queda de las Fases 3, 4 y 6
+### Paso 4 — Lo que queda de las Fases 3, 4 y 6 — ✅ hecho (espera aprobación)
 
-Es revisión, sin funciones nuevas:
+Hecho el 04/11/2026 (`docs/v1/ux/profesor/ENTREGA-P4.md`):
+- Atajos: tabla en Tareas frecuentes. Al cerrar un panel lateral, el foco vuelve al botón que lo
+  abrió (antes se perdía).
+- Formularios: ayudantes `errorEnCampo`, `limpiarCampo` y `ocupado` en `main.js`.
+  - El arranque ya no borra lo escrito cuando «Abrir la clase» falla, y marca el campo culpable.
+  - Canal, nombre y aviso muestran junto al campo el error que devuelve Go.
+  - Ningún botón de envío se puede pulsar dos veces mientras espera; «Emitir» mandaba dos
+    ejercicios.
+- Carga: «Cargando el manual…». El salto a una sección del manual espera a que se decodifiquen
+  los diagramas de arriba, que la empujaban.
+- Primer uso (6.1) y Fase 4.3: sin cambios, como estaba previsto.
+- Recorrido: 52 capturas sin errores.
+
+Plan original:
 - **Atajos de teclado (3.6):** su lista en el manual. Revisar Esc en paneles y diálogos y Ctrl+A,
   y agregar solo los que falten.
 - **Formularios (3.5):** validación en línea y no perder lo escrito al fallar, en canal, nombre,

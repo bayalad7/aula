@@ -85,6 +85,25 @@
     return { titulo: T("error.generico"), texto: /[.!?]$/.test(frase) ? frase : frase + ".", detalle: "" };
   }
 
+  // Formularios: el error va junto a su campo, que queda marcado y con el foco;
+  // lo escrito nunca se borra al fallar, y la marca se quita al escribir.
+  function errorEnCampo(campo, caja, texto) {
+    caja.hidden = false;
+    caja.replaceChildren(icono("error", "icono--sm"), document.createTextNode(texto));
+    campo.setAttribute("aria-invalid", "true");
+    campo.focus();
+  }
+  function limpiarCampo(campo, caja) {
+    if (caja) caja.hidden = true;
+    campo.removeAttribute("aria-invalid");
+  }
+  // Un botón ocupado no se puede volver a pulsar (nada se manda dos veces).
+  function ocupado(b, si) {
+    b.disabled = si;
+    if (si) b.setAttribute("aria-busy", "true");
+    else b.removeAttribute("aria-busy");
+  }
+
   // --- Avisos flotantes ------------------------------------------------------------------
   function toast(tipo, titulo, texto, detalle, ayuda) {
     const ic = { exito: "conectado", error: "error", advertencia: "advertencia", info: "info" }[tipo];
@@ -240,7 +259,8 @@
   window.addEventListener("hashchange", () => irA(location.hash.slice(1)));
 
   // --- Arranque --------------------------------------------------------------------------
-  function mostrarArranque(error) {
+  // conservar: el error viene de «Abrir la clase», así que se respeta lo escrito.
+  function mostrarArranque(error, conservar) {
     $("app").hidden = true;
     $("arranque").hidden = false;
     api.Setup().then((s) => {
@@ -256,8 +276,15 @@
         $("arranque-error-detalle").textContent = m.detalle || String(fallo);
         $("arranque-error-detalle").parentElement.hidden = !m.detalle;
       }
-      $("arranque-canal").value = s.defaultChannel;
-      $("arranque-nombre").value = s.consoleName || "";
+      if (!conservar) {
+        $("arranque-canal").value = s.defaultChannel;
+        $("arranque-nombre").value = s.consoleName || "";
+      }
+      const campo = { invalidChannel: "arranque-canal", invalidName: "arranque-nombre" }[fallo ? amable(fallo).codigo : ""];
+      for (const id of ["arranque-canal", "arranque-nombre"]) {
+        if (id === campo) $(id).setAttribute("aria-invalid", "true");
+        else $(id).removeAttribute("aria-invalid");
+      }
       $("arranque-recientes").replaceChildren(...s.recentChannels.slice(0, 6).map((c) => {
         const b = boton(T("canal.reciente", { canal: c }), "btn--sm");
         b.addEventListener("click", () => { $("arranque-canal").value = c; });
@@ -266,16 +293,17 @@
       $("arranque-version").textContent = T("arranque.version", { version: s.version });
       // Mientras abre el canal predeterminado, el formulario espera.
       for (const e of $$("#arranque-form input, #arranque-form button")) e.disabled = !fallo;
+      if (campo) $(campo).focus();
     });
   }
+  for (const id of ["arranque-canal", "arranque-nombre"]) $(id).addEventListener("input", () => limpiarCampo($(id)));
   $("arranque-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const b = $("arranque-abrir");
-    b.setAttribute("aria-busy", "true");
-    b.disabled = true;
+    ocupado(b, true);
     api.StartClass(String($("arranque-canal").value).trim(), $("arranque-nombre").value).then(mostrarConsola, (err) => {
-      mostrarArranque(err);
-    }).finally(() => { b.removeAttribute("aria-busy"); b.disabled = false; });
+      mostrarArranque(err, true);
+    }).finally(() => ocupado(b, false));
   });
 
   // --- Consola ---------------------------------------------------------------------------
@@ -295,7 +323,9 @@
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
     api.Simulation().then(pintarSimulacion);
-    if (!manual) api.Manual().then(cargarManual, fallo);
+    if (!manual) {
+      api.Manual().then(cargarManual, (e) => { $("ayuda-cargando").hidden = true; fallo(e); });
+    }
     if (!editor) iniciarEditor();
     irA(location.hash.slice(1) || "alumnos");
   }
@@ -617,7 +647,9 @@
 
   // --- Paneles laterales ---------------------------------------------------------------------
   let panel = "";
+  let abridor = null; // el control que abrió el panel: recibe el foco al cerrarlo
   function abrirPanel(id) {
+    if (!panel) abridor = document.activeElement;
     panel = id;
     document.body.dataset.panel = id; // con un panel abierto, la lista cede columnas (style.css)
     for (const p of $$(".panel-lateral")) p.hidden = p.id !== "panel-" + id;
@@ -629,10 +661,14 @@
     $("h-panel-" + id).focus();
   }
   function cerrarPanel() {
+    const dentro = document.activeElement && document.activeElement.closest(".panel-lateral");
     panel = "";
     delete document.body.dataset.panel;
     for (const p of $$(".panel-lateral")) p.hidden = true;
     for (const b of $$("[data-panel]")) b.setAttribute("aria-expanded", "false");
+    // Si el foco estaba en el panel, se perdería al ocultarlo: vuelve a quien lo abrió.
+    if (dentro && abridor && abridor.isConnected && !abridor.closest("[hidden]")) abridor.focus();
+    abridor = null;
   }
   for (const b of $$("[data-panel]")) b.addEventListener("click", () => (panel === b.dataset.panel ? cerrarPanel() : abrirPanel(b.dataset.panel)));
   for (const b of $$("[data-cerrar-panel]")) b.addEventListener("click", cerrarPanel);
@@ -690,22 +726,22 @@
     const texto = $("aviso-texto").value.trim();
     const err = $("aviso-error");
     if (!texto) {
-      err.hidden = false;
-      err.replaceChildren(icono("error", "icono--sm"), document.createTextNode(T("aviso.vacio")));
-      $("aviso-texto").setAttribute("aria-invalid", "true");
-      $("aviso-texto").focus();
+      errorEnCampo($("aviso-texto"), err, T("aviso.vacio"));
       return;
     }
-    err.hidden = true;
-    $("aviso-texto").removeAttribute("aria-invalid");
+    limpiarCampo($("aviso-texto"), err);
     const nivel = document.querySelector('input[name="aviso-nivel"]:checked').value;
     const b = $("aviso-enviar");
-    b.setAttribute("aria-busy", "true");
+    ocupado(b, true);
     api.SendNoticeTo(texto, nivel, destinos()).then((d) => {
       $("aviso-texto").value = "";
       cerrarPanel();
       toast("exito", P("aviso.enviado", d.sent + d.simSent), T("aviso.enviadoTexto"));
-    }, fallo).finally(() => b.removeAttribute("aria-busy"));
+    }, (e) => {
+      // Un aviso que no es válido se explica junto al campo; lo demás, en un aviso flotante.
+      if (amable(e).codigo === "invalidNotice") errorEnCampo($("aviso-texto"), err, amable(e).texto);
+      else fallo(e);
+    }).finally(() => ocupado(b, false));
   });
 
   // Restricciones
@@ -762,9 +798,7 @@
     const items = $("restr-lista").value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
     const err = $("restr-error");
     if (!items.length) {
-      err.hidden = false;
-      err.replaceChildren(icono("error", "icono--sm"), document.createTextNode(T("restr.vacia")));
-      $("restr-lista").setAttribute("aria-invalid", "true");
+      errorEnCampo($("restr-lista"), err, T("restr.vacia"));
       return;
     }
     if (seleccion.size && !equiposReales().length) {
@@ -772,18 +806,15 @@
       return;
     }
     const b = $("restr-aplicar");
-    b.setAttribute("aria-busy", "true");
+    ocupado(b, true);
     api.SetRestriction({ kind: tipoRestr, mode: $("restr-modo").value, items, hosts: equiposReales() }).then((v) => {
-      err.hidden = true;
-      $("restr-lista").removeAttribute("aria-invalid");
+      limpiarCampo($("restr-lista"), err);
       pintarRestricciones(v);
       toast("exito", T("restr.aplicada"), T("restr.aplicadaTexto"));
     }, (e) => {
       // El error va junto al campo, sin perder lo escrito.
-      err.hidden = false;
-      err.replaceChildren(icono("error", "icono--sm"), document.createTextNode(amable(e).texto));
-      $("restr-lista").setAttribute("aria-invalid", "true");
-    }).finally(() => b.removeAttribute("aria-busy"));
+      errorEnCampo($("restr-lista"), err, amable(e).texto);
+    }).finally(() => { ocupado(b, false); pintarPanelRestricciones(); });
   });
   $("restr-quitar").addEventListener("click", () => {
     confirmar({
@@ -924,10 +955,12 @@
   }
   function emitir(mode) {
     const b = $(mode === "replace" ? "codigo-emitir" : "codigo-agregar");
-    b.setAttribute("aria-busy", "true");
+    // Los dos botones esperan: un segundo clic mandaría otro ejercicio.
+    ocupado(b, true);
+    $(mode === "replace" ? "codigo-agregar" : "codigo-emitir").disabled = true;
     api.Emit({ title: $("codigo-titulo").value, lang: $("codigo-lenguaje").value, content: editor.getValue(), mode, targets: destinoCodigo() })
       .then((d) => toast("exito", P("codigo.enviado", d.sent + d.simSent, { etiqueta: d.label }), T("codigo.enviadoTexto")), fallo)
-      .finally(() => b.removeAttribute("aria-busy"));
+      .finally(() => { ocupado(b, false); actualizarAccionesCodigo(); });
   }
   $("codigo-emitir").addEventListener("click", () => emitir("replace"));
   $("codigo-agregar").addEventListener("click", () => emitir("append"));
@@ -1096,18 +1129,20 @@
   }
   for (const b of $$("[data-abrir-simulada]")) {
     b.addEventListener("click", () => {
-      b.setAttribute("aria-busy", "true");
+      ocupado(b, true);
       api.SimulationStart(0).then((v) => {
         pintarSimulacion(v);
         toast("exito", P("simulada.abierta", v.students.length), T("simulada.abiertaTexto"));
         if (vista !== "simulada") location.hash = "alumnos";
-      }, fallo).finally(() => b.removeAttribute("aria-busy"));
+      }, fallo).finally(() => ocupado(b, false));
     });
   }
   $("sim-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const caps = $$("#sim-capacidades input:checked").map((i) => i.value);
-    api.SimulationAdd({ os: $("sim-so").value, capabilities: caps }).then(pintarSimulacion, fallo);
+    const b = e.submitter || $("sim-form").querySelector('button[type="submit"]');
+    if (b) ocupado(b, true);
+    api.SimulationAdd({ os: $("sim-so").value, capabilities: caps }).then(pintarSimulacion, fallo).finally(() => { if (b) ocupado(b, false); });
   });
   const cerrarSimulada = () => confirmar({ titulo: T("simulada.cerrarTitulo"), texto: T("simulada.cerrarTexto"), si: T("simulada.salir") })
     .then((si) => { if (si) api.SimulationStop().then(pintarSimulacion, fallo); });
@@ -1362,6 +1397,7 @@
 
   function cargarManual(m) {
     manual = m;
+    $("ayuda-cargando").hidden = true;
     // Índice, agrupado como lo dicen las páginas (front-matter «grupo»).
     const grupos = [];
     for (const p of m.pages) {
@@ -1399,7 +1435,13 @@
     dibujarPagina(p, $("ayuda-pagina"));
     if (seccion) {
       const h = $("manual-" + p.slug + "-" + seccion);
-      if (h) h.scrollIntoView();
+      if (h) {
+        h.scrollIntoView();
+        // Los diagramas de arriba toman su altura al decodificarse y empujarían la
+        // sección: se vuelve a ella cuando todos están listos.
+        const imgs = $$("img", $("ayuda-pagina")).filter((i) => !i.complete);
+        if (imgs.length) Promise.allSettled(imgs.map((i) => i.decode())).then(() => { if (h.isConnected) h.scrollIntoView(); });
+      }
     }
   }
 
@@ -1643,13 +1685,10 @@
     const n = Number(c);
     const err = $("cc-error");
     if (!/^[1-9][0-9]{0,4}$/.test(c) || n > 16000 || c === clase.channel) {
-      err.hidden = false;
-      err.replaceChildren(icono("error", "icono--sm"), document.createTextNode(c === clase.channel ? T("canal.mismo") : T("canal.invalido")));
-      $("cc-canal").setAttribute("aria-invalid", "true");
-      $("cc-canal").focus();
+      errorEnCampo($("cc-canal"), err, c === clase.channel ? T("canal.mismo") : T("canal.invalido"));
       return;
     }
-    reabrir(c, clase.consoleName, $("cambiar-canal"));
+    reabrir(c, clase.consoleName, $("cambiar-canal"), $("cc-canal"), err);
   });
   $("nav-clase").addEventListener("click", abrirCambiarCanal);
   $("nav-clase-compacta").addEventListener("click", abrirCambiarCanal);
@@ -1667,24 +1706,32 @@
     const nombre = $("cn-nombre").value.trim();
     if (!nombre || nombre === clase.consoleName) {
       if (!nombre) {
-        $("cn-error").hidden = false;
-        $("cn-error").replaceChildren(icono("error", "icono--sm"), document.createTextNode(T("nombre.vacio")));
+        errorEnCampo($("cn-nombre"), $("cn-error"), T("nombre.vacio"));
         return;
       }
       $("cambiar-nombre").close();
       return;
     }
-    reabrir(clase.channel, nombre, $("cambiar-nombre"));
+    reabrir(clase.channel, nombre, $("cambiar-nombre"), $("cn-nombre"), $("cn-error"));
   });
-  function reabrir(canal, nombre, dialogo) {
+  for (const [campo, caja] of [["cc-canal", "cc-error"], ["cn-nombre", "cn-error"], ["aviso-texto", "aviso-error"], ["restr-lista", "restr-error"]]) {
+    $(campo).addEventListener("input", () => limpiarCampo($(campo), $(caja)));
+  }
+  // Reabre la clase con otro canal o nombre. Un canal o un nombre que Go rechaza
+  // se explica junto al campo, sin cerrar el diálogo ni borrar lo escrito.
+  function reabrir(canal, nombre, dialogo, campo, caja) {
     const b = dialogo.querySelector('button[type="submit"]');
-    b.setAttribute("aria-busy", "true");
+    ocupado(b, true);
     if (modo === "miniaturas") ponerModo("lista");
     api.StartClass(canal, nombre).then((v) => {
       dialogo.close();
       mostrarConsola(v);
       toast("exito", T("canal.listo", { canal: v.class.channel }), T("canal.listoTexto"));
-    }, fallo).finally(() => b.removeAttribute("aria-busy"));
+    }, (e) => {
+      const m = amable(e);
+      if (m.codigo === "invalidChannel" || m.codigo === "invalidName") errorEnCampo(campo, caja, m.texto);
+      else fallo(e);
+    }).finally(() => ocupado(b, false));
   }
 
   // --- Eventos del backend -----------------------------------------------------------------

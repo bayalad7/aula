@@ -131,6 +131,16 @@ consola agrega aquí sus casos.
 | C-36 | Marca la red del equipo como Pública y comprueba de nuevo | El paso 4 falla: «La red … es Pública y el firewall no deja entrar a los alumnos», con «Qué hacer» |
 | C-37 | Con el aula simulada abierta, comprueba | Los alumnos simulados no reciben nada y siguen igual; el resultado no cambia |
 
+### Teclado, formularios y carga
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-38 | Con «Restricciones» abierto, pulsa Tab hasta un campo del panel y luego Esc | El panel se cierra y el foco vuelve al botón «Restricciones» |
+| C-39 | Haz que la consola arranque con error (otro programa ocupa el puerto 47830); en el arranque escribe otro canal y nombre y pulsa «Abrir la clase» | Sale el error y lo que escribiste sigue ahí; si el problema es el canal o el nombre, ese campo queda marcado y con el foco |
+| C-40 | En Código, pulsa «Emitir» dos veces seguidas muy rápido | Sale un solo ejercicio en el historial |
+| C-41 | Abre Ayuda nada más arrancar la consola | Se ve «Cargando el manual…» y luego el índice |
+| C-42 | Ayuda › Tareas frecuentes › Atajos de teclado (desde el índice de la página) | La página baja hasta la tabla de atajos, aunque haya diagramas arriba |
+
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 
 | # | Pasos | Esperado |

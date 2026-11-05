@@ -12,6 +12,10 @@ type Notice struct {
 	Text  string            `json:"text"`
 	Level protocol.MsgLevel `json:"level"`
 	At    time.Time         `json:"at"`
+	// Kind is empty for the teacher's msg.show. The agent adds notices of
+	// its own with a Kind and no Text, and the window words them
+	// ("snapshot": the teacher took a screenshot, docs/privacidad.md rule 44).
+	Kind string `json:"kind,omitempty"`
 }
 
 // Receiver applies the console's messages on the student side.

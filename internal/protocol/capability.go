@@ -16,6 +16,9 @@ const (
 	CapWebFilter Capability = "web.filter"
 	// CapPower shuts down, reboots or logs off (§5.15). Windows.
 	CapPower Capability = "power"
+	// CapRemote lets the teacher see and control the keyboard and mouse (§5.16).
+	// Windows, in window mode or as a service with its helper.
+	CapRemote Capability = "remote"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -23,7 +26,6 @@ const (
 	CapScreenFreeze Capability = "screen.freeze" // documented, pending (§6)
 	CapFileCollect  Capability = "file.collect"
 	CapCodeCollect  Capability = "code.collect"
-	CapRemote       Capability = "remote"
 	CapPoll         Capability = "poll"
 )
 
@@ -49,6 +51,10 @@ var requiredCapability = map[Type]Capability{
 
 	TypePowerAction: CapPower,
 	TypePowerCancel: CapPower,
+
+	TypeRemoteStart: CapRemote,
+	TypeRemoteInput: CapRemote,
+	TypeRemoteStop:  CapRemote,
 }
 
 // RequiredCapability reports the capability needed to receive a message of

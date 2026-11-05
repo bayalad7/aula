@@ -62,6 +62,16 @@ func samplePayloads() []Payload {
 		PowerAction{ActionID: testRefID, Action: PowerShutdown, Force: true},
 		PowerCancel{ActionID: testRefID},
 		PowerAck{RefID: testSnippetID, ActionID: testRefID, Status: PowerPostponed, RemainingS: 325, PostponesLeft: 1},
+		RemoteStart{ControlID: testRefID, IntervalMS: 125, Quality: 60, MaxWidth: 1280},
+		RemoteInput{ControlID: testRefID, Seq: 1, Events: []InputEvent{
+			{T: InputMove, X: 0.5, Y: 0.25},
+			{T: InputButton, B: ButtonLeft, Down: true, X: 0.5, Y: 0.25},
+			{T: InputWheel, DY: -120},
+			{T: InputKey, Code: "KeyA", Down: true},
+		}},
+		RemoteStop{ControlID: testRefID},
+		RemoteAck{RefID: testSnippetID, ControlID: testRefID, Status: RemoteActive},
+		RemoteAck{RefID: testSnippetID, ControlID: testRefID, Status: RemoteEnded, Reason: RemoteIdle},
 	}
 }
 
@@ -357,12 +367,13 @@ func TestRequiredCapability(t *testing.T) {
 		TypeAppBlockSet: CapAppBlock, TypeAppBlockClear: CapAppBlock,
 		TypeWebFilterSet: CapWebFilter, TypeWebFilterClear: CapWebFilter,
 		TypePowerAction: CapPower, TypePowerCancel: CapPower,
+		TypeRemoteStart: CapRemote, TypeRemoteInput: CapRemote, TypeRemoteStop: CapRemote,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}
@@ -462,6 +473,54 @@ func TestPolicyKeys(t *testing.T) {
 	for _, bad := range []string{"", "org", "-a.com", "a-.com", "a..com", "a_b.com", "*.x.com", strings.Repeat("a", 64) + ".com"} {
 		if ValidDomain(bad) {
 			t.Errorf("ValidDomain(%q) = true", bad)
+		}
+	}
+}
+
+func TestRemoteValidation(t *testing.T) {
+	ev := func(e InputEvent) RemoteInput {
+		return RemoteInput{ControlID: testRefID, Seq: 1, Events: []InputEvent{e}}
+	}
+	for name, p := range map[string]Payload{
+		"start id":        RemoteStart{IntervalMS: 125, Quality: 60, MaxWidth: 1280},
+		"start too fast":  RemoteStart{ControlID: testRefID, IntervalMS: MinRemoteInterval - 1, Quality: 60, MaxWidth: 1280},
+		"start too slow":  RemoteStart{ControlID: testRefID, IntervalMS: MaxRemoteInterval + 1, Quality: 60, MaxWidth: 1280},
+		"start quality":   RemoteStart{ControlID: testRefID, IntervalMS: 125, Quality: 5, MaxWidth: 1280},
+		"start width":     RemoteStart{ControlID: testRefID, IntervalMS: 125, Quality: 60, MaxWidth: 320},
+		"input seq":       RemoteInput{ControlID: testRefID, Events: []InputEvent{{T: InputMove}}},
+		"input empty":     RemoteInput{ControlID: testRefID, Seq: 1},
+		"input too many":  RemoteInput{ControlID: testRefID, Seq: 1, Events: make([]InputEvent, MaxRemoteEvents+1)},
+		"input type":      ev(InputEvent{T: "touch"}),
+		"move out":        ev(InputEvent{T: InputMove, X: 1.5}),
+		"move negative":   ev(InputEvent{T: InputMove, Y: -0.1}),
+		"button name":     ev(InputEvent{T: InputButton, B: "back"}),
+		"button out":      ev(InputEvent{T: InputButton, B: ButtonLeft, X: 2}),
+		"wheel zero":      ev(InputEvent{T: InputWheel}),
+		"wheel big":       ev(InputEvent{T: InputWheel, DY: MaxRemoteWheel + 1}),
+		"key unknown":     ev(InputEvent{T: InputKey, Code: "MetaLeft"}),
+		"key empty":       ev(InputEvent{T: InputKey}),
+		"stop id":         RemoteStop{},
+		"ack status":      RemoteAck{RefID: testRefID, ControlID: testRefID, Status: "asking"},
+		"ack no reason":   RemoteAck{RefID: testRefID, ControlID: testRefID, Status: RemoteEnded},
+		"ack bad reason":  RemoteAck{RefID: testRefID, ControlID: testRefID, Status: RemoteEnded, Reason: "student"},
+		"ack reason only": RemoteAck{RefID: testRefID, ControlID: testRefID, Status: RemotePaused, Reason: RemoteIdle},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
+				t.Fatalf("Validate = %v, want ErrInvalidMessage", err)
+			}
+		})
+	}
+	full := make([]InputEvent, MaxRemoteEvents)
+	for i := range full {
+		full[i] = InputEvent{T: InputMove, X: 1, Y: 0}
+	}
+	if err := (RemoteInput{ControlID: testRefID, Seq: 1, Events: full}).Validate(); err != nil {
+		t.Fatalf("a full batch must be valid: %v", err)
+	}
+	for _, c := range KeyCodes {
+		if !ValidKeyCode(c) {
+			t.Fatalf("%s must be valid", c)
 		}
 	}
 }

@@ -307,7 +307,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `file.collect` | `file.collect` | Reservada |
 | `code.collect` | `code.collect` | Reservada |
 | `power` | `power.action`, `power.cancel` | v0.5 (§5.15). Windows, en modo ventana y como servicio (también sin sesión iniciada). Linux y macOS no la declaran. |
-| `remote` | `remote.*` | Reservada |
+| `remote` | `remote.start`, `remote.input`, `remote.stop` | v0.6 (§5.16). Windows, en modo ventana y como servicio con su ayudante (la entrada se inyecta en la sesión del alumno). Linux y macOS no la declaran. |
 | `poll` | `poll.*` | Reservada |
 
 Las capacidades desconocidas en `hello` se ignoran (un agente más nuevo puede declarar cosas
@@ -347,6 +347,10 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `power.action` | P → A | `power` | `action_id`, `action`, `delay_s`?, `force` | `power.ack` (uno o varios) o `error` |
 | `power.cancel` | P → A | `power` | `action_id` | `power.ack` (`cancelled`); sin orden vigente se ignora |
 | `power.ack` | A → P | — | `ref_id`, `action_id`, `status`, `remaining_s`, `postpones_left` | — |
+| `remote.start` | P → A | `remote` | `control_id`, `interval_ms`, `quality`, `max_width` | `remote.ack` (`active`) y `screen.thumb.frame` periódicos, o `error` |
+| `remote.input` | P → A | `remote` | `control_id`, `seq`, `events` | — (solo `error`) |
+| `remote.stop` | P → A | `remote` | `control_id` | `remote.ack` (`ended`); sin control vigente se ignora |
+| `remote.ack` | A → P | — | `ref_id`, `control_id`, `status`, `reason`? | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -758,6 +762,128 @@ Sin `force`, una app con cambios sin guardar puede detener el apagado en la pant
 "Esta aplicación impide…". Es intencional: no se pierde trabajo, y el profesor puede reenviar la
 orden con `force`.
 
+### 5.16 Control remoto (`remote.*`)
+
+> Implementado en v0.6 (Windows), aprobado el 2026-11-05. Decisión técnica en D-019;
+> implementación en `internal/remote`; avisos en `docs/privacidad.md` reglas 36–43.
+
+El profesor ve en vivo la pantalla de **un** alumno y maneja su ratón y su teclado para ayudarlo.
+El video es la vista en grande de siempre (`screen.thumb.frame`, §5.7) a un ritmo más rápido; la
+entrada va en lotes de eventos por el mismo WebSocket autenticado. **No se pide consentimiento**:
+es una acción del profesor sobre un equipo del centro de cómputo, como la energía o las
+restricciones, y el alumno lo ve siempre (banda y distintivo, antes del primer evento).
+
+```
+Consola (P)                                   Agente (A)
+   |-- remote.start (control_id, video) --------->|  raise, banda y distintivo
+   |<----------------------- remote.ack active ---|
+   |<== screen.thumb.frame (ref_id = remote.start)|  hasta 10 por segundo
+   |-- remote.input (lotes de eventos) ---------->|  inyecta en la sesión del alumno
+   |<----------------------- remote.ack paused ---|  el alumno usa su ratón o su teclado
+   |<---------------------- remote.ack resumed ---|  2 s después de su último movimiento
+   |-- remote.stop ------------------------------>|  suelta teclas y botones, quita la banda
+   |<----------------------- remote.ack ended ----|
+```
+
+**`remote.start` (P → A)**
+
+```json
+{ "control_id": "5b0e…", "interval_ms": 125, "quality": 60, "max_width": 1280 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `control_id` | string | UUID v4 de la consola; identifica el control en `remote.input`, `remote.stop` y `remote.ack`. |
+| `interval_ms` | entero | 100–1000: como máximo **10 imágenes por segundo**. |
+| `quality` | entero | Calidad JPEG, 10–95. |
+| `max_width` | entero | 640–1920. La imagen se reduce conservando la proporción; nunca se amplía. |
+
+Valores de la consola: `125 / 60 / 1280` con la vista abierta; `1000 / 50 / 640` con la vista
+cerrada (el control sigue). Un `remote.start` con el **mismo** `control_id` solo cambia el video
+(sin otro `ack`); con otro `control_id` reemplaza al anterior, que termina (`ended`, `reason`
+`replaced`).
+
+El agente envía las imágenes como `screen.thumb.frame` con `ref_id` = el `id` del
+`remote.start` que abrió el control; reemplazan a las miniaturas mientras dure (la consola no le
+pide `screen.thumb.start` a ese equipo, y si llega uno, el agente lo atiende al terminar el
+control). Si una imagen sigue esperando a salir cuando toca la siguiente, el agente se salta esa
+captura: el video nunca se atrasa.
+
+**`remote.input` (P → A)**
+
+```json
+{ "control_id": "5b0e…", "seq": 41, "events": [
+  { "t": "move", "x": 0.5123, "y": 0.3301 },
+  { "t": "button", "b": "left", "down": true, "x": 0.5123, "y": 0.3301 },
+  { "t": "wheel", "dx": 0, "dy": -120 },
+  { "t": "key", "code": "KeyA", "down": true } ] }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `control_id` | string | UUID v4. Si no es el del control vigente, el mensaje se descarta sin error. |
+| `seq` | entero | 1, 2, 3… por control. El agente descarta los que llegan con `seq` menor o igual al último. |
+| `events` | arreglo | 1–32 eventos, en orden. |
+
+| `t` | Campos | Regla |
+|---|---|---|
+| `move` | `x`, `y` | Posición absoluta, 0–1, relativa al **monitor principal** (el que se ve). |
+| `button` | `b`, `down`, `x`, `y` | `b`: `left`, `right` o `middle`. Mueve a (`x`, `y`) y presiona o suelta. |
+| `wheel` | `dx`, `dy` | −1200 a 1200, en unidades de la rueda (120 = un paso; `dy` positivo = hacia arriba, `dx` positivo = a la derecha, como la rueda de Windows). Al menos uno distinto de 0. |
+| `key` | `code`, `down` | `code` es un `KeyboardEvent.code` de la tabla cerrada de teclas físicas de `internal/protocol` (letras, dígitos, F1–F12, flechas, edición, teclado numérico, modificadores y puntuación de un teclado de 102 teclas). Se inyecta por *scancode*: la distribución del teclado del alumno decide el carácter. Otro `code` → `invalid_message`. |
+
+No tiene respuesta. Un mensaje mal formado → `error` `invalid_message` (la sesión sigue).
+
+**`remote.stop` (P → A)**
+
+```json
+{ "control_id": "5b0e…" }
+```
+
+Termina el control: el agente suelta todo lo que presionó, deja de inyectar, detiene el video,
+quita la banda y el distintivo y responde `remote.ack` `ended` (`reason` `teacher`). Con otro
+`control_id`, o sin control vigente, se ignora.
+
+**`remote.ack` (A → P)**
+
+```json
+{ "ref_id": "<id del remote.start o remote.stop>", "control_id": "5b0e…", "status": "paused" }
+```
+
+| `status` | Cuándo | `reason` |
+|---|---|---|
+| `active` | La banda y el distintivo ya se ven y el agente acepta entrada. | — |
+| `paused` | El alumno movió su ratón o pulsó una tecla: la entrada del profesor se descarta. | — |
+| `resumed` | Pasaron 2 s sin entrada del alumno. | — |
+| `ended` | Terminó el control. | `teacher` (`remote.stop`), `replaced` (otro `remote.start`), `idle` (5 min sin `remote.input`), `session` (se fue el ayudante: la sesión del alumno se cerró o cambió), `error` (el SO rechazó la entrada durante 30 s seguidos, p. ej. con la pantalla bloqueada o el aviso de UAC). |
+
+Todos los `ack` llevan como `ref_id` el `id` del `remote.start` que abrió el control, salvo
+`ended` por `remote.stop`, que lleva el del `stop`.
+
+Reglas:
+
+- **Uno a la vez.** Cada consola controla como máximo un equipo; cada agente acepta un control.
+- **Aviso antes de la entrada.** El agente muestra la banda y el distintivo y trae su ventana al
+  frente **antes** de responder `active`; descarta toda entrada anterior a ese momento.
+- **El alumno tiene prioridad, pero no corta.** Su entrada pausa la del profesor (`paused` /
+  `resumed`) sin terminar el control. Desde Aula, el alumno no puede terminarlo.
+- **Nada queda presionado.** Al pausar, terminar, cerrarse la conexión o cerrarse el agente, el
+  agente suelta cada tecla y botón que presionó.
+- **Termina con la conexión.** Si el WebSocket se cierra, el control termina de inmediato y
+  **no se reanuda** al reconectar.
+- **Límite de ritmo.** La consola junta los movimientos seguidos y envía como máximo 60
+  `remote.input` por segundo. El agente descarta, sin error, los que excedan 60 por segundo y los
+  que lleguen en pausa o fuera de un control activo, y lo registra una vez por control.
+- Antes de `auth.ok`, como cualquier otro mensaje, → `error` `unauthorized` y cierre `1008`.
+
+#### 5.16.1 Permisos del sistema operativo
+
+| SO | Cómo | Requiere y límites |
+|---|---|---|
+| Windows | `SendInput` con `MOUSEEVENTF_ABSOLUTE` y `KEYEVENTF_SCANCODE`, **desde la sesión del alumno**: en modo servicio lo hace el ayudante (D-016), con el token del alumno y sin elevar; en modo ventana, el propio agente. Sin ayudante no se declara `remote`. | Ningún privilegio. Windows **no** deja inyectar Ctrl+Alt+Supr ni entrada en el escritorio seguro (pantalla de bloqueo, aviso de UAC). Por UIPI, el ayudante no controla ventanas de administrador, y Windows no avisa del fallo. Las teclas que atiende el Windows del profesor (Win, Alt+Tab, Ctrl+Alt+Supr) no llegan a la consola y no se envían. |
+| Linux (pendiente) | X11: extensión XTest. | Wayland no deja que un cliente inyecte entrada: haría falta el portal `org.freedesktop.portal.RemoteDesktop`, que pide aprobación en cada sesión. No se declara `remote`. |
+| macOS (pendiente) | `CGEventPost`. | Permisos de **Accesibilidad** y **Grabación de pantalla** (TCC), que concede el usuario o un perfil MDM. No se declara `remote`. |
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -769,7 +895,6 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
 | `file.collect` | Recolectar un archivo que el alumno elige entregar. |
 | `code.collect` | Recolectar el código que el alumno entrega desde el overlay. |
-| `remote.*` | Control remoto de teclado y ratón (con indicador visible y consentimiento). |
 | `poll.*` | Encuestas y preguntas rápidas a los alumnos. |
 
 ---
@@ -792,6 +917,8 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `app.block.set.apps` | 1–100 nombres de ≤ 64 caracteres | `error` `invalid_message` |
 | `web.filter.set.domains` | 1–500 dominios de ≤ 253 caracteres | `error` `invalid_message` |
 | `power.action.delay_s` | 10–600 s (0 o ausente = 30 s) | `error` `invalid_message` |
+| `remote.start.interval_ms` | 100–1000 ms (≤ 10 imágenes/s) | `error` `invalid_message` |
+| `remote.input.events` | 1–32 por mensaje; ≤ 60 mensajes/s | `error` `invalid_message`; los que exceden el ritmo se descartan sin error |
 | `error.message` | 500 caracteres | El emisor lo trunca. |
 | `hello.capabilities` | 64 entradas | `error` `invalid_message` y cierre |
 | Versión `v` ≠ 1 | — | `error` `unsupported_version` y cierre `1008` |
@@ -823,6 +950,9 @@ emisor verifica el tamaño final de la envoltura.
   transmisión no se graba en ningún extremo.
 - De `power.*` se registran `action`, `action_id`, `force`, `status`, los aplazamientos y el
   resultado; el agente lo registra **antes** de llamar al SO.
+- De `remote.*` se registran `control_id`, `status`, `reason` y la cantidad de eventos y de
+  descartes. **Nunca** qué teclas se enviaron, ni las coordenadas, ni la entrada del alumno que
+  causó una pausa (el agente solo sabe *que* la hubo).
 - `hello` revela al profesor el usuario y el equipo del alumno. Es intencional (monitoreo
   transparente) y se explica en `docs/privacidad.md`.
 

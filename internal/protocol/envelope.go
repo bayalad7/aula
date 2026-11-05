@@ -52,6 +52,11 @@ const (
 	TypePowerAction Type = "power.action"
 	TypePowerCancel Type = "power.cancel"
 	TypePowerAck    Type = "power.ack"
+	// Remote control (docs/protocol.md §5.16).
+	TypeRemoteStart Type = "remote.start"
+	TypeRemoteInput Type = "remote.input"
+	TypeRemoteStop  Type = "remote.stop"
+	TypeRemoteAck   Type = "remote.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -242,6 +247,11 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypePowerAction: decodeAs[PowerAction],
 	TypePowerCancel: decodeAs[PowerCancel],
 	TypePowerAck:    decodeAs[PowerAck],
+
+	TypeRemoteStart: decodeAs[RemoteStart],
+	TypeRemoteInput: decodeAs[RemoteInput],
+	TypeRemoteStop:  decodeAs[RemoteStop],
+	TypeRemoteAck:   decodeAs[RemoteAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

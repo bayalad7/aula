@@ -47,7 +47,7 @@
   const TI = "titulo."; // + estado, o pendiente.<acción>
   function title() {
     const v = { canal: status.channel, profesor: status.teacher };
-    let t = status.viewed ? T("titulo.vista", v) : status.watching ? T("titulo.recibiendo", v) : T(TI + status.state, v);
+    let t = status.control ? T("titulo.control", v) : status.viewed ? T("titulo.vista", v) : status.watching ? T("titulo.recibiendo", v) : T(TI + status.state, v);
     if (restricted && status.state === "connected") t += T("titulo.restricciones");
     if (pendingPower && status.state !== "unconfigured") t += T(TI + "pendiente." + pendingPower);
     // Lo nuevo que el alumno aún no mira, al frente del título (barra de tareas).
@@ -61,6 +61,7 @@
   }
 
   function renderStatus(s) {
+    const antes = status.control || "";
     status = s;
     const v = { canal: s.channel, profesor: s.teacher };
     $("estado").dataset.estado = s.state;
@@ -69,6 +70,12 @@
     $("estado-detalle").textContent = s.detail || "";
     $("banda-vista").hidden = !s.viewed;
     $("banda-vista-texto").textContent = s.viewed ? T("banda.vista", v) : "";
+    // Control remoto (reglas 37-41): la banda dice quién y, en pausa, por qué.
+    $("banda-control").hidden = !s.control;
+    const BC = "banda.control."; // + Status.Control (active, paused)
+    $("banda-control-texto").textContent = s.control ? T(BC + s.control, v) : "";
+    if (s.control && !antes) { ocultarFinControl(); salirDeCompacto(); }
+    if (!s.control && antes) mostrarFinControl(v);
     pintarVacio();
     title();
     pintarCompacto();
@@ -102,7 +109,9 @@
     $("compacto-nuevos").hidden = n === 0;
     $("compacto-nuevos").textContent = n ? P("compacto.nuevos", n) : "";
     $("compacto").dataset.nuevo = String(n > 0);
-    $("compacto-vista").hidden = !status.viewed;
+    $("compacto-control").hidden = !status.control;
+    // El control implica la pantalla vista: una insignia basta.
+    $("compacto-vista").hidden = !status.viewed || !!status.control;
   }
   function ponerCompacto(on, avisarAGo) {
     compacto = on;
@@ -331,6 +340,22 @@
     pintarCompacto();
   }
   $("avisos-mas").addEventListener("click", () => { todos = true; renderNotices(avisos); });
+
+  // Fin del control remoto (regla 41): un aviso en la esquina, sin quitar el foco. Se va
+  // con «Entendido», con Esc o solo, a los 15 s.
+  let finControl = 0;
+  function mostrarFinControl(v) {
+    $("control-fin-texto").textContent = T("control.finTexto", v);
+    $("control-fin").hidden = false;
+    clearTimeout(finControl);
+    finControl = setTimeout(ocultarFinControl, 15000);
+  }
+  function ocultarFinControl() {
+    clearTimeout(finControl);
+    $("control-fin").hidden = true;
+  }
+  $("control-fin-ok").addEventListener("click", ocultarFinControl);
+  $("control-fin").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); ocultarFinControl(); } });
 
   // --- Transmisión de la pantalla del profesor ------------------------------------------------------
   // El backend ya revisó la oferta (video solo de recepción) y mostró esta

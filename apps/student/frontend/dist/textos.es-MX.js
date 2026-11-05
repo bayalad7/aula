@@ -12,6 +12,7 @@ window.AulaTextos = Object.freeze({
   "titulo.searching": "Aula — buscando canal {canal}",
   "titulo.disconnected": "Aula — sin conexión (canal {canal}); reintentando",
   "titulo.unconfigured": "Aula — sin configurar",
+  "titulo.control": "Aula — {profesor} controla este equipo (canal {canal})",
   "titulo.vista": "Aula — tu pantalla está siendo vista por {profesor} (canal {canal})",
   "titulo.recibiendo": "Aula — viendo la pantalla de {profesor} (canal {canal})",
   "titulo.restricciones": " · restricciones activas",
@@ -28,6 +29,7 @@ window.AulaTextos = Object.freeze({
   "compacto.nuevos.uno": "1 nuevo",
   "compacto.nuevos.varios": "{n} nuevos",
   "compacto.vista": "Pantalla vista",
+  "compacto.control": "Controlado",
 
   // Tira de identidad
   "estado.connected": "Conectado al canal {canal} · {profesor}",
@@ -67,11 +69,15 @@ window.AulaTextos = Object.freeze({
   "aviso.info": "Aviso",
   "aviso.warning": "Importante",
   "aviso.entendido": "Entendido",
+  "control.finTitulo": "Control remoto terminado",
+  "control.finTexto": "{profesor} dejó de controlar tu equipo. El mouse y el teclado son solo tuyos otra vez.",
   "aviso.region": "Avisos de tu profesor",
   "aviso.mas.uno": "Ver 1 aviso más",
   "aviso.mas.varios": "Ver {n} avisos más",
 
   // Bandas de transparencia
+  "banda.control.active": "{profesor} (canal {canal}) está controlando tu equipo: el mouse y el teclado se mueven solos mientras te ayuda.",
+  "banda.control.paused": "{profesor} (canal {canal}) está controlando tu equipo. Su control está en pausa mientras usas tu mouse o tu teclado.",
   "banda.vista": "Tu pantalla la está viendo {profesor} (canal {canal})",
   "banda.recibiendo": "Estás viendo la pantalla de {profesor} (canal {canal})",
   "banda.tamanoReal": "Tamaño real",

@@ -220,9 +220,39 @@ await caso("banda-transmision", "transmision", async (p) => {
   await emitir(p, "aula:broadcast", { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "" });
   ok(await p.evaluate(() => document.getElementById("broadcast").hidden), "la vista sigue al terminar la transmisión");
 });
+// Control remoto (reglas 37-41): la banda no se cierra ni corta el control; al soltar se va,
+// y el aviso de fin aparece en la esquina sin quitarle el foco al alumno.
+await caso("banda-control", "control", async (p) => {
+  await bandaPermanente(p, "#banda-control");
+  const t = await p.evaluate(() => [document.getElementById("banda-control-texto").textContent, document.title]);
+  ok(t[0].startsWith("Prof. Ayala (canal 1) está controlando tu equipo"), "banda: " + t[0]);
+  ok(t[1] === "Aula — Prof. Ayala controla este equipo (canal 1)", "título: " + t[1]);
+  await emitir(p, "aula:status", { state: "connected", teacher: "Prof. Ayala", channel: "1", detail: "", cause: "", viewed: true, watching: false, restricted: false, control: "paused" });
+  ok((await p.evaluate(() => document.getElementById("banda-control-texto").textContent)).includes("en pausa"), "la pausa no se dice");
+  await p.focus(".copy");
+  await emitir(p, "aula:status", { state: "connected", teacher: "Prof. Ayala", channel: "1", detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "" });
+  const fin = await p.evaluate(() => ({ banda: document.getElementById("banda-control").hidden, aviso: !document.getElementById("control-fin").hidden,
+    foco: document.activeElement.classList.contains("copy"), titulo: document.title }));
+  ok(fin.banda, "la banda sigue al soltar");
+  ok(fin.aviso, "no se avisó el fin del control");
+  ok(fin.foco, "el aviso de fin le quitó el foco al alumno");
+  ok(fin.titulo.startsWith("Aula — conectado"), "título al soltar: " + fin.titulo);
+  await p.click("#control-fin-ok");
+  ok(await p.evaluate(() => document.getElementById("control-fin").hidden), "«Entendido» no quitó el aviso de fin");
+});
+// Tomar el control saca la ventana del modo compacto; dentro del modo compacto, se ve.
+await caso("compacto-control", "conectado", async (p) => {
+  await p.click("#compactar");
+  await emitir(p, "aula:status", { state: "connected", teacher: "Prof. Ayala", channel: "1", detail: "", cause: "", viewed: true, watching: false, restricted: false, control: "active" });
+  ok(await p.evaluate(() => document.getElementById("compacto").hidden && !document.getElementById("banda-control").hidden),
+    "el control no sacó la ventana del modo compacto");
+  await p.click("#compactar");
+  ok(await p.evaluate(() => !document.getElementById("compacto-control").hidden && document.getElementById("compacto-vista").hidden),
+    "en el modo compacto no se ve «Controlado»");
+});
 await caso("bandas-orden", "todo", async (p) => {
   const orden = await p.evaluate(() => [...document.querySelectorAll("#bandas > .franja")].filter((b) => !b.hidden).map((b) => b.id));
-  ok(orden.join() === "power,banda-vista,restrictions", "orden " + orden.join());
+  ok(orden.join() === "power,banda-control,banda-vista,restrictions", "orden " + orden.join());
 });
 
 // «Aula cerró…» se queda hasta que el alumno lo lee (ya no se esfuma a los 8 s)

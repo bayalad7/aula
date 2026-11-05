@@ -31,8 +31,8 @@
   <!-- Bandas de transparencia: no se pueden cerrar; desaparecen cuando el profesor termina
        (docs/privacidad.md, reglas 6, 12, 20-22 y 26-28). -->
   <!-- Orden fijo: lo urgente primero (energía), después lo que el profesor hace con esta
-       pantalla (control remoto y pantalla vista o en pausa, cuando existan: diseñados en
-       apps/teacher/frontend/dev/prototipo/alumno-*.html) y al final las restricciones. La
+       pantalla (control remoto, y pantalla vista o en pausa cuando exista: diseñada en
+       apps/teacher/frontend/dev/prototipo/alumno-pausa.html) y al final las restricciones. La
        transmisión del profesor lleva su banda sobre el video. Ninguna banda tiene botón para cerrarse: cada
        una desaparece sola cuando el profesor termina (prompt 19, entrega F). -->
   <div id="bandas" class="bandas">
@@ -43,6 +43,11 @@
       <span id="power-left" class="franja__nota"></span>
       <button type="button" id="power-dismiss" class="btn btn--sm btn--sobre-color" data-t="energia.entendido" hidden></button>
     </section>
+    <!-- Control remoto (reglas 37-40): después de la energía; sin botón para cerrarse ni para cortar. -->
+    <p id="banda-control" class="franja franja--control" role="status" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg>
+      <span id="banda-control-texto" class="franja__texto"></span>
+    </p>
     <p id="banda-vista" class="franja franja--vista" role="status" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg>
       <span id="banda-vista-texto" class="franja__texto"></span>
@@ -69,6 +74,7 @@
     <span id="compacto-punto" class="estado-conexion__punto" aria-hidden="true"></span>
     <span id="compacto-texto" class="modo-compacto__texto"></span>
     <span id="compacto-nuevos" class="insignia insignia--info" hidden></span>
+    <span id="compacto-control" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span data-t="compacto.control"></span></span>
     <span id="compacto-vista" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg><span data-t="compacto.vista"></span></span>
     <button type="button" id="restaurar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.restaurar" data-t-title="ventana.restaurar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#expandir"/></svg></button>
   </main>
@@ -100,6 +106,15 @@
   <!-- Avisos del profesor: en una esquina, sin mover el código (prompt 19). -->
   <section id="avisos" class="avisos-flotantes" data-t-aria-label="aviso.region" aria-live="polite">
     <div id="notices" class="avisos"></div>
+    <!-- El fin del control remoto (regla 41): lo arma la ventana al ver que terminó. -->
+    <div id="control-fin" class="toast" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg>
+      <div class="toast__texto">
+        <span class="toast__titulo" data-t="control.finTitulo"></span>
+        <span id="control-fin-texto"></span>
+      </div>
+      <button type="button" id="control-fin-ok" class="btn btn--sm" data-t="aviso.entendido"></button>
+    </div>
     <button type="button" id="avisos-mas" class="btn btn--sm" hidden></button>
   </section>
 

@@ -279,6 +279,7 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	app := NewApp(cfg, pub, cfgErr, sa.base, agentsvc.Clipboard{Helper: sa.helper}, nil, log)
 	app.screen.Capture = agentsvc.Capture{Helper: sa.helper}
 	app.screen.Indicator = agentsvc.Indicator{Helper: sa.helper}
+	app.control.Input = agentsvc.Input{Helper: sa.helper}
 	app.emit = func(event string, data any) {
 		sa.helper.Notify(agentsvc.EventEmit, emitted{Event: event, Data: data})
 	}
@@ -321,6 +322,10 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	}
 	if sa.ready.Broadcast {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenBroadcast)
+	}
+	if sa.ready.Capture && sa.ready.Input {
+		// The input goes into the session, with the screen and its notice.
+		h.Capabilities = append(h.Capabilities, protocol.CapRemote)
 	}
 	if sa.policy != nil {
 		// Only with a helper: it shows the notice (docs/privacidad.md rule 20).

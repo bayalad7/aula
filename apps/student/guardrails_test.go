@@ -51,7 +51,7 @@ func TestNoBindingTurnsOffTransparency(t *testing.T) {
 		"BroadcastFailed":    "reports a failed connection; the band stays while the broadcast is on",
 		"PowerPostpone":      "rule 27: postpones the countdown; the notice stays",
 		"DismissPower":       "closes only a failed order's notice (power.Countdown.Dismiss)",
-		"SetCompact":         "shrinks the window; the screen-viewed mark stays in the strip and the native indicator",
+		"SetCompact":         "shrinks the window; the screen-viewed and controlled marks stay in the strip and the native indicator",
 		"ReportWindow":       "the notification area icon's text",
 	}
 	app := reflect.TypeOf(&App{})

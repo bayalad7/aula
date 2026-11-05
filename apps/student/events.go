@@ -85,6 +85,9 @@ type Status struct {
 	Watching bool   `json:"watching"` // this screen shows the teacher's broadcast
 	// Restricted is set while class restrictions are on.
 	Restricted bool `json:"restricted"`
+	// Control is "active" while the teacher controls this computer, "paused"
+	// while the student uses it meanwhile, and "" otherwise (rules 36-41).
+	Control string `json:"control"`
 }
 
 // BroadcastView is the broadcast of the teacher's screen as the window shows

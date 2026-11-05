@@ -69,6 +69,11 @@ func main() {
 	} else {
 		log.Info("screen thumbnails not available", "capture", capErr, "indicator", indErr)
 	}
+	if in, err := platform.NewInputInjector(); err == nil && app.screen.Available() {
+		app.enableRemote(in)
+	} else {
+		log.Info("remote control not available", "err", err)
+	}
 	if p, err := platform.NewPower(); err == nil {
 		app.enablePower(p)
 	} else {

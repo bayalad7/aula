@@ -26,6 +26,7 @@ type helper struct {
 	clip      platform.Clipboard
 	capture   platform.ScreenCapture
 	indicator platform.ScreenIndicator
+	input     *heldInput // nil when the OS cannot inject
 	log       *slog.Logger
 }
 
@@ -48,6 +49,9 @@ func runHelper(channel string, log *slog.Logger) int {
 	if capErr != nil || indErr != nil {
 		h.capture, h.indicator = nil, nil // no capture without its notice
 	}
+	if in, err := platform.NewInputInjector(); err == nil {
+		h.input = &heldInput{in: in}
+	}
 
 	// The App only serves the window's bindings, forwarding them to the
 	// agent in the service; it does not connect to any console.
@@ -64,8 +68,9 @@ func runHelper(channel string, log *slog.Logger) int {
 	var once sync.Once
 	ready := func(webrtc, h264 bool) {
 		once.Do(func() {
-			r := agentsvc.Ready{Capture: h.capture != nil, Clipboard: clipErr == nil, Broadcast: webrtc && h264}
-			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast)
+			r := agentsvc.Ready{Capture: h.capture != nil, Clipboard: clipErr == nil, Broadcast: webrtc && h264,
+				Input: h.input != nil}
+			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input)
 			_ = link.Notify(agentsvc.EventReady, r)
 		})
 	}
@@ -86,6 +91,9 @@ func runHelper(channel string, log *slog.Logger) int {
 		}()
 	}, func() {
 		link.Close()
+		if h.input != nil {
+			h.input.releaseAll() // nothing stays pressed if the service goes away
+		}
 		if h.indicator != nil {
 			_ = h.indicator.Hide()
 		}
@@ -132,6 +140,20 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 			return nil, nil
 		}
 		return nil, h.indicator.Hide()
+	case agentsvc.CallInputInject:
+		var events []platform.InputEvent
+		if err := json.Unmarshal(data, &events); err != nil {
+			return nil, err
+		}
+		if h.input == nil {
+			return nil, platform.ErrNotSupported
+		}
+		return nil, h.input.Inject(events)
+	case agentsvc.CallInputLocal:
+		if h.input == nil {
+			return nil, platform.ErrNotSupported
+		}
+		return h.input.LocalInput()
 	case agentsvc.CallPower:
 		var a agentsvc.PowerArgs
 		if err := json.Unmarshal(data, &a); err != nil {
@@ -195,4 +217,60 @@ func runPower(a agentsvc.PowerArgs) error {
 		return p.Logoff(own, a.Force)
 	}
 	return fmt.Errorf("unknown power action %q", a.Action)
+}
+
+// heldInput injects for the service and remembers what stays pressed, so the
+// helper can let go of it if the service disappears in the middle of a remote
+// control (the service releases everything itself when it ends normally).
+type heldInput struct {
+	in platform.InputInjector
+
+	mu      sync.Mutex
+	keys    map[string]bool
+	buttons map[platform.MouseButton]bool
+}
+
+func (h *heldInput) Inject(events []platform.InputEvent) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.keys == nil {
+		h.keys, h.buttons = map[string]bool{}, map[platform.MouseButton]bool{}
+	}
+	for _, e := range events {
+		switch e.Kind {
+		case platform.InputKey:
+			if e.Down {
+				h.keys[e.Code] = true
+			} else {
+				delete(h.keys, e.Code)
+			}
+		case platform.InputButton:
+			if e.Down {
+				h.buttons[e.Button] = true
+			} else {
+				delete(h.buttons, e.Button)
+			}
+		}
+	}
+	return h.in.Inject(events)
+}
+
+func (h *heldInput) LocalInput() (time.Time, error) { return h.in.LocalInput() }
+
+// releaseAll lets go of every key and button still pressed.
+func (h *heldInput) releaseAll() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	var up []platform.InputEvent
+	for k := range h.keys {
+		up = append(up, platform.InputEvent{Kind: platform.InputKey, Code: k})
+	}
+	for b := range h.buttons {
+		up = append(up, platform.InputEvent{Kind: platform.InputButton, Button: b})
+	}
+	clear(h.keys)
+	clear(h.buttons)
+	if len(up) > 0 {
+		_ = h.in.Inject(up)
+	}
 }

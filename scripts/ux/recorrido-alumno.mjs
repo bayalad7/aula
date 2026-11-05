@@ -55,6 +55,11 @@ await f("18-app-cerrada", "restricciones", { pasos: emitir("aula:app-closed", { 
 await f("34-todas-las-bandas", "todo", { pasos: emitir("aula:app-closed", { app: "steam" }) });
 await f("35-todas-las-bandas-oscuro", "todo", { oscuro: true });
 await f("19-energia-cuenta", "energia-cuenta");
+await f("36-control", "control");
+await f("37-control-pausa", "control-pausa");
+await f("38-control-terminado", "control", { pasos: emitir("aula:status", { state: "connected", teacher: "Prof. Ayala", channel: "1",
+  detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "" }) });
+await f("39-control-oscuro", "control", { oscuro: true });
 await f("20-energia-forzada", "energia-forzada");
 await f("21-energia-fallida", "energia-fallida");
 
@@ -65,6 +70,8 @@ await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: 
   await emitir("aula:board", { snippets: [...prev, { id: "sn-4", exercise: "4", title: "Tabla", lang: "python", content: "print(5)\n",
     receivedAt: new Date().toISOString() }] })(p);
 }) });
+
+await f("40-compacto-controlado", "control", { w: 380, h: 80, pasos: click("#compactar") });
 
 // Tema y tamaño
 await f("22-oscuro-varios-codigos", "varios-codigos", { oscuro: true });

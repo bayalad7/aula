@@ -18,7 +18,7 @@
   const channel = "1";
   // El estado: Go manda estados, no frases (apps/student/events.go, Status).
   const st = (state, extra) => Object.assign({ state, teacher: state === "searching" || state === "unconfigured" ? "" : teacher,
-    channel: state === "unconfigured" ? "" : channel, detail: "", cause: "", viewed: false, watching: false, restricted: false }, extra);
+    channel: state === "unconfigured" ? "" : channel, detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "" }, extra);
   const conectado = st("connected");
   const status = {
     "sin-configurar": st("unconfigured", { detail: "no hay configuración: falta config.json en C:\ProgramData\Aula\alumno (canal y clave pública del centro); pide al administrador que instale Aula en este equipo" }),
@@ -29,7 +29,10 @@
     "pantalla-vista": st("connected", { viewed: true }),
     transmision: st("connected", { watching: true }),
     restricciones: st("connected", { restricted: true }),
-    todo: st("connected", { restricted: true, viewed: true }),
+    // El control remoto implica la pantalla vista (docs/privacidad.md, regla 37).
+    control: st("connected", { viewed: true, control: "active" }),
+    "control-pausa": st("connected", { viewed: true, control: "paused" }),
+    todo: st("connected", { restricted: true, viewed: true, control: "active" }),
   }[scene] || conectado;
 
   const ahora = new Date().toISOString();
@@ -40,6 +43,7 @@
   const java = { id: "sn-3", exercise: "3", title: "", lang: "java", receivedAt: ahora,
     content: "public class Hola {\n    public static void main(String[] args) {\n        for (int i = 0; i < 3; i++) {\n            System.out.println(\"Hola \" + i);\n        }\n    }\n}\n" };
   const snippets = { "un-codigo": [py], "varios-codigos": [py, js, java], "pantalla-vista": [py], transmision: [],
+    control: [py], "control-pausa": [py],
     restricciones: [py], "aviso-info": [py], "aviso-warning": [py], "varios-avisos": [py, js, java], "muchos-avisos": [py] }[scene] || [];
 
   const aviso = (id, level, text) => ({ id, level, text, at: ahora });

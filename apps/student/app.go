@@ -20,6 +20,7 @@ import (
 	"github.com/bayalad7/aula/internal/policy"
 	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/remote"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/session"
 	"github.com/bayalad7/aula/internal/transport"
@@ -31,18 +32,19 @@ const maxNotices = 10
 // App is the student agent behind the Wails window. Its exported methods are
 // the bindings the frontend calls.
 type App struct {
-	cfg    Config
-	cfgErr error
-	pub    ed25519.PublicKey
-	hello  protocol.HelloInfo
-	board  *codedist.Board
-	recv   *codedist.Receiver
-	screen *screen.Streamer   // screen thumbnails; inert until enableScreen
-	power  *power.Countdown   // power.*; inert until enablePower
-	viewer *broadcast.Viewer  // the teacher's screen; declared after ReportMedia
-	clip   platform.Clipboard // nil when the system has none
-	clipEr error
-	log    *slog.Logger
+	cfg     Config
+	cfgErr  error
+	pub     ed25519.PublicKey
+	hello   protocol.HelloInfo
+	board   *codedist.Board
+	recv    *codedist.Receiver
+	screen  *screen.Streamer   // screen thumbnails; inert until enableScreen
+	power   *power.Countdown   // power.*; inert until enablePower
+	viewer  *broadcast.Viewer  // the teacher's screen; declared after ReportMedia
+	control *remote.Agent      // remote control; inert until enableRemote
+	clip    platform.Clipboard // nil when the system has none
+	clipEr  error
+	log     *slog.Logger
 
 	// UI hooks, set at startup (replaced in tests).
 	emit   func(event string, data any)
@@ -94,6 +96,7 @@ type App struct {
 	restrict policy.State  // class restrictions in force (rules 20-21)
 	watching bool          // this screen shows the teacher's broadcast (rule 12)
 	powerV   PowerView     // power notice in force (rules 26-28)
+	ctrl     remote.State  // remote control in force (rules 36-41)
 	cancel   context.CancelFunc
 	done     chan struct{}
 }
@@ -112,6 +115,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a.screen = &screen.Streamer{Logger: log, OnViewed: a.onViewed}
 	a.viewer = &broadcast.Viewer{Logger: log, OnView: a.onBroadcastView, OnSignal: a.onBroadcastSignal}
 	a.power = &power.Countdown{OnChange: a.onPower, Logger: log}
+	a.control = &remote.Agent{Video: a.screen, OnState: a.onControl, Logger: log}
 	if cfgErr != nil {
 		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Detail: cfgErr.Error()}
 	} else {
@@ -259,6 +263,7 @@ func (a *App) stop() {
 		a.cancel()
 		<-a.done
 	}
+	a.control.Stop()
 	a.screen.Stop()
 	a.viewer.Stop()
 }
@@ -302,6 +307,7 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 	if s != session.AgentConnected {
 		// The streams belong to the connection: no console, no capture and
 		// no broadcast view, and no restrictions.
+		a.control.Stop() // first: it releases the keys and gives the stream back
 		a.screen.Stop()
 		a.viewer.Stop()
 		if a.onLeave != nil {
@@ -378,6 +384,9 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		reply, ok = a.power.Handle(ctx, power.Sender(send), env)
 	}
 	if !ok {
+		reply, ok = a.control.Handle(ctx, send, env)
+	}
+	if !ok {
 		reply, ok = a.screen.Handle(ctx, send, env)
 	}
 	if !ok {
@@ -425,6 +434,7 @@ func (a *App) setStatus(s Status) {
 	s.Viewed = a.viewed && s.State == StateConnected
 	s.Watching = a.watching && s.State == StateConnected
 	s.Restricted = a.restrict.Active() && s.State == StateConnected
+	s.Control = controlState(a.ctrl, s.State)
 	a.status = s
 	a.mu.Unlock()
 	a.emit(EventStatus, s)

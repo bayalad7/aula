@@ -85,6 +85,9 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, k := range []string{"appsDeny", "appsAllow", "webDeny", "webAllow", "separador"} {
 		need("banda.restricciones."+k, "policy.State (mode)")
 	}
+	for _, c := range []string{ControlActive, ControlPaused} {
+		need("banda.control."+c, "events.go (Status.Control)")
+	}
 
 	for key, where := range used {
 		if !defined[key] {

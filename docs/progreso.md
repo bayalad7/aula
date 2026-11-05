@@ -1,7 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-05 (etapa 19 cerrada; prompts y comandos al día con las etapas
-18 y 19).
+Última actualización: 2026-11-05 (10.4 control remoto implementado, falta la prueba en VM; etapa 19
+cerrada; prompts y comandos al día con las etapas 18 y 19).
 
 La columna «Etapa» es el número del prompt en `docs/v1/prompts/`. Entre paréntesis, el número con
 el que se trabajó antes; las notas de abajo lo conservan.
@@ -21,7 +21,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.1 (09.3) | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
 | 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado; apagado con cuenta y posponer probado en el laboratorio (faltan los demás casos de `docs/prueba-vms.md` §15) |
-| 10.4 | Control remoto del alumno | ⏳ Pendiente (banda diseñada: `alumno-control.html`) |
+| 10.4 | Control remoto del alumno | ✅ Implementado y probado en CI con dobles (falta la prueba en VM, `docs/prueba-vms.md` §16, y los casos C-44 a C-48 y A-09 a A-11) |
 | 10.5 | Captura de pantalla de un alumno | ⏳ Pendiente |
 | 10.6 | Mensajería del alumno y «levantar la mano» | ⏳ Pendiente (crea la vista «Clase» si es la primera) |
 | 10.7 | Mensaje directo a un alumno | ⏳ Pendiente (casi todo existe: el aviso a una selección; quizá es una mejora) |
@@ -45,11 +45,12 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
 
 **Siguiente:**
-1. Probar en la ventana real los casos C-01 a C-43 y A-01 a A-08.
+1. Probar en la ventana real los casos C-01 a C-48 y A-01 a A-11, y el control remoto en VM
+   (`docs/prueba-vms.md` §16: RC-A, RC-B y RC-C para aceptar).
 2. La revisión 11.
-3. Publicar `v0.4.0-rc.1` (etapas 18 y 19: funciones nuevas compatibles, sin cambios de
-   protocolo ni de configuración).
-4. Cualquier función de 10.4 a 10.13 con `/funcionalidad-nueva <número>`.
+3. Publicar `v0.6.0-rc.1` (etapas 18, 19 y 10.4). Las 0.x son borradores: al integrar todas las
+   funciones se borran y empieza la versión 1 oficial.
+4. Cualquier función de 10.5 a 10.13 con `/funcionalidad-nueva <número>`.
 
 ## Etapa 02: notas
 
@@ -1118,3 +1119,51 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.4: control remoto (D-019) — notas
+
+- **Diseño aprobado** (2026-11-05), con dos cambios del usuario sobre la propuesta: **sin
+  consentimiento** del alumno (el profesor tiene autoridad sobre los equipos) y **sin botón para
+  que el alumno corte** el control. Se mantuvieron la pausa cuando el alumno usa su equipo, el
+  video por la vista en grande (no WebRTC) y que cerrar la vista no suelte.
+- **Protocolo** (`docs/protocol.md` §5.16, permisos del SO en §5.16.1): `remote.start`,
+  `remote.input`, `remote.stop` y `remote.ack`; capacidad `remote`. Las imágenes son
+  `screen.thumb.frame` con el `ref_id` del `remote.start` (hasta 10 por segundo). `remote.input`
+  lleva hasta 32 eventos (`move`, `button`, `wheel`, `key` con `KeyboardEvent.code` de una lista
+  cerrada), como máximo 60 por segundo.
+- **`internal/platform`:** `InputInjector` (`Inject`, `LocalInput`) y la tabla de scancodes. En
+  Windows, `SendInput` con `MOUSEEVENTF_ABSOLUTE` y `KEYEVENTF_SCANCODE` (Pausa, Bloq Num e Impr
+  Pant por tecla virtual), marcado con `dwExtraInfo`; la entrada del alumno se detecta con
+  `GetLastInputInfo` y `GetCursorPos`, sin hooks. Fallback «no soportado» en Linux y macOS. Las
+  pruebas comprueban el tamaño de `INPUT` y la traducción de eventos; **nunca llaman a
+  `SendInput`**. Una prueba del atajo global ya declaraba `procSendInput`: ahora usa la del paquete.
+- **`internal/agentsvc`:** llamadas `input.inject` e `input.local`, *proxy* `Input` y
+  `Ready.Input`.
+- **`internal/screen`:** `Streamer.StartControl`, `RetuneControl` y `StopControl`: el control toma
+  prestada la captura con su propio ritmo y aviso; las miniaturas que pida la consola mientras
+  tanto se retoman al terminar.
+- **`internal/remote`** (nuevo, sin APIs del SO): `Agent` (aviso antes de aceptar entrada, un
+  control a la vez, `seq`, ritmo, pausa y reanudación, inactividad de 5 min, 30 s de rechazos →
+  `error`, ayudante perdido → `session`, soltar todo al terminar) y `Desk` (uno a la vez, lotes,
+  movimientos juntados, 60 por segundo sin perder teclas, video según la vista).
+- **Alumno:** declara `remote` con captura e inyección (modo ventana; en servicio, si el ayudante
+  dice `input`). `Status.control` (`active`, `paused`); banda `#banda-control` después de la de
+  energía, título, insignia «Controlado» en compacto, `raise` al empezar y aviso de fin en la
+  esquina sin quitar el foco. El ayudante recuerda lo presionado y lo suelta si el servicio se va.
+  Sin bindings nuevos.
+- **Consola:** «Tomar control» en la ficha y en la pantalla grande de Miniaturas (agregado a pedido:
+  ahí es donde el profesor ve si el alumno está en la actividad), solo reales, conectados y con
+  `remote`; la vista es
+  `#pantalla-grande` en modo control (mouse, rueda y teclado; Ctrl+Alt+Fin devuelve el teclado;
+  Esc va al alumno); franja global «Controlando … · Ver · Soltar»; errores `alreadyControlling`,
+  `remoteUnsupported` y `remoteGone`; «Control remoto» en «Qué puede hacer su equipo».
+- **Documentación:** `docs/privacidad.md` reglas 36–43 (y las reglas 1, 2 y 4); D-019; manual
+  (Tareas frecuentes › «Ayudar a un alumno tomando el control» y la ficha en Alumnos); diagrama
+  nuevo 17 y los 09 y 13 actualizados, con sus SVG; `docs/eventos-ui.md`; casos C-44 a C-47,
+  A-09 a A-11 y `docs/prueba-vms.md` §16; `CLAUDE.md` lista `internal/remote`.
+- **Arnés:** escenas `lab-control` y `lab-control-pausa` en `dobles.js` y capturas 54–59 en
+  `recorrido.mjs`; escenas `control` y `control-pausa` en `dobles-alumno.js`, capturas 36–40 en
+  `recorrido-alumno.mjs` y los casos `banda-control`, `compacto-control` y el orden de las bandas
+  en `pruebas-alumno.mjs`.
+- **Falta de tu lado:** la prueba en VM (§16) y los casos manuales. La latencia real del JPEG
+  (objetivo: menos de medio segundo) solo se puede medir ahí.

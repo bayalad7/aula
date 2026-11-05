@@ -1,6 +1,6 @@
 ---
 titulo: "Tareas frecuentes"
-resumen: "Mostrar tu pantalla, mandar avisos, restringir aplicaciones y sitios, apagar equipos y cambiar de canal."
+resumen: "Mostrar tu pantalla, mandar avisos, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo y cambiar de canal."
 grupo: "Tareas frecuentes"
 orden: 60
 pantallas: []
@@ -59,6 +59,40 @@ marcas **Forzar ahora**, no hay cuenta y las aplicaciones se cierran sin guardar
 órdenes pendientes, una franja en tu consola permite **Cancelar**.
 
 {{diagrama:16-energia}}
+
+## Ayudar a un alumno tomando el control
+
+1. En [Alumnos](alumnos#la-ficha-de-un-alumno), abre la **ficha** del alumno (botón de información
+   al final de su fila).
+2. Pulsa **Tomar control**.
+
+También desde **Miniaturas**: haz clic en la pantalla de un alumno para verla en grande y pulsa
+**Tomar control** arriba. Es lo más rápido cuando ves que alguien está haciendo otra cosa.
+
+Se abre su pantalla en grande y en vivo. Haz clic sobre ella: tu mouse y tu teclado manejan su
+equipo hasta que pulses **Soltar**. Mientras dura, una franja arriba de tu consola dice
+«Controlando LAB3-PC07», con **Ver** y **Soltar**; puedes cerrar la vista para hacer otra cosa en
+la consola sin soltar el control.
+
+- **El alumno siempre lo sabe:** su ventana de Aula pasa al frente con una banda roja «Prof. …
+  está controlando tu equipo», y un aviso fijo arriba de su pantalla lo dice aunque cierre la
+  ventana. No se le pide permiso; tampoco puede cortar el control.
+- **Si el alumno mueve su mouse o escribe,** tu control se pausa hasta 2 segundos después: la
+  vista dice «El alumno está usando su equipo».
+- **Uno a la vez.** Para ayudar a otro, primero suelta al que controlas.
+- **Termina solo** si el alumno se desconecta, si pasan 5 minutos sin que uses el mouse ni el
+  teclado o si cierras la clase.
+- **Teclas que no llegan:** Windows, Alt+Tab y Ctrl+Alt+Supr las atiende tu propio equipo. Para
+  que tu teclado vuelva a la consola sin soltar, pulsa **Ctrl+Alt+Fin**.
+- **Lo que Windows no deja controlar:** la pantalla de bloqueo, los avisos de «¿Quieres permitir
+  que esta aplicación haga cambios?» y las ventanas abiertas como administrador.
+
+Solo se puede en equipos con Windows y una versión de Aula que lo incluya (su ficha dice «Control
+remoto: Sí»); los alumnos simulados no se pueden
+controlar. La imagen va por la red del laboratorio a unas 8 imágenes por segundo: sirve para
+ayudar, no para ver videos.
+
+{{diagrama:17-control-remoto}}
 
 ## Cambiar de canal o de nombre
 

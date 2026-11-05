@@ -113,6 +113,11 @@ consola agrega aquí sus casos.
 | C-28 | Ajustes › Acerca de: pulsa la «i» junto a «Clave del centro», luego fuera | Aparece la explicación con «Más en el manual»; un clic fuera o Esc la cierra |
 | C-29 | Ajustes › Acerca de | «Certificado de la conexión: Vigente hasta el …» (10 años después de instalar) |
 | C-30 | Con un alumno real de otra versión o sin una capacidad, mándale lo que no soporta (opcional) | En su fila «No pudo: …»; en Código, «Quién falta» lo lista con el motivo y «Ver en el manual»; «Reenviar» lo reintenta |
+| C-44 | Abre la ficha de un simulado y la de un alumno real con Windows | El simulado no tiene «Tomar control» y en «Qué puede hacer su equipo» dice No en «Control remoto»; el real con Windows y una versión que lo incluya tiene el botón |
+| C-45 | En la ficha de un alumno real, «Tomar control»; haz clic en su pantalla y escribe | Se abre su pantalla en grande con «Controlando …» y «Soltar»; arriba de la consola, la franja roja «Controlando …» con «Ver» y «Soltar»; lo que escribes aparece en su equipo |
+| C-46 | Con la imagen enfocada pulsa Esc, luego Ctrl+Alt+Fin; cierra la vista con la X | Esc llega al alumno (no cierra la vista); Ctrl+Alt+Fin lleva el foco a «Soltar»; al cerrar, la franja sigue y «Ver» vuelve a abrir la vista |
+| C-47 | Con un alumno controlado, toma el control de otro | Aviso «Ya estás controlando otro equipo» con «Ver en el manual»; el primero sigue controlado |
+| C-48 | En Miniaturas, haz clic en la pantalla de un alumno real y pulsa «Tomar control» arriba | La misma vista pasa a «Controlando …» con «Soltar»; al soltar, su miniatura sigue actualizándose en la cuadrícula. En un simulado no aparece el botón |
 
 ### Diagramas
 
@@ -157,6 +162,9 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-06 | Sin tocar la ventana, pulsa Ctrl+Mayús+C con Aula al frente y pega en el Bloc de notas | Se pega el último código, con su sangría y sus saltos de línea |
 | A-07 | En compacto, manda una orden de energía de 10 min y cancélala en seguida | La ventana vuelve a su tamaño y al frente con la banda roja; al cancelar, la banda se va |
 | A-08 | Abre «Miniaturas» en la consola con el alumno en la lista | El distintivo nativo arriba de la pantalla y la banda «Tu pantalla la está viendo…» en Aula; al cerrar, ambos se van |
+| A-09 | Con Aula compacta o cerrada, toma el control desde la ficha del alumno en la consola | La ventana vuelve a su tamaño y al frente con la banda roja «… está controlando tu equipo» (sin botón para cerrarla) y la de pantalla vista; el distintivo nativo dice «El profesor está controlando tu equipo» |
+| A-10 | Mientras te controlan, mueve tu propio mouse | La banda dice «Su control está en pausa…» y la consola «En pausa»; a los 2 s sin moverte vuelve a «Controlando» |
+| A-11 | Pulsa «Soltar» en la consola con el foco en tu editor | La banda y el distintivo se van; en la esquina aparece «… dejó de controlar tu equipo» sin quitarle el foco a tu editor |
 
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 

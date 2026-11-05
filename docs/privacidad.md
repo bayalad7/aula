@@ -19,7 +19,7 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
    título: "(2) Aula — conectado…". En el modo compacto, la tira resume canal y profesor.
 
    **Bandas de transparencia (prompt 19).** Lo que el profesor hace con este equipo se ve en
-   bandas fijas arriba de la ventana, en este orden: energía; control remoto (cuando exista);
+   bandas fijas arriba de la ventana, en este orden: energía; control remoto (reglas 36-41);
    pantalla vista, o en pausa (cuando exista, reglas 9-10); restricciones. La transmisión lleva la suya sobre el
    video. **Ninguna tiene botón para cerrarse ni se oculta con el teclado**: cada una desaparece
    sola cuando el profesor termina. Lo prueban `scripts/ux/pruebas-alumno.mjs` y, del lado de Go,
@@ -28,8 +28,8 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
    la ventana la oculta y deja el icono de Aula en el área de notificación de Windows («Mostrar
    iconos ocultos»), con el estado al pasar el puntero y «Abrir Aula». Mientras está oculta, el
    código y los avisos que llegan solo marcan el icono; la ventana no reaparece sola, salvo por
-   una acción del profesor sobre el equipo (energía, restricciones o su transmisión, reglas 12, 20
-   y 26). El distintivo de pantalla vista (regla 6) no depende de la ventana: se ve igual. Donde no
+   una acción del profesor sobre el equipo (energía, restricciones, su transmisión o el control remoto, reglas 12, 20,
+   26 y 36). El distintivo de pantalla vista (regla 6) no depende de la ventana: se ve igual. Donde no
    hay área de notificación (Linux y macOS por ahora), cerrar minimiza.
 3. **El agente se presenta con su nombre real** (equipo y usuario del sistema) y solo después de
    comprobar que la consola es la autorizada (`docs/protocol.md` §3.1). Sabe quién lo ve.
@@ -37,7 +37,7 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
    la ventana de Aula, pero nunca le quitan el foco ni la mueven (prompt 19). Si está visible, se
    actualizan en su lugar; si está minimizada, el botón de la barra de tareas parpadea y el título
    dice cuántos hay nuevos; si está cerrada al área de notificación, el icono se marca. Solo las
-   acciones del profesor sobre el equipo traen la ventana al frente (reglas 12, 20 y 26). Las
+   acciones del profesor sobre el equipo traen la ventana al frente (reglas 12, 20, 26 y 36). Las
    confirmaciones (`code.ack`, `msg.ack`) solo dicen "se mostró", no "se leyó" ni "se copió".
 5. **Registros.** No se registran el código, los textos de los avisos, las claves, los nonces ni
    las firmas. Sí el tipo de mensaje, los identificadores, el equipo y los tamaños.
@@ -236,8 +236,62 @@ Alumnos de prueba que la consola crea dentro de sí misma para probar Aula sin l
     como la de un equipo real, muestra «Tu pantalla está siendo vista por el profesor» mientras
     se ve.
 
+## Control remoto (v0.6, Windows)
+
+Reglas para `remote.*` (`docs/protocol.md` §5.16), aprobadas el 2026-11-05. Es la función más
+intrusiva de Aula: el profesor ve la pantalla de un alumno y maneja su teclado y su mouse para
+ayudarlo. Por eso el alumno lo ve siempre, desde antes del primer evento hasta el final.
+
+36. **Sin consentimiento, con aviso inmediato.** El control no le pide permiso al alumno: es una
+    acción del profesor sobre un equipo del centro de cómputo, con la misma autoridad que apagarlo
+    o restringirlo, y solo la acepta el agente de una consola autenticada con la clave del centro
+    (regla 29, `docs/protocol.md` §10). Al llegar `remote.start`, y **antes** de aceptar el primer
+    evento, la ventana de Aula pasa al frente, sale del modo compacto y muestra la banda de la
+    regla 37. Se decidió no pedir consentimiento para que el profesor pueda ayudar a un alumno que
+    no sabe responder o no está frente al equipo; la transparencia no depende de esa respuesta.
+37. **Banda permanente.** Mientras dura, la ventana muestra, después de la banda de energía y
+    antes de la de pantalla vista:
+
+    > **<profesor> (canal <X>) está controlando tu equipo: el mouse y el teclado se mueven solos
+    > mientras te ayuda.** (con el icono de control)
+
+    En pausa (regla 40) dice además «Su control está en pausa mientras usas tu mouse o tu
+    teclado». La banda **no tiene botón para cerrarse** ni se oculta con el teclado; en el modo
+    compacto se ve la insignia «Controlado». La barra de la ventana dice **"Aula — <profesor>
+    controla este equipo (canal <X>)"**.
+38. **Aviso fijo aunque la ventana esté cerrada.** El distintivo nativo de la regla 6 (siempre
+    encima, en la parte superior del monitor principal, sin tomar clics ni el foco) dice
+    **"● El profesor está controlando tu equipo"** mientras dure el control. Como el profesor ve
+    la pantalla, la banda «Tu pantalla la está viendo…» también aparece.
+39. **El alumno no corta el control**, por la misma autoridad de la regla 36: no hay botón ni
+    atajo para terminarlo desde Aula. Lo termina el profesor («Soltar»), el fin de la clase, la
+    desconexión o la inactividad (regla 41).
+40. **El alumno tiene prioridad sobre el mouse y el teclado.** Si mueve su mouse o pulsa una
+    tecla, la entrada del profesor se descarta (pausa) hasta 2 s después de su último movimiento,
+    y la consola ve «El alumno está usando su equipo». Para saberlo, Aula **no instala hooks de
+    teclado ni registra teclas**: compara la hora de la última entrada del sistema y la posición
+    del puntero con lo que inyectó. Sabe *que* el alumno usó su equipo, nunca *qué* tecleó.
+41. **Uno a la vez y fin evidente.** Una consola controla un solo equipo a la vez. Al soltar, al
+    cerrar la clase, al perderse la conexión (no se reanuda al reconectar) o tras 5 minutos sin
+    entrada del profesor, el agente suelta toda tecla y botón que presionó, deja de inyectar,
+    quita la banda y el aviso fijo, y la ventana avisa en una esquina, sin quitar el foco:
+    «<profesor> dejó de controlar tu equipo. El mouse y el teclado son solo tuyos otra vez.»
+42. **Nunca a simulados, sin grabación.** Los alumnos simulados no declaran `remote` (regla 34).
+    Las imágenes del control viven solo en memoria, como las miniaturas (regla 7).
+43. **Registros.** Se registran el inicio, el fin y su motivo, las pausas, el equipo, el
+    `control_id` y cuántos eventos se inyectaron o descartaron. **Nunca** qué teclas se enviaron,
+    las coordenadas, ni la entrada del alumno.
+
+Permisos del SO (detalle en `docs/protocol.md` §5.16.1): en Windows, `SendInput` desde la sesión
+del alumno (en modo servicio, el ayudante, sin elevar), sin privilegios especiales; Windows no deja
+controlar la pantalla de bloqueo, el aviso de UAC ni las ventanas de administrador. En macOS hará
+falta el permiso de **Accesibilidad** y el de **Grabación de pantalla**; en Linux, X11 (XTest);
+en **Wayland** la inyección de entrada puede no ser posible sin que el alumno la apruebe en cada
+sesión (portal RemoteDesktop). Linux y macOS no declaran `remote` hasta que se documente aquí su
+aviso.
+
 ## Pendiente para etapas futuras
 
 - Guardar una captura por petición explícita del profesor, y Linux y macOS (incluida la
-  recepción de la transmisión y las restricciones): sus textos de aviso se agregarán aquí antes
-  de implementarlos, con las mismas reglas 6–31.
+  recepción de la transmisión, las restricciones y el control remoto): sus textos de aviso se
+  agregarán aquí antes de implementarlos, con las mismas reglas 6–43.

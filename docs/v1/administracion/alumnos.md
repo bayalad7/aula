@@ -28,8 +28,12 @@ vista por el profesor». Las imágenes no se guardan: al salir de Miniaturas se 
 
 El botón de información al final de cada fila abre su **ficha** a la derecha: usuario, estado,
 sistema, versión de Aula, canal, desde qué hora está conectado y sus restricciones. Abajo dice
-**qué puede hacer su equipo** (recibir código, mostrar su pantalla, energía…), y arriba, si su
-equipo contestó con un problema, cuál fue y qué hacer.
+**qué puede hacer su equipo** (recibir código, mostrar su pantalla, energía, control remoto…), y
+arriba, si su equipo contestó con un problema, cuál fue y qué hacer.
+
+Si su equipo lo permite, la ficha tiene el botón **Tomar control**: ves su pantalla en vivo y
+manejas su mouse y su teclado para ayudarlo (ver
+[Tareas frecuentes](tareas-frecuentes#ayudar-a-un-alumno-tomando-el-control)).
 
 ![La ficha de un alumno con un problema reciente](img/ficha-alumno.png)
 

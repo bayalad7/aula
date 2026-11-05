@@ -53,7 +53,8 @@ que no es parte de la página.
                                      // unreachable, certMismatch, wrongKey, authIncomplete
   "viewed": false,                   // true mientras el profesor recibe esta pantalla
   "watching": false,                 // true mientras esta pantalla muestra la del profesor
-  "restricted": false }              // true mientras hay restricciones de la clase
+  "restricted": false,               // true mientras hay restricciones de la clase
+  "control": "" }                    // "active" o "paused" mientras el profesor controla este equipo
 
 // BroadcastView: la transmisión de la pantalla del profesor
 { "active": true, "broadcastId": "7d1f…", "width": 1920, "height": 1080, "fps": 15,
@@ -117,6 +118,13 @@ navegador.
   llegan antes de aplicar la oferta se guardan y se aplican después. Al terminar (`active:
   false`) la interfaz cierra la conexión y Go restaura la ventana. La CSP permite
   `media-src mediastream: blob:` para el video.
+- **Control remoto** (`docs/privacidad.md`, reglas 36–41): con `status.control` (`active` o
+  `paused`), Go trae la ventana al frente al empezar y la interfaz sale del modo compacto, muestra
+  la banda roja `#banda-control` después de la de energía (sin botón para cerrarla ni para cortar
+  el control) y titula «Aula — <profesor> controla este equipo (canal N)»; en el modo compacto, la
+  insignia «Controlado». Al volver a `""` muestra en la esquina «… dejó de controlar tu equipo»,
+  sin tomar el foco. No hay métodos nuevos: el alumno no acepta ni corta el control. La entrada
+  la inyecta Go (`internal/remote`), nunca la interfaz.
 - **Aviso de energía** (`docs/privacidad.md`, reglas 26–28): con `aula:power`, Go trae la ventana
   al frente y la deja siempre encima mientras cuenta o se ejecuta. La franja roja fija dice quién
   y qué ("⏻ El profesor … va a reiniciar este equipo en 0:30. Guarda tu trabajo.") y la interfaz
@@ -164,6 +172,8 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:restrictions` | `RestrictionsView` | Cambian las restricciones de la clase: `{apps, web}`, cada uno `null` o `{policyId, mode, items, hosts}` (`hosts` vacío: todo el canal). Los acuses de cada alumno llegan en `aula:students` (`appsActive`, `webActive`). |
 | `aula:simulation` | `SimulationView` | El aula simulada se abre o se cierra, o uno de sus alumnos cambia (conecta, recibe código o un aviso, se ve su pantalla, cambia de falla). Sus sesiones también llegan en `aula:students` con `simulated: true`. |
 | `aula:connectcheck` | `connectcheck.Report` | Mientras corre `CheckConnection()`, cada vez que un paso empieza o termina; el último trae `done: true`. |
+| `aula:remote` | `remote.Control` | El control remoto empieza (`starting`), el agente muestra su banda (`active`), se pausa porque el alumno usa su equipo (`paused`), sigue (`active`) o termina: `ended` con `reason` `teacher`, `replaced`, `idle`, `session` o `error`; `gone` si el alumno se desconectó; `failed` si el agente no pudo mostrar su aviso. `{sessionID, hostname, controlID, status, reason, viewing}`. |
+| `aula:remote-frame` | `Thumb` | Cada imagen de la pantalla controlada (hasta 8 por segundo con la vista abierta, 1 con la vista cerrada). No pasa por `aula:frame` ni se guarda. |
 
 ```jsonc
 // Students: la lista del canal y los conteos que habilitan los botones
@@ -284,6 +294,10 @@ cada código tenga su enlace y que la sección exista.
 | `SimulationRemove(id)` | `SimulationView` / error | Quita uno. |
 | `SimulationFault(id, fault, delayMs)` | `SimulationView` / error | Hace fallar a uno: `slow` (contesta con `delayMs` de retraso, 500–10 000), `noack` (muestra pero no confirma), `disconnected` (se va hasta volver a `none`). |
 | `Manual()` | `ManualView` / error | El manual embebido (`docs/v1/administracion`), ya leído y validado: `{pages, diagrams, images, errors, diagnosis}`. `pages[]` = `{slug, title, summary, group, order, screens, blocks, headings}`; los bloques no traen HTML (la interfaz los dibuja con el DOM). `diagrams[id]` = `{id, title, description, audience, screens, alt, explanation, mermaid, light, dark}`: `light` y `dark` son los SVG claro y oscuro como data URI para un `<img>` (vacíos si el dibujo no está vigente: la interfaz muestra `mermaid`), `explanation` son los bloques de «Lo que no es obvio» y `screens` las vistas cuyo «?» lo muestra. `images`: `img/x.png` → data URI. `errors`: código de error → `página#sección`; `agentErrors`, lo mismo para los códigos del protocolo que mandan los alumnos. `diagnosis`: el árbol de «¿Falta un alumno?» sacado del diagrama 12 (`{start, nodes}`). |
+| `TakeControl(sessionID)` | `remote.Control` / error | **Tomar control** desde la ficha o desde la pantalla en grande de Miniaturas (que deja su vista en detalle con `ViewScreen("")` y pasa a modo control): `remote.start` a ese alumno. Solo a alumnos reales conectados que declararon `remote` (nunca a simulados): si no, `remoteUnsupported`. Uno a la vez: con otro vivo, `alreadyControlling`. Sigue con `aula:remote`. |
+| `ReleaseControl()` | error | **Soltar** (en la vista y en la franja): `remote.stop`. El control termina con el `remote.ack ended` del agente o con su desconexión. `remoteGone` si no había ninguno. |
+| `ShowControl(visible)` | error | La vista de control se abre (`true`) o se cierra sin soltar (`false`): ajusta el video con un `remote.start` del mismo `control_id` (125 ms y 1280 px, o 1000 ms y 640 px). Sin la vista no se manda entrada. |
+| `SendRemoteInput(events)` | error | Eventos de la imagen en vivo, en lotes cada 33 ms: `{t: "move", x, y}`, `{t: "button", b, down, x, y}`, `{t: "wheel", dx, dy}`, `{t: "key", code, down}` (`docs/protocol.md` §5.16). Go descarta las teclas fuera de la lista, junta los movimientos y manda como máximo 60 `remote.input` por segundo; nada sale antes de `active` ni en pausa. |
 | `ManualSearch(q)` | `Result[]` | Búsqueda local, sin distinguir acentos ni mayúsculas, en títulos, secciones y texto de las páginas y en los títulos y descripciones de los diagramas. Hasta 12 `{slug, anchor, diagram, title, snippet}`. |
 | `CheckConnection()` | `connectcheck.Report` / error | **Comprobar la conexión** (`internal/connectcheck`): recorre desde este equipo el camino de un alumno y dice en qué paso fallaría. `{channel, steps, cause, done}`; cada paso `{id, status, cause, reason, addrs, port, others, networks}` con `id` `announce`, `port`, `secure` o `network` y `status` `pending`, `running`, `ok`, `warn`, `fail` o `unknown`. El texto de un paso es `comprobar.<id>.<reason \| cause \| status>` (`connectcheck.Outcomes` los lista, y la prueba de textos exige uno por cada). `cause` es la del primer paso que falla, con los mismos valores que `session.Cause` del agente. Tarda unos segundos; no llega a ningún alumno, ni real ni simulado (la conexión de prueba se cierra antes de `hello`). Error `noClass` sin clase y `checkRunning` si ya hay una en curso. |
 | `SimulationStop()` | `SimulationView` | Cierra el aula simulada: sus alumnos se van y se olvidan. También ocurre al cambiar de canal o de nombre, o al cerrar la clase. Los alumnos reales no se tocan. |
@@ -300,6 +314,10 @@ cada código tenga su enlace y que la sección exista.
 - **Las pantallas solo se transmiten con la vista abierta.** La interfaz llama a
   `CloseScreens()` al cerrarla y al cambiar de canal o de nombre; Go además detiene todo al
   cerrar la clase (`EndClass`), y cada agente se detiene solo si se pierde la conexión.
+- **Control remoto, uno a la vez y siempre a la vista:** la vista es `#pantalla-grande` en modo
+  control (la imagen captura el mouse y, con el foco, el teclado; Ctrl+Alt+Fin devuelve el
+  teclado; Esc va al alumno). Mientras dura, la franja roja «Controlando LAB3-PC07 · Ver · Soltar»
+  está en todas las vistas; cerrar la vista no suelta. Cerrar la clase lo suelta.
 - **La transmisión de la pantalla es visible para los dos lados:** la consola muestra la franja
   roja con "Detener" mientras dura y su propia ventana no aparece en el video
   (`docs/privacidad.md`, regla 15).

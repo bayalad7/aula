@@ -139,7 +139,7 @@
         "alumnos",
         "ayuda"
       ],
-      "hash": "sha256:926bc8b749fea3c182fc36c6cde40717b79d2cc33e908eb2e3a81ac7232a9226",
+      "hash": "sha256:bed3aeca0e19f8656c852c2e2f619f9127c69bfffe43000697472fa541f403ee",
       "alt": "Transparencia: avisos e indicadores al alumno: Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le transmite, lo restringe o apaga su equipo",
       "claro": "generados/09-transparencia-avisos.claro.svg",
       "oscuro": "generados/09-transparencia-avisos.oscuro.svg"
@@ -204,7 +204,7 @@
       "pantallas": [
         "falta"
       ],
-      "hash": "sha256:673594528c6f8dd37e317fad2bc4c022e0bdec50308ba0aab21020d7a51846d0",
+      "hash": "sha256:6a54937965fd4bd6a0487d086731f88cdf4d04ac6b75673536ab856188bde0cd",
       "alt": "El agente como servicio de Windows: Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
       "claro": "generados/13-agente-servicio.claro.svg",
       "oscuro": "generados/13-agente-servicio.oscuro.svg"
@@ -258,6 +258,23 @@
       "alt": "Energía: apagar, reiniciar y cerrar sesión: Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que el equipo se apaga",
       "claro": "generados/16-energia.claro.svg",
       "oscuro": "generados/16-energia.oscuro.svg"
+    },
+    {
+      "id": "17-control-remoto",
+      "titulo": "Control remoto de un alumno",
+      "descripcion": "Cómo toma el profesor el teclado y el mouse de un alumno, cómo lo sabe el alumno y cómo termina",
+      "audiencia": [
+        "profesor",
+        "alumno",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "alumnos"
+      ],
+      "hash": "sha256:f3a042d96b49f5aad81f8ba24718d0b8fd32667fe74dbd5cd38b130769f6e9ea",
+      "alt": "Control remoto de un alumno: Cómo toma el profesor el teclado y el mouse de un alumno, cómo lo sabe el alumno y cómo termina",
+      "claro": "generados/17-control-remoto.claro.svg",
+      "oscuro": "generados/17-control-remoto.oscuro.svg"
     }
   ]
 }

@@ -1071,3 +1071,33 @@ estos casos apagan y reinician equipos de verdad. Toma una instantánea de cada 
 | **PW-I** Registros | Revisa `aula-agente.log` y el log de la consola. | Aparecen la acción, `action_id`, `force`, los aplazamientos y "power executing" **antes** del apagado; ningún contenido de las apps abiertas. |
 
 **Para aceptar** bastan PW-A, PW-B y PW-D en ✅.
+
+## 16. Control remoto (D-019)
+
+Comprueba que el profesor ve la pantalla de un alumno y maneja su mouse y su teclado, que el
+alumno lo ve siempre y que al soltar todo se detiene (`docs/privacidad.md`, reglas 36–43). Se
+prueba en una VM: nunca con clics ni teclas sintéticas en el escritorio de quien prueba.
+
+### 16.1 Preparación
+
+- Consola en el equipo del profesor y una VM de alumno con Windows y el agente como servicio
+  (§13), con una sesión iniciada y el Bloc de notas abierto.
+- En la ficha del alumno, «Qué puede hacer su equipo» dice Sí en «Control remoto» y está el botón
+  **Tomar control**. Si no, revisa que el ayudante esté corriendo (`aula-cliente.log`: "helper
+  ready … input=true").
+
+### 16.2 Casos
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **RC-A** Tomar control, mover y escribir (**aceptación**) | Ficha → **Tomar control**. Haz clic dentro del Bloc de notas en la imagen y escribe «hola ñandú». | La vista muestra su pantalla en vivo (unas 8 imágenes por segundo). El puntero de la VM va donde haces clic y el texto aparece tal cual, con la distribución del teclado de la VM. Mide a ojo la latencia: debería sentirse por debajo de medio segundo. |
+| **RC-B** Indicador permanente (**aceptación**) | Durante RC-A, minimiza y cierra Aula en la VM; usa Alt+Tab. | La banda roja «… está controlando tu equipo» no se puede cerrar; aunque Aula esté cerrada, el aviso fijo arriba de la pantalla dice «● El profesor está controlando tu equipo». La barra de la ventana dice «Aula — … controla este equipo». |
+| **RC-C** Soltar detiene todo (**aceptación**) | Con una tecla presionada en la consola (mantén Mayús) pulsa **Soltar**. Luego mueve el mouse de la consola sobre la vista cerrada. | La banda y el aviso fijo se van; la VM muestra «… dejó de controlar tu equipo». En la VM, Mayús no queda presionada (escribe una letra: sale minúscula). Nada que hagas en la consola llega a la VM. |
+| **RC-D** El alumno tiene prioridad | Mientras controlas, mueve el mouse dentro de la VM. | La consola dice «En pausa: el alumno está usando su mouse…» y tu entrada no llega; 2 s después de que la VM deja de moverse, vuelve a «Controlando». |
+| **RC-E** Corte de red | Mientras controlas, desconecta la red de la VM. | En la VM, la banda y el aviso fijo se van al cerrarse la conexión; al volver la red, el control **no** se reanuda. La consola avisa «El alumno se desconectó». |
+| **RC-F** Uno a la vez y simulados | Con un alumno controlado, toma el control de otro. Abre el aula simulada y la ficha de un simulado. | «Ya estás controlando otro equipo». El simulado no tiene «Tomar control». |
+| **RC-G** Orden sin autenticar | Desde otra consola con **otra** clave del centro, en el mismo canal. | El agente no se conecta a ella (diagnóstico «otra clave»): no hay forma de mandarle `remote.start`. |
+| **RC-H** Límites de Windows | Abre en la VM una ventana como administrador y bloquea la sesión (Win+L en la VM). | Sobre la ventana de administrador el mouse no hace clic (UIPI); con la sesión bloqueada no se inyecta nada y, tras 30 s, el control termina con «Windows dejó de aceptar tu mouse y tu teclado». |
+| **RC-I** Registros | Revisa `aula-agente.log` y el log de la consola. | "remote control started/ended" con `control_id`, motivo, eventos y descartes; **ninguna** tecla ni coordenada. |
+
+**Para aceptar** bastan RC-A, RC-B y RC-C en ✅.

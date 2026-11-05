@@ -658,3 +658,46 @@ que el profesor fuerce la orden.
   el apagado; el profesor puede reenviar con `force`.
 
 Versión: función nueva compatible → sube `y`.
+
+## D-019: Control remoto con la vista en grande y entrada inyectada desde el ayudante
+
+**Fecha:** 2026-11-05 · **Estado:** aprobada en v0.6 (Windows).
+
+**Contexto.** El profesor quiere ver en vivo la pantalla de un alumno y manejar su teclado y su
+mouse para ayudarlo (`remote.*`, `docs/protocol.md` §5.16). Es la función más intrusiva de Aula:
+la transparencia (`docs/privacidad.md` reglas 36–43) es criterio de aceptación.
+
+**Decisiones.**
+- **El video es la vista en grande (JPEG por el WebSocket), no WebRTC.** WebRTC del alumno a la
+  consola obligaba a codificar H.264 en el ayudante, llevar las unidades por el canal local,
+  correr pion en el servicio, invertir la señalización y recibir en un `<video>` de la consola:
+  duplicar casi todo `internal/broadcast` para un solo alumno, con la parte más frágil (ICE y
+  firewall). `screen.Streamer` ya captura por el ayudante con su aviso; el control lo toma
+  prestado (`StartControl`) a un ritmo de hasta 10 imágenes por segundo (la consola pide 8, de
+  1280 px) y nunca encola: si una imagen no salió, se salta la captura. Latencia esperada de
+  150–300 ms y 0,5–1,5 MB/s en la LAN. `remote.start` deja lugar a un `video: "webrtc"` futuro.
+- **Sin consentimiento** (decisión del usuario, 2026-11-05): el profesor tiene autoridad sobre los
+  equipos del centro, como con la energía forzada o las restricciones. A cambio, el aviso va
+  **antes** de la primera entrada (banda, ventana al frente y distintivo nativo) y el alumno no
+  lo puede cerrar ni cortar el control.
+- **El alumno tiene prioridad sin hooks.** La entrada del profesor se pausa mientras el alumno usa
+  su equipo (2 s desde su última entrada). Se detecta comparando `GetLastInputInfo` y
+  `GetCursorPos` con lo último que inyectó Aula (marcado con `dwExtraInfo`), sin
+  `WH_KEYBOARD_LL`: Aula sabe *que* hubo entrada, nunca *qué* fue.
+- **La entrada se inyecta en la sesión del alumno.** `SendInput` solo alcanza el escritorio de la
+  sesión que lo llama: en modo servicio lo hace el ayudante (`input.inject`, `input.local`), sin
+  elevar. Por UIPI no controla ventanas de administrador, y Windows no inyecta en el escritorio
+  seguro (bloqueo, UAC). Tras 30 s de rechazos seguidos, el control termina con `error`.
+- **Teclas por scancode, no por carácter.** `remote.input` lleva `KeyboardEvent.code` de una
+  lista cerrada de 102 teclas; el agente los inyecta con `KEYEVENTF_SCANCODE`, de modo que la
+  distribución del teclado del alumno decide el carácter, como con un teclado físico. Pausa,
+  Bloq Num e Impr Pant van por tecla virtual porque Windows no las toma por scancode.
+- **Nada queda presionado.** El agente suelta lo que presionó al pausar, terminar o cerrarse la
+  conexión, y el ayudante también si el servicio desaparece a mitad del control.
+- **Ritmo acotado en los dos extremos.** La consola junta los movimientos seguidos, arma lotes
+  de hasta 32 eventos y manda como máximo 60 `remote.input` por segundo; si se pasa, las teclas
+  esperan y los movimientos viejos se descartan. El agente descarta lo que exceda 60 por segundo.
+- **La lógica vive en `internal/remote`** (`Agent` del lado del alumno, `Desk` de la consola) y
+  no toca el SO; la inyección está detrás de `platform.InputInjector`.
+
+Versión: función nueva compatible → sube `y`.

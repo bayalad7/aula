@@ -21,6 +21,7 @@ flowchart LR
         bcast["screen.broadcast.start"]
         pol["app.block.set · web.filter.set"]
         pwr["power.action"]
+        rmt["remote.start"]
     end
 
     subgraph avisos["Lo que ve el alumno (antes de actuar)"]
@@ -30,6 +31,7 @@ flowchart LR
         franja["Vista maximizada con franja:<br/>«Estás viendo la pantalla de …»<br/>regla 12"]
         restr["«Restricciones de la clase activas…»<br/>y aviso por cada app cerrada<br/>reglas 20–22"]
         energia["Aviso siempre encima con cuenta<br/>y «Posponer 5 min»; con force,<br/>«El profesor … está apagando»<br/>reglas 26–28"]
+        control["La ventana pasa al frente con la banda<br/>«… está controlando tu equipo» y el<br/>aviso fijo dice que lo controlan<br/>reglas 36–41"]
     end
 
     fin["Se quita con stop o clear,<br/>al cerrar la vista o la clase,<br/>o al caerse la conexión"]
@@ -41,17 +43,19 @@ flowchart LR
     bcast --> franja
     pol --> restr
     pwr --> energia
+    rmt --> control
     visto --> fin
     franja --> fin
     restr --> fin
+    control --> fin
     energia --> sigue
 
     classDef externo fill:#dbeafe,stroke:#1d4ed8,color:#111827
     classDef aula fill:#dcfce7,stroke:#15803d,color:#111827
     classDef datos fill:#ffedd5,stroke:#c2410c,color:#111827
     classDef seguridad fill:#fee2e2,stroke:#b91c1c,color:#111827
-    class conexion,share,thumb,bcast,pol,pwr seguridad
-    class distintivo,frente,visto,franja,restr,energia aula
+    class conexion,share,thumb,bcast,pol,pwr,rmt seguridad
+    class distintivo,frente,visto,franja,restr,energia,control aula
     class fin,sigue externo
 ```
 
@@ -60,11 +64,11 @@ flowchart LR
 - **El aviso va antes que la acción**, y el código lo hace cumplir: `Streamer` no captura si no
   pudo mostrar el distintivo; `Viewer` muestra la vista antes de procesar la oferta WebRTC;
   `policy.Manager` avisa antes de aplicar; `Countdown` llama a `OnChange` con el aviso antes de
-  responder a la consola.
+  responder a la consola; `remote.Agent` muestra la banda y el aviso fijo antes de aceptar entrada.
 - **Toda orden viene de una consola autenticada** (rojo): nada de esto se procesa antes de
   `auth.ok` (diagrama 04).
 - **Al perderse la conexión el alumno no queda vigilado ni restringido**: miniaturas,
-  transmisión y restricciones terminan solas. La única excepción es la cuenta regresiva de
+  transmisión, control remoto y restricciones terminan solas. La única excepción es la cuenta regresiva de
   apagado, porque la orden ya llegó de la consola legítima; el alumno aún puede posponerla.
 - **Con el agente como servicio** todos estos avisos los muestra el ayudante en la sesión del
   alumno; el servicio no tiene ventana ni puede capturar (reglas 17–18, diagrama 13).
@@ -76,8 +80,8 @@ flowchart LR
 
 ## Fuentes en el código
 
-- `docs/privacidad.md` reglas 1–31
+- `docs/privacidad.md` reglas 1–31 y 36–43
 - `apps/student/app.go` (`setStatus`, `onViewed`, `onBoard`, `onNotice`, `setRestrictions`,
   `appClosed`), `apps/student/events.go`, `apps/student/power.go`, `apps/student/broadcast.go`
 - `internal/screen/streamer.go`, `internal/broadcast/viewer.go`, `internal/policy/manager.go`,
-  `internal/power/countdown.go`
+  `internal/power/countdown.go`, `internal/remote/agent.go`, `apps/student/remote.go`

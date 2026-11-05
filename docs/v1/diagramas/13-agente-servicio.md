@@ -18,7 +18,7 @@ flowchart LR
     subgraph svc["Servicio «Aula — agente del aula» (SYSTEM, sesión 0)"]
         agente["session.Agent<br/>conexión con la consola"]
         sup["agentsvc.Supervisor<br/>lanza, vigila y mueve al ayudante"]
-        proxies["Proxies Clipboard, Capture, Indicator<br/>y power.run"]
+        proxies["Proxies Clipboard, Capture, Indicator,<br/>Input y power.run"]
         pol["policy.Manager y power.Countdown"]
     end
 
@@ -26,7 +26,7 @@ flowchart LR
 
     subgraph user["Sesión del alumno (sus permisos)"]
         ayud["aula-cliente.exe --ayudante<br/>ventana, distintivo y avisos"]
-        so["Portapapeles, captura,<br/>apagado sin force"]
+        so["Portapapeles, captura, entrada<br/>del control remoto, apagado sin force"]
     end
 
     sesiones["platform.SessionManager<br/>sesión activa, Launch con el token del usuario"]
@@ -39,7 +39,7 @@ flowchart LR
     sup -- "comprueba PeerPID" --> pipe
     proxies <-- "Link: JSON por líneas<br/>calls, replies y events" --> pipe
     pipe <--> ayud
-    ayud -- "ready: capture, clipboard, broadcast" --> pipe
+    ayud -- "ready: capture, clipboard, broadcast, input" --> pipe
     ayud --> so
 
     classDef externo fill:#dbeafe,stroke:#1d4ed8,color:#111827
@@ -68,6 +68,10 @@ flowchart LR
   equipo (límite de 4 MiB por línea, por los cuadros de pantalla).
 - **Si el alumno cierra el ayudante**, el supervisor lo vuelve a abrir con retroceso; si cambia
   el usuario, lo mueve; al cerrar sesión lo detiene y las restricciones se quitan.
+- **El control remoto inyecta desde el ayudante** (`input.inject`, `input.local`): `SendInput` solo
+  llega al escritorio de la sesión que lo llama. El ayudante no está elevado, así que no controla
+  ventanas de administrador (UIPI); recuerda lo que quedó presionado y lo suelta si el servicio
+  desaparece (diagrama 17).
 - **Apagar sin `force` con alguien en sesión lo hace el ayudante** (`power.run`): desde SYSTEM,
   Windows lo rechaza con `ERROR_SHUTDOWN_USERS_LOGGED_ON` (diagrama 16).
 - Solo Windows; en los demás SO `NewSessionManager` y `ListenLocal` devuelven «no soportado».

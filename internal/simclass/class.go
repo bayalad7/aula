@@ -17,6 +17,7 @@ import (
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/session"
+	"github.com/bayalad7/aula/internal/snapshot"
 	"github.com/bayalad7/aula/internal/transport"
 )
 
@@ -40,9 +41,11 @@ const (
 )
 
 // Capabilities a simulated student may declare: what it can honour without an
-// OS. Power, restrictions and broadcast are left out on purpose: the console
-// never sends them to simulated students.
-var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb}
+// OS. Power, restrictions, broadcast and remote control are left out on
+// purpose: the console never sends them to simulated students. A screenshot
+// changes no computer: it is its drawn screen, marked as simulated, and the
+// console files it apart (docs/privacidad.md rule 46).
+var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities
@@ -88,6 +91,7 @@ type Student struct {
 	Snippets     []Snippet             `json:"snippets"`
 	Notices      int                   `json:"notices"`
 	LastNotice   string                `json:"lastNotice"`
+	Snapshots    int                   `json:"snapshots"` // screenshots the teacher took of it
 }
 
 // Class is a set of simulated students connected to one console. It is safe
@@ -259,9 +263,11 @@ type student struct {
 	viewed     bool
 	notices    int
 	lastNotice string
+	snapshots  int
 	cancel     context.CancelFunc // stops the running agent; nil while disconnected
 	done       chan struct{}
 	streamer   *screen.Streamer
+	taker      *snapshot.Taker
 }
 
 func (s *student) hello() protocol.HelloInfo {
@@ -283,9 +289,15 @@ func (s *student) start() {
 	s.cancel, s.done = cancel, done
 	log := s.class.log.With("student", s.name)
 	s.streamer = &screen.Streamer{Logger: log}
-	if slices.Contains(s.caps, protocol.CapScreenThumb) {
+	if slices.Contains(s.caps, protocol.CapScreenThumb) || slices.Contains(s.caps, protocol.CapScreenSnapshot) {
 		s.streamer.Capture = drawnScreen{s}
 		s.streamer.Indicator = viewedFlag{s}
+	}
+	s.taker = &snapshot.Taker{Indicator: s.streamer, Settle: -1, Logger: log,
+		Identity: func() (string, string) { h := s.hello(); return h.Hostname, h.Username },
+		OnTaken:  func(time.Time) { s.tookSnapshot() }}
+	if slices.Contains(s.caps, protocol.CapScreenSnapshot) {
+		s.taker.Capture = drawnScreen{s}
 	}
 	recv := &codedist.Receiver{
 		Board:    s.board,
@@ -363,7 +375,10 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 			_, err := cl.Send(ctx, p)
 			return err
 		}
-		reply, handled := s.streamer.Handle(ctx, send, env)
+		reply, handled := s.taker.Handle(ctx, snapshot.Sender(send), env)
+		if !handled {
+			reply, handled = s.streamer.Handle(ctx, send, env)
+		}
 		if !handled {
 			reply = recv.Handle(env)
 		}
@@ -400,6 +415,13 @@ func (s *student) noticed(n codedist.Notice) {
 	s.class.changed()
 }
 
+func (s *student) tookSnapshot() {
+	s.mu.Lock()
+	s.snapshots++
+	s.mu.Unlock()
+	s.class.changed()
+}
+
 func (s *student) setViewed(v bool) {
 	s.mu.Lock()
 	changed := s.viewed != v
@@ -415,7 +437,7 @@ func (s *student) snapshot() Student {
 	defer s.mu.Unlock()
 	out := Student{
 		ID: s.id, Name: s.name, OS: s.os, Capabilities: slices.Clone(s.caps), Connected: s.connected,
-		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, LastNotice: s.lastNotice, Snippets: []Snippet{},
+		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, LastNotice: s.lastNotice, Snapshots: s.snapshots, Snippets: []Snippet{},
 	}
 	if s.fault == FaultSlow {
 		out.DelayMs = int(s.delay / time.Millisecond)

@@ -13,6 +13,7 @@ import (
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
+	"github.com/bayalad7/aula/internal/snapshot"
 	"github.com/bayalad7/aula/internal/transport"
 )
 
@@ -30,6 +31,7 @@ type console struct {
 	mu     sync.Mutex
 	acks   map[string]bool // ref_id of code.ack and msg.ack
 	frames map[string]int  // session ID → frames received
+	snaps  *snapshot.Store // screenshots asked to the students
 }
 
 func startConsole(t *testing.T) *console {
@@ -47,7 +49,7 @@ func startConsole(t *testing.T) *console {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := &console{reg: session.NewRegistry(0), acks: map[string]bool{}, frames: map[string]int{}}
+	c := &console{reg: session.NewRegistry(0), acks: map[string]bool{}, frames: map[string]int{}, snaps: &snapshot.Store{}}
 	c.Console = &session.Console{
 		Channel: testChannel, Registry: c.reg, Identity: id, CertSHA256: cert.SHA256, Logger: quiet,
 		OnMessage: func(_ context.Context, conn *transport.Conn, env protocol.Envelope) {
@@ -60,6 +62,8 @@ func startConsole(t *testing.T) *console {
 				c.acks[p.RefID] = true
 			case protocol.ScreenThumbFrame:
 				c.frames[conn.ID()]++
+			case protocol.ScreenSnapshotResponse:
+				c.snaps.Response(conn.ID(), p)
 			}
 		},
 	}
@@ -238,6 +242,32 @@ func TestScreenThumbnailsShowTheViewedNotice(t *testing.T) {
 		t.Fatal(err)
 	}
 	eventually(t, "notice removed", func() bool { return !cl.Students()[0].Viewed })
+}
+
+// A simulated student answers a screenshot with its drawn screen, which says
+// it is simulated, and counts it.
+func TestScreenshotOfASimulatedStudent(t *testing.T) {
+	c := startConsole(t)
+	cl := newClass(t, c)
+	a, _ := cl.Add(protocol.OSWindows, nil)
+	eventually(t, "connected", func() bool { return len(c.connected()) == 1 })
+	s := sessionOf(t, c, a.Name)
+	if !s.Can(protocol.CapScreenSnapshot) {
+		t.Fatal("screen.snapshot not declared")
+	}
+	req, snap, err := c.snaps.Request(s.ID, s.Hostname, s.Username, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Send(context.Background(), s.ID, req); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "screenshot", func() bool { got, _ := c.snaps.Get(snap.ID); return got.Status == snapshot.StatusReady })
+	got, _ := c.snaps.Get(snap.ID)
+	if got.Hostname != a.Name || got.Width != canvasW*scale || got.Height != canvasH*scale {
+		t.Fatalf("snapshot = %+v", got)
+	}
+	eventually(t, "counted", func() bool { return cl.Students()[0].Snapshots == 1 })
 }
 
 func TestRemoveAndClose(t *testing.T) {

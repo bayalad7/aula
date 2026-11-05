@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"image"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -51,7 +50,7 @@ func TestScreenViewedBannerAndStopOnDisconnect(t *testing.T) {
 		t.Fatal("no frame")
 	}
 	st := rec.last(EventStatus).(Status)
-	if !ind.on() || !st.Viewed || !strings.Contains(st.Banner, "tu pantalla está siendo vista por Prof. Ayala") {
+	if !ind.on() || !st.Viewed || st.Teacher != "Prof. Ayala" {
 		t.Fatalf("indicator %v, status %+v", ind.on(), st)
 	}
 

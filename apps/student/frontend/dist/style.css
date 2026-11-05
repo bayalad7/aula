@@ -1,223 +1,34 @@
-:root {
-  color-scheme: light dark;
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --fg: #1d2330;
-  --muted: #5b6475;
-  --border: #d9dde5;
-  --accent: #2563eb;
-  --ok: #15803d;
-  --warn-bg: #fff7e6;
-  --warn-fg: #8a4b00;
-  --info-bg: #eaf2ff;
-  --info-fg: #1e3a8a;
-  --error: #b91c1c;
-  --code-bg: #f3f4f7;
-  /* Syntax colors */
-  --tok-comment: #6b7280;
-  --tok-keyword: #7c3aed;
-  --tok-string: #15803d;
-  --tok-number: #b45309;
-  --tok-function: #1d4ed8;
-  --tok-type: #0e7490;
-  --tok-operator: #374151;
-}
+/* App del alumno: solo la composición de la página. Colores, tipografía,
+   espaciado y componentes salen del sistema de diseño (internal/ui, servido en
+   sistema/): aquí no hay colores sueltos. */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #161a22;
-    --surface: #1e232d;
-    --fg: #e8ebf1;
-    --muted: #9aa3b5;
-    --border: #2f3542;
-    --accent: #60a5fa;
-    --ok: #4ade80;
-    --warn-bg: #3a2a10;
-    --warn-fg: #fcd38d;
-    --info-bg: #172a46;
-    --info-fg: #bcd4fb;
-    --error: #f87171;
-    --code-bg: #12161d;
-    --tok-comment: #8b93a3;
-    --tok-keyword: #c4a5ff;
-    --tok-string: #86efac;
-    --tok-number: #fbbf75;
-    --tok-function: #93c5fd;
-    --tok-type: #67e8f9;
-    --tok-operator: #cbd5e1;
-  }
-}
+html, body { height: 100%; }
+body { margin: 0; }
 
-* { box-sizing: border-box; }
+/* Tira de identidad y bandas: siempre arriba, aunque el código se desplace
+   (docs/privacidad.md, reglas 1, 6, 20 y 26). */
+.arriba { position: sticky; top: 0; z-index: 10; }
+.estado-conexion__detalles[hidden] { display: none; }
+.franja[hidden] { display: none; }
+.franja__detalle[hidden] { display: none; }
+.franja__detalle p { margin: var(--e-1) 0 0; overflow-wrap: anywhere; }
 
-html, body {
-  margin: 0;
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: "Segoe UI", system-ui, sans-serif;
-  font-size: 15px;
-}
+main { padding: var(--e-4); display: grid; gap: var(--e-3); }
+.vacio[hidden], .codigos:empty { display: none; }
+.avisos { display: grid; gap: var(--e-2); }
+.avisos:empty { display: none; }
+.notice-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.codigo-recibido__codigo { max-height: 70vh; white-space: pre; }
+.codigo-recibido .exercise[hidden] { display: none; }
 
-/* Identity banner: always on top of the page. */
-.banner {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  font-weight: 600;
-}
-.banner .dot {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 50%;
-  background: var(--muted);
-  flex: none;
-}
-.banner[data-state="connected"] .dot { background: var(--ok); }
-.banner[data-state="disconnected"] .dot,
-.banner[data-state="unconfigured"] .dot { background: var(--error); }
-.banner .detail {
-  flex-basis: 100%;
-  font-weight: 400;
-  color: var(--muted);
-  font-size: 0.9em;
-}
-.banner .detail:empty { display: none; }
-/* The teacher is receiving this screen (docs/privacidad.md rule 6). */
-.banner[data-viewed="true"] { background: #b91c1c; color: #ffffff; border-bottom-color: #b91c1c; }
-.banner[data-viewed="true"] .dot { background: #ffffff; }
-
-/* Broadcast of the teacher's screen (docs/privacidad.md rule 12). */
+/* La pantalla del profesor (regla 12): ocupa la ventana. */
 body.watching { display: flex; flex-direction: column; height: 100vh; }
 body.watching main { display: none; }
 .broadcast { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .broadcast[hidden] { display: none; }
-.bc-band {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.5rem 1rem;
-  background: #1e3a8a;
-  color: #ffffff;
-  font-weight: 600;
-}
-.bc-band span { flex: 1; }
-.bc-band button { background: #ffffff; color: #1e3a8a; border-color: #ffffff; font-weight: 600; }
-.bc-stage { position: relative; flex: 1; min-height: 0; background: #000000; overflow: auto; }
+.bc-stage { position: relative; flex: 1; min-height: 0; overflow: auto; background: var(--c-video-fondo); }
 .bc-stage video { display: block; width: 100%; height: 100%; object-fit: contain; }
-/* 1:1 pixels, with scrollbars, for screens smaller than the teacher's. */
+/* Píxel a píxel, con barras de desplazamiento, si la pantalla del alumno es más chica. */
 .bc-stage[data-fit="real"] video { width: auto; height: auto; max-width: none; object-fit: none; }
-.bc-wait {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  margin: 0;
-  color: #e8ebf1;
-}
+.bc-wait { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--c-video-texto); }
 .bc-wait[hidden] { display: none; }
-
-/* Power order (docs/privacidad.md rules 26-28): always visible while it counts. */
-.power { position: sticky; top: 0; z-index: 5; margin: 0; padding: 0.9rem 1rem; background: var(--error); color: #fff; border-bottom: 1px solid var(--border); }
-.power[hidden] { display: none; }
-.power-text { margin: 0 0 0.5rem; font-size: 1.15rem; font-weight: 700; }
-.power-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-.power-left { font-size: 0.9rem; }
-
-/* Class restrictions (docs/privacidad.md rules 20-22). */
-.restrictions { margin: 0; padding: 0.55rem 1rem; background: var(--warn-bg); color: var(--warn-fg); border-bottom: 1px solid var(--border); }
-.restrictions[hidden] { display: none; }
-.restr-head { display: flex; align-items: center; gap: 0.75rem; font-weight: 600; }
-.restr-head span { flex: 1; }
-.restr-details { margin-top: 0.4rem; font-size: 0.9rem; }
-.restr-details[hidden] { display: none; }
-.restr-details p { margin: 0.2rem 0; overflow-wrap: anywhere; }
-.app-closed { margin: 0.75rem 1rem 0; padding: 0.6rem 1rem; border-radius: 8px; background: var(--warn-bg); color: var(--warn-fg); }
-.app-closed[hidden] { display: none; }
-
-.notices { padding: 0 1rem; }
-.notice {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  background: var(--info-bg);
-  color: var(--info-fg);
-}
-.notice[data-level="warning"] { background: var(--warn-bg); color: var(--warn-fg); }
-.notice-text { flex: 1; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-
-main { padding: 1rem; }
-.empty { color: var(--muted); text-align: center; margin-top: 3rem; }
-
-.snippets { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
-.snippet {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.snippet-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-  padding: 0.6rem 0.9rem;
-  border-bottom: 1px solid var(--border);
-}
-.title { flex: 1; min-width: 10rem; margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
-.exercise {
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--surface);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-.lang { color: var(--muted); font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.85rem; }
-
-button {
-  font: inherit;
-  padding: 0.4rem 0.9rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--fg);
-  cursor: pointer;
-}
-button:hover { border-color: var(--accent); }
-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.copy { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
-.copy[data-kind="ok"] { background: var(--ok); border-color: var(--ok); }
-.copy[data-kind="error"] { background: var(--error); border-color: var(--error); }
-
-.code {
-  margin: 0;
-  padding: 0.9rem;
-  background: var(--code-bg);
-  overflow: auto;
-  max-height: 70vh;
-  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
-  font-size: 14px;
-  line-height: 1.5;
-  tab-size: 4;
-  white-space: pre;
-}
-
-/* Prism tokens */
-.token.comment, .token.prolog, .token.doctype, .token.cdata { color: var(--tok-comment); font-style: italic; }
-.token.keyword, .token.boolean, .token.important, .token.atrule { color: var(--tok-keyword); }
-.token.string, .token.char, .token.attr-value, .token.regex, .token.template-string { color: var(--tok-string); }
-.token.number, .token.constant, .token.symbol { color: var(--tok-number); }
-.token.function, .token.method { color: var(--tok-function); }
-.token.class-name, .token.builtin, .token.tag, .token.selector { color: var(--tok-type); }
-.token.operator, .token.punctuation { color: var(--tok-operator); }

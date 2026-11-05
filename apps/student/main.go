@@ -78,12 +78,9 @@ func main() {
 		app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }
 	}
 	if err := runWindow(app, func(ctx context.Context) {
-		app.emit = func(event string, data any) {
-			runtime.EventsEmit(ctx, event, data)
-			if s, ok := data.(Status); ok {
-				runtime.WindowSetTitle(ctx, s.Banner) // visible in the taskbar too
-			}
-		}
+		// The window sets its own title from the status (rule 1: visible in
+		// the taskbar too).
+		app.emit = func(event string, data any) { runtime.EventsEmit(ctx, event, data) }
 		app.start(ctx)
 	}, func() { app.stop() }); err != nil {
 		log.Error("wails run failed", "err", err)

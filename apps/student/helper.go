@@ -150,13 +150,7 @@ func (h *helper) event(ctx context.Context, app *App, name string, data json.Raw
 		if err := json.Unmarshal(data, &e); err != nil {
 			return
 		}
-		runtime.EventsEmit(ctx, e.Event, e.Data)
-		if e.Event == EventStatus {
-			var s Status
-			if json.Unmarshal(e.Data, &s) == nil {
-				runtime.WindowSetTitle(ctx, s.Banner) // visible in the taskbar too
-			}
-		}
+		runtime.EventsEmit(ctx, e.Event, e.Data) // the window sets its own title from the status
 	case agentsvc.EventRaise:
 		app.raise()
 	case agentsvc.EventMaximize:

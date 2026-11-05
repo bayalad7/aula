@@ -30,7 +30,7 @@
       <a href="#tabla">Tabla</a> · <a href="#avisos">Avisos</a> · <a href="#franjas">Franjas</a> ·
       <a href="#aviso-linea">Aviso en línea</a> · <a href="#dialogo">Diálogo</a> · <a href="#vacio">Estado vacío</a> · <a href="#carga">Carga</a> ·
       <a href="#pasos">Pasos</a> · <a href="#codigo">Código</a> · <a href="#diagrama">Diagrama</a> ·
-      <a href="#iconos">Iconos</a> · <a href="prototipo/alumnos.html">Prototipo</a>
+      <a href="#iconos">Iconos</a> · <a href="#alumno">App del alumno</a> · <a href="prototipo/alumnos.html">Prototipo</a>
     </nav>
 
     <section id="colores" aria-labelledby="h-colores">
@@ -244,6 +244,65 @@ discord</textarea></label>
       <h2 id="h-iconos">Iconos</h2>
       <p class="suave">Leídos de <code>iconos.svg</code>. Uso: <code>&lt;svg class="icono"&gt;&lt;use href="sistema/iconos.svg#id"/&gt;&lt;/svg&gt;</code></p>
       <ul class="cat-iconos" id="lista-iconos"></ul>
+    </section>
+
+    <section id="alumno" aria-labelledby="h-alumno">
+      <h2 id="h-alumno">App del alumno</h2>
+      <p class="suave">Componentes de <code>apps/student</code> (prompt 19). La pantalla en pausa y el control remoto aún no existen: están diseñados para cuando se implementen.</p>
+
+      <h3>Tira de identidad</h3>
+      <div class="cat-franjas">
+        <div class="estado-conexion" data-estado="connected"><span class="estado-conexion__punto" aria-hidden="true"></span><span class="estado-conexion__texto">Conectado al canal 1 · Prof. Ayala</span></div>
+        <div class="estado-conexion" data-estado="searching"><span class="estado-conexion__punto" aria-hidden="true"></span><span class="estado-conexion__texto">Buscando la clase del canal 1…</span></div>
+        <div class="estado-conexion" data-estado="disconnected"><span class="estado-conexion__punto" aria-hidden="true"></span><span class="estado-conexion__texto">Se perdió la conexión con Prof. Ayala. Reconectando…</span></div>
+        <div class="estado-conexion" data-estado="unconfigured"><span class="estado-conexion__punto" aria-hidden="true"></span><span class="estado-conexion__texto">Aula aún no está lista en este equipo. Avisa a tu profesor.</span>
+          <details class="detalles estado-conexion__detalles"><summary>Detalles para TI</summary><pre>falta config.json en C:\ProgramData\Aula\alumno</pre></details></div>
+      </div>
+
+      <h3>Bandas de transparencia (no se pueden cerrar)</h3>
+      <div class="cat-franjas bandas">
+        <p class="franja franja--vista"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#ojo"/></svg><span class="franja__texto">Tu pantalla la está viendo Prof. Ayala (canal 1)</span></p>
+        <p class="franja franja--pausa"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#pausa"/></svg><span class="franja__texto">Tu pantalla está en pausa por Prof. Ayala (canal 1)</span></p>
+        <p class="franja franja--control"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#control"/></svg><span class="franja__texto">Prof. Ayala está controlando tu equipo (canal 1)</span></p>
+        <div class="franja franja--recibiendo"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#transmitir"/></svg><span class="franja__texto">Estás viendo la pantalla de Prof. Ayala (canal 1)</span><button type="button" class="btn btn--sm btn--sobre-color">Tamaño real</button></div>
+        <div class="franja franja--restricciones"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#candado"/></svg><span class="franja__texto">Restricciones de la clase activas: aplicaciones bloqueadas · sitios web filtrados</span><button type="button" class="btn btn--sm">Ver detalles</button></div>
+        <div class="franja franja--urgente"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#energia"/></svg><span class="franja__texto">Prof. Ayala (canal 1) va a reiniciar este equipo en <span class="franja__cuenta">1:26</span>. Guarda tu trabajo.</span><button type="button" class="btn btn--sm btn--sobre-color">Posponer 5 minutos</button><span class="franja__nota">(2 veces más)</span></div>
+      </div>
+
+      <h3>Código recibido</h3>
+      <ol class="codigos">
+        <li class="codigo-recibido" aria-current="true">
+          <div class="codigo-recibido__cabecera">
+            <span class="insignia insignia--info">Ejercicio 3</span>
+            <h4 class="codigo-recibido__titulo">Factorial recursivo</h4>
+            <span class="insignia insignia--conectado">Nuevo</span>
+            <span class="codigo-recibido__meta">Python · 10:42</span>
+            <button type="button" class="btn btn--primario btn--sm"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#copiar"/></svg>Copiar</button>
+          </div>
+<pre class="codigo-recibido__codigo" tabindex="0"><code><span class="token keyword">def</span> <span class="token function">factorial</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># caso base</span>
+    <span class="token keyword">if</span> n <span class="token operator">&lt;=</span> <span class="token number">1</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token number">1</span>
+    <span class="token keyword">return</span> n <span class="token operator">*</span> factorial<span class="token punctuation">(</span>n <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token builtin">print</span><span class="token punctuation">(</span><span class="token string">"listo"</span><span class="token punctuation">)</span></code></pre>
+        </li>
+      </ol>
+
+      <h3>Modo compacto</h3>
+      <div class="cat-rejilla">
+        <div class="cat-franjas"><div class="modo-compacto"><span class="estado-conexion__punto" aria-hidden="true"></span><span class="modo-compacto__texto">Canal 1 · Prof. Ayala</span><button type="button" class="btn btn--fantasma btn--icono btn--sm" aria-label="Restaurar"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#expandir"/></svg></button></div></div>
+        <div class="cat-franjas"><div class="modo-compacto" data-nuevo="true"><span class="insignia insignia--info">2 nuevos</span><span class="modo-compacto__texto">Factorial recursivo</span><button type="button" class="btn btn--fantasma btn--icono btn--sm" aria-label="Restaurar"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#expandir"/></svg></button></div></div>
+      </div>
+
+      <h3>Pantalla en pausa (dentro de un marco)</h3>
+      <div class="cat-marco">
+        <div class="pantalla-pausa">
+          <svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#pausa"/></svg>
+          <h4 class="pantalla-pausa__titulo">Tu pantalla está en pausa</h4>
+          <p>Prof. Ayala (canal 1) pausó las pantallas para explicar algo. Tu trabajo sigue abierto: vuelve en cuanto termine.</p>
+          <p class="pantalla-pausa__mensaje">«Miren al pizarrón un momento.»</p>
+        </div>
+      </div>
     </section>
   </main>
 

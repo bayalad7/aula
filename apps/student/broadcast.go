@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"time"
 
@@ -66,12 +65,8 @@ func (a *App) onBroadcastView(v broadcast.View) error {
 }
 
 func (a *App) broadcastView(v broadcast.View, st Status) BroadcastView {
-	bv := BroadcastView{Active: v.Active, BroadcastID: v.BroadcastID, Width: v.Width, Height: v.Height,
+	return BroadcastView{Active: v.Active, BroadcastID: v.BroadcastID, Width: v.Width, Height: v.Height,
 		FPS: v.FPS, Teacher: st.Teacher, Channel: st.Channel}
-	if v.Active {
-		bv.Notice = fmt.Sprintf("▶ Estás viendo la pantalla de %s (canal %s)", st.Teacher, st.Channel)
-	}
-	return bv
 }
 
 func (a *App) onBroadcastSignal(s broadcast.Signal) { a.emit(EventSignal, s) }

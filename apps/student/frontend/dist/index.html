@@ -1,81 +1,102 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-MX">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' mediastream: blob:; connect-src 'self' ws: wss:">
-  <title>Aula — Cliente</title>
+  <link rel="icon" href="data:,">
+  <title>Aula</title>
+  <link rel="stylesheet" href="sistema/tokens.css">
+  <link rel="stylesheet" href="sistema/componentes.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Identity banner: always visible (docs/privacidad.md). -->
-  <header id="banner" class="banner" data-state="searching" role="status" aria-live="polite">
-    <span class="dot" aria-hidden="true"></span>
-    <span id="banner-text">Aula — iniciando…</span>
-    <span id="banner-detail" class="detail"></span>
+  <!-- Arriba y fijas aunque el código se desplace: la tira de identidad y las bandas. -->
+  <div class="arriba">
+  <!-- Tira de identidad: siempre visible (docs/privacidad.md, regla 1). -->
+  <header id="estado" class="estado-conexion" data-estado="searching">
+    <span class="estado-conexion__punto" aria-hidden="true"></span>
+    <span id="estado-texto" class="estado-conexion__texto" role="status"></span>
+    <details id="estado-detalles" class="detalles estado-conexion__detalles" hidden>
+      <summary data-t="estado.detalles"></summary>
+      <pre id="estado-detalle"></pre>
+    </details>
   </header>
 
-  <!-- Power order (docs/privacidad.md rules 26-28): fixed, with the countdown. -->
-  <section id="power" class="power" role="alert" aria-live="assertive" hidden>
-    <p id="power-text" class="power-text"></p>
-    <div class="power-actions">
-      <button type="button" id="power-postpone">Posponer 5 min</button>
-      <span id="power-left" class="power-left"></span>
-      <button type="button" id="power-dismiss" hidden>Entendido</button>
-    </div>
-  </section>
+  <!-- Bandas de transparencia: no se pueden cerrar; desaparecen cuando el profesor termina
+       (docs/privacidad.md, reglas 6, 12, 20-22 y 26-28). -->
+  <div id="bandas" class="bandas">
+    <p id="banda-vista" class="franja franja--vista" role="status" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg>
+      <span id="banda-vista-texto" class="franja__texto"></span>
+    </p>
+    <section id="power" class="franja franja--urgente" role="alert" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg>
+      <span id="power-text" class="franja__texto"></span>
+      <button type="button" id="power-postpone" class="btn btn--sm btn--sobre-color" data-t="energia.posponer"></button>
+      <span id="power-left" class="franja__nota"></span>
+      <button type="button" id="power-dismiss" class="btn btn--sm btn--sobre-color" data-t="energia.entendido" hidden></button>
+    </section>
+    <section id="restrictions" class="franja franja--restricciones" role="status" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg>
+      <span id="restr-text" class="franja__texto"></span>
+      <button type="button" id="restr-toggle" class="btn btn--sm" aria-expanded="false" aria-controls="restr-details" data-t="banda.verDetalles"></button>
+      <div id="restr-details" class="franja__detalle" hidden></div>
+    </section>
+    <p id="app-closed" class="franja franja--restricciones" role="alert" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg>
+      <span id="app-closed-text" class="franja__texto"></span>
+    </p>
+  </div>
+  </div>
 
-  <!-- Class restrictions (docs/privacidad.md rules 20-22). -->
-  <section id="restrictions" class="restrictions" role="status" aria-live="polite" hidden>
-    <div class="restr-head">
-      <span id="restr-text"></span>
-      <button type="button" id="restr-toggle" aria-expanded="false">Ver detalles</button>
-    </div>
-    <div id="restr-details" class="restr-details" hidden></div>
-  </section>
-  <p id="app-closed" class="app-closed" role="alert" hidden></p>
-
-  <section id="notices" class="notices" aria-live="assertive"></section>
-
-  <!-- The teacher's screen (docs/privacidad.md rule 12): the band is fixed and
-       the connection is receive-only. -->
-  <section id="broadcast" class="broadcast" hidden aria-label="Pantalla del profesor">
-    <div class="bc-band" role="status" aria-live="polite">
-      <span id="bc-notice"></span>
-      <button type="button" id="bc-size" aria-pressed="false">Tamaño real</button>
+  <!-- La pantalla del profesor (docs/privacidad.md, regla 12): franja fija y conexión solo de recepción. -->
+  <section id="broadcast" class="broadcast" hidden aria-labelledby="bc-notice">
+    <div class="franja franja--recibiendo" role="status">
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg>
+      <span id="bc-notice" class="franja__texto"></span>
+      <button type="button" id="bc-size" class="btn btn--sm btn--sobre-color" aria-pressed="false" data-t="banda.tamanoReal"></button>
     </div>
     <div id="bc-stage" class="bc-stage" data-fit="window">
       <video id="bc-video" autoplay muted playsinline></video>
-      <p id="bc-wait" class="bc-wait">Conectando con la pantalla del profesor…</p>
+      <p id="bc-wait" class="bc-wait" data-t="banda.conectando"></p>
     </div>
   </section>
 
-  <main>
-    <p id="empty" class="empty">Cuando el profesor comparta código, aparecerá aquí listo para copiar.</p>
-    <ol id="snippets" class="snippets"></ol>
+  <main id="contenido" data-t-aria-label="app.contenido">
+    <h1 class="solo-lector" data-t="app.titulo"></h1>
+    <section id="notices" class="avisos" aria-live="polite"></section>
+    <p id="empty" class="vacio" data-t="codigos.vacio"></p>
+    <ol id="snippets" class="codigos"></ol>
   </main>
 
   <template id="snippet-template">
-    <li class="snippet">
-      <div class="snippet-head">
-        <span class="exercise"></span>
-        <h2 class="title"></h2>
-        <span class="lang"></span>
-        <button type="button" class="copy">Copiar al portapapeles</button>
+    <li class="codigo-recibido">
+      <div class="codigo-recibido__cabecera">
+        <span class="insignia insignia--info exercise"></span>
+        <h2 class="codigo-recibido__titulo title"></h2>
+        <span class="codigo-recibido__meta lang"></span>
+        <button type="button" class="btn btn--primario btn--sm copy"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#copiar"/></svg><span></span></button>
       </div>
-      <pre class="code"><code></code></pre>
+      <pre class="codigo-recibido__codigo" tabindex="0"><code></code></pre>
+      <p class="campo__error codigo-recibido__error" role="alert" hidden></p>
     </li>
   </template>
 
   <template id="notice-template">
-    <div class="notice" role="alert">
-      <p class="notice-text"></p>
-      <button type="button" class="dismiss">Entendido</button>
+    <div class="toast notice">
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg>
+      <div class="toast__texto">
+        <span class="toast__titulo"></span>
+        <span class="notice-text"></span>
+      </div>
+      <button type="button" class="btn btn--sm dismiss"></button>
     </div>
   </template>
 
   <script src="events.js"></script>
+  <script src="textos.es-MX.js"></script>
   <script src="vendor/prism/prism-config.js"></script>
   <script src="vendor/prism/prism-core.min.js"></script>
   <script src="vendor/prism/prism-markup.min.js"></script>

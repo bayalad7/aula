@@ -133,12 +133,13 @@ func TestNoticesAckedCappedAndDismissed(t *testing.T) {
 func TestBannerAlwaysIdentifiesClass(t *testing.T) {
 	a, rec := newTestApp(nil)
 	a.onState(session.AgentConnected, discovery.Console{Name: "Lab 3 — Prof. Ayala"})
+	// The window words the strip; the status always carries whose class it is.
 	s := rec.last(EventStatus).(Status)
-	if s.Banner != "Aula — conectado a la clase de Lab 3 — Prof. Ayala (canal 1)" {
-		t.Fatalf("banner = %q", s.Banner)
+	if s.State != StateConnected || s.Teacher != "Lab 3 — Prof. Ayala" || s.Channel != "1" {
+		t.Fatalf("status = %+v", s)
 	}
 	a.onState(session.AgentDisconnected, discovery.Console{Name: "Lab 3"})
-	if s := rec.last(EventStatus).(Status); s.State != StateDisconnected || !strings.Contains(s.Banner, "Lab 3") {
+	if s := rec.last(EventStatus).(Status); s.State != StateDisconnected || s.Teacher != "Lab 3" {
 		t.Fatalf("disconnected banner = %+v", s)
 	}
 	u := NewApp(Config{}, nil, errors.New("falta la clave"), localHello(), nil, nil, quiet)

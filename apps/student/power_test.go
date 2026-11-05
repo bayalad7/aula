@@ -6,7 +6,6 @@ import (
 	"net"
 	"slices"
 	"strconv"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -243,11 +242,8 @@ func TestPowerCountdownWithLiveConsole(t *testing.T) {
 	}
 	got.wait(t, "countdown", ackStatus(protocol.PowerCountdown))
 	v := a.View()
-	if v.Power.Notice == nil || v.Power.Notice.RemainingS != 60 || v.Power.Verb != "reiniciar este equipo" || v.Power.Channel != "1" {
+	if v.Power.Notice == nil || v.Power.Notice.RemainingS != 60 || v.Power.Notice.Action != protocol.PowerReboot || v.Power.Channel != "1" {
 		t.Fatalf("notice %+v", v.Power)
-	}
-	if !strings.HasSuffix(v.Status.Banner, "· reinicio pendiente") {
-		t.Fatalf("banner %q", v.Status.Banner)
 	}
 	if rec.last(EventPower) == nil || rec.raised == 0 {
 		t.Fatal("the notice was not shown nor the window raised")
@@ -340,7 +336,7 @@ func TestServiceAgentPower(t *testing.T) {
 		return ok && a.ActionID == order.ActionID && a.Status == protocol.PowerCountdown
 	})
 	var v View
-	if err := h.binding(t, &v, "View"); err != nil || v.Power.Notice == nil || v.Power.Verb != "cerrar tu sesión" {
+	if err := h.binding(t, &v, "View"); err != nil || v.Power.Notice == nil || v.Power.Notice.Action != protocol.PowerLogoff {
 		t.Fatalf("view through the helper: %+v, %v", v.Power, err)
 	}
 	if err := h.binding(t, nil, "PowerPostpone"); err != nil {

@@ -227,7 +227,7 @@ func TestHelperForwardsBindings(t *testing.T) {
 		_ = json.Unmarshal(data, &b)
 		switch b.Method {
 		case "View":
-			return View{Status: Status{State: StateConnected, Banner: "Aula — conectado a la clase de Prof (canal 1)"}}, nil
+			return View{Status: Status{State: StateConnected, Teacher: "Prof", Channel: "1"}}, nil
 		case "Copy":
 			return nil, errors.New("ese fragmento ya no está en pantalla")
 		}
@@ -350,7 +350,7 @@ func TestServiceAgentAppliesAndEndsRestrictions(t *testing.T) {
 		_ = h.binding(t, &v, "View")
 		time.Sleep(20 * time.Millisecond)
 	}
-	if v.Restrictions.Apps == nil || v.Restrictions.Apps.Items[0] != "steam" || !strings.HasSuffix(v.Status.Banner, "· restricciones activas") {
+	if v.Restrictions.Apps == nil || v.Restrictions.Apps.Items[0] != "steam" || !v.Status.Restricted {
 		t.Fatalf("student's view %+v", v)
 	}
 	sa.policy.Apps.Enforce()

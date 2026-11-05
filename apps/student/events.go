@@ -38,12 +38,12 @@ const (
 )
 
 // PowerView is the power notice as the window shows it. Notice is nil when
-// there is none; the window counts RemainingS down by itself.
+// there is none; the window counts RemainingS down by itself and words it by
+// Notice.Action.
 type PowerView struct {
 	Notice  *power.Notice `json:"notice"`
 	Teacher string        `json:"teacher"` // who gave the order
 	Channel string        `json:"channel"`
-	Verb    string        `json:"verb"` // "apagar este equipo", "reiniciar este equipo", "cerrar tu sesión"
 }
 
 // AppClosed names the app the agent closed (docs/privacidad.md rule 22).
@@ -59,14 +59,16 @@ const (
 	StateDisconnected = "disconnected"
 )
 
-// Status is the always-visible identity banner (docs/privacidad.md: the agent
-// always identifies itself).
+// Status is what the always-visible identity strip shows (docs/privacidad.md
+// rule 1: the agent always identifies itself). It carries states only: the
+// window writes the text, and the window title, from textos.es-MX.js.
 type Status struct {
-	State    string `json:"state"`
-	Teacher  string `json:"teacher"` // console_name; empty until found
-	Channel  string `json:"channel"`
-	Banner   string `json:"banner"`   // ready-to-show Spanish text
-	Detail   string `json:"detail"`   // extra help, e.g. why it is unconfigured
+	State   string `json:"state"`
+	Teacher string `json:"teacher"` // console_name; empty until found
+	Channel string `json:"channel"`
+	// Detail is the technical reason it is not connected (configuration error
+	// or the agent's diagnostic), for "Detalles para TI".
+	Detail   string `json:"detail"`
 	Viewed   bool   `json:"viewed"`   // the teacher is receiving this screen
 	Watching bool   `json:"watching"` // this screen shows the teacher's broadcast
 	// Restricted is set while class restrictions are on.
@@ -74,7 +76,8 @@ type Status struct {
 }
 
 // BroadcastView is the broadcast of the teacher's screen as the window shows
-// it (docs/privacidad.md rule 12). Notice is the fixed band over the video.
+// it (docs/privacidad.md rule 12): the window puts its fixed band over the
+// video.
 type BroadcastView struct {
 	Active      bool   `json:"active"`
 	BroadcastID string `json:"broadcastId"`
@@ -83,7 +86,6 @@ type BroadcastView struct {
 	FPS         int    `json:"fps"`
 	Teacher     string `json:"teacher"`
 	Channel     string `json:"channel"`
-	Notice      string `json:"notice"`
 }
 
 // Board is the list of snippets, oldest first.

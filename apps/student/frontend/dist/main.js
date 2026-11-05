@@ -1,7 +1,9 @@
-// Interfaz del cliente del alumno. Recibe el estado del backend Go por eventos
+// Interfaz de la app del alumno. Recibe el estado del backend Go por eventos
 // de Wails y llama a sus métodos (View, Copy, DismissNotice y los de la
 // transmisión del profesor: ReportMedia, BroadcastAnswer, BroadcastCandidate,
 // BroadcastFailed; y los del aviso de energía: PowerPostpone, DismissPower).
+// Go manda estados; los textos salen de textos.es-MX.js (T) y el título de la
+// ventana lo pone esta página (docs/privacidad.md, regla 1).
 // Seguridad: todo texto recibido se inserta con textContent; el único HTML es
 // el que genera Prism, que escapa el código antes de colorearlo.
 "use strict";
@@ -10,16 +12,63 @@
   const api = window.go.main.App;
   const rt = window.runtime;
   const ev = window.AulaEvents;
+  const TX = window.AulaTextos;
 
   const $ = (id) => document.getElementById(id);
-  const banner = $("banner");
-  const bannerText = $("banner-text");
-  const bannerDetail = $("banner-detail");
+
+  // --- Textos ------------------------------------------------------------------------------
+  // T("clave", {n: 3}) sustituye {n}. Una clave que falta se ve como tal y se
+  // registra: una prueba de Go impide que llegue así a una versión.
+  function T(key, vars) {
+    let s = TX[key];
+    if (typeof s !== "string") {
+      console.error("texto faltante:", key);
+      return key;
+    }
+    if (vars) for (const [k, v] of Object.entries(vars)) s = s.split("{" + k + "}").join(String(v));
+    return s;
+  }
+  // Plural: claves "x.uno" y "x.varios".
+  const P = (key, n, vars) => T(key + (n === 1 ? ".uno" : ".varios"), Object.assign({ n }, vars));
+  function aplicarTextos(root) {
+    for (const e of root.querySelectorAll("[data-t]")) e.textContent = T(e.dataset.t);
+    for (const e of root.querySelectorAll("[data-t-aria-label]")) e.setAttribute("aria-label", T(e.dataset.tAriaLabel));
+  }
+
+  // --- Estado: tira de identidad, bandas y título ----------------------------------------------
+  // El título junta el estado, lo que el profesor hace con este equipo y las
+  // órdenes pendientes, como piden las reglas 1, 6, 12, 20 y 26.
+  let status = { state: "searching", channel: "", teacher: "" };
+  let restricted = false;
+  let pendingPower = "";
+
+  const TI = "titulo."; // + estado, o pendiente.<acción>
+  function title() {
+    const v = { canal: status.channel, profesor: status.teacher };
+    let t = status.viewed ? T("titulo.vista", v) : status.watching ? T("titulo.recibiendo", v) : T(TI + status.state, v);
+    if (restricted && status.state === "connected") t += T("titulo.restricciones");
+    if (pendingPower && status.state !== "unconfigured") t += T(TI + "pendiente." + pendingPower);
+    document.title = t;
+    if (rt.WindowSetTitle) rt.WindowSetTitle(t); // también en la barra de tareas
+  }
+
+  function renderStatus(s) {
+    status = s;
+    const v = { canal: s.channel, profesor: s.teacher };
+    $("estado").dataset.estado = s.state;
+    const ES = "estado."; // + estado de la conexión
+    $("estado-texto").textContent = T(ES + s.state, v);
+    $("estado-detalles").hidden = !s.detail;
+    $("estado-detalle").textContent = s.detail || "";
+    $("banda-vista").hidden = !s.viewed;
+    $("banda-vista-texto").textContent = s.viewed ? T("banda.vista", v) : "";
+    title();
+  }
+
+  // --- Código ---------------------------------------------------------------------------------
   const list = $("snippets");
   const empty = $("empty");
-  const noticesBox = $("notices");
   const snippetTpl = $("snippet-template");
-  const noticeTpl = $("notice-template");
 
   // Identificadores de Monaco/protocolo → gramática de Prism.
   const aliases = {
@@ -28,13 +77,6 @@
     cs: "csharp", js: "javascript", ts: "typescript",
     py: "python", golang: "go", "c++": "cpp",
   };
-
-  function renderStatus(s) {
-    banner.dataset.state = s.state;
-    banner.dataset.viewed = s.viewed ? "true" : "false";
-    bannerText.textContent = s.banner;
-    bannerDetail.textContent = s.detail || "";
-  }
 
   function highlight(codeEl, lang, content) {
     const name = aliases[lang] || lang;
@@ -53,14 +95,17 @@
     for (const s of snippets) {
       const node = snippetTpl.content.firstElementChild.cloneNode(true);
       const exercise = node.querySelector(".exercise");
-      exercise.textContent = s.exercise ? "Ejercicio " + s.exercise : "";
+      exercise.textContent = s.exercise ? T("codigo.ejercicio", { n: s.exercise }) : "";
       exercise.hidden = !s.exercise;
-      node.querySelector(".title").textContent = s.title || "Código del profesor";
+      const titulo = s.title || T("codigo.sinTitulo");
+      node.querySelector(".title").textContent = titulo;
       node.querySelector(".lang").textContent = s.lang;
+      node.querySelector("pre").setAttribute("aria-label", T("codigo.region", { titulo }));
       highlight(node.querySelector("code"), s.lang, s.content);
 
       const button = node.querySelector(".copy");
-      button.addEventListener("click", () => copy(s.id, button));
+      button.querySelector("span").textContent = T("codigo.copiar");
+      button.addEventListener("click", () => copy(s.id, button, node.querySelector(".codigo-recibido__error")));
       list.appendChild(node);
     }
     if (snippets.length > 0) {
@@ -68,39 +113,43 @@
     }
   }
 
-  function copy(id, button) {
-    api.Copy(id).then(
-      () => flash(button, "Copiado ✓", "ok"),
-      (err) => flash(button, "No se pudo copiar", "error", String(err)),
-    );
+  // El texto lo copia Go, del fragmento tal como llegó (sangría y saltos incluidos).
+  function copy(id, button, error) {
+    error.hidden = true;
+    api.Copy(id).then(() => {
+      button.querySelector("span").textContent = T("codigo.copiado");
+      setTimeout(() => { button.querySelector("span").textContent = T("codigo.copiar"); }, 2000);
+    }, (err) => {
+      error.textContent = T("codigo.noSeCopio", { motivo: String(err && err.message ? err.message : err) });
+      error.hidden = false;
+    });
   }
 
-  function flash(button, text, kind, title) {
-    const original = "Copiar al portapapeles";
-    button.textContent = text;
-    button.dataset.kind = kind;
-    button.title = title || "";
-    setTimeout(() => {
-      button.textContent = original;
-      delete button.dataset.kind;
-      button.title = "";
-    }, 2000);
-  }
+  // --- Avisos del profesor ----------------------------------------------------------------------
+  const noticesBox = $("notices");
+  const noticeTpl = $("notice-template");
+  const NIVEL = { info: ["info", ""], warning: ["advertencia", "toast--advertencia"] };
 
   function renderNotices(notices) {
     noticesBox.replaceChildren();
     for (const n of notices) {
       const node = noticeTpl.content.firstElementChild.cloneNode(true);
-      node.dataset.level = n.level;
+      const [icono, clase] = NIVEL[n.level] || NIVEL.info;
+      if (clase) node.classList.add(clase);
+      node.querySelector("use").setAttribute("href", "sistema/iconos.svg#" + icono);
+      const AV = "aviso."; // + nivel del aviso (info, warning)
+      node.querySelector(".toast__titulo").textContent = T(AV + (n.level === "warning" ? "warning" : "info"));
       node.querySelector(".notice-text").textContent = n.text;
-      node.querySelector(".dismiss").addEventListener("click", () => api.DismissNotice(n.id));
+      const b = node.querySelector(".dismiss");
+      b.textContent = T("aviso.entendido");
+      b.addEventListener("click", () => api.DismissNotice(n.id));
       noticesBox.appendChild(node);
     }
   }
 
-  // --- Broadcast of the teacher's screen ------------------------------------------
-  // The backend has already checked the offer (receive-only video) and shown
-  // this view before handing it over. This connection never sends media.
+  // --- Transmisión de la pantalla del profesor ------------------------------------------------------
+  // El backend ya revisó la oferta (video solo de recepción) y mostró esta
+  // vista antes de pasarla. Esta conexión nunca envía medios.
   const bcSection = $("broadcast");
   const video = $("bc-video");
   const wait = $("bc-wait");
@@ -121,7 +170,7 @@
   function renderBroadcast(b) {
     document.body.classList.toggle("watching", b.active);
     bcSection.hidden = !b.active;
-    $("bc-notice").textContent = b.notice || "";
+    $("bc-notice").textContent = b.active ? T("banda.recibiendo", { profesor: b.teacher, canal: b.channel }) : "";
     if (!b.active) closeConnection();
   }
 
@@ -179,63 +228,59 @@
     const stage = $("bc-stage");
     const real = stage.dataset.fit !== "real";
     stage.dataset.fit = real ? "real" : "window";
-    $("bc-size").textContent = real ? "Ajustar a la ventana" : "Tamaño real";
+    $("bc-size").textContent = real ? T("banda.ajustar") : T("banda.tamanoReal");
     $("bc-size").setAttribute("aria-pressed", String(real));
   });
 
-  // --- Class restrictions (docs/privacidad.md rules 20-22) ------------------------
-  // The teacher's policy is shown before it is applied; the details list the
-  // first items and how many there are.
+  // --- Restricciones de la clase (docs/privacidad.md, reglas 20-22) --------------------------------
+  // La política se muestra antes de aplicarse; los detalles listan las primeras
+  // y cuántas hay.
   const restr = $("restrictions");
   const restrDetails = $("restr-details");
   const restrToggle = $("restr-toggle");
-
-  function restrPart(s, deny, allow) {
-    if (!s) return "";
-    return s.mode === "allow" ? allow : deny;
-  }
+  const BR = "banda.restricciones."; // + appsDeny, appsAllow, webDeny, webAllow
 
   function restrList(label, s) {
     if (!s) return null;
     const p = document.createElement("p");
-    const more = s.total > s.items.length ? " y " + (s.total - s.items.length) + " más" : "";
-    p.textContent = label + (s.mode === "allow" ? " (solo estas): " : ": ") + s.items.join(", ") + more;
+    const more = s.total > s.items.length ? T("banda.lista.mas", { n: s.total - s.items.length }) : "";
+    p.textContent = label + (s.mode === "allow" ? T("banda.lista.soloEstas") : "") + ": " + s.items.join(", ") + more;
     return p;
   }
 
   function renderRestrictions(r) {
-    const parts = [
-      restrPart(r.apps, "aplicaciones bloqueadas", "solo se permiten algunas aplicaciones"),
-      restrPart(r.web, "sitios web filtrados", "solo se permiten algunos sitios"),
-    ].filter(Boolean);
-    restr.hidden = parts.length === 0;
-    $("restr-text").textContent = parts.length ? "🔒 Restricciones de la clase activas: " + parts.join(" · ") : "";
-    restrDetails.replaceChildren(...[restrList("Aplicaciones", r.apps), restrList("Sitios", r.web)].filter(Boolean));
-    if (parts.length === 0) {
+    const parts = [];
+    if (r.apps) parts.push(T(BR + (r.apps.mode === "allow" ? "appsAllow" : "appsDeny")));
+    if (r.web) parts.push(T(BR + (r.web.mode === "allow" ? "webAllow" : "webDeny")));
+    restricted = parts.length > 0;
+    restr.hidden = !restricted;
+    $("restr-text").textContent = restricted ? T("banda.restricciones", { partes: parts.join(T(BR + "separador")) }) : "";
+    restrDetails.replaceChildren(...[restrList(T("banda.lista.apps"), r.apps), restrList(T("banda.lista.web"), r.web)].filter(Boolean));
+    if (!restricted) {
       restrDetails.hidden = true;
       restrToggle.setAttribute("aria-expanded", "false");
-      restrToggle.textContent = "Ver detalles";
+      restrToggle.textContent = T("banda.verDetalles");
     }
+    title();
   }
 
   restrToggle.addEventListener("click", () => {
     const open = restrDetails.hidden;
     restrDetails.hidden = !open;
     restrToggle.setAttribute("aria-expanded", String(open));
-    restrToggle.textContent = open ? "Ocultar detalles" : "Ver detalles";
+    restrToggle.textContent = open ? T("banda.ocultarDetalles") : T("banda.verDetalles");
   });
 
   let closedTimer = 0;
   function onAppClosed(c) {
-    const p = $("app-closed");
-    p.textContent = "Aula cerró «" + c.app + "»: está bloqueada durante la clase.";
-    p.hidden = false;
+    $("app-closed-text").textContent = T("banda.appCerrada", { app: c.app });
+    $("app-closed").hidden = false;
     clearTimeout(closedTimer);
-    closedTimer = setTimeout(() => { p.hidden = true; }, 8000);
+    closedTimer = setTimeout(() => { $("app-closed").hidden = true; }, 8000);
   }
 
-  // --- Power order (docs/privacidad.md rules 26-28) -------------------------------
-  // The backend sends the seconds left; the window counts down by itself.
+  // --- Orden de energía (docs/privacidad.md, reglas 26-28) ------------------------------------------
+  // El backend manda los segundos que faltan; la ventana cuenta sola.
   const powerBox = $("power");
   const powerText = $("power-text");
   const powerPostpone = $("power-postpone");
@@ -244,6 +289,7 @@
   let powerView = null;
   let powerEnd = 0;
   let powerTick = 0;
+  const EN = "energia."; // + cuenta|ejecutando|fallo . reboot|shutdown|logoff
 
   function clock(s) {
     const m = Math.floor(s / 60);
@@ -256,20 +302,19 @@
     const n = v && v.notice;
     powerBox.hidden = !n;
     if (!n) return;
-    const who = "El profesor " + (v.teacher || "de la clase") + (v.channel ? " (canal " + v.channel + ")" : "");
+    const who = { profesor: v.teacher || T("energia.profesor"), canal: v.channel };
     powerPostpone.hidden = n.state !== "countdown";
     powerLeft.hidden = n.state !== "countdown";
     powerDismiss.hidden = n.state !== "failed";
     if (n.state === "countdown") {
       const left = Math.max(0, Math.ceil((powerEnd - Date.now()) / 1000));
-      powerText.textContent = "⏻ " + who + " va a " + v.verb + " en " + clock(left) + ". Guarda tu trabajo.";
+      powerText.textContent = T(EN + "cuenta." + n.action, Object.assign({ tiempo: clock(left) }, who));
       powerPostpone.disabled = n.postpones_left === 0;
-      powerLeft.textContent = n.postpones_left === 0 ? "Ya no se puede posponer" : "(te quedan " + n.postpones_left + ")";
+      powerLeft.textContent = n.postpones_left === 0 ? T("energia.yaNo") : P("energia.quedan", n.postpones_left);
     } else if (n.state === "executing") {
-      const verb = v.verb.replace(/^apagar/, "apagando").replace(/^reiniciar/, "reiniciando").replace(/^cerrar/, "cerrando");
-      powerText.textContent = "⏻ " + who + " está " + verb + ".";
+      powerText.textContent = T(EN + "ejecutando." + n.action, who);
     } else {
-      powerText.textContent = "No se pudo " + v.verb + ".";
+      powerText.textContent = T(EN + "fallo." + n.action);
     }
   }
 
@@ -280,7 +325,9 @@
       powerEnd = Date.now() + powerView.notice.remaining_s * 1000;
       powerTick = setInterval(drawPower, 250);
     }
+    pendingPower = powerView && powerView.notice.state !== "failed" ? powerView.notice.action : "";
     drawPower();
+    title();
   }
 
   powerPostpone.addEventListener("click", () => {
@@ -291,7 +338,9 @@
   });
   powerDismiss.addEventListener("click", () => api.DismissPower());
 
-  // Subscribe first, then fetch the full state, so nothing is missed.
+  // --- Arranque ------------------------------------------------------------------------------------
+  aplicarTextos(document);
+  // Suscribirse primero y después pedir el estado completo, para no perder nada.
   rt.EventsOn(ev.POWER, renderPower);
   rt.EventsOn(ev.RESTRICTIONS, renderRestrictions);
   rt.EventsOn(ev.APP_CLOSED, onAppClosed);

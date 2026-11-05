@@ -16,27 +16,18 @@
 
   const teacher = "Prof. Ayala";
   const channel = "1";
-  // El texto del distintivo lo arma hoy el backend (app.go: statusFor y setStatus).
-  const conectado = { state: "connected", teacher, channel, banner: `Aula — conectado a la clase de ${teacher} (canal ${channel})`,
-    detail: "", viewed: false, watching: false, restricted: false };
+  // El estado: Go manda estados, no frases (apps/student/events.go, Status).
+  const st = (state, extra) => Object.assign({ state, teacher: state === "searching" || state === "unconfigured" ? "" : teacher,
+    channel: state === "unconfigured" ? "" : channel, detail: "", viewed: false, watching: false, restricted: false }, extra);
+  const conectado = st("connected");
   const status = {
-    "sin-configurar": { state: "unconfigured", teacher: "", channel: "", banner: "Aula — sin configurar",
-      detail: "no hay configuración: falta config.json en C:\\ProgramData\\Aula\\alumno (canal y clave pública del centro); pide al administrador que instale Aula en este equipo",
-      viewed: false, watching: false, restricted: false },
-    buscando: { state: "searching", teacher: "", channel, banner: `Aula — buscando la clase del canal ${channel}`, detail: "",
-      viewed: false, watching: false, restricted: false },
-    "sin-conexion": { state: "searching", teacher: "", channel, banner: `Aula — buscando la clase del canal ${channel}`,
-      detail: `No se encontró ninguna consola del canal ${channel}. Revisa que la consola del profesor esté abierta en ese canal, que la red de este equipo sea Privada o de Dominio (no Pública) y que el firewall permita Aula.`,
-      viewed: false, watching: false, restricted: false },
-    reconectando: { state: "disconnected", teacher, channel, banner: `Aula — sin conexión con la clase de ${teacher} (canal ${channel}); reintentando`,
-      detail: "", viewed: false, watching: false, restricted: false },
-    "pantalla-vista": Object.assign({}, conectado, { viewed: true,
-      banner: `Aula — tu pantalla está siendo vista por ${teacher} (canal ${channel})` }),
-    transmision: Object.assign({}, conectado, { watching: true,
-      banner: `Aula — viendo la pantalla de ${teacher} (canal ${channel})` }),
-    restricciones: Object.assign({}, conectado, { restricted: true, banner: conectado.banner + " · restricciones activas" }),
-    "energia-cuenta": Object.assign({}, conectado, { banner: conectado.banner + " · reinicio pendiente" }),
-    "energia-forzada": Object.assign({}, conectado, { banner: conectado.banner + " · apagado pendiente" }),
+    "sin-configurar": st("unconfigured", { detail: "no hay configuración: falta config.json en C:\ProgramData\Aula\alumno (canal y clave pública del centro); pide al administrador que instale Aula en este equipo" }),
+    buscando: st("searching"),
+    "sin-conexion": st("searching", { detail: `No se encontró ninguna consola del canal ${channel}. Revisa que la consola del profesor esté abierta en ese canal, que la red de este equipo sea Privada o de Dominio (no Pública) y que el firewall permita Aula.` }),
+    reconectando: st("disconnected"),
+    "pantalla-vista": st("connected", { viewed: true }),
+    transmision: st("connected", { watching: true }),
+    restricciones: st("connected", { restricted: true }),
   }[scene] || conectado;
 
   const ahora = new Date().toISOString();
@@ -64,17 +55,16 @@
   } : { apps: null, web: null };
 
   const broadcast = scene === "transmision"
-    ? { active: true, broadcastId: "b-1", width: 1920, height: 1080, fps: 15, teacher, channel,
-      notice: `▶ Estás viendo la pantalla de ${teacher} (canal ${channel})` }
-    : { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "", notice: "" };
+    ? { active: true, broadcastId: "b-1", width: 1920, height: 1080, fps: 15, teacher, channel }
+    : { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "" };
 
-  const potencia = (state, action, verb, extra) => ({ notice: Object.assign({ action_id: "pw-1", action, state,
-    remaining_s: 87, postpones_left: 2, force: false }, extra), teacher, channel, verb });
+  const potencia = (state, action, extra) => ({ notice: Object.assign({ action_id: "pw-1", action, state,
+    remaining_s: 87, postpones_left: 2, force: false }, extra), teacher, channel });
   const power = {
-    "energia-cuenta": potencia("countdown", "reboot", "reiniciar este equipo"),
-    "energia-forzada": potencia("executing", "shutdown", "apagar este equipo", { force: true, remaining_s: 0 }),
-    "energia-fallida": potencia("failed", "logoff", "cerrar tu sesión", { remaining_s: 0 }),
-  }[scene] || { notice: null, teacher: "", channel: "", verb: "" };
+    "energia-cuenta": potencia("countdown", "reboot"),
+    "energia-forzada": potencia("executing", "shutdown", { force: true, remaining_s: 0 }),
+    "energia-fallida": potencia("failed", "logoff", { remaining_s: 0 }),
+  }[scene] || { notice: null, teacher: "", channel: "" };
 
   const ok = (v) => new Promise((r) => setTimeout(() => r(v), 5));
   // Un doble que devuelve un Error rechaza la promesa con su texto, como Wails.

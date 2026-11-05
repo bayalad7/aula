@@ -31,7 +31,7 @@ func (a *App) onPower(n *power.Notice) {
 				v.Channel = a.cfg.Channel
 			}
 		}
-		v.Notice, v.Verb = n, powerVerb(n.Action)
+		v.Notice = n
 	}
 	a.powerV = v
 	st := a.status
@@ -60,28 +60,4 @@ func (a *App) DismissPower() {
 		return
 	}
 	a.power.Dismiss()
-}
-
-func powerVerb(k protocol.PowerKind) string {
-	switch k {
-	case protocol.PowerReboot:
-		return "reiniciar este equipo"
-	case protocol.PowerLogoff:
-		return "cerrar tu sesión"
-	}
-	return "apagar este equipo"
-}
-
-// powerPending is what the banner adds while an order counts or runs.
-func powerPending(n *power.Notice) string {
-	if n == nil || n.State == power.NoticeFailed {
-		return ""
-	}
-	switch n.Action {
-	case protocol.PowerReboot:
-		return "reinicio pendiente"
-	case protocol.PowerLogoff:
-		return "cierre de sesión pendiente"
-	}
-	return "apagado pendiente"
 }

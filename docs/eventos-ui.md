@@ -21,6 +21,14 @@ interfaz ──App.Copy(id)──▶ Go ──platform.Clipboard──▶ portap
 Al cargar, la interfaz **primero se suscribe** a los eventos y **después** pide el estado
 completo con `App.View()`, para no perder nada que llegue entre medio.
 
+**Go manda estados, no frases** (prompt 19). Los textos de la ventana están en
+`frontend/dist/textos.es-MX.js` y la interfaz pone el título de la ventana, que también se ve en
+la barra de tareas (`runtime.WindowSetTitle`), a partir de `Status`, de las restricciones y de la
+orden de energía (`docs/privacidad.md`, reglas 1, 6, 12, 20 y 26). `TestTextsAreComplete` exige un
+texto por cada estado, acción de energía, nivel de aviso y modo de restricción que Go puede mandar.
+El único texto que sigue en Go es el del distintivo nativo de la regla 6 (`screen.IndicatorText`),
+que no es parte de la página.
+
 ### Eventos (Go → interfaz)
 
 | Evento | Datos | Cuándo |
@@ -39,15 +47,14 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
 { "state": "connected",            // unconfigured | searching | connected | disconnected
   "teacher": "Lab 3 — Prof. Ayala",  // console_name; vacío mientras busca
   "channel": "1",
-  "banner": "Aula — conectado a la clase de Lab 3 — Prof. Ayala (canal 1)",
-  "detail": "",                      // ayuda extra, p. ej. por qué está sin configurar
+  "detail": "",                      // motivo técnico si no conecta («Detalles para TI»)
   "viewed": false,                   // true mientras el profesor recibe esta pantalla
-  "watching": false }                // true mientras esta pantalla muestra la del profesor
+  "watching": false,                 // true mientras esta pantalla muestra la del profesor
+  "restricted": false }              // true mientras hay restricciones de la clase
 
 // BroadcastView: la transmisión de la pantalla del profesor
 { "active": true, "broadcastId": "7d1f…", "width": 1920, "height": 1080, "fps": 15,
-  "teacher": "Lab 3 — Prof. Ayala", "channel": "1",
-  "notice": "▶ Estás viendo la pantalla de Lab 3 — Prof. Ayala (canal 1)" }
+  "teacher": "Lab 3 — Prof. Ayala", "channel": "1" }
 
 // Signal: para el RTCPeerConnection de la interfaz; un attempt mayor reemplaza la conexión
 { "kind": "offer", "broadcastId": "7d1f…", "attempt": 1, "sdp": "v=0…" }
@@ -62,8 +69,7 @@ completo con `App.View()`, para no perder nada que llegue entre medio.
 { "notice": { "action_id": "c2e1…", "action": "reboot",     // shutdown | reboot | logoff
               "state": "countdown",                          // countdown | executing | failed
               "remaining_s": 30, "postpones_left": 2, "force": false },
-  "teacher": "Lab 3 — Prof. Ayala", "channel": "1",          // quién dio la orden
-  "verb": "reiniciar este equipo" }
+  "teacher": "Lab 3 — Prof. Ayala", "channel": "1" }        // quién dio la orden
 
 // Notices: avisos no cerrados, el más antiguo primero (máx. 10)
 { "notices": [ { "id": "5b0e…", "text": "Guarden su trabajo", "level": "warning", "at": "…" } ] }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -72,14 +71,14 @@ func TestBroadcastViewNoticeAndSignaling(t *testing.T) {
 
 	handle(protocol.ScreenBroadcastStart{BroadcastID: bcID, Width: 1920, Height: 1080, FPS: 15})
 	bv, ok := rec.last(EventBroadcast).(BroadcastView)
-	if !ok || !bv.Active || bv.Notice != "▶ Estás viendo la pantalla de Prof. Ayala (canal 1)" {
+	if !ok || !bv.Active || bv.Teacher != "Prof. Ayala" || bv.Channel != "1" {
 		t.Fatalf("broadcast view %+v", rec.last(EventBroadcast))
 	}
 	if rec.last(EventSignal) != nil {
 		t.Fatal("a signal reached the frontend before the offer")
 	}
 	st := rec.last(EventStatus).(Status)
-	if !st.Watching || st.Banner != "Aula — viendo la pantalla de Prof. Ayala (canal 1)" {
+	if !st.Watching || st.Teacher != "Prof. Ayala" {
 		t.Fatalf("status %+v", st)
 	}
 	if rec.raised == 0 || len(*maximized) != 1 || !(*maximized)[0] {
@@ -120,7 +119,7 @@ func TestBroadcastViewNoticeAndSignaling(t *testing.T) {
 	if bv := rec.last(EventBroadcast).(BroadcastView); bv.Active {
 		t.Fatal("broadcast view still shown after the connection closed")
 	}
-	if st := rec.last(EventStatus).(Status); st.Watching || strings.Contains(st.Banner, "viendo") {
+	if st := rec.last(EventStatus).(Status); st.Watching {
 		t.Fatalf("status after disconnect %+v", st)
 	}
 	if m := *maximized; m[len(m)-1] {

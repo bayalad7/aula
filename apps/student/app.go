@@ -106,7 +106,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a.viewer = &broadcast.Viewer{Logger: log, OnView: a.onBroadcastView, OnSignal: a.onBroadcastSignal}
 	a.power = &power.Countdown{OnChange: a.onPower, Logger: log}
 	if cfgErr != nil {
-		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Banner: "Aula — sin configurar", Detail: cfgErr.Error()}
+		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Detail: cfgErr.Error()}
 	} else {
 		a.status = statusFor(StateSearching, cfg.Channel, "")
 	}
@@ -167,7 +167,7 @@ func (a *App) supervise(ctx context.Context) {
 			a.diag = ""
 			a.mu.Unlock()
 			if err != nil {
-				a.setStatus(Status{State: StateUnconfigured, Channel: cfg.Channel, Banner: "Aula — sin configurar", Detail: err.Error()})
+				a.setStatus(Status{State: StateUnconfigured, Channel: cfg.Channel, Detail: err.Error()})
 			} else {
 				a.setStatus(statusFor(StateSearching, cfg.Channel, ""))
 			}
@@ -199,7 +199,7 @@ func (a *App) runAgent(ctx context.Context) (stop func()) {
 		defer close(done)
 		if err := agent.Run(actx); err != nil {
 			a.log.Error("agent stopped", "err", err)
-			a.setStatus(Status{State: StateUnconfigured, Channel: channel, Banner: "Aula — sin configurar", Detail: err.Error()})
+			a.setStatus(Status{State: StateUnconfigured, Channel: channel, Detail: err.Error()})
 		}
 	}()
 	return func() {
@@ -400,37 +400,15 @@ func (a *App) setStatus(s Status) {
 	s.Viewed = a.viewed && s.State == StateConnected
 	s.Watching = a.watching && s.State == StateConnected
 	s.Restricted = a.restrict.Active() && s.State == StateConnected
-	if s.Viewed {
-		s.Banner = fmt.Sprintf("Aula — tu pantalla está siendo vista por %s (canal %s)", s.Teacher, s.Channel)
-	} else if s.Watching {
-		s.Banner = fmt.Sprintf("Aula — viendo la pantalla de %s (canal %s)", s.Teacher, s.Channel)
-	} else if s.State == StateConnected {
-		s.Banner = statusFor(s.State, s.Channel, s.Teacher).Banner
-	}
-	if s.Restricted {
-		s.Banner += " · restricciones activas"
-	}
-	if pending := powerPending(a.powerV.Notice); pending != "" && s.State != StateUnconfigured {
-		s.Banner += " · " + pending
-	}
 	a.status = s
 	a.mu.Unlock()
 	a.emit(EventStatus, s)
 }
 
-// statusFor builds the identity banner. The wording is fixed by the privacy
-// rules: the student always sees whose class this machine is connected to.
+// statusFor builds the identity strip's state. The window words it (rule 1:
+// the student always sees whose class this machine is connected to).
 func statusFor(state, channel, teacher string) Status {
-	s := Status{State: state, Channel: channel, Teacher: teacher}
-	switch state {
-	case StateConnected:
-		s.Banner = fmt.Sprintf("Aula — conectado a la clase de %s (canal %s)", teacher, channel)
-	case StateDisconnected:
-		s.Banner = fmt.Sprintf("Aula — sin conexión con la clase de %s (canal %s); reintentando", teacher, channel)
-	default:
-		s.Banner = fmt.Sprintf("Aula — buscando la clase del canal %s", channel)
-	}
-	return s
+	return Status{State: state, Channel: channel, Teacher: teacher}
 }
 
 // --- Bindings (called by the frontend) -------------------------------------------

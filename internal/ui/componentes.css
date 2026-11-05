@@ -620,3 +620,87 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
   box-shadow: var(--sombra-2); color: var(--c-texto); font-size: var(--t-sm); font-weight: normal; line-height: 1.5;
 }
 .info-globo[hidden] { display: none; }
+
+/* === App del alumno (prompt 19) =================================================================
+   Componentes que solo usa apps/student. La consola puede reutilizarlos; no hay copia en la app. */
+
+/* --- Tira de identidad: siempre visible (docs/privacidad.md, regla 1), discreta en reposo ----- */
+.estado-conexion {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-1) var(--e-2);
+  padding: var(--e-2) var(--e-4);
+  background: var(--c-superficie); border-bottom: 1px solid var(--c-borde);
+  font-size: var(--t-sm); color: var(--c-texto-suave);
+}
+.estado-conexion__punto { flex: none; width: 0.625rem; height: 0.625rem; border-radius: 50%; background: var(--c-desconectado-solido); }
+.estado-conexion[data-estado="connected"] .estado-conexion__punto { background: var(--c-conectado-solido); }
+.estado-conexion[data-estado="searching"] .estado-conexion__punto,
+.estado-conexion[data-estado="disconnected"] .estado-conexion__punto { background: var(--c-advertencia-solido); }
+.estado-conexion[data-estado="unconfigured"] .estado-conexion__punto { background: var(--c-error-solido); }
+.estado-conexion__texto { color: var(--c-texto); font-weight: var(--peso-medio); }
+.estado-conexion__acciones { margin-left: auto; display: flex; gap: var(--e-1); }
+.estado-conexion__detalles { flex-basis: 100%; }
+
+/* --- Banda de transparencia: variantes de .franja que el alumno NO puede cerrar ----------------
+   Orden fijo en .bandas: pantalla vista o en pausa, control, transmisión, restricciones, energía.
+   Sin botón de cerrar: desaparecen solas cuando el profesor termina. */
+.bandas { display: grid; }
+.franja > .icono { flex: none; }
+.franja--vista, .franja--pausa { background: var(--c-vista-solido); color: var(--c-vista-solido-texto); border-color: transparent; }
+.franja--recibiendo { background: var(--c-acento); color: var(--c-acento-texto); border-color: transparent; }
+.franja--control, .franja--urgente { background: var(--c-error-solido); color: var(--c-error-solido-texto); border-color: transparent; }
+.franja--restricciones { background: var(--c-advertencia-fondo); color: var(--c-advertencia); }
+/* Botón sobre una franja de color sólido: toma el color de la franja. */
+.btn--sobre-color { background: transparent; border-color: currentColor; color: inherit; }
+.btn--sobre-color:hover:not(:disabled) { background: color-mix(in srgb, currentColor 16%, transparent); }
+.franja__detalle { flex-basis: 100%; font-weight: var(--peso-normal); font-size: var(--t-sm); }
+.franja__cuenta { font-variant-numeric: tabular-nums; font-size: var(--t-lg); font-weight: var(--peso-fuerte); }
+
+/* --- Código recibido: cabecera, bloque y «Copiar» -------------------------------------------- */
+.codigos { display: grid; gap: var(--e-3); margin: 0; padding: 0; list-style: none; }
+.codigo-recibido {
+  background: var(--c-superficie); border: 1px solid var(--c-borde); border-radius: var(--r-lg);
+  box-shadow: var(--sombra-1); overflow: hidden;
+}
+.codigo-recibido[aria-current="true"] { border-color: var(--c-acento); box-shadow: 0 0 0 1px var(--c-acento), var(--sombra-1); }
+.codigo-recibido__cabecera {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-3);
+  padding: var(--e-2) var(--e-2) var(--e-2) var(--e-4); border-bottom: 1px solid var(--c-borde);
+}
+.codigo-recibido__titulo { flex: 1 1 10rem; min-width: 0; margin: 0; font-size: var(--t-md); font-weight: var(--peso-fuerte); overflow-wrap: anywhere; }
+.codigo-recibido__meta { font-size: var(--t-sm); color: var(--c-texto-suave); }
+.codigo-recibido__codigo {
+  margin: 0; padding: var(--e-3) var(--e-4); overflow: auto; tab-size: 4;
+  background: var(--c-superficie-2); color: var(--c-texto);
+  font-family: var(--f-mono); font-size: 0.875rem; line-height: 1.5;
+}
+.codigo-recibido__codigo:focus-visible { outline-offset: -2px; }
+.codigo-recibido__error { padding: 0 var(--e-4) var(--e-2); }
+/* Sintaxis (las clases que pone Prism) */
+.codigo-recibido .token.comment, .codigo-recibido .token.prolog, .codigo-recibido .token.doctype, .codigo-recibido .token.cdata { color: var(--c-sintaxis-comentario); font-style: italic; }
+.codigo-recibido .token.keyword, .codigo-recibido .token.atrule, .codigo-recibido .token.important, .codigo-recibido .token.selector { color: var(--c-sintaxis-clave); }
+.codigo-recibido .token.string, .codigo-recibido .token.char, .codigo-recibido .token.attr-value, .codigo-recibido .token.regex, .codigo-recibido .token.template-string { color: var(--c-sintaxis-cadena); }
+.codigo-recibido .token.number, .codigo-recibido .token.boolean, .codigo-recibido .token.constant, .codigo-recibido .token.symbol { color: var(--c-sintaxis-numero); }
+.codigo-recibido .token.function, .codigo-recibido .token.attr-name { color: var(--c-sintaxis-funcion); }
+.codigo-recibido .token.class-name, .codigo-recibido .token.builtin, .codigo-recibido .token.tag, .codigo-recibido .token.namespace { color: var(--c-sintaxis-tipo); }
+.codigo-recibido .token.operator, .codigo-recibido .token.punctuation { color: var(--c-sintaxis-operador); }
+
+/* --- Pantalla en pausa (screen.freeze, pendiente de implementar): cubre todo y explica ------- */
+.pantalla-pausa {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-content: center; justify-items: center; gap: var(--e-4);
+  padding: var(--e-6); text-align: center;
+  background: var(--c-vista-solido); color: var(--c-vista-solido-texto);
+}
+.pantalla-pausa > .icono { width: 3.5rem; height: 3.5rem; }
+.pantalla-pausa__titulo { margin: 0; font-size: var(--t-2xl); }
+.pantalla-pausa p { margin: 0; max-width: 36rem; font-size: var(--t-lg); }
+.pantalla-pausa__mensaje { padding: var(--e-3) var(--e-4); border: 1px solid currentColor; border-radius: var(--r-md); }
+
+/* --- Modo compacto: la ventana encogida a una tira (estado + «N nuevos») ---------------------- */
+.modo-compacto {
+  display: flex; align-items: center; gap: var(--e-2);
+  padding: var(--e-2) var(--e-3); background: var(--c-superficie);
+  border-left: 4px solid transparent; font-size: var(--t-sm);
+}
+.modo-compacto[data-nuevo="true"] { border-left-color: var(--c-acento); background: var(--c-acento-suave); color: var(--c-acento-sobre-suave); }
+.modo-compacto__texto { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

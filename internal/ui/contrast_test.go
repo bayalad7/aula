@@ -87,12 +87,21 @@ func TestTokensContrast(t *testing.T) {
 		{"c-error-solido-texto", "c-error-solido"},
 		{"c-simulado", "c-simulado-fondo"}, {"c-simulado", "c-superficie"},
 		{"c-info", "c-info-fondo"},
+		{"c-vista-solido-texto", "c-vista-solido"},
+		{"c-video-texto", "c-video-fondo"},
+		// The student app's code, on its block.
+		{"c-texto", "c-superficie-2"},
+		{"c-sintaxis-comentario", "c-superficie-2"}, {"c-sintaxis-clave", "c-superficie-2"},
+		{"c-sintaxis-cadena", "c-superficie-2"}, {"c-sintaxis-numero", "c-superficie-2"},
+		{"c-sintaxis-funcion", "c-superficie-2"}, {"c-sintaxis-tipo", "c-superficie-2"},
+		{"c-sintaxis-operador", "c-superficie-2"},
 	}
 	ui := [][2]string{
 		{"c-borde-fuerte", "c-superficie"}, {"c-foco", "c-superficie"}, {"c-foco", "c-fondo"},
 		{"c-conectado-solido", "c-superficie"}, {"c-desconectado-solido", "c-superficie"},
 		{"c-advertencia-solido", "c-superficie"}, {"c-error-solido", "c-superficie"},
 		{"c-simulado-solido", "c-superficie"}, {"c-acento", "c-superficie"},
+		{"c-vista-solido", "c-superficie"},
 	}
 	light, darkAuto, darkManual := themeBlocks(t)
 	for name, theme := range map[string]map[string]string{"claro": light, "oscuro": darkManual} {

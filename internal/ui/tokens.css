@@ -1,7 +1,7 @@
 /* Sistema de diseño de Aula: tokens.
  *
  * Fuente única de colores, tipografía, espaciado, radios y sombras de la
- * consola (y, más adelante, del overlay del alumno). Los componentes solo usan
+ * consola y de la app del alumno. Los componentes solo usan
  * estas variables. Tema: claro u oscuro según el sistema, o fijado con
  * <html data-theme="light|dark">. Los pares de texto/fondo cumplen WCAG AA
  * (4.5:1; 3:1 en bordes de controles); internal/ui/contrast_test.go lo verifica.
@@ -48,6 +48,23 @@
   --c-simulado-solido: #7c4ae0;
   --c-info: #1d4ed8;
   --c-info-fondo: #e6edff;
+
+  /* Transparencia (app del alumno): el profesor ve o pausa esta pantalla.
+     Distinto del rojo de error y del azul de acción: informa, no alarma. */
+  --c-vista-solido: #0b5d6b;
+  --c-vista-solido-texto: #ffffff;
+  /* Fondo del video de la transmisión del profesor (convención: negro en los dos temas) */
+  --c-video-fondo: #000000;
+  --c-video-texto: #e7eaf0;
+
+  /* Sintaxis del código (sobre --c-superficie-2) */
+  --c-sintaxis-comentario: #57606f;
+  --c-sintaxis-clave: #6d28d9;
+  --c-sintaxis-cadena: #146c34;
+  --c-sintaxis-numero: #9a4a00;
+  --c-sintaxis-funcion: #1d4ed8;
+  --c-sintaxis-tipo: #0b6375;
+  --c-sintaxis-operador: #374151;
 
   /* Tipografía del sistema (sin fuentes descargadas) */
   --f-texto: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Ubuntu", "Cantarell", sans-serif;
@@ -126,6 +143,17 @@
     --c-simulado-solido: #8d63ee;
     --c-info: #8db4ff;
     --c-info-fondo: #1d2a4d;
+    --c-vista-solido: #7fd1db;
+    --c-vista-solido-texto: #06292f;
+    --c-video-fondo: #000000;
+    --c-video-texto: #e7eaf0;
+    --c-sintaxis-comentario: #9aa4b5;
+    --c-sintaxis-clave: #c9adff;
+    --c-sintaxis-cadena: #7ed69c;
+    --c-sintaxis-numero: #f3bc6a;
+    --c-sintaxis-funcion: #8db4ff;
+    --c-sintaxis-tipo: #6fd0e0;
+    --c-sintaxis-operador: #d0d5de;
     --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
     --sombra-2: 0 8px 24px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.3);
   }
@@ -167,6 +195,17 @@
   --c-simulado-solido: #8d63ee;
   --c-info: #8db4ff;
   --c-info-fondo: #1d2a4d;
+  --c-vista-solido: #7fd1db;
+  --c-vista-solido-texto: #06292f;
+  --c-video-fondo: #000000;
+  --c-video-texto: #e7eaf0;
+  --c-sintaxis-comentario: #9aa4b5;
+  --c-sintaxis-clave: #c9adff;
+  --c-sintaxis-cadena: #7ed69c;
+  --c-sintaxis-numero: #f3bc6a;
+  --c-sintaxis-funcion: #8db4ff;
+  --c-sintaxis-tipo: #6fd0e0;
+  --c-sintaxis-operador: #d0d5de;
   --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
   --sombra-2: 0 8px 24px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.3);
 }

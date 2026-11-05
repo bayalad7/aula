@@ -93,8 +93,8 @@
   const view = () => ({
     active: !scene.startsWith("setup"), class: cls, students: studentsView(), history, deliveries,
     hotkey: scene === "atajo-ocupado"
-      ? { combo: "Ctrl+Alt+Shift+C", active: false, error: "Otra aplicación ya usa Ctrl+Alt+Shift+C. Usa el botón Capturar." }
-      : { combo: "Ctrl+Alt+Shift+C", active: true, error: "" },
+      ? { combo: "Ctrl+Alt+Shift+C", active: false, reason: "InUse", error: "" }
+      : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true },
     restrictions,
   });

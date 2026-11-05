@@ -492,14 +492,14 @@
       const puede = s.state === "connected" && s.canThumb;
       const pantalla = li.querySelector(".alumno__pantalla");
       pantalla.disabled = !puede;
-      // Solo se nombra como acción cuando lo es; si no, su texto dice por qué.
-      if (puede) pantalla.setAttribute("aria-label", T("alumnos.verGrande", { equipo: s.hostname }));
-      else pantalla.removeAttribute("aria-label");
       img.alt = T("alumnos.pantallaDe", { equipo: s.hostname });
       if (!puede) img.removeAttribute("src");
       texto.textContent = s.state !== "connected" ? T("alumnos.desconectado")
         : !s.canThumb ? (s.canCode ? T("alumnos.noComparte") : T("alumnos.sinSesion"))
           : img.getAttribute("src") ? "" : T("alumnos.esperandoImagen");
+      // Solo se nombra como acción cuando lo es; si no, su texto dice por qué.
+      if (puede) nombrarPantalla(pantalla, s.hostname);
+      else pantalla.removeAttribute("aria-label");
       return li;
     };
     const items = reales.map(tarjeta);
@@ -532,6 +532,12 @@
     $("pg-imagen").removeAttribute("src");
     api.ViewScreen("");
   });
+  // El nombre del botón de la miniatura incluye el texto que se ve
+  // («Esperando imagen…»), para que quien lo dice en voz alta lo encuentre.
+  function nombrarPantalla(pantalla, equipo) {
+    const visible = pantalla.querySelector(".alumno__pantalla-texto").textContent;
+    pantalla.setAttribute("aria-label", (visible ? visible + " " : "") + T("alumnos.verGrande", { equipo }));
+  }
   function alCuadro(t) {
     const s = alumnoPorSesion(t.sessionId);
     if (!s) return;
@@ -540,6 +546,7 @@
     if (li) {
       li.querySelector("img").src = src;
       li.querySelector(".alumno__pantalla-texto").textContent = "";
+      nombrarPantalla(li.querySelector(".alumno__pantalla"), s.hostname);
     }
     if (t.sessionId === enGrande) $("pg-imagen").src = src;
   }
@@ -1648,7 +1655,9 @@
     $("aj-certificado").textContent = clase.certExpires
       ? T("ajustes.certificadoVence", { fecha: new Date(clase.certExpires + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }) })
       : T("ajustes.certificadoSinFecha");
-    $("aj-atajo").textContent = hotkey.active ? T("ajustes.atajoActivo", { combo: hotkey.combo }) : (hotkey.error || T("ajustes.atajoInactivo"));
+    const AT = "ajustes.atajo"; // + Activo, InUse, NotSupported o Inactivo
+    $("aj-atajo").textContent = hotkey.active ? T(AT + "Activo", { combo: hotkey.combo })
+      : T(AT + (hotkey.reason || "Inactivo"), { combo: hotkey.combo });
     api.InstallerInfo().then((i) => { $("aj-datos").textContent = datosInstalador(i); });
     aplicarTema(tema);
     elegirPestana($("tab-" + (pestana || "clase")), false);

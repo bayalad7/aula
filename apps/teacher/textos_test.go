@@ -97,6 +97,11 @@ func TestTextsAreComplete(t *testing.T) {
 		need("error."+code+".texto", "errores.go")
 	}
 
+	// Why the capture hotkey is off (HotkeyStatus.Reason), and the fallback.
+	for _, r := range []string{hotkeyInUse, hotkeyNotSupported, "Inactivo", "Activo"} {
+		need("ajustes.atajo"+r, "events.go (HotkeyStatus.Reason)")
+	}
+
 	// The connection checker's texts: comprobar.<step>.titulo, one per outcome
 	// a step can end with, and one per status.
 	for id, outcomes := range connectcheck.Outcomes {

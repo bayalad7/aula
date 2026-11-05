@@ -116,9 +116,9 @@ func (a *App) startup(ctx context.Context) {
 	case err == nil:
 		a.hotkey.Active = true
 	case errors.Is(err, platform.ErrHotkeyInUse):
-		a.hotkey.Error = "Otra aplicación ya usa " + a.hotkey.Combo + ". Usa el botón Capturar."
+		a.hotkey.Reason = hotkeyInUse
 	case errors.Is(err, platform.ErrNotSupported):
-		a.hotkey.Error = "El atajo global no está disponible en este sistema. Usa el botón Capturar."
+		a.hotkey.Reason = hotkeyNotSupported
 	default:
 		a.hotkey.Error = err.Error()
 	}

@@ -146,7 +146,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código, responde a una orden de energía (`power`) o manda un error del protocolo (`lastError`). |
 | `aula:history` | `History` | Tras cada emisión o reemisión. |
 | `aula:deliveries` | `Deliveries` | Tras cada envío, cada acuse (`code.ack`, `msg.ack`) y cada error con que un alumno contesta a un envío (`rejected`). |
-| `aula:capture` | `Capture` | Al pulsar el atajo global o el botón Capturar. |
+| `aula:capture` | `Capture` | Al pulsar el atajo global o «Pegar del portapapeles». |
 | `aula:class` | `View` | Al terminar el arranque automático en el canal predeterminado. Si falló, `active` es `false` y el motivo está en `Setup().startError`. |
 | `aula:frame` | `Thumb` | Por cada cuadro recibido mientras la vista de pantallas está abierta (≤ 1 por segundo y alumno). Solo cuadros del `screen.thumb.start` vigente. |
 | `aula:broadcast` | `BroadcastState` | La transmisión de tu pantalla empieza, termina o cambia su número de receptores. |
@@ -245,7 +245,7 @@ cada código tenga su enlace y que la sección exista.
 | `Setup()` | `Setup` | Canal predeterminado (`defaultChannel`), canales recientes, nombre, huella, origen de la clave (`keySource`: `centro` o `personal`) y `startError` si el arranque automático falló. |
 | `StartClass(canal, nombre)` | `View` / error | Abre la clase en el canal (número 1–16000); si ya había una abierta, la cierra antes («Cambiar de canal» y «Cambiar tu nombre», con su confirmación). **El historial de código y los envíos se conservan** (son del profesor, no del canal). Usa la clave del centro o, si no hay, la personal. |
 | `EndClass()` | — | Cierra la clase. La interfaz no lo llama directamente. |
-| `View()` | `View` | Estado completo para el primer dibujo. `class` = `{channel, consoleName, publicKey, fingerprint, keySource, port, certExpires}`; `certExpires` (`AAAA-MM-DD`) es el vencimiento del certificado de la conexión, solo informativo: los alumnos fijan su huella y no revisan fechas. |
+| `View()` | `View` | Estado completo para el primer dibujo. `class` = `{channel, consoleName, publicKey, fingerprint, keySource, port, certExpires}`; `certExpires` (`AAAA-MM-DD`) es el vencimiento del certificado de la conexión, solo informativo: los alumnos fijan su huella y no revisan fechas. `hotkey` = `{combo, active, reason, error}`: si el atajo de captura no está activo, `reason` dice por qué (`InUse`: otro programa lo usa; `NotSupported`: el sistema no lo permite) y la interfaz muestra `ajustes.atajo<reason>`; con otra falla, `reason` va vacío y `error` trae el detalle técnico. |
 | `Emit({title, lang, content, mode, targets})` | `Delivery` / error | `mode` = `replace` («Emitir») o `append` («Agregar debajo»). `targets`: IDs de sesión (reales o simulados) de la selección; vacío = todos. Crea una entrada nueva en el historial. |
 | `Reemit(snippetId)` | `Delivery` / error | Reenvía un fragmento del historial con el mismo número e ID (`replace`). |
 | `ClearScreens()` | `Delivery` / error | `code.clear` a todos. |

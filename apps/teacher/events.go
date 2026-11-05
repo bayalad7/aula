@@ -164,8 +164,18 @@ type Capture struct {
 type HotkeyStatus struct {
 	Combo  string `json:"combo"`
 	Active bool   `json:"active"`
+	// Reason says why it is not active, for the interface text
+	// (ajustes.atajo<Reason>): hotkeyInUse or hotkeyNotSupported; empty with
+	// any other failure, whose technical detail is in Error.
+	Reason string `json:"reason"`
 	Error  string `json:"error"`
 }
+
+// HotkeyStatus.Reason values.
+const (
+	hotkeyInUse        = "InUse"
+	hotkeyNotSupported = "NotSupported"
+)
 
 // View is the whole console state for the first render.
 type View struct {

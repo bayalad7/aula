@@ -444,6 +444,8 @@ window.AulaTextos = Object.freeze({
   "ajustes.certificadoSinFecha": "No se pudo leer su fecha.",
   "ajustes.atajoActivo": "{combo} carga en el editor lo que copiaste, desde cualquier programa.",
   "ajustes.atajoInactivo": "El atajo no está disponible. Usa «Pegar del portapapeles» en Código.",
+  "ajustes.atajoInUse": "Otro programa ya usa {combo}. Usa «Pegar del portapapeles» en Código.",
+  "ajustes.atajoNotSupported": "En este sistema no hay atajo global. Usa «Pegar del portapapeles» en Código.",
 
   // Datos para quien instala
   "instalador.titulo": "Datos para quien instala",

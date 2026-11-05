@@ -99,6 +99,18 @@ jobs:
         working-directory: scripts/ux
         run: node recorrido.mjs salida
 
+      # Tab through every view (focus never lost, always visible, no traps) and
+      # Esc on panels and dialogs (prompt 18, Fase 7.1).
+      - name: Recorrido con el teclado
+        working-directory: scripts/ux
+        run: node teclado.mjs
+
+      # Follow «Primeros pasos» as written: every control the manual names must
+      # exist with that label.
+      - name: Usuario nuevo (Primeros pasos)
+        working-directory: scripts/ux
+        run: node usuario-nuevo.mjs
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:

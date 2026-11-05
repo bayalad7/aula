@@ -51,6 +51,7 @@ await f("18-codigo-no-pudo", "lab-errores", { ruta: "codigo", pasos: click(".env
 // Aula simulada
 await f("19-simulada", "simulada", { ruta: "simulada" });
 await f("20-alumnos-con-simulados", "simulada");
+await f("53-miniaturas-esperando-imagen", "simulada", { pasos: click('[data-modo="miniaturas"]') });
 
 // Ajustes y canal
 await f("21-ajustes-clase", "datos", { pasos: click("#nav-ajustes") });

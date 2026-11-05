@@ -324,7 +324,7 @@ func TestHotkeyCapturesClipboardWithoutEmitting(t *testing.T) {
 func TestHotkeyUnavailableIsExplained(t *testing.T) {
 	a := NewApp(t.TempDir(), nil, errors.New("sin portapapeles"), &fakeHotkeys{err: platform.ErrHotkeyInUse}, quiet)
 	a.startup(context.Background())
-	if hk := a.View().Hotkey; hk.Active || !strings.Contains(hk.Error, "Capturar") {
+	if hk := a.View().Hotkey; hk.Active || hk.Reason != hotkeyInUse {
 		t.Fatalf("hotkey status = %+v", hk)
 	}
 	if _, err := a.CaptureClipboard(); err == nil {

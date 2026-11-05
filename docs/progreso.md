@@ -20,7 +20,7 @@
 | 10 | Plantilla reutilizable para nuevas funciones | ✅ Completada |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 16 diagramas, con el 10 del aula simulada |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | 🚧 Falta el cierre: E12 `internal/ui`, E8 diagramas, E11 comprobador (6.3) y E10 verificación (ver «Etapa 18: plan de cierre») |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 en la ventana real. Release sugerido: `v0.4.0-rc.1` |
 
 ## Etapa 02: notas
 
@@ -709,7 +709,7 @@
   `pantallas` y `secciones_manual` (la prueba fallará hasta hacerlo si se renombran las
   secciones), agregar el diagrama 10 y generar el árbol interactivo a partir del 12.
 
-## Etapa 18: pulido de la consola — notas (en curso)
+## Etapa 18: pulido de la consola — notas
 
 - **Fase 1, análisis** (`docs/v1/ux/profesor/ANALISIS-CONSOLA.md`, commit `b27c408`):
   - 26 capturas del frontend real en Chromium headless, con un doble de los bindings;
@@ -960,7 +960,34 @@ Plan original:
   dirá si alcanza.
 - **Fase 4.3:** el enlace con el diagnóstico de la etapa 15 queda anotado para esa etapa.
 
-### Paso 5 — E10: verificación y cierre (Fase 7)
+### Paso 5 — E10: verificación y cierre (Fase 7) — ✅ hecho (espera aprobación)
+
+Hecho el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`):
+- `scripts/ux/teclado.mjs` (en el CI): Tab por las 5 vistas, foco visible, sin trampas, y Esc en
+  paneles y diálogos con el foco de vuelta. Comprobé que falla si se quita el contorno de foco.
+- `scripts/ux/despues.mjs`: las 26 capturas de `despues/`, con los mismos estados que `antes/`.
+  Destaparon dos fallos que se corrigieron:
+  - la miniatura «Esperando imagen…» tenía un nombre accesible sin su texto visible (WCAG 2.5.3);
+    ahora está también en el recorrido;
+  - el aviso del atajo ocupado lo armaba Go y nombraba un botón «Capturar» que ya no existe;
+    ahora Go manda `HotkeyStatus.Reason` y el texto vive en `textos.es-MX.js`.
+- `scripts/ux/usuario-nuevo.mjs` (en el CI): «Primeros pasos» con 4 clics y una escritura, y
+  cada control que nombra el manual existe con esa etiqueta.
+- `RESULTADOS.md`: 23 de los 24 hallazgos de §4 resueltos y A2 parcial (Alt+1…5); del flujo a
+  faltan el filtro y el orden de Alumnos. axe en 0.
+- `CHANGELOG.md` nuevo, con la etapa 18 en «Sin publicar».
+- Binario: 23,07 → 25,86 MB (+12 %) frente a `5af6107`; sin Node para compilar; sin URLs
+  externas.
+- Release sugerido: **`v0.4.0-rc.1`**. Sube `y` porque hay funciones nuevas compatibles, sin
+  cambios de protocolo ni de configuración. La última etiqueta es `v0.3.0-rc.2` y la 0.3.0 nunca
+  salió como estable.
+
+Pendiente de tu lado:
+- la prueba del usuario nuevo en una VM limpia, con el instalador local y solo el aula simulada;
+- los casos C-01 a C-43 en la ventana real.
+
+Plan original:
+
 
 - **Teclado:** `scripts/ux/teclado.mjs` recorre cada vista con Tab, comprueba el foco visible, que
   Esc cierra y que no hay trampas de foco. Va al CI.

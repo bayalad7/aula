@@ -34,3 +34,5 @@ Thumbs.db
 
 # Arnés web (scripts/ux)
 scripts/ux/salida/
+scripts/ux/salida-teclado/
+scripts/ux/salida-usuario/

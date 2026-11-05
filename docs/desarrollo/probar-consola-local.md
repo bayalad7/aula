@@ -140,6 +140,7 @@ consola agrega aquí sus casos.
 | C-40 | En Código, pulsa «Emitir» dos veces seguidas muy rápido | Sale un solo ejercicio en el historial |
 | C-41 | Abre Ayuda nada más arrancar la consola | Se ve «Cargando el manual…» y luego el índice |
 | C-42 | Ayuda › Tareas frecuentes › Atajos de teclado (desde el índice de la página) | La página baja hasta la tabla de atajos, aunque haya diagramas arriba |
+| C-43 | Con otro programa usando Ctrl+Alt+Mayús+C, abre la consola y ve a Ajustes › Acerca de | «Otro programa ya usa Ctrl+Alt+Shift+C. Usa «Pegar del portapapeles» en Código.» |
 
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 

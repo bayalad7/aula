@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "recorrido": "node recorrido.mjs",
+    "teclado": "node teclado.mjs",
+    "usuario-nuevo": "node usuario-nuevo.mjs",
+    "despues": "node despues.mjs",
     "capturas-manual": "node capturas-manual.mjs"
   },
   "devDependencies": {

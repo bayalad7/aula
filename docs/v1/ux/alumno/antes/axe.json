@@ -1,0 +1,325 @@
+{
+  "01-sin-configurar": {
+    "errores": [
+      "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "02-buscando-clase": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "03-sin-conexion-diagnostico": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "04-reconectando": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "05-conectado-reposo": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "06-un-codigo": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "07-varios-codigos": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "08-codigo-copiado": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "09-copia-falla": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "10-tras-limpiar": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "11-aviso-info": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "12-aviso-warning": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "13-varios-avisos": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "14-pantalla-vista": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "15-transmision": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      }
+    ]
+  },
+  "16-restricciones": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "17-restricciones-detalles": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "18-app-cerrada": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "19-energia-cuenta": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "20-energia-forzada": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "21-energia-fallida": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "22-oscuro-varios-codigos": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "23-oscuro-aviso-y-restricciones": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "24-ventana-minima-480x360": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  },
+  "25-ventana-minima-aviso": {
+    "errores": [],
+    "violaciones": [
+      {
+        "impacto": "minor",
+        "texto": "minor aria-allowed-role (1): #banner"
+      },
+      {
+        "impacto": "moderate",
+        "texto": "moderate page-has-heading-one (1): html"
+      }
+    ]
+  }
+}

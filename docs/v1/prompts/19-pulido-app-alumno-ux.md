@@ -40,7 +40,7 @@ segundos, sin perder lo que estaba escribiendo en su editor.
   equipos modestos.
 
 # FASE 1 — Análisis (no escribas código del frontend en esta fase)
-1. Recorre la app del alumno en todos sus estados y captura cada uno (docs/ux/v1/alumno/antes):
+1. Recorre la app del alumno en todos sus estados y captura cada uno (docs/v1/ux/alumno/antes):
    sin conexión / buscando clase, conectado en reposo, recibiendo un snippet, con varios snippets,
    con un aviso (info y warning), con la pantalla siendo vista, con pantalla en blanco (freeze),
    recibiendo la transmisión del profesor, y siendo controlado remotamente (si esas funciones
@@ -58,7 +58,7 @@ segundos, sin perder lo que estaba escribiendo en su editor.
    reconectando) son claros?
 5. Punto clave a evaluar: ¿el overlay de código roba el foco del teclado y le interrumpe lo que
    escribe? Documenta el comportamiento actual y propón cómo notificar sin arrebatar el foco.
-6. Entrega docs/ux/v1/alumno/ANALISIS.md con hallazgos priorizados (cada uno con captura, heurística,
+6. Entrega docs/v1/ux/alumno/ANALISIS.md con hallazgos priorizados (cada uno con captura, heurística,
    impacto y propuesta), flujos actuales vs propuestos, y la lista de cambios en entregas pequeñas.
    Espera mi aprobación antes de seguir.
 
@@ -112,7 +112,7 @@ Evalúa e implementa lo que corresponda:
    correspondiente está activa.
 3. Prueba de que un snippet nuevo no arrebata el foco del editor del alumno.
 4. Prueba del portapapeles con un fragmento multilínea con sangría.
-5. Capturas "después" en docs/ux/v1/alumno/despues/ y un informe docs/ux/v1/alumno/RESULTADOS.md
+5. Capturas "después" en docs/v1/ux/alumno/despues/ y un informe docs/v1/ux/alumno/RESULTADOS.md
    (antes/después por estado, hallazgos resueltos, cifras de CPU/RAM).
 6. `go build` sin Node, `go test -race ./...` en los tres sistemas, binario autocontenido y tamaño
    agregado reportado. Actualiza docs/progreso.md y docs/privacidad.md si cambió algún texto de
@@ -125,7 +125,7 @@ Evalúa e implementa lo que corresponda:
   avisos y estado de conexión → banda de transparencia y freeze → accesibilidad/rendimiento →
   verificación.
 - Si una mejora exige cambiar el protocolo o el modelo de seguridad, no la implementes: anótala
-  como propuesta en docs/ux/PROPUESTAS.md.
+  como propuesta en docs/v1/ux/PROPUESTAS.md (sección «App del alumno»).
 ~~~~
 
 ## Relación con otras etapas

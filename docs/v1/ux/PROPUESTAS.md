@@ -1,9 +1,12 @@
 # Propuestas que cambian el protocolo o el modelo de seguridad
 
-El prompt 18 no permite cambiar el protocolo ni el modelo de confianza fuera del aula simulada.
-Lo que una mejora de la consola necesitaría de esos lados se anota aquí y no se implementa. Cada
+Los prompts de UX (18, consola del profesor; 19, app del alumno) no permiten cambiar el protocolo
+ni el modelo de confianza. Lo que una mejora necesitaría de esos lados se anota aquí y no se
+implementa. Cada
 propuesta, si se aprueba, va primero a `docs/protocol.md` (y es un cambio de versión según
 SemVer).
+
+# Consola del profesor (prompt 18)
 
 ## P-01 · Nombre del estudiante en la lista
 
@@ -38,3 +41,7 @@ SemVer).
   hará falta un aviso con tiempo y una forma de renovarlo sin reinstalar a los alumnos.
 - **«Recoger» y «Recursos»** (Fase 3, punto 6): son funciones nuevas de aula (`code.collect`,
   `file.collect` están reservados en el protocolo); quedan para una etapa propia.
+
+# App del alumno (prompt 19)
+
+Todavía sin propuestas.

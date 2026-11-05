@@ -1,8 +1,10 @@
-// Arnés web de la consola del profesor: sirve apps/teacher/frontend/dist en
-// 127.0.0.1, carga el doble de los bindings (dobles.js) y el manual real
-// (exportado con TestExportManualForUX), y abre cada escena en Chromium
-// headless. Wails no se puede manejar desde fuera, así que se prueba el mismo
-// frontend en un navegador (prompt 18, Fase 7). Ver README.md.
+// Arnés web de las dos apps: sirve el frontend de la consola del profesor
+// (apps/teacher/frontend/dist, con dobles.js y el manual real exportado con
+// TestExportManualForUX) o el de la app del alumno (apps/student/frontend/dist,
+// con dobles-alumno.js) en 127.0.0.1, más el sistema de diseño de internal/ui
+// bajo sistema/, y abre cada escena en Chromium headless. Wails no se puede
+// manejar desde fuera, así que se prueba el mismo frontend en un navegador
+// (prompts 18 y 19). Ver README.md.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
@@ -14,12 +16,15 @@ import puppeteer from "puppeteer";
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 export const raiz = path.resolve(aqui, "..", "..");
-const dist = path.join(raiz, "apps", "teacher", "frontend", "dist");
+// Cada app: su frontend y el doble de sus bindings.
+const apps = {
+  profesor: { dist: path.join(raiz, "apps", "teacher", "frontend", "dist"), dobles: "dobles.js", manual: true },
+  alumno: { dist: path.join(raiz, "apps", "student", "frontend", "dist"), dobles: "dobles-alumno.js", manual: false },
+};
 // El sistema de diseño vive en internal/ui y la consola lo sirve en sistema/ (ui.Assets).
 const ui = path.join(raiz, "internal", "ui");
 const require = createRequire(import.meta.url);
 const axe = fs.readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
-const dobles = fs.readFileSync(path.join(aqui, "dobles.js"), "utf8");
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export const click = (sel) => async (p) => { await p.click(sel); await sleep(200); };
@@ -42,8 +47,12 @@ const tipos = { ".html": "text/html", ".js": "text/javascript", ".css": "text/cs
 // abre una página nueva (contexto aislado: el tema guardado no se cuela),
 // ejecuta los pasos, guarda la captura y devuelve los errores de JS y las
 // violaciones de axe.
-export async function abrir() {
-  const manual = exportarManual();
+export async function abrir({ app = "profesor" } = {}) {
+  const conf = apps[app];
+  if (!conf) throw new Error("app desconocida: " + app);
+  const dist = conf.dist;
+  const dobles = fs.readFileSync(path.join(aqui, conf.dobles), "utf8");
+  const manual = conf.manual ? exportarManual() : "null";
   const srv = http.createServer((q, r) => {
     const rel = decodeURIComponent(q.url === "/" ? "index.html" : q.url.split("?")[0].split("#")[0]).replace(/^\/+/, "");
     const [raizArchivo, relArchivo] = rel.startsWith("sistema/") ? [ui, rel.slice("sistema/".length)] : [dist, rel];

@@ -41,6 +41,10 @@ await f("27-seleccion-con-teclado", "varios-codigos", { pasos: async (p) => { aw
 await f("11-aviso-info", "aviso-info");
 await f("12-aviso-warning", "aviso-warning");
 await f("13-varios-avisos", "varios-avisos");
+await f("30-muchos-avisos", "muchos-avisos");
+await f("31-muchos-avisos-todos", "muchos-avisos", { pasos: click("#avisos-mas") });
+await f("32-otra-clave", "otra-clave");
+await f("33-otra-clave-detalles", "otra-clave", { pasos: click("#estado-detalles summary") });
 
 // Transparencia y control del profesor
 await f("14-pantalla-vista", "pantalla-vista");

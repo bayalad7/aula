@@ -69,15 +69,31 @@
     $("estado-detalle").textContent = s.detail || "";
     $("banda-vista").hidden = !s.viewed;
     $("banda-vista-texto").textContent = s.viewed ? T("banda.vista", v) : "";
+    pintarVacio();
     title();
     pintarCompacto();
+  }
+
+  // El estado vacío dice qué pasa y que no hay nada que hacer, sin alarmar: lo
+  // técnico queda en «Detalles para TI». Si el agente sabe por qué no conecta
+  // (session.Cause), lo dice en palabras llanas.
+  const VACIO = "vacio."; // + estado . titulo|texto
+  const CAUSA = "causa."; // + causa de session.Cause
+  const ICONO_VACIO = { connected: "codigo", searching: "pendiente", disconnected: "desconectado", unconfigured: "advertencia" };
+  function pintarVacio() {
+    const v = { canal: status.channel, profesor: status.teacher };
+    $("vacio-icono").setAttribute("href", "sistema/iconos.svg#" + (ICONO_VACIO[status.state] || "codigo"));
+    $("vacio-titulo").textContent = T(VACIO + status.state + ".titulo", v);
+    const porCausa = status.state !== "connected" && status.state !== "unconfigured" && status.cause;
+    $("vacio-texto").textContent = porCausa ? T(CAUSA + status.cause, v) : T(VACIO + status.state + ".texto", v);
   }
 
   // --- Modo compacto (prompt 19) ----------------------------------------------------------------
   // La ventana se encoge a una tira en una esquina: el estado, lo nuevo y la
   // pantalla vista. No queda encima de las demás ni toma el foco.
   let compacto = false;
-  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length;
+  // Lo que el alumno aún no ve: código «Nuevo» y avisos abiertos.
+  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + avisos.length;
   function pintarCompacto() {
     const v = { canal: status.channel, profesor: status.teacher };
     $("compacto").dataset.estado = status.state;
@@ -279,9 +295,21 @@
   const noticeTpl = $("notice-template");
   const NIVEL = { info: ["info", ""], warning: ["advertencia", "toast--advertencia"] };
 
+  // En una esquina, sin mover el código; se ven los 3 más recientes y «Ver N
+  // más» despliega el resto. Esc cierra el aviso que tiene el foco.
+  // En una ventana angosta, uno solo: más taparían el código.
+  const maxAvisos = () => (window.matchMedia("(max-width: 600px)").matches ? 1 : 3);
+  let avisos = [];
+  let todos = false;
   function renderNotices(notices) {
+    avisos = notices;
+    if (notices.length <= maxAvisos()) todos = false;
+    const visibles = todos ? notices : notices.slice(-maxAvisos());
+    const mas = notices.length - visibles.length;
+    $("avisos-mas").hidden = mas === 0;
+    $("avisos-mas").textContent = mas ? P("aviso.mas", mas) : "";
     noticesBox.replaceChildren();
-    for (const n of notices) {
+    for (const n of visibles) {
       const node = noticeTpl.content.firstElementChild.cloneNode(true);
       const [icono, clase] = NIVEL[n.level] || NIVEL.info;
       if (clase) node.classList.add(clase);
@@ -292,9 +320,13 @@
       const b = node.querySelector(".dismiss");
       b.textContent = T("aviso.entendido");
       b.addEventListener("click", () => api.DismissNotice(n.id));
+      node.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); api.DismissNotice(n.id); } });
       noticesBox.appendChild(node);
     }
+    title();
+    pintarCompacto();
   }
+  $("avisos-mas").addEventListener("click", () => { todos = true; renderNotices(avisos); });
 
   // --- Transmisión de la pantalla del profesor ------------------------------------------------------
   // El backend ya revisó la oferta (video solo de recepción) y mostró esta

@@ -76,7 +76,11 @@ type Status struct {
 	Channel string `json:"channel"`
 	// Detail is the technical reason it is not connected (configuration error
 	// or the agent's diagnostic), for "Detalles para TI".
-	Detail   string `json:"detail"`
+	Detail string `json:"detail"`
+	// Cause classifies why it is not connected (session.Cause: noConsole,
+	// unreachable, certMismatch, wrongKey, authIncomplete; "" if unknown or
+	// connected): the window tells the student what it means in plain words.
+	Cause    string `json:"cause"`
 	Viewed   bool   `json:"viewed"`   // the teacher is receiving this screen
 	Watching bool   `json:"watching"` // this screen shows the teacher's broadcast
 	// Restricted is set while class restrictions are on.

@@ -49,6 +49,8 @@ que no es parte de la página.
   "teacher": "Lab 3 — Prof. Ayala",  // console_name; vacío mientras busca
   "channel": "1",
   "detail": "",                      // motivo técnico si no conecta («Detalles para TI»)
+  "cause": "",                       // por qué no conecta, clasificado (session.Cause): noConsole,
+                                     // unreachable, certMismatch, wrongKey, authIncomplete
   "viewed": false,                   // true mientras el profesor recibe esta pantalla
   "watching": false,                 // true mientras esta pantalla muestra la del profesor
   "restricted": false }              // true mientras hay restricciones de la clase

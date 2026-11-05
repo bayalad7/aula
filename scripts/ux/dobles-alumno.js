@@ -18,13 +18,14 @@
   const channel = "1";
   // El estado: Go manda estados, no frases (apps/student/events.go, Status).
   const st = (state, extra) => Object.assign({ state, teacher: state === "searching" || state === "unconfigured" ? "" : teacher,
-    channel: state === "unconfigured" ? "" : channel, detail: "", viewed: false, watching: false, restricted: false }, extra);
+    channel: state === "unconfigured" ? "" : channel, detail: "", cause: "", viewed: false, watching: false, restricted: false }, extra);
   const conectado = st("connected");
   const status = {
     "sin-configurar": st("unconfigured", { detail: "no hay configuración: falta config.json en C:\ProgramData\Aula\alumno (canal y clave pública del centro); pide al administrador que instale Aula en este equipo" }),
     buscando: st("searching"),
-    "sin-conexion": st("searching", { detail: `No se encontró ninguna consola del canal ${channel}. Revisa que la consola del profesor esté abierta en ese canal, que la red de este equipo sea Privada o de Dominio (no Pública) y que el firewall permita Aula.` }),
+    "sin-conexion": st("searching", { cause: "noConsole", detail: `No se encontró ninguna consola del canal ${channel}. Revisa que la consola del profesor esté abierta en ese canal, que la red de este equipo sea Privada o de Dominio (no Pública) y que el firewall permita Aula.` }),
     reconectando: st("disconnected"),
+    "otra-clave": st("searching", { cause: "wrongKey", detail: `Se encontró la consola «Sala 2» del canal ${channel}, pero su clave no es la de este centro: no se le obedece. Si es la consola de tu profesor, este equipo tiene otra clave del centro; avisa al administrador.` }),
     "pantalla-vista": st("connected", { viewed: true }),
     transmision: st("connected", { watching: true }),
     restricciones: st("connected", { restricted: true }),
@@ -38,7 +39,7 @@
   const java = { id: "sn-3", exercise: "3", title: "", lang: "java", receivedAt: ahora,
     content: "public class Hola {\n    public static void main(String[] args) {\n        for (int i = 0; i < 3; i++) {\n            System.out.println(\"Hola \" + i);\n        }\n    }\n}\n" };
   const snippets = { "un-codigo": [py], "varios-codigos": [py, js, java], "pantalla-vista": [py], transmision: [],
-    restricciones: [py], "aviso-info": [py], "aviso-warning": [py], "varios-avisos": [py] }[scene] || [];
+    restricciones: [py], "aviso-info": [py], "aviso-warning": [py], "varios-avisos": [py, js, java], "muchos-avisos": [py] }[scene] || [];
 
   const aviso = (id, level, text) => ({ id, level, text, at: ahora });
   const notices = {
@@ -47,6 +48,7 @@
     "varios-avisos": [aviso("m-1", "info", "En 10 minutos revisamos el ejercicio 1 todos juntos."),
       aviso("m-2", "warning", "Guarden su trabajo: en 5 minutos cerramos la sesión."),
       aviso("m-3", "info", "Si terminaste, intenta la versión iterativa del factorial.")],
+    "muchos-avisos": [1, 2, 3, 4, 5].map((i) => aviso("m-" + i, i === 5 ? "warning" : "info", `Aviso número ${i} de la clase.`)),
   }[scene] || [];
 
   const restrictions = scene === "restricciones" ? {

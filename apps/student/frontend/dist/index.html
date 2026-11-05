@@ -81,12 +81,21 @@
   </section>
 
   <main id="contenido" data-t-aria-label="app.contenido">
-    <section id="notices" class="avisos" aria-live="polite"></section>
-    <p id="empty" class="vacio" data-t="codigos.vacio"></p>
+    <div id="empty" class="vacio">
+      <svg class="icono icono--xl" aria-hidden="true"><use id="vacio-icono" href="sistema/iconos.svg#codigo"/></svg>
+      <h2 id="vacio-titulo"></h2>
+      <p id="vacio-texto"></p>
+    </div>
     <p id="codigos-atajo" class="codigos__atajo" data-t="codigos.atajo" hidden></p>
     <ol id="snippets" class="codigos" data-t-aria-label="codigos.lista"></ol>
     <p id="anuncio" class="solo-lector" role="status"></p>
   </main>
+
+  <!-- Avisos del profesor: en una esquina, sin mover el código (prompt 19). -->
+  <section id="avisos" class="avisos-flotantes" data-t-aria-label="aviso.region" aria-live="polite">
+    <div id="notices" class="avisos"></div>
+    <button type="button" id="avisos-mas" class="btn btn--sm" hidden></button>
+  </section>
 
   <template id="snippet-template">
     <li class="codigo-recibido">

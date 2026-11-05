@@ -37,7 +37,20 @@ window.AulaTextos = Object.freeze({
   "estado.detalles": "Detalles para TI",
 
   // Código
-  "codigos.vacio": "Cuando tu profesor comparta código, aparecerá aquí listo para copiar.",
+  // Estado vacío, según la conexión y, si no conecta, su causa (session.Cause)
+  "vacio.connected.titulo": "Listo",
+  "vacio.connected.texto": "Cuando tu profesor comparta código, aparecerá aquí listo para copiar.",
+  "vacio.searching.titulo": "Esperando a tu profesor",
+  "vacio.searching.texto": "Aula está lista. Cuando tu profesor abra la clase del canal {canal}, te conectarás solo.",
+  "vacio.disconnected.titulo": "Reconectando",
+  "vacio.disconnected.texto": "Se perdió la conexión con la clase. Aula vuelve a intentarlo sola; no tienes que hacer nada.",
+  "vacio.unconfigured.titulo": "Aula aún no está lista",
+  "vacio.unconfigured.texto": "Falta configurar este equipo. Avisa a tu profesor; lo que necesita TI está arriba, en «Detalles para TI».",
+  "causa.noConsole": "No se encuentra la clase del canal {canal}. ¿Ya la abrió tu profesor? Aula sigue buscando sola.",
+  "causa.unreachable": "Se encontró la clase, pero este equipo no logra conectarse a ella. Avisa a tu profesor.",
+  "causa.certMismatch": "Apareció otra clase que no es la de tu profesor; Aula la ignora y sigue buscando.",
+  "causa.wrongKey": "Se encontró una clase del canal {canal} que no es de este centro de cómputo; Aula no la obedece. Avisa a tu profesor.",
+  "causa.authIncomplete": "La clase no respondió a tiempo. Aula vuelve a intentarlo.",
   "codigos.lista": "Código que compartió tu profesor, lo más nuevo primero",
   "codigos.atajo": "Ctrl+Mayús+C copia el código seleccionado. ↑ y ↓ cambian de código.",
   "codigos.anuncioCopiado": "Copiado: {titulo}",
@@ -54,6 +67,9 @@ window.AulaTextos = Object.freeze({
   "aviso.info": "Aviso",
   "aviso.warning": "Importante",
   "aviso.entendido": "Entendido",
+  "aviso.region": "Avisos de tu profesor",
+  "aviso.mas.uno": "Ver 1 aviso más",
+  "aviso.mas.varios": "Ver {n} avisos más",
 
   // Bandas de transparencia
   "banda.vista": "Tu pantalla la está viendo {profesor} (canal {canal})",

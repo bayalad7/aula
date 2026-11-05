@@ -159,6 +159,32 @@ await caso("titulo-nuevos", "varios-codigos", async (p) => {
   ok(t.startsWith("Aula — conectado"), "tras verlo, el título sigue con el contador: " + t);
 });
 
+// Avisos: en una esquina, los 3 más recientes y «Ver N más»; Esc cierra el que
+// tiene el foco; cuentan como «sin ver» en el título.
+await caso("avisos", "muchos-avisos", async (p) => {
+  ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 3), "no se ven 3 avisos");
+  ok(await p.evaluate(() => document.getElementById("avisos-mas").textContent === "Ver 2 avisos más"), "sin «Ver 2 avisos más»");
+  ok(await p.evaluate(() => getComputedStyle(document.getElementById("avisos")).position === "fixed"), "los avisos no están en una esquina");
+  ok((await p.evaluate(() => window.__title)).startsWith("(5) "), "el título no cuenta los avisos");
+  await p.click("#avisos-mas");
+  ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 5), "«Ver más» no mostró todos");
+  await p.focus("#notices .toast:last-child .dismiss");
+  await p.keyboard.press("Escape");
+  await sleep(100);
+  ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "DismissNotice" && c[1][0] === "m-5")), "Esc no cerró el aviso con foco");
+});
+
+// A 480×360, un solo aviso a la vista.
+await caso("avisos-angosta", "muchos-avisos", async (p) => {
+  ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 1), "a 480 se ve más de un aviso");
+}, { w: 480, h: 360 });
+
+// El estado vacío dice qué pasa según la conexión y su causa.
+await caso("vacio-causa", "sin-conexion", async (p) => {
+  const t = await p.evaluate(() => [document.getElementById("vacio-titulo").textContent, document.getElementById("vacio-texto").textContent]);
+  ok(t[0] === "Esperando a tu profesor" && t[1].startsWith("No se encuentra la clase del canal 1"), "vacío: " + t.join(" / "));
+});
+
 await cerrar();
 pasaron.forEach((n) => console.log("✓ " + n));
 fallas.forEach((n) => console.error("✗ " + n));

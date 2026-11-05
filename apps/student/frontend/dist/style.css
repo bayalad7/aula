@@ -15,8 +15,14 @@ body { margin: 0; }
 
 #contenido { padding: var(--e-4); display: grid; gap: var(--e-3); }
 .vacio[hidden], .codigos:empty { display: none; }
+.vacio { padding-block: var(--e-6); }
 .avisos { display: grid; gap: var(--e-2); }
-.avisos:empty { display: none; }
+.avisos-flotantes:not(:has(.toast)) { display: none; }
+#avisos-mas { justify-self: end; }
+#avisos-mas[hidden] { display: none; }
+/* Que el último código no quede debajo de los avisos. */
+body:has(.avisos .toast) #contenido { padding-bottom: 14rem; }
+body.compacto .avisos-flotantes { display: none; }
 .notice-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .codigo-recibido__codigo { max-height: 70vh; white-space: pre; }
 .codigo-recibido .exercise[hidden], .codigo-recibido .nuevo[hidden] { display: none; }

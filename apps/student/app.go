@@ -88,11 +88,12 @@ type App struct {
 	mu       sync.Mutex
 	status   Status
 	notices  []codedist.Notice
-	diag     string       // why the agent is not connected (session.Agent.OnDiagnostic)
-	viewed   bool         // the console is receiving this screen (docs/privacidad.md rule 6)
-	restrict policy.State // class restrictions in force (rules 20-21)
-	watching bool         // this screen shows the teacher's broadcast (rule 12)
-	powerV   PowerView    // power notice in force (rules 26-28)
+	diag     string        // why the agent is not connected (session.Agent.OnDiagnostic)
+	cause    session.Cause // the same, classified (session.Agent.OnCause)
+	viewed   bool          // the console is receiving this screen (docs/privacidad.md rule 6)
+	restrict policy.State  // class restrictions in force (rules 20-21)
+	watching bool          // this screen shows the teacher's broadcast (rule 12)
+	powerV   PowerView     // power notice in force (rules 26-28)
 	cancel   context.CancelFunc
 	done     chan struct{}
 }
@@ -170,7 +171,7 @@ func (a *App) supervise(ctx context.Context) {
 			stopAgent()
 			a.cfg, a.pub, a.cfgErr = cfg, pub, err
 			a.mu.Lock()
-			a.diag = ""
+			a.diag, a.cause = "", session.CauseNone
 			a.mu.Unlock()
 			if err != nil {
 				a.setStatus(Status{State: StateUnconfigured, Channel: cfg.Channel, Detail: err.Error()})
@@ -196,6 +197,7 @@ func (a *App) runAgent(ctx context.Context) (stop func()) {
 		OnMessage:        a.onMessage,
 		OnState:          a.onState,
 		OnDiagnostic:     a.onDiagnostic,
+		OnCause:          a.onCause,
 		Logger:           a.log,
 	}
 	actx, cancel := context.WithCancel(ctx)
@@ -308,7 +310,7 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 	}
 	a.mu.Lock()
 	if st.State != StateConnected {
-		st.Detail = a.diag
+		st.Detail, st.Cause = a.diag, string(a.cause)
 	}
 	a.mu.Unlock()
 	a.setStatus(st)
@@ -335,6 +337,23 @@ func (a *App) onDiagnostic(msg string) {
 	changed := st.State != StateConnected && st.State != StateUnconfigured && st.Detail != msg
 	if changed {
 		st.Detail = msg
+		a.status = st
+	}
+	a.mu.Unlock()
+	if changed {
+		a.emit(EventStatus, st)
+	}
+}
+
+// onCause keeps why the agent is not connected, classified, for the window
+// (CauseNone once connected).
+func (a *App) onCause(c session.Cause) {
+	a.mu.Lock()
+	a.cause = c
+	st := a.status
+	changed := st.State != StateConnected && st.State != StateUnconfigured && st.Cause != string(c)
+	if changed {
+		st.Cause = string(c)
 		a.status = st
 	}
 	a.mu.Unlock()

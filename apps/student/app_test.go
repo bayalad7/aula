@@ -254,3 +254,23 @@ func TestFrontendDoesNotInjectHTML(t *testing.T) {
 		t.Fatalf("main.js uses innerHTML %d times outside Prism.highlight", n)
 	}
 }
+
+// Why the agent is not connected reaches the window classified (the cause),
+// so it can tell the student in plain words; once connected, it is gone.
+func TestStatusCarriesTheCause(t *testing.T) {
+	a, rec := newTestApp(nil)
+	a.onState(session.AgentSearching, discovery.Console{})
+	a.onCause(session.CauseNoConsole)
+	if s := rec.last(EventStatus).(Status); s.State != StateSearching || s.Cause != "noConsole" {
+		t.Fatalf("searching status %+v", s)
+	}
+	a.onState(session.AgentConnected, discovery.Console{Name: "Prof. Ayala"})
+	a.onCause(session.CauseNone)
+	if s := rec.last(EventStatus).(Status); s.State != StateConnected || s.Cause != "" {
+		t.Fatalf("connected status %+v", s)
+	}
+	a.onCause(session.CauseWrongKey) // a late report while connected changes nothing
+	if s := rec.last(EventStatus).(Status); s.Cause != "" {
+		t.Fatalf("cause shown while connected: %+v", s)
+	}
+}

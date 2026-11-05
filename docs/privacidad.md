@@ -5,12 +5,18 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
 
 ## Reglas vigentes
 
-1. **El agente siempre se identifica en pantalla.** La ventana del cliente muestra, fijo arriba
-   y también en el título de la ventana y en la barra de tareas:
+1. **El agente siempre se identifica en pantalla.** El título de la ventana, que también se ve
+   en la barra de tareas y en el icono del área de notificación (regla 2), dice:
    - Conectado: **"Aula — conectado (canal <X> - <profesor>)"**
    - Buscando: "Aula — buscando canal <X>"
    - Sin conexión: "Aula — sin conexión (canal <X>); reintentando"
-   - Sin configurar: "Aula — sin configurar" (con la explicación)
+   - Sin configurar: "Aula — sin configurar"
+
+   Arriba de la ventana, fija, la tira de identidad dice lo mismo para el alumno: "Conectado al
+   canal <X> · <profesor>", "Buscando la clase del canal <X>…", "Se perdió la conexión con
+   <profesor>. Reconectando…" o "Aula aún no está lista en este equipo. Avisa a tu profesor."; el
+   motivo técnico va plegado en «Detalles para TI». Lo nuevo sin ver se cuenta al frente del
+   título: "(2) Aula — conectado…". En el modo compacto, la tira resume canal y profesor.
 2. **Al cerrar la ventana, el agente no se detiene: sigue en segundo plano, a la vista.** Cerrar
    la ventana la oculta y deja el icono de Aula en el área de notificación de Windows («Mostrar
    iconos ocultos»), con el estado al pasar el puntero y «Abrir Aula». Mientras está oculta, el

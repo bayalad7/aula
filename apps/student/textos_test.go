@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/session"
 )
 
 // Every text the student window shows lives in frontend/dist/textos.es-MX.js
@@ -64,6 +65,13 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, s := range []string{StateConnected, StateSearching, StateDisconnected, StateUnconfigured} {
 		need("titulo."+s, "events.go (Status.State)")
 		need("estado."+s, "events.go (Status.State)")
+		need("vacio."+s+".titulo", "events.go (Status.State)")
+		need("vacio."+s+".texto", "events.go (Status.State)")
+	}
+	// Why the agent does not connect (Status.Cause), in plain words.
+	for _, c := range []session.Cause{session.CauseNoConsole, session.CauseUnreachable, session.CauseCertMismatch,
+		session.CauseWrongKey, session.CauseAuthIncomplete} {
+		need("causa."+string(c), "events.go (Status.Cause)")
 	}
 	for _, a := range []protocol.PowerKind{protocol.PowerShutdown, protocol.PowerReboot, protocol.PowerLogoff} {
 		need("titulo.pendiente."+string(a), "power.Notice.Action")

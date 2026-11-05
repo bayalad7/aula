@@ -111,11 +111,23 @@ jobs:
         working-directory: scripts/ux
         run: node usuario-nuevo.mjs
 
+      # The student app (prompt 19): every state with axe, and its behavior
+      # (newest first, no jumps, keyboard, focus kept, copy errors).
+      - name: Recorrido de la app del alumno
+        working-directory: scripts/ux
+        run: node recorrido-alumno.mjs salida-alumno
+
+      - name: Pruebas de la app del alumno
+        working-directory: scripts/ux
+        run: node pruebas-alumno.mjs
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: capturas-consola
-          path: scripts/ux/salida/
+          path: |
+            scripts/ux/salida/
+            scripts/ux/salida-alumno/
           retention-days: 7
 
   # Installs a real Windows service (AulaAgentePrueba, never AulaAgente) and runs

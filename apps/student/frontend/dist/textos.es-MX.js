@@ -28,10 +28,15 @@ window.AulaTextos = Object.freeze({
 
   // Código
   "codigos.vacio": "Cuando tu profesor comparta código, aparecerá aquí listo para copiar.",
+  "codigos.lista": "Código que compartió tu profesor, lo más nuevo primero",
+  "codigos.atajo": "Ctrl+Mayús+C copia el código seleccionado. ↑ y ↓ cambian de código.",
+  "codigos.anuncioCopiado": "Copiado: {titulo}",
   "codigo.sinTitulo": "Código sin título",
   "codigo.ejercicio": "Ejercicio {n}",
   "codigo.copiar": "Copiar",
   "codigo.copiado": "Copiado",
+  "codigo.copiarDe": " {titulo}",
+  "codigo.nuevo": "Nuevo",
   "codigo.noSeCopio": "No se pudo copiar: {motivo}",
   "codigo.region": "Código: {titulo}",
 

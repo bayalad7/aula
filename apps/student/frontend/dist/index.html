@@ -68,16 +68,21 @@
     <h1 class="solo-lector" data-t="app.titulo"></h1>
     <section id="notices" class="avisos" aria-live="polite"></section>
     <p id="empty" class="vacio" data-t="codigos.vacio"></p>
-    <ol id="snippets" class="codigos"></ol>
+    <p id="codigos-atajo" class="codigos__atajo" data-t="codigos.atajo" hidden></p>
+    <ol id="snippets" class="codigos" data-t-aria-label="codigos.lista"></ol>
+    <p id="anuncio" class="solo-lector" role="status"></p>
   </main>
 
   <template id="snippet-template">
     <li class="codigo-recibido">
       <div class="codigo-recibido__cabecera">
-        <span class="insignia insignia--info exercise"></span>
-        <h2 class="codigo-recibido__titulo title"></h2>
-        <span class="codigo-recibido__meta lang"></span>
-        <button type="button" class="btn btn--primario btn--sm copy"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#copiar"/></svg><span></span></button>
+        <div class="codigo-recibido__info">
+          <span class="insignia insignia--info exercise"></span>
+          <h2 class="codigo-recibido__titulo title"></h2>
+          <span class="insignia insignia--conectado nuevo" hidden></span>
+          <span class="codigo-recibido__meta lang"></span>
+        </div>
+        <button type="button" class="btn btn--primario btn--sm copy"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#copiar"/></svg><span></span><span class="solo-lector"></span></button>
       </div>
       <pre class="codigo-recibido__codigo" tabindex="0"><code></code></pre>
       <p class="campo__error codigo-recibido__error" role="alert" hidden></p>

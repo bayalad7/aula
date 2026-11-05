@@ -663,9 +663,12 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
 }
 .codigo-recibido[aria-current="true"] { border-color: var(--c-acento); box-shadow: 0 0 0 1px var(--c-acento), var(--sombra-1); }
 .codigo-recibido__cabecera {
-  display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-3);
+  display: flex; align-items: center; gap: var(--e-3);
   padding: var(--e-2) var(--e-2) var(--e-2) var(--e-4); border-bottom: 1px solid var(--c-borde);
 }
+/* Ejercicio, título, «Nuevo» y lenguaje: se acomodan en varias líneas; «Copiar» queda a la derecha. */
+.codigo-recibido__info { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-1) var(--e-3); }
+.codigo-recibido__cabecera > .btn { flex: none; }
 .codigo-recibido__titulo { flex: 1 1 10rem; min-width: 0; margin: 0; font-size: var(--t-md); font-weight: var(--peso-fuerte); overflow-wrap: anywhere; }
 .codigo-recibido__meta { font-size: var(--t-sm); color: var(--c-texto-suave); }
 .codigo-recibido__codigo {

@@ -89,40 +89,153 @@
     }
   }
 
-  function renderBoard(snippets) {
-    list.replaceChildren();
-    empty.hidden = snippets.length > 0;
-    for (const s of snippets) {
-      const node = snippetTpl.content.firstElementChild.cloneNode(true);
-      const exercise = node.querySelector(".exercise");
-      exercise.textContent = s.exercise ? T("codigo.ejercicio", { n: s.exercise }) : "";
-      exercise.hidden = !s.exercise;
-      const titulo = s.title || T("codigo.sinTitulo");
-      node.querySelector(".title").textContent = titulo;
-      node.querySelector(".lang").textContent = s.lang;
-      node.querySelector("pre").setAttribute("aria-label", T("codigo.region", { titulo }));
-      highlight(node.querySelector("code"), s.lang, s.content);
+  // Nombres legibles de los lenguajes (identificadores de Monaco). Son nombres
+  // propios: no se traducen.
+  const LENGUAJES = {
+    python: "Python", javascript: "JavaScript", typescript: "TypeScript", java: "Java", c: "C", cpp: "C++",
+    csharp: "C#", go: "Go", rust: "Rust", kotlin: "Kotlin", sql: "SQL", html: "HTML", css: "CSS",
+    json: "JSON", shell: "Bash", powershell: "PowerShell", xml: "XML", plaintext: "Texto",
+  };
+  const hora = (iso) => {
+    const d = new Date(iso);
+    return isNaN(d) ? "" : d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+  };
 
-      const button = node.querySelector(".copy");
-      button.querySelector("span").textContent = T("codigo.copiar");
-      button.addEventListener("click", () => copy(s.id, button, node.querySelector(".codigo-recibido__error")));
-      list.appendChild(node);
-    }
-    if (snippets.length > 0) {
-      list.lastElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+  // La lista: lo más nuevo arriba. Se dibuja por partes (cada fragmento es un
+  // nodo con clave id + llegada) y, si el alumno está leyendo más abajo, se
+  // compensa lo que se insertó arriba para que lo que ve no se mueva. Un
+  // fragmento que llega con la ventana ya abierta se marca «Nuevo» hasta que el
+  // alumno lo selecciona o lo copia. ↑/↓ cambian de fragmento y Ctrl+Mayús+C
+  // copia el seleccionado.
+  const nodos = new Map();   // clave → li
+  let primeraVez = true;
+  let seleccionado = "";     // id del fragmento seleccionado
+  let eligio = false;        // el alumno eligió uno; si no, la selección sigue a lo más nuevo
+  const clave = (s) => s.id + "|" + s.receivedAt;
+
+  function nodoDe(s, nuevo) {
+    const node = snippetTpl.content.firstElementChild.cloneNode(true);
+    node.dataset.id = s.id;
+    node.tabIndex = -1;
+    const exercise = node.querySelector(".exercise");
+    exercise.textContent = s.exercise ? T("codigo.ejercicio", { n: s.exercise }) : "";
+    exercise.hidden = !s.exercise;
+    const titulo = s.title || T("codigo.sinTitulo");
+    node.querySelector(".title").textContent = titulo;
+    node.querySelector(".nuevo").textContent = T("codigo.nuevo");
+    node.querySelector(".nuevo").hidden = !nuevo;
+    const meta = [LENGUAJES[s.lang] || s.lang, hora(s.receivedAt)].filter(Boolean).join(" · ");
+    node.querySelector(".lang").textContent = meta;
+    node.querySelector("pre").setAttribute("aria-label", T("codigo.region", { titulo }));
+    highlight(node.querySelector("code"), s.lang, s.content);
+    const button = node.querySelector(".copy");
+    button.querySelector("span").textContent = T("codigo.copiar");
+    // El nombre accesible es «Copiar <título>» y siempre contiene lo que se ve.
+    button.querySelector(".solo-lector").textContent = T("codigo.copiarDe", { titulo });
+    button.addEventListener("click", () => copy(s.id));
+    node.addEventListener("focusin", () => seleccionar(s.id));
+    node.addEventListener("pointerdown", () => seleccionar(s.id));
+    return node;
   }
 
+  // El primer fragmento visible bajo la cabecera fija, y dónde está.
+  function anclaVisible() {
+    if (window.scrollY <= 0) return null; // arriba del todo: lo nuevo se ve y está bien
+    const tope = document.querySelector(".arriba").getBoundingClientRect().bottom;
+    for (const li of list.children) {
+      const r = li.getBoundingClientRect();
+      if (r.bottom > tope) return { li, top: r.top };
+    }
+    return null;
+  }
+
+  function renderBoard(snippets) {
+    const ancla = anclaVisible();
+    const orden = snippets.slice().reverse(); // lo más nuevo arriba
+    const vivos = new Set(orden.map(clave));
+    for (const [k, li] of nodos) {
+      if (!vivos.has(k)) { li.remove(); nodos.delete(k); }
+    }
+    let anterior = null;
+    for (const s of orden) {
+      const k = clave(s);
+      let li = nodos.get(k);
+      if (!li) {
+        li = nodoDe(s, !primeraVez);
+        nodos.set(k, li);
+      }
+      // En su lugar: después del anterior, o el primero de la lista.
+      const lugar = anterior ? anterior.nextSibling : list.firstChild;
+      if (li !== lugar) list.insertBefore(li, lugar);
+      anterior = li;
+    }
+    primeraVez = false;
+    if (ancla && ancla.li.isConnected) window.scrollBy(0, ancla.li.getBoundingClientRect().top - ancla.top);
+    empty.hidden = snippets.length > 0;
+    $("codigos-atajo").hidden = snippets.length === 0;
+    if (!eligio || !orden.some((s) => s.id === seleccionado)) seleccionado = orden.length ? orden[0].id : "";
+    marcarSeleccion();
+  }
+
+  function marcarSeleccion() {
+    for (const li of list.children) {
+      if (li.dataset.id === seleccionado) li.setAttribute("aria-current", "true");
+      else li.removeAttribute("aria-current");
+    }
+  }
+  function seleccionar(id) {
+    seleccionado = id;
+    eligio = true;
+    const li = nodoPorId(id);
+    if (li) li.querySelector(".nuevo").hidden = true; // ya lo vio
+    marcarSeleccion();
+  }
+  const nodoPorId = (id) => [...list.children].find((li) => li.dataset.id === id);
+
+  // ↑/↓ entre fragmentos (fuera del bloque de código, donde las flechas lo
+  // desplazan) y Ctrl+Mayús+C para copiar el seleccionado.
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && !e.altKey && e.code === "KeyC") {
+      if (!seleccionado) return;
+      e.preventDefault();
+      copy(seleccionado);
+      return;
+    }
+    if ((e.key !== "ArrowDown" && e.key !== "ArrowUp") || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.target.closest && e.target.closest("pre, input, textarea, select, video")) return;
+    const items = [...list.children];
+    if (!items.length) return;
+    const i = Math.max(0, items.findIndex((li) => li.dataset.id === seleccionado));
+    const j = e.key === "ArrowDown" ? Math.min(items.length - 1, i + 1) : Math.max(0, i - 1);
+    e.preventDefault();
+    seleccionar(items[j].dataset.id);
+    items[j].focus();
+  });
+
   // El texto lo copia Go, del fragmento tal como llegó (sangría y saltos incluidos).
-  function copy(id, button, error) {
+  function copy(id) {
+    const li = nodoPorId(id);
+    if (!li) return;
+    seleccionar(id);
+    const button = li.querySelector(".copy");
+    const error = li.querySelector(".codigo-recibido__error");
+    const titulo = li.querySelector(".title").textContent;
     error.hidden = true;
     api.Copy(id).then(() => {
       button.querySelector("span").textContent = T("codigo.copiado");
+      anunciar(T("codigos.anuncioCopiado", { titulo }));
       setTimeout(() => { button.querySelector("span").textContent = T("codigo.copiar"); }, 2000);
     }, (err) => {
       error.textContent = T("codigo.noSeCopio", { motivo: String(err && err.message ? err.message : err) });
       error.hidden = false;
     });
+  }
+
+  // Mensajes para lectores de pantalla (región viva, invisible).
+  function anunciar(texto) {
+    const r = $("anuncio");
+    r.textContent = "";
+    setTimeout(() => { r.textContent = texto; }, 50);
   }
 
   // --- Avisos del profesor ----------------------------------------------------------------------

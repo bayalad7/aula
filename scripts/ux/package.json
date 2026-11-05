@@ -6,6 +6,8 @@
   "scripts": {
     "recorrido": "node recorrido.mjs",
     "teclado": "node teclado.mjs",
+    "recorrido-alumno": "node recorrido-alumno.mjs",
+    "pruebas-alumno": "node pruebas-alumno.mjs",
     "usuario-nuevo": "node usuario-nuevo.mjs",
     "despues": "node despues.mjs",
     "capturas-manual": "node capturas-manual.mjs"

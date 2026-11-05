@@ -18,6 +18,8 @@ binario: `go build` no necesita Node.
 | `node teclado.mjs` | Recorre cada vista solo con Tab: el foco nunca se pierde y siempre se ve, no hay trampas (del editor se sale con Ctrl+M y Tab) y Esc cierra paneles y diálogos devolviendo el foco a quien los abrió. Corre en el CI. |
 | `node usuario-nuevo.mjs` | Sigue «Primeros pasos» con el aula simulada: cada control que nombra el manual debe existir con esa etiqueta exacta. Cuenta clics y teclas. Corre en el CI. |
 | `node despues.mjs [carpeta]` | Las 26 capturas «después» de la etapa 18 (las mismas pantallas que `docs/v1/ux/profesor/antes/`), con axe-core. Por omisión escribe en `docs/v1/ux/profesor/despues/`. |
+| `node recorrido-alumno.mjs [carpeta]` | La app del alumno (`apps/student`, con `dobles-alumno.js`): cada estado a 900×700 y 480×360, claro y oscuro, con axe-core. Por omisión en `./salida-alumno`. Corre en el CI. |
+| `node pruebas-alumno.mjs` | Comportamiento de la app del alumno: lo nuevo arriba, «Nuevo», sin saltos al llegar código, ↑/↓ y Ctrl+Mayús+C, el foco no se mueve, `replace`/`clear` y el error al copiar. Corre en el CI. |
 | `node capturas-manual.mjs` | Regenera las capturas del manual en `docs/v1/administracion/img/`. Úsalo cuando cambie una pantalla que sale en el manual y revisa el diff de las imágenes antes del commit. |
 
 ## Cómo funciona

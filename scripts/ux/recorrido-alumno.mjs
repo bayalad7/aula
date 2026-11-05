@@ -30,6 +30,12 @@ await f("08-codigo-copiado", "un-codigo", { pasos: click(".copy") });
 await f("09-copia-falla", "copia-falla", { pasos: seq(emitir("aula:board", { snippets: [{ id: "sn-1", exercise: "1",
   title: "Factorial recursivo", lang: "python", content: "print(1)\n", receivedAt: new Date().toISOString() }] }), click(".copy")) });
 await f("10-tras-limpiar", "un-codigo", { pasos: emitir("aula:board", { snippets: [] }) });
+await f("26-codigo-nuevo-arriba", "varios-codigos", { pasos: async (p) => {
+  const prev = await p.evaluate(() => window.go.main.App.View().then((v) => v.snippets));
+  await emitir("aula:board", { snippets: [...prev, { id: "sn-4", exercise: "4", title: "Tabla de multiplicar", lang: "python",
+    content: "for i in range(1, 11):\n    print(f\"5 x {i} = {5 * i}\")\n", receivedAt: new Date().toISOString() }] })(p);
+} });
+await f("27-seleccion-con-teclado", "varios-codigos", { pasos: async (p) => { await p.keyboard.press("ArrowDown"); await sleep(200); } });
 
 // Avisos
 await f("11-aviso-info", "aviso-info");

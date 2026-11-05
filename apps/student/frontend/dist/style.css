@@ -19,7 +19,11 @@ main { padding: var(--e-4); display: grid; gap: var(--e-3); }
 .avisos:empty { display: none; }
 .notice-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .codigo-recibido__codigo { max-height: 70vh; white-space: pre; }
-.codigo-recibido .exercise[hidden] { display: none; }
+.codigo-recibido .exercise[hidden], .codigo-recibido .nuevo[hidden] { display: none; }
+.codigo-recibido:focus { outline: none; }
+.codigo-recibido:focus-visible { outline: 2px solid var(--c-foco); outline-offset: 2px; }
+.codigos__atajo { margin: 0; font-size: var(--t-sm); color: var(--c-texto-suave); }
+.codigos__atajo[hidden] { display: none; }
 
 /* La pantalla del profesor (regla 12): ocupa la ventana. */
 body.watching { display: flex; flex-direction: column; height: 100vh; }

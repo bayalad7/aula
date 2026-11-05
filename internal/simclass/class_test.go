@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
@@ -32,6 +33,8 @@ type console struct {
 	acks   map[string]bool // ref_id of code.ack and msg.ack
 	frames map[string]int  // session ID → frames received
 	snaps  *snapshot.Store // screenshots asked to the students
+	hands  []protocol.HandRaise
+	msgs   []protocol.Envelope // msg.student
 }
 
 func startConsole(t *testing.T) *console {
@@ -64,6 +67,10 @@ func startConsole(t *testing.T) *console {
 				c.frames[conn.ID()]++
 			case protocol.ScreenSnapshotResponse:
 				c.snaps.Response(conn.ID(), p)
+			case protocol.HandRaise:
+				c.hands = append(c.hands, p)
+			case protocol.MsgStudent:
+				c.msgs = append(c.msgs, env)
 			}
 		},
 	}
@@ -295,7 +302,7 @@ func TestRemoveAndClose(t *testing.T) {
 func TestOnlySafeCapabilitiesAndFaults(t *testing.T) {
 	c := startConsole(t)
 	cl := newClass(t, c)
-	for _, k := range []protocol.Capability{protocol.CapPower, protocol.CapAppBlock, protocol.CapWebFilter, protocol.CapScreenBroadcast} {
+	for _, k := range []protocol.Capability{protocol.CapPower, protocol.CapAppBlock, protocol.CapWebFilter, protocol.CapScreenBroadcast, protocol.CapRemote} {
 		if _, err := cl.Add(protocol.OSWindows, []protocol.Capability{k}); !errors.Is(err, ErrBadCapability) {
 			t.Errorf("capability %s: %v", k, err)
 		}
@@ -306,5 +313,49 @@ func TestOnlySafeCapabilitiesAndFaults(t *testing.T) {
 	}
 	if _, err := New(Console{}, "0.6.0", nil, nil); err == nil {
 		t.Error("New accepted an empty console")
+	}
+}
+
+// A simulated student raises its hand and writes when the teacher makes it;
+// the console's ack and «Bajar la mano» reach it like a real one.
+func TestSimulatedStudentRaisesItsHandAndWrites(t *testing.T) {
+	c := startConsole(t)
+	cl := newClass(t, c)
+	a, _ := cl.Add(protocol.OSWindows, nil)
+	only, _ := cl.Add(protocol.OSWindows, []protocol.Capability{protocol.CapCodeView})
+	eventually(t, "connected", func() bool { return len(c.connected()) == 2 })
+	if err := cl.Raise(only.ID, true); !errors.Is(err, ErrBadCapability) {
+		t.Errorf("raise without the capability: %v", err)
+	}
+	if err := cl.Raise(a.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := cl.Write(a.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	var hand protocol.HandRaise
+	var msg protocol.Envelope
+	eventually(t, "hand and message", func() bool {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		if len(c.hands) == 1 && len(c.msgs) == 1 {
+			hand, msg = c.hands[0], c.msgs[0]
+			return true
+		}
+		return false
+	})
+	if text := msg.Payload.(protocol.MsgStudent).Text; text != SampleMessages[0] {
+		t.Errorf("sample text %q", text)
+	}
+	if got := cl.Students()[0]; got.Hand != participation.HandUp || got.Sent != 1 {
+		t.Errorf("student = %+v", got)
+	}
+	s := sessionOf(t, c, a.Name)
+	if _, err := c.Send(context.Background(), s.ID, protocol.HandLower{HandID: hand.HandID, By: protocol.HandByTeacher}); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "lowered", func() bool { return cl.Students()[0].Hand == participation.HandLoweredByTeacher })
+	if err := cl.Write("nobody", "x"); !errors.Is(err, ErrUnknownStudent) {
+		t.Errorf("unknown student: %v", err)
 	}
 }

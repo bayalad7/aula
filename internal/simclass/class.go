@@ -14,6 +14,7 @@ import (
 
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
+	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/session"
@@ -44,8 +45,11 @@ const (
 // OS. Power, restrictions, broadcast and remote control are left out on
 // purpose: the console never sends them to simulated students. A screenshot
 // changes no computer: it is its drawn screen, marked as simulated, and the
-// console files it apart (docs/privacidad.md rule 46).
-var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot}
+// console files it apart (docs/privacidad.md rule 46). Raising a hand and
+// writing to the teacher start on the student's side: the teacher makes a
+// simulated student do it (Raise, Write) to try «Participación» without a lab.
+var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
+	protocol.CapHand, protocol.CapMsgStudent}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities
@@ -56,6 +60,7 @@ var (
 	ErrUnknownStudent  = errors.New("simclass: no simulated student with that ID")
 	ErrBadCapability   = errors.New("simclass: capability not available to simulated students")
 	ErrBadFault        = errors.New("simclass: unknown fault")
+	ErrNotConnected    = errors.New("simclass: the simulated student is not connected")
 	ErrClosed          = errors.New("simclass: class closed")
 	errConsoleRequired = errors.New("simclass: console address, channel, key and fingerprint are required")
 )
@@ -92,6 +97,10 @@ type Student struct {
 	Notices      int                   `json:"notices"`
 	LastNotice   string                `json:"lastNotice"`
 	Snapshots    int                   `json:"snapshots"` // screenshots the teacher took of it
+	// Hand is its hand (participation.HandState) and Sent how many messages
+	// it wrote to the teacher.
+	Hand participation.HandState `json:"hand"`
+	Sent int                     `json:"sent"`
 }
 
 // Class is a set of simulated students connected to one console. It is safe
@@ -151,6 +160,7 @@ func (c *Class) Add(os protocol.OS, caps []protocol.Capability) (Student, error)
 	s := &student{
 		class: c, id: protocol.NewID(), name: "Simulado " + strconv.Itoa(c.next), os: os,
 		caps: slices.Clone(caps), index: c.next, fault: FaultNone, board: codedist.NewBoard(0),
+		desk: participation.NewDesk(),
 	}
 	if err := s.hello().Validate(); err != nil {
 		c.mu.Unlock()
@@ -255,8 +265,11 @@ type student struct {
 	caps  []protocol.Capability
 	index int
 	board *codedist.Board
+	desk  *participation.Desk // its hand and messages to the teacher
 
 	mu         sync.Mutex
+	cl         *transport.Client // the connection, nil while not connected
+	sent       int
 	fault      Fault
 	delay      time.Duration
 	connected  bool
@@ -316,9 +329,20 @@ func (s *student) start() {
 		Backoff:   session.Backoff{Base: 200 * time.Millisecond, Max: 2 * time.Second, Jitter: 0.1},
 		Logger:    log,
 		OnMessage: func(ctx context.Context, cl *transport.Client, env protocol.Envelope) { s.handle(ctx, cl, recv, env) },
+		OnConnect: func(ctx context.Context, cl *transport.Client) {
+			s.mu.Lock()
+			s.cl = cl
+			s.mu.Unlock()
+			for _, p := range s.desk.Reconnected() {
+				s.send(ctx, cl, p)
+			}
+		},
 		OnState: func(st session.AgentState, _ discovery.Console) {
 			s.mu.Lock()
 			s.connected = st == session.AgentConnected
+			if !s.connected {
+				s.cl = nil
+			}
 			s.mu.Unlock()
 			if st != session.AgentConnected {
 				s.streamer.Stop() // the stream ends with the session (§5.6)
@@ -370,6 +394,9 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 	s.mu.Lock()
 	fault, delay := s.fault, s.delay
 	s.mu.Unlock()
+	if s.handleParticipation(env) {
+		return
+	}
 	run := func() {
 		send := func(ctx context.Context, p protocol.Payload) error {
 			_, err := cl.Send(ctx, p)
@@ -438,6 +465,7 @@ func (s *student) snapshot() Student {
 	out := Student{
 		ID: s.id, Name: s.name, OS: s.os, Capabilities: slices.Clone(s.caps), Connected: s.connected,
 		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, LastNotice: s.lastNotice, Snapshots: s.snapshots, Snippets: []Snippet{},
+		Hand: s.desk.View().Hand, Sent: s.sent,
 	}
 	if s.fault == FaultSlow {
 		out.DelayMs = int(s.delay / time.Millisecond)

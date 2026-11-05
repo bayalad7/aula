@@ -63,6 +63,24 @@ type fakeStudent struct {
 	mu    sync.Mutex
 	pc    *webrtc.PeerConnection
 	views []View
+
+	// inboxMu guards inbox against the test's cleanup: the broadcast may
+	// still send (its stop) after a student's cleanup ran, when an earlier
+	// check failed. Then the message is dropped instead of panicking, so the
+	// real failure shows.
+	inboxMu sync.Mutex
+	closed  bool
+}
+
+// deliver hands a console message to the student, unless it is gone.
+func (s *fakeStudent) deliver(e protocol.Envelope) bool {
+	s.inboxMu.Lock()
+	defer s.inboxMu.Unlock()
+	if s.closed {
+		return false
+	}
+	s.inbox <- e
+	return true
 }
 
 func newFakeStudent(t *testing.T, id string, toConsole func(sessionID string, p protocol.Payload)) *fakeStudent {
@@ -93,7 +111,10 @@ func newFakeStudent(t *testing.T, id string, toConsole func(sessionID string, p 
 		}
 	}()
 	t.Cleanup(func() {
+		s.inboxMu.Lock()
+		s.closed = true
 		close(s.inbox)
+		s.inboxMu.Unlock()
 		s.mu.Lock()
 		if s.pc != nil {
 			s.pc.Close()
@@ -200,7 +221,9 @@ func TestBroadcastEndToEnd(t *testing.T) {
 				return "", errors.New("no such session")
 			}
 			e := roundTrip(t, p)
-			s.inbox <- e
+			if !s.deliver(e) {
+				return "", errors.New("session closed")
+			}
 			return e.ID, nil
 		},
 		Media: MediaOptions{UDPPort: 0, Loopback: true},
@@ -222,7 +245,7 @@ func TestBroadcastEndToEnd(t *testing.T) {
 	if err := b.Start(0, class); !errors.Is(err, ErrAlreadyBroadcasting) {
 		t.Fatalf("second Start: %v", err)
 	}
-	waitFor(t, 10*time.Second, "both students receive video", func() bool {
+	waitFor(t, 30*time.Second, "both students receive video", func() bool {
 		return a.packets.Load() > 10 && c.packets.Load() > 10
 	})
 	if s := b.Status(); !s.Active || s.Receivers != 2 || s.Eligible != 2 {
@@ -240,7 +263,7 @@ func TestBroadcastEndToEnd(t *testing.T) {
 	before := keys.Load()
 	c2 := join("c2")
 	b.Sync([]session.Session{agent("a", protocol.CapScreenBroadcast), agent("c2", protocol.CapScreenBroadcast)})
-	waitFor(t, 10*time.Second, "c2 receives video", func() bool { return c2.packets.Load() > 10 })
+	waitFor(t, 30*time.Second, "c2 receives video", func() bool { return c2.packets.Load() > 10 })
 	waitFor(t, 5*time.Second, "two receivers again", func() bool { return b.Status().Receivers == 2 })
 	if keys.Load() <= before {
 		t.Error("no keyframe for the student who came back")

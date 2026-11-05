@@ -112,6 +112,10 @@
     if (avisarAGo) api.SetCompact(on).catch(() => {});
     $(on ? "restaurar" : "compactar").focus();
   }
+  // Lo que el profesor hace sobre el equipo (energía, restricciones, su
+  // transmisión) no cabe en la tira: la ventana vuelve a su tamaño. Go también
+  // lo hace al traerla al frente; esto cubre el caso en que ya estaba al frente.
+  function salirDeCompacto() { if (compacto) ponerCompacto(false, true); }
   $("compactar").addEventListener("click", () => ponerCompacto(true, true));
   $("restaurar").addEventListener("click", () => ponerCompacto(false, true));
 
@@ -352,6 +356,7 @@
     document.body.classList.toggle("watching", b.active);
     bcSection.hidden = !b.active;
     $("bc-notice").textContent = b.active ? T("banda.recibiendo", { profesor: b.teacher, canal: b.channel }) : "";
+    if (b.active) salirDeCompacto();
     if (!b.active) closeConnection();
   }
 
@@ -433,11 +438,15 @@
     const parts = [];
     if (r.apps) parts.push(T(BR + (r.apps.mode === "allow" ? "appsAllow" : "appsDeny")));
     if (r.web) parts.push(T(BR + (r.web.mode === "allow" ? "webAllow" : "webDeny")));
+    const antes = restricted;
     restricted = parts.length > 0;
+    if (restricted && !antes) salirDeCompacto();
     restr.hidden = !restricted;
     $("restr-text").textContent = restricted ? T("banda.restricciones", { partes: parts.join(T(BR + "separador")) }) : "";
     restrDetails.replaceChildren(...[restrList(T("banda.lista.apps"), r.apps), restrList(T("banda.lista.web"), r.web)].filter(Boolean));
     if (!restricted) {
+      cerradas = [];
+      pintarCerradas();
       restrDetails.hidden = true;
       restrToggle.setAttribute("aria-expanded", "false");
       restrToggle.textContent = T("banda.verDetalles");
@@ -452,13 +461,20 @@
     restrToggle.textContent = open ? T("banda.ocultarDetalles") : T("banda.verDetalles");
   });
 
-  let closedTimer = 0;
-  function onAppClosed(c) {
-    $("app-closed-text").textContent = T("banda.appCerrada", { app: c.app });
-    $("app-closed").hidden = false;
-    clearTimeout(closedTimer);
-    closedTimer = setTimeout(() => { $("app-closed").hidden = true; }, 8000);
+  // Las apps que Aula cerró se juntan en la banda de restricciones y se quedan
+  // hasta que el alumno pulsa «Entendido»: si no estaba mirando, sabe por qué
+  // se cerró su app (regla 22).
+  let cerradas = [];
+  function pintarCerradas() {
+    $("app-closed").hidden = cerradas.length === 0;
+    $("app-closed-text").textContent = cerradas.length
+      ? P("banda.appCerrada", cerradas.length, { apps: cerradas.map((a) => "«" + a + "»").join(", ") }) : "";
   }
+  function onAppClosed(c) {
+    if (!cerradas.includes(c.app)) cerradas.push(c.app);
+    pintarCerradas();
+  }
+  $("app-closed-ok").addEventListener("click", () => { cerradas = []; pintarCerradas(); });
 
   // --- Orden de energía (docs/privacidad.md, reglas 26-28) ------------------------------------------
   // El backend manda los segundos que faltan; la ventana cuenta sola.
@@ -507,6 +523,7 @@
       powerTick = setInterval(drawPower, 250);
     }
     pendingPower = powerView && powerView.notice.state !== "failed" ? powerView.notice.action : "";
+    if (pendingPower) salirDeCompacto();
     drawPower();
     title();
   }

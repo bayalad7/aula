@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <link rel="icon" href="data:,">
+  <title>Control remoto · App del alumno (prototipo)</title>
+  <link rel="stylesheet" href="../../dist/sistema/tokens.css">
+  <link rel="stylesheet" href="../../dist/sistema/componentes.css">
+  <style>
+    body { margin: 0; }
+    main { padding: var(--e-4); }
+  </style>
+</head>
+<body>
+  <!-- Diseño de la banda de control remoto (remote.*, prompt 10.4). Pendiente de implementar:
+       este prototipo solo fija cómo se verá en la ventana del alumno (prompt 19, F). Va con las
+       demás bandas, en su orden fijo, sin botón para cerrarla; el distintivo nativo de la
+       regla 6 se extendería igual. -->
+  <header class="estado-conexion" data-estado="connected">
+    <span class="estado-conexion__punto" aria-hidden="true"></span>
+    <span class="estado-conexion__texto">Conectado al canal 1 · Prof. Ayala</span>
+  </header>
+  <div class="bandas">
+    <p class="franja franja--control" role="status">
+      <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#control"/></svg>
+      <span class="franja__texto">Prof. Ayala (canal 1) está controlando tu equipo: el mouse y el teclado se mueven solos mientras te ayuda.</span>
+    </p>
+    <p class="franja franja--vista" role="status">
+      <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#ojo"/></svg>
+      <span class="franja__texto">Tu pantalla la está viendo Prof. Ayala (canal 1)</span>
+    </p>
+  </div>
+  <main>
+    <div class="vacio">
+      <svg class="icono icono--xl" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#codigo"/></svg>
+      <h2>Listo</h2>
+      <p>Cuando tu profesor comparta código, aparecerá aquí listo para copiar.</p>
+    </div>
+  </main>
+</body>
+</html>

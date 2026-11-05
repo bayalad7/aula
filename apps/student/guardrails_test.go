@@ -35,3 +35,30 @@ func TestHarnessFakesEveryBinding(t *testing.T) {
 		t.Errorf("scripts/ux/dobles-alumno.js fakes App.%s, which no longer exists", name)
 	}
 }
+
+// Transparency (docs/privacidad.md; prompt 19, Fase 5.2): nothing the window
+// can call hides or turns off what tells the student the teacher sees or
+// controls this computer. Every binding is listed here with why it is safe; a
+// new one fails this test until someone checks it and adds it.
+func TestNoBindingTurnsOffTransparency(t *testing.T) {
+	reviewed := map[string]string{
+		"View":               "reads the state",
+		"Copy":               "copies a snippet",
+		"DismissNotice":      "closes a teacher's notice (msg.show), not an indicator",
+		"ReportMedia":        "reports WebRTC support",
+		"BroadcastAnswer":    "answers the broadcast; the band is shown before, by Go",
+		"BroadcastCandidate": "part of the broadcast connection",
+		"BroadcastFailed":    "reports a failed connection; the band stays while the broadcast is on",
+		"PowerPostpone":      "rule 27: postpones the countdown; the notice stays",
+		"DismissPower":       "closes only a failed order's notice (power.Countdown.Dismiss)",
+		"SetCompact":         "shrinks the window; the screen-viewed mark stays in the strip and the native indicator",
+		"ReportWindow":       "the notification area icon's text",
+	}
+	app := reflect.TypeOf(&App{})
+	for i := range app.NumMethod() {
+		name := app.Method(i).Name
+		if _, ok := reviewed[name]; !ok {
+			t.Errorf("new binding App.%s: check it cannot hide or turn off a transparency indicator, then list it here", name)
+		}
+	}
+}

@@ -185,6 +185,68 @@ await caso("vacio-causa", "sin-conexion", async (p) => {
   ok(t[0] === "Esperando a tu profesor" && t[1].startsWith("No se encuentra la clase del canal 1"), "vacío: " + t.join(" / "));
 });
 
+// Transparencia (prompt 19, Fase 5.2): cada banda aparece cuando su función
+// está activa, no tiene control que la cierre u oculte (Esc tampoco), y se va
+// sola cuando el profesor termina.
+const PERMITIDOS = ["restr-toggle", "power-postpone", "power-dismiss", "bc-size", "app-closed-ok"];
+async function bandaPermanente(p, sel) {
+  const b = await p.evaluate((sel, permitidos) => {
+    const el = document.querySelector(sel);
+    const botones = [...el.querySelectorAll("button")].map((x) => x.id || x.className);
+    return { visible: !!el && !el.hidden && el.getClientRects().length > 0, extra: botones.filter((x) => !permitidos.includes(x)) };
+  }, sel, PERMITIDOS);
+  ok(b.visible, sel + " no se ve");
+  ok(b.extra.length === 0, sel + " tiene controles de más: " + b.extra.join());
+  await p.keyboard.press("Escape");
+  ok(await p.evaluate((sel) => !document.querySelector(sel).hidden, sel), sel + " se ocultó con Esc");
+}
+await caso("banda-vista", "pantalla-vista", async (p) => {
+  await bandaPermanente(p, "#banda-vista");
+  await emitir(p, "aula:status", { state: "connected", teacher: "Prof. Ayala", channel: "1", detail: "", cause: "", viewed: false, watching: false, restricted: false });
+  ok(await p.evaluate(() => document.getElementById("banda-vista").hidden), "la banda sigue al dejar de ver la pantalla");
+});
+await caso("banda-restricciones", "restricciones", async (p) => {
+  await bandaPermanente(p, "#restrictions");
+  await emitir(p, "aula:restrictions", { apps: null, web: null });
+  ok(await p.evaluate(() => document.getElementById("restrictions").hidden), "la banda sigue sin restricciones");
+});
+await caso("banda-energia", "energia-cuenta", async (p) => {
+  await bandaPermanente(p, "#power");
+  await emitir(p, "aula:power", { notice: null, teacher: "", channel: "" });
+  ok(await p.evaluate(() => document.getElementById("power").hidden), "la banda sigue sin orden");
+});
+await caso("banda-transmision", "transmision", async (p) => {
+  await bandaPermanente(p, "#broadcast .franja");
+  await emitir(p, "aula:broadcast", { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "" });
+  ok(await p.evaluate(() => document.getElementById("broadcast").hidden), "la vista sigue al terminar la transmisión");
+});
+await caso("bandas-orden", "todo", async (p) => {
+  const orden = await p.evaluate(() => [...document.querySelectorAll("#bandas > .franja")].filter((b) => !b.hidden).map((b) => b.id));
+  ok(orden.join() === "power,banda-vista,restrictions", "orden " + orden.join());
+});
+
+// «Aula cerró…» se queda hasta que el alumno lo lee (ya no se esfuma a los 8 s)
+// y junta las apps.
+await caso("app-cerrada", "restricciones", async (p) => {
+  await emitir(p, "aula:app-closed", { app: "steam" });
+  await emitir(p, "aula:app-closed", { app: "discord" });
+  await sleep(9000);
+  const t = await p.evaluate(() => document.getElementById("app-closed").hidden ? "" : document.getElementById("app-closed-text").textContent);
+  ok(t.includes("«steam», «discord»"), "a los 9 s: «" + t + "»");
+  await p.click("#app-closed-ok");
+  ok(await p.evaluate(() => document.getElementById("app-closed").hidden), "«Entendido» no lo quitó");
+  ok(await p.evaluate(() => !document.getElementById("restrictions").hidden), "«Entendido» quitó la banda de restricciones");
+});
+
+// Lo que el profesor hace sobre el equipo saca la ventana del modo compacto.
+await caso("compacto-sale", "conectado", async (p) => {
+  await p.click("#compactar");
+  await emitir(p, "aula:restrictions", { apps: { policyId: "p", mode: "deny", items: ["steam"], total: 1 }, web: null });
+  await sleep(100);
+  ok(await p.evaluate(() => document.getElementById("compacto").hidden && !document.getElementById("restrictions").hidden),
+    "las restricciones no sacaron la ventana del modo compacto");
+});
+
 await cerrar();
 pasaron.forEach((n) => console.log("✓ " + n));
 fallas.forEach((n) => console.error("✗ " + n));

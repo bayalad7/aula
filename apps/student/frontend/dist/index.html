@@ -30,11 +30,12 @@
 
   <!-- Bandas de transparencia: no se pueden cerrar; desaparecen cuando el profesor termina
        (docs/privacidad.md, reglas 6, 12, 20-22 y 26-28). -->
+  <!-- Orden fijo: lo urgente primero (energía), después lo que el profesor hace con esta
+       pantalla (control remoto y pantalla vista o en pausa, cuando existan: diseñados en
+       apps/teacher/frontend/dev/prototipo/alumno-*.html) y al final las restricciones. La
+       transmisión del profesor lleva su banda sobre el video. Ninguna banda tiene botón para cerrarse: cada
+       una desaparece sola cuando el profesor termina (prompt 19, entrega F). -->
   <div id="bandas" class="bandas">
-    <p id="banda-vista" class="franja franja--vista" role="status" hidden>
-      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg>
-      <span id="banda-vista-texto" class="franja__texto"></span>
-    </p>
     <section id="power" class="franja franja--urgente" role="alert" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg>
       <span id="power-text" class="franja__texto"></span>
@@ -42,16 +43,21 @@
       <span id="power-left" class="franja__nota"></span>
       <button type="button" id="power-dismiss" class="btn btn--sm btn--sobre-color" data-t="energia.entendido" hidden></button>
     </section>
+    <p id="banda-vista" class="franja franja--vista" role="status" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg>
+      <span id="banda-vista-texto" class="franja__texto"></span>
+    </p>
     <section id="restrictions" class="franja franja--restricciones" role="status" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg>
       <span id="restr-text" class="franja__texto"></span>
       <button type="button" id="restr-toggle" class="btn btn--sm" aria-expanded="false" aria-controls="restr-details" data-t="banda.verDetalles"></button>
       <div id="restr-details" class="franja__detalle" hidden></div>
+      <!-- Las apps que Aula cerró (regla 22): se quedan hasta que el alumno las lee. -->
+      <p id="app-closed" class="franja__detalle franja__cerradas" role="alert" hidden>
+        <span id="app-closed-text"></span>
+        <button type="button" id="app-closed-ok" class="btn btn--sm" data-t="banda.appCerradaOk"></button>
+      </p>
     </section>
-    <p id="app-closed" class="franja franja--restricciones" role="alert" hidden>
-      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg>
-      <span id="app-closed-text" class="franja__texto"></span>
-    </p>
   </div>
   </div>
 

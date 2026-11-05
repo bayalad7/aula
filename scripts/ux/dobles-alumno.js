@@ -29,6 +29,7 @@
     "pantalla-vista": st("connected", { viewed: true }),
     transmision: st("connected", { watching: true }),
     restricciones: st("connected", { restricted: true }),
+    todo: st("connected", { restricted: true, viewed: true }),
   }[scene] || conectado;
 
   const ahora = new Date().toISOString();
@@ -51,7 +52,7 @@
     "muchos-avisos": [1, 2, 3, 4, 5].map((i) => aviso("m-" + i, i === 5 ? "warning" : "info", `Aviso número ${i} de la clase.`)),
   }[scene] || [];
 
-  const restrictions = scene === "restricciones" ? {
+  const restrictions = scene === "restricciones" || scene === "todo" ? {
     apps: { policyId: "p-apps", mode: "deny", items: ["steam", "discord", "spotify", "whatsapp", "telegram"], total: 9 },
     web: { policyId: "p-web", mode: "deny", items: ["youtube.com", "tiktok.com", "instagram.com", "facebook.com", "x.com"], total: 11 },
   } : { apps: null, web: null };
@@ -64,6 +65,7 @@
     remaining_s: 87, postpones_left: 2, force: false }, extra), teacher, channel });
   const power = {
     "energia-cuenta": potencia("countdown", "reboot"),
+    todo: potencia("countdown", "reboot"),
     "energia-forzada": potencia("executing", "shutdown", { force: true, remaining_s: 0 }),
     "energia-fallida": potencia("failed", "logoff", { remaining_s: 0 }),
   }[scene] || { notice: null, teacher: "", channel: "" };

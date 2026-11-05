@@ -17,6 +17,13 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
    <profesor>. Reconectando…" o "Aula aún no está lista en este equipo. Avisa a tu profesor."; el
    motivo técnico va plegado en «Detalles para TI». Lo nuevo sin ver se cuenta al frente del
    título: "(2) Aula — conectado…". En el modo compacto, la tira resume canal y profesor.
+
+   **Bandas de transparencia (prompt 19).** Lo que el profesor hace con este equipo se ve en
+   bandas fijas arriba de la ventana, en este orden: energía; control remoto (cuando exista);
+   pantalla vista, o en pausa (cuando exista, reglas 9-10); restricciones. La transmisión lleva la suya sobre el
+   video. **Ninguna tiene botón para cerrarse ni se oculta con el teclado**: cada una desaparece
+   sola cuando el profesor termina. Lo prueban `scripts/ux/pruebas-alumno.mjs` y, del lado de Go,
+   `TestNoBindingTurnsOffTransparency` (ninguna función de la ventana las desactiva).
 2. **Al cerrar la ventana, el agente no se detiene: sigue en segundo plano, a la vista.** Cerrar
    la ventana la oculta y deja el icono de Aula en el área de notificación de Windows («Mostrar
    iconos ocultos»), con el estado al pasar el puntero y «Abrir Aula». Mientras está oculta, el
@@ -50,6 +57,9 @@ pantalla en blanco (`screen.freeze`, §5.9–5.11, **pendiente**: reglas 9 y 10)
 
    > **Aula — tu pantalla está siendo vista por <profesor> (canal <X>)**
 
+   y la ventana muestra la banda de transparencia «Tu pantalla la está viendo <profesor> (canal
+   <X>)», también en el modo compacto («Pantalla vista»).
+
    El distintivo no roba clics ni el foco, no se puede ocultar desde Aula y desaparece solo
    cuando la transmisión termina (`screen.thumb.stop`, desconexión o cierre del agente). Es
    visible también en las miniaturas: el profesor ve lo mismo que sabe el alumno.
@@ -81,7 +91,7 @@ Reglas para `screen.broadcast.*` (`docs/protocol.md` §5.12), aprobadas el 2026-
     **antes** de aceptar la conexión de video, la ventana de Aula se trae al frente, se maximiza
     y cambia a la vista de transmisión, con una franja fija arriba del video:
 
-    > **▶ Estás viendo la pantalla de <profesor> (canal <X>)**
+    > **Estás viendo la pantalla de <profesor> (canal <X>)** (con su icono)
 
     La barra de la ventana y la barra de tareas cambian a:
 
@@ -140,16 +150,19 @@ Reglas para `app.block.*` y `web.filter.*` (`docs/protocol.md` §5.13–5.14), a
 20. **El alumno sabe que hay restricciones, y de qué tipo.** Al llegar una política, y **antes**
     de aplicarla, la ventana de Aula pasa al frente con un aviso fijo debajo del distintivo:
 
-    > **🔒 Restricciones de la clase activas: aplicaciones bloqueadas · sitios web filtrados**
+    > **Restricciones de la clase activas: aplicaciones bloqueadas · sitios web filtrados** (con
+    > el icono de un candado)
 
     Solo aparece el tipo que esté activo. Con el modo de lista blanca dice "solo se permiten
     algunas aplicaciones" o "solo se permiten algunos sitios". La barra de la ventana agrega
     "· restricciones activas".
 21. **La lista se puede consultar, sin abrumar.** Un botón "Ver detalles" muestra las apps y los
     dominios. Si son más de 15, muestra los 15 primeros y "y N más".
-22. **Cerrar una app no es silencioso.** Cuando Aula cierra una app bloqueada, el alumno ve
-    "Aula cerró «steam.exe»: está bloqueada durante la clase". El aviso se agrupa: uno por app
-    cada 30 s.
+22. **Cerrar una app no es silencioso.** Cuando Aula cierra una app bloqueada, el alumno ve en la
+    banda de restricciones "Aula cerró «steam.exe»: está bloqueada durante la clase". El aviso
+    se agrupa (uno por app cada 30 s; varias apps en una sola línea) y se queda hasta que el
+    alumno pulsa «Entendido» o se quitan las restricciones: si no estaba mirando, sabe por qué se
+    cerró su app.
 23. **No se vigila la navegación.** El filtro decide por nombre de dominio y no guarda ni envía a
     la consola qué sitios intentó abrir el alumno, ni cuántos. La consola solo sabe si la
     política está aplicada (`active`). Los logs registran altas y bajas de políticas, nunca
@@ -174,18 +187,18 @@ siempre tiene tiempo de guardar.
 26. **Aviso antes de apagar, siempre visible.** Sin `force`, al llegar la orden la ventana de Aula
     pasa al frente, queda siempre encima y muestra un aviso fijo con la cuenta en vivo:
 
-    > **⏻ El profesor <nombre> (canal <X>) va a reiniciar este equipo en 0:30. Guarda tu
-    > trabajo.**
+    > **<profesor> (canal <X>) va a reiniciar este equipo en 0:30. Guarda tu trabajo.** (con el
+    > icono de energía)
 
-    ("apagar este equipo" o "cerrar tu sesión" según la orden), con el botón **"Posponer 5 min
-    (te quedan 2)"**. La cuenta dura 30 s si el profesor no elige otra (10 s a 10 min). La barra
+    ("apagar este equipo" o "cerrar tu sesión" según la orden), con el botón **"Posponer 5
+    minutos"** y "(2 veces más)". Es la primera de las bandas de transparencia. La cuenta dura 30 s si el profesor no elige otra (10 s a 10 min). La barra
     de la ventana agrega "· reinicio pendiente" (o "apagado" o "cierre de sesión"), también sin
     conexión.
 27. **Posponer.** Cada aplazamiento suma 5 minutos a lo que falta, como máximo 2 veces por orden.
     La consola ve cada aplazamiento. Agotados, el botón se deshabilita con "Ya no se puede
     posponer". Aula no cierra nada durante la cuenta.
-28. **Forzar es explícito y se advierte.** Con `force` no hay cuenta: el alumno ve "El profesor
-    <nombre> está apagando este equipo" mientras Windows lo apaga, y las aplicaciones se cierran
+28. **Forzar es explícito y se advierte.** Con `force` no hay cuenta: el alumno ve "<profesor>
+    (canal <X>) está apagando este equipo" mientras Windows lo apaga, y las aplicaciones se cierran
     **sin guardar**. La consola lo advierte en rojo antes de confirmar. Sin `force`, Windows
     deja que las apps pidan guardar ("Esta aplicación impide…").
 29. **Solo la consola autenticada.** Ninguna orden `power.*` se procesa antes de `auth.ok`. Sin

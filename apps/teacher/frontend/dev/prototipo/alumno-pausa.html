@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <link rel="icon" href="data:,">
+  <title>Pantalla en pausa · App del alumno (prototipo)</title>
+  <link rel="stylesheet" href="../../dist/sistema/tokens.css">
+  <link rel="stylesheet" href="../../dist/sistema/componentes.css">
+</head>
+<body>
+  <!-- Diseño de la pantalla en blanco (screen.freeze, protocolo §5.9; docs/privacidad.md reglas
+       9-10). Pendiente de implementar: este prototipo solo fija cómo se verá (prompt 19, F).
+       Cubre todos los monitores, dice por qué y quién, y no parece un cuelgue: el reloj avanza y
+       el texto explica que el trabajo sigue abierto. -->
+  <main class="pantalla-pausa" aria-labelledby="pausa-titulo">
+    <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#pausa"/></svg>
+    <h1 id="pausa-titulo" class="pantalla-pausa__titulo">Tu pantalla está en pausa</h1>
+    <p>Prof. Ayala (canal 1) pausó las pantallas de la clase. Tu trabajo sigue abierto y nada se
+      perdió: tu equipo vuelve en cuanto el profesor termine.</p>
+    <p class="pantalla-pausa__mensaje">«Miren al pizarrón un momento.»</p>
+    <p>Si se pierde la conexión con la clase, la pausa se quita sola.</p>
+  </main>
+</body>
+</html>

@@ -52,6 +52,8 @@ await f("15-transmision", "transmision");
 await f("16-restricciones", "restricciones");
 await f("17-restricciones-detalles", "restricciones", { pasos: click("#restr-toggle") });
 await f("18-app-cerrada", "restricciones", { pasos: emitir("aula:app-closed", { app: "steam" }) });
+await f("34-todas-las-bandas", "todo", { pasos: emitir("aula:app-closed", { app: "steam" }) });
+await f("35-todas-las-bandas-oscuro", "todo", { oscuro: true });
 await f("19-energia-cuenta", "energia-cuenta");
 await f("20-energia-forzada", "energia-forzada");
 await f("21-energia-fallida", "energia-fallida");

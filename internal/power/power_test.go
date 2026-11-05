@@ -471,6 +471,30 @@ func TestOSFailure(t *testing.T) {
 	}
 }
 
+// Dismiss only closes the notice of an order that failed: the student cannot
+// remove a countdown nor a running order (docs/privacidad.md rules 26-28).
+func TestDismissOnlyAFailedNotice(t *testing.T) {
+	r := newRig(t, errors.New("access denied"))
+	r.handle(t, envA, protocol.PowerAction{ActionID: actionA, Action: protocol.PowerReboot})
+	r.c.Dismiss()
+	if n := r.c.Notice(); n == nil || n.State != NoticeCountdown {
+		t.Fatalf("Dismiss removed a countdown: %+v", n)
+	}
+	r.clock.Advance(30 * time.Second)
+	r.waitRun(t)
+	deadline := time.Now().Add(5 * time.Second)
+	for n := r.c.Notice(); n == nil || n.State != NoticeFailed; n = r.c.Notice() {
+		if time.Now().After(deadline) {
+			t.Fatalf("no failed notice; events %q", r.ev.all())
+		}
+		time.Sleep(time.Millisecond)
+	}
+	r.c.Dismiss()
+	if n := r.c.Notice(); n != nil {
+		t.Fatalf("Dismiss kept a failed notice: %+v", n)
+	}
+}
+
 func TestUnsupported(t *testing.T) {
 	c := &Countdown{}
 	reply, ok := c.Handle(context.Background(), nil, protocol.Envelope{ID: envA, Payload: protocol.PowerAction{ActionID: actionA, Action: protocol.PowerReboot}})

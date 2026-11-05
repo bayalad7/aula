@@ -89,7 +89,9 @@ window.AulaTextos = Object.freeze({
   "banda.lista.web": "Sitios",
   "banda.lista.soloEstas": " (solo estas)",
   "banda.lista.mas": " y {n} más",
-  "banda.appCerrada": "Aula cerró «{app}»: está bloqueada durante la clase.",
+  "banda.appCerrada.uno": "Aula cerró {apps}: está bloqueada durante la clase.",
+  "banda.appCerrada.varios": "Aula cerró {apps}: están bloqueadas durante la clase.",
+  "banda.appCerradaOk": "Entendido",
 
   // Energía (docs/privacidad.md, reglas 26-28)
   "energia.cuenta.reboot": "{profesor} (canal {canal}) va a reiniciar este equipo en {tiempo}. Guarda tu trabajo.",

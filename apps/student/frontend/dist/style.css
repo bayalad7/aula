@@ -12,6 +12,7 @@ body { margin: 0; }
 .franja[hidden] { display: none; }
 .franja__detalle[hidden] { display: none; }
 .franja__detalle p { margin: var(--e-1) 0 0; overflow-wrap: anywhere; }
+.franja__cerradas { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); margin: var(--e-1) 0 0; font-weight: var(--peso-medio); }
 
 #contenido { padding: var(--e-4); display: grid; gap: var(--e-3); }
 .vacio[hidden], .codigos:empty { display: none; }

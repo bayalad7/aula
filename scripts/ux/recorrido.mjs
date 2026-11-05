@@ -50,6 +50,26 @@ const grande = seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB
 await f("60-miniatura-grande-tomar-control", "lab", { pasos: grande });
 await f("61-miniatura-grande-controlando", "lab", { pasos: seq(grande, click("#pg-tomar"), async () => { await sleep(400); }) });
 
+// Captura de la pantalla de un alumno (docs/protocol.md §5.17): la ficha, la vista previa, guardada,
+// fallida, en lote, durante el control y la carpeta en Ajustes › Acerca de.
+const espera = async () => { await sleep(400); };
+const capturar = seq(click(`${fila("LAB3-PC07")} .ficha`), click("#ficha-capturar"), espera);
+await f("62-ficha-tomar-captura", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+await f("63-captura-vista-previa", "lab", { pasos: capturar });
+await f("64-captura-guardada", "lab", { pasos: seq(capturar, click("#cap-guardar"), espera) });
+await f("65-captura-fallida", "lab-captura-falla", { pasos: seq(click(`${fila("LAB3-PC12")} .ficha`), click("#ficha-capturar"), espera) });
+await f("66-captura-tamano-real", "lab", { pasos: seq(capturar, click("#cap-marco"), espera) });
+await f("67-captura-lote", "lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12")), click(fila("lab-ubuntu-02")),
+  click('[data-panel="captura"]'), click("#lote-tomar"), espera) });
+await f("68-captura-lote-guardadas", "lab", { pasos: seq(click('[data-panel="captura"]'), click("#lote-tomar"), espera,
+  click("#lote-guardar"), espera) });
+await f("69-captura-durante-control", "lab", { pasos: seq(tomar, click("#pg-capturar"), espera) });
+await f("70-captura-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: seq(capturar, click("#cap-guardar"), espera) });
+await f("71-ajustes-carpeta-capturas", "datos", { pasos: seq(ajustes("acerca"), async (p) => {
+  await p.evaluate(() => document.getElementById("aj-capturas-ruta").scrollIntoView());
+  await sleep(200);
+}) });
+
 // Código
 await f("16-codigo", "datos", { ruta: "codigo", pasos: async (p) => {
   await p.evaluate(() => window.monaco && window.monaco.editor.getEditors()[0].setValue(

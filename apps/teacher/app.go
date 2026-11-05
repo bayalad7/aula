@@ -22,6 +22,7 @@ import (
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
 	"github.com/bayalad7/aula/internal/simclass"
+	"github.com/bayalad7/aula/internal/snapshot"
 )
 
 var errNoClass = codedf(codeNoClass, "primero abre una clase")
@@ -74,7 +75,12 @@ type App struct {
 	restr *policy.ClassPolicy // class restrictions: who has what (D-017)
 	power *power.Tracker      // power orders and each agent's answer (§5.15)
 	desk  *remote.Desk        // remote control: one computer at a time (§5.16)
-	sim   *simclass.Class     // the aula simulada's students; nil while closed (guarded by mu)
+	snaps *snapshot.Store     // screenshots of students, in memory until saved (§5.17)
+	// documents is the teacher's Documents folder and openFolder shows a
+	// folder in Explorer (replaced in tests: never a window on the desktop).
+	documents  func() (string, error)
+	openFolder func(string) error
+	sim        *simclass.Class // the aula simulada's students; nil while closed (guarded by mu)
 
 	agentErrs agentErrors // the last error each student reported
 
@@ -102,6 +108,9 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.restr = policy.NewClassPolicy()
 	a.power = &power.Tracker{Now: func() time.Time { return a.now() }}
 	a.desk = &remote.Desk{Now: func() time.Time { return a.now() }}
+	a.snaps = &snapshot.Store{Now: func() time.Time { return a.now() }, Logger: log,
+		OnChange: func(l []snapshot.Snapshot) { a.emit(EventSnapshots, Snapshots{Snapshots: l}) }}
+	a.documents, a.openFolder = platform.DocumentsDir, platform.OpenFolder
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	a.checks = newConnectChecks(log)
 	return a
@@ -197,7 +206,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
 		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage,
-		onRemote: a.onRemoteMessage, onError: a.onAgentError}, a.log)
+		onRemote: a.onRemoteMessage, onSnapshot: a.onSnapshotMessage, onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -228,6 +237,7 @@ func (a *App) EndClass() {
 		a.stopSimulationOf(class)
 		a.StopBroadcast() // agents also stop when the connection closes
 		a.endControl(class)
+		a.snaps.Reset() // unsaved screenshots never outlive the class (rule 45)
 		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
 		class.Stop()
@@ -251,6 +261,7 @@ func (a *App) View() View {
 	v.Restrictions = a.Restrictions()
 	v.Broadcast = a.stateOf(a.bc.Status())
 	v.Remote = a.desk.Current()
+	v.Snapshots = a.snaps.List()
 	return v
 }
 
@@ -542,6 +553,7 @@ func (a *App) onChange() {
 	a.emit(EventStudents, a.studentsIn(class))
 	a.syncScreens()
 	a.syncRemote(class.Sessions())
+	a.syncSnapshots(class)
 	a.bc.Sync(class.Sessions())
 	a.sendRestrictions(class, a.restr.Plan(class.Sessions())) // students who reconnect get them again
 }
@@ -587,7 +599,8 @@ func studentsOf(list []session.Session) Students {
 			CanCode: s.Can(protocol.CapCodeView), CanNotice: s.Can(protocol.CapMsgShow),
 			CanThumb: s.Can(protocol.CapScreenThumb), CanBroadcast: s.Can(protocol.CapScreenBroadcast),
 			CanAppBlock: s.Can(protocol.CapAppBlock), CanWebFilter: s.Can(protocol.CapWebFilter),
-			CanPower: s.Can(protocol.CapPower), CanRemote: s.Can(protocol.CapRemote), LastCodeAck: s.LastCodeAck,
+			CanPower: s.Can(protocol.CapPower), CanRemote: s.Can(protocol.CapRemote),
+			CanSnapshot: s.Can(protocol.CapScreenSnapshot), LastCodeAck: s.LastCodeAck,
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))
@@ -621,6 +634,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanPower {
 				out.CanPower++
+			}
+			if st.CanSnapshot {
+				out.CanSnapshot++
 			}
 		}
 		out.Students = append(out.Students, st)

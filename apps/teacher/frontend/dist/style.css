@@ -95,5 +95,22 @@ body[data-panel] .col-sistema { display: none; }
 .tarjeta__cabecera.con-info { display: flex; }
 .manual .lista-limpia { padding: 0; }
 
+/* --- Captura de la pantalla de un alumno (vista previa y lote) -------------------------- */
+.ruta { display: block; overflow-wrap: anywhere; user-select: text; }
+.cap-marco { display: block; width: 100%; padding: 0; border: 1px solid var(--c-borde); border-radius: var(--r-md);
+  background: var(--c-superficie-2); cursor: zoom-in; overflow: auto; max-height: 62vh; }
+.cap-marco img { display: block; width: 100%; height: auto; max-height: 60vh; object-fit: contain; }
+/* «Tamaño real»: la imagen a su resolución, con barras de desplazamiento. */
+.cap-marco[aria-pressed="true"] { cursor: zoom-out; }
+.cap-marco[aria-pressed="true"] img { width: auto; max-width: none; max-height: none; }
+.lote-capturas { display: grid; gap: var(--e-2); }
+.lote-captura { display: grid; grid-template-columns: auto 4.5rem 1fr auto; align-items: center; gap: var(--e-2); }
+.lote-captura__mini { display: block; width: 4.5rem; aspect-ratio: 16 / 9; border: 1px solid var(--c-borde);
+  border-radius: var(--r-sm); background: var(--c-superficie-2); overflow: hidden; }
+.lote-captura__mini img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.lote-captura__mini img:not([src]) { display: none; }
+.lote-captura__texto { display: grid; min-width: 0; }
+.lote-captura__texto .equipo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* --- Control remoto: la imagen en vivo recibe el mouse y el teclado ---------------------- */
 #pantalla-grande img.pg-control { cursor: crosshair; touch-action: none; user-select: none; }

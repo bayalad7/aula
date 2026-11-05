@@ -45,6 +45,9 @@ type classHooks struct {
 	// onRemote receives remote.ack and the errors (which may answer a
 	// remote.start).
 	onRemote func(sessionID string, env protocol.Envelope)
+	// onSnapshot receives screen.snapshot.response parts and the errors
+	// (which may answer a screen.snapshot.request). Simulated students too.
+	onSnapshot func(sessionID string, env protocol.Envelope)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
 }
@@ -247,7 +250,14 @@ func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, prot
 			if h.onFrame != nil {
 				h.onFrame(conn.ID(), p)
 			}
+		case protocol.ScreenSnapshotResponse:
+			if h.onSnapshot != nil {
+				h.onSnapshot(conn.ID(), env)
+			}
 		case protocol.ErrorPayload:
+			if h.onSnapshot != nil {
+				h.onSnapshot(conn.ID(), env)
+			}
 			if h.onError != nil {
 				h.onError(conn.ID(), p)
 			}
@@ -302,6 +312,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onRemote != nil {
 					hooks.onRemote(conn.ID(), env)
 				}
+			case protocol.ScreenSnapshotResponse:
+				if hooks.onSnapshot != nil {
+					hooks.onSnapshot(conn.ID(), env)
+				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {
 					hooks.onBroadcast(conn.ID(), env)
@@ -312,6 +326,9 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 					}
 					if hooks.onRemote != nil {
 						hooks.onRemote(conn.ID(), env)
+					}
+					if hooks.onSnapshot != nil {
+						hooks.onSnapshot(conn.ID(), env)
 					}
 					if hooks.onError != nil {
 						hooks.onError(conn.ID(), p)

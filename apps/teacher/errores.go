@@ -52,6 +52,11 @@ const (
 	codeAlreadyControlling   = "alreadyControlling"
 	codeRemoteUnsupported    = "remoteUnsupported"
 	codeRemoteGone           = "remoteGone"
+	codeSnapshotUnsupported  = "snapshotUnsupported"
+	codeSnapshotTooMany      = "snapshotTooMany"
+	codeSnapshotGone         = "snapshotGone"
+	codeSnapshotSaveFailed   = "snapshotSaveFailed"
+	codeSnapshotFolder       = "snapshotFolder"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -63,6 +68,7 @@ var errorCodes = []string{
 	codeInvalidPower, codeNoPowerTargets, codeInvalidRestriction, codeInvalidApp, codeInvalidDomain,
 	codeSimUnavailable, codeSimClosed, codeSimFull, codeSimCapability, codeSimGone, codeSimFault, codeSimFailed, codeManualFailed,
 	codeCheckRunning, codeAlreadyControlling, codeRemoteUnsupported, codeRemoteGone,
+	codeSnapshotUnsupported, codeSnapshotTooMany, codeSnapshotGone, codeSnapshotSaveFailed, codeSnapshotFolder,
 }
 
 // errorHelp is the section of the manual (docs/v1/administracion) that each
@@ -108,6 +114,11 @@ var errorHelp = map[string]string{
 	codeAlreadyControlling:   "tareas-frecuentes#ayudar-a-un-alumno-tomando-el-control",
 	codeRemoteUnsupported:    "tareas-frecuentes#ayudar-a-un-alumno-tomando-el-control",
 	codeRemoteGone:           "tareas-frecuentes#ayudar-a-un-alumno-tomando-el-control",
+	codeSnapshotUnsupported:  "tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno",
+	codeSnapshotTooMany:      "tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno",
+	codeSnapshotGone:         "tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno",
+	codeSnapshotSaveFailed:   "ajustes#capturas-de-pantalla",
+	codeSnapshotFolder:       "ajustes#capturas-de-pantalla",
 }
 
 // codedError is an error the UI can explain by its code.

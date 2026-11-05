@@ -320,6 +320,7 @@
     pintarTransmision(v.broadcast);
     pintarRestricciones(v.restrictions);
     if (v.remote) pintarControl(v.remote);
+    alCapturas(v.snapshots || []);
     pintarHistorial(v.history);
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
@@ -447,7 +448,8 @@
       return [el("dt", "", T(k)), dd];
     }));
     const puede = [["canCode", "ficha.codigo"], ["canNotice", "ficha.avisos"], ["canThumb", "ficha.miniaturas"],
-      ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"], ["canRemote", "ficha.control"]];
+      ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"], ["canRemote", "ficha.control"],
+      ["canSnapshot", "ficha.captura"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k]) => {
       const li = el("li", "fila");
       li.append(s[c] ? insignia("conectado", "hecho", T("ficha.si")) : insignia("", "cerrar", T("ficha.no")), el("span", "", T(k)));
@@ -459,6 +461,8 @@
     const esEste = control.live && control.sessionID === s.id;
     $("ficha-tomar-texto").textContent = T(esEste ? "control.verPantalla" : "control.tomar");
     $("ficha-tomar").onclick = () => (esEste ? abrirControl() : tomarControl(s, $("ficha-tomar")));
+    // Tomar una captura: reales y simulados, también mientras se le controla.
+    $("ficha-captura").hidden = !(s.state === "connected" && s.canSnapshot);
     const e = s.lastError;
     $("ficha-error").hidden = !e;
     if (e) {
@@ -531,6 +535,7 @@
     // Aquí es donde el profesor ve si el alumno está en la actividad: puede tomar el control
     // sin ir a la ficha (solo reales cuyo equipo lo permite).
     $("pg-tomar").hidden = !s.canRemote || s.simulated;
+    pintarBotonCaptura();
     $("pg-titulo").textContent = s.hostname + (s.username ? " · " + s.username : "");
     const li = tarjetas.get(k);
     const src = li && li.querySelector("img").getAttribute("src");
@@ -572,6 +577,7 @@
     $("pg-nota").hidden = on;
     img.classList.toggle("pg-control", on);
     if (on) img.tabIndex = 0; else img.removeAttribute("tabindex");
+    pintarBotonCaptura();
   }
   function abrirControl() {
     const s = alumnoPorSesion(control.sessionID);
@@ -716,6 +722,238 @@
   });
   $("f-control-soltar").addEventListener("click", soltarControl);
   $("f-control-ver").addEventListener("click", abrirControl);
+  // --- Captura de la pantalla de un alumno (docs/protocol.md §5.17) ------------------------
+  // La imagen llega en partes a Go y queda en su memoria; aquí se pide para la vista previa.
+  // Solo «Guardar» la escribe en disco (docs/privacidad.md regla 45). Cerrar la vista previa
+  // la descarta de la memoria; un archivo ya guardado se queda donde está.
+  let capturas = new Map(); // id → snapshot (sin imagen)
+  let capturaActual = "";   // la de la vista previa
+  let capturaDeLote = false; // la vista previa se abrió desde el lote: cerrarla no la descarta
+  let lote = [];            // ids pedidos desde el panel Captura
+  const marcadasLote = new Set();
+  const imagenes = new Map(); // id → data URL, solo mientras se ven
+  const CAP_FALLO = "captura.fallo."; // + motivo (internal/snapshot: timeout, capture, busy…)
+  const CAP_ESTADO = "captura.lote.estado."; // + status (pending, ready)
+  const kb = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
+  const horaDe = (iso) => {
+    const d = new Date(iso);
+    return isNaN(d) ? "" : d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  };
+  function alCapturas(lista) {
+    capturas = new Map(lista.map((c) => [c.id, c]));
+    for (const id of [...imagenes.keys()]) if (!capturas.has(id)) imagenes.delete(id);
+    if (capturaActual) pintarCaptura();
+    if (panel === "captura") pintarLote();
+  }
+  function imagenDe(id) {
+    if (imagenes.has(id)) return Promise.resolve(imagenes.get(id));
+    return api.SnapshotImage(id).then((b64) => {
+      const src = "data:image/jpeg;base64," + b64;
+      if (capturas.has(id)) imagenes.set(id, src);
+      return src;
+    });
+  }
+  // Tomar una captura de un alumno: desde su ficha o desde la vista en grande (también
+  // mientras se le controla: el control sigue, solo se suelta el teclado).
+  function tomarCaptura(s, b) {
+    if (enControl) soltarTeclas(); // nada queda presionado mientras se ve la vista previa
+    ocupado(b, true);
+    api.TakeSnapshot(s.id).then((c) => {
+      capturas.set(c.id, c);
+      abrirCaptura(c.id);
+    }, fallo).finally(() => ocupado(b, false));
+  }
+  function abrirCaptura(id) {
+    capturaActual = id;
+    $("cap-marco").setAttribute("aria-pressed", "false");
+    $("cap-imagen").removeAttribute("src");
+    pintarCaptura();
+    const d = $("captura");
+    if (!d.open) d.showModal();
+    $("cap-descartar").focus();
+  }
+  function pintarCaptura() {
+    const c = capturas.get(capturaActual);
+    if (!c) return;
+    const quien = c.hostname + (c.username ? " · " + c.username : "");
+    $("cap-titulo").textContent = T("captura.titulo", { equipo: quien });
+    $("cap-simulado").replaceChildren(...(c.simulated ? [insignia("simulado", "simulado", T("alumnos.simulado"))] : []));
+    $("cap-simulado-nota").hidden = !c.simulated;
+    const lista = c.status === "ready", fallida = c.status === "failed";
+    $("cap-estado").hidden = c.status !== "pending";
+    $("cap-estado-texto").textContent = T("captura.tomando", { equipo: c.hostname });
+    $("cap-error").hidden = !fallida;
+    if (fallida) {
+      $("cap-error-titulo").textContent = T(CAP_FALLO + c.reason + ".titulo");
+      $("cap-error-texto").textContent = T(CAP_FALLO + c.reason + ".texto", { equipo: c.hostname });
+    }
+    $("cap-marco").hidden = !lista;
+    $("cap-meta").hidden = !lista;
+    if (lista) {
+      $("cap-imagen").alt = T("captura.imagen", { equipo: c.hostname });
+      $("cap-meta").textContent = T("captura.meta", { ancho: c.width, alto: c.height, hora: horaDe(c.takenAt), tamano: kb(c.size) });
+      if (!$("cap-imagen").getAttribute("src")) {
+        imagenDe(c.id).then((src) => { if (capturaActual === c.id) $("cap-imagen").src = src; }, fallo);
+      }
+    }
+    const guardada = !!c.path;
+    $("cap-guardada").hidden = !guardada;
+    $("cap-ruta").textContent = c.path || "";
+    $("cap-guardar").hidden = guardada;
+    $("cap-guardar").disabled = !lista;
+    $("cap-descartar").hidden = guardada;
+    $("cap-abrir").hidden = !guardada;
+    $("cap-listo").hidden = !guardada;
+  }
+  $("cap-marco").addEventListener("click", () => {
+    const b = $("cap-marco");
+    b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
+  });
+  $("cap-marco").setAttribute("aria-label", T("captura.tamanoReal"));
+  $("cap-guardar").addEventListener("click", () => {
+    const b = $("cap-guardar");
+    ocupado(b, true);
+    api.SaveSnapshots([capturaActual]).then((l) => {
+      for (const c of l) capturas.set(c.id, c);
+      pintarCaptura();
+      $("cap-listo").focus();
+    }, fallo).finally(() => ocupado(b, false));
+  });
+  $("cap-descartar").addEventListener("click", () => $("captura").close());
+  $("cap-abrir").addEventListener("click", () => {
+    const c = capturas.get(capturaActual);
+    api.OpenSnapshotFolder(c ? c.path : "").catch(fallo);
+  });
+  $("captura").addEventListener("close", () => {
+    // Guardada o no, sale de la memoria: lo guardado ya está en disco. Las del lote
+    // siguen en él hasta «Guardar» o «Descartar todas».
+    if (capturaActual && !capturaDeLote) {
+      api.DiscardSnapshots([capturaActual]);
+      imagenes.delete(capturaActual);
+    }
+    if (capturaDeLote && panel === "captura") pintarLote();
+    capturaDeLote = false;
+    capturaActual = "";
+    $("cap-imagen").removeAttribute("src");
+  });
+  $("ficha-capturar").addEventListener("click", () => {
+    const s = alumnos.students.find((x) => clave(x) === fichaClave);
+    if (s) tomarCaptura(s, $("ficha-capturar"));
+  });
+  $("pg-capturar").addEventListener("click", () => {
+    const s = alumnoPorSesion(enControl ? control.sessionID : enGrande);
+    if (s) tomarCaptura(s, $("pg-capturar"));
+  });
+  // El botón de la vista en grande: con o sin control, si su equipo lo permite.
+  function pintarBotonCaptura() {
+    const s = alumnoPorSesion(enControl ? control.sessionID : enGrande);
+    $("pg-capturar").hidden = !(s && s.state === "connected" && s.canSnapshot);
+  }
+
+  // Lote: el panel Captura de la barra de acciones, sobre la selección (o todos).
+  const objetivoLote = () => (seleccion.size ? seleccionados() : conectados());
+  function pintarLote() {
+    const objetivo = objetivoLote();
+    const pueden = objetivo.filter((s) => s.canSnapshot).length;
+    $("lote-tomar-texto").textContent = P("captura.lote.tomar", pueden);
+    $("lote-tomar").disabled = pueden === 0;
+    $("lote-sin-soporte").hidden = pueden === objetivo.length && pueden > 0;
+    $("lote-sin-soporte-texto").textContent = pueden === 0 ? T("captura.lote.nadie") : P("captura.lote.algunosNo", objetivo.length - pueden);
+    lote = lote.filter((id) => capturas.has(id));
+    $("lote-vacio").hidden = lote.length > 0;
+    const tpl = $("t-lote-captura").content.firstElementChild;
+    $("lote-lista").replaceChildren(...lote.map((id) => {
+      const c = capturas.get(id);
+      const li = tpl.cloneNode(true);
+      const m = li.querySelector(".marca");
+      const lista = c.status === "ready" && !c.path;
+      m.disabled = !lista;
+      m.checked = lista && marcadasLote.has(id);
+      m.setAttribute("aria-label", T("captura.lote.marcar", { equipo: c.hostname }));
+      m.addEventListener("change", () => { if (m.checked) marcadasLote.add(id); else marcadasLote.delete(id); pintarPieLote(); });
+      li.querySelector(".equipo").textContent = c.hostname + (c.simulated ? " · " + T("alumnos.simulado") : "");
+      const estado = c.path ? T("captura.lote.guardada") : c.status === "failed" ? T(CAP_FALLO + c.reason + ".titulo") : T(CAP_ESTADO + c.status);
+      li.querySelector(".estado").textContent = estado;
+      const img = li.querySelector("img");
+      img.alt = T("captura.imagen", { equipo: c.hostname });
+      if (c.status === "ready") imagenDe(id).then((src) => { img.src = src; }, () => {});
+      const ver = li.querySelector(".ver");
+      ver.hidden = c.status !== "ready";
+      ver.textContent = T("captura.lote.ver");
+      ver.setAttribute("aria-label", T("captura.lote.verDe", { equipo: c.hostname }));
+      ver.addEventListener("click", () => abrirCapturaDeLote(id));
+      return li;
+    }));
+    pintarPieLote();
+  }
+  function pintarPieLote() {
+    const marcadas = lote.filter((id) => {
+      const c = capturas.get(id) || {};
+      return marcadasLote.has(id) && c.status === "ready" && !c.path;
+    });
+    $("lote-guardar").hidden = lote.length === 0;
+    $("lote-descartar").hidden = lote.length === 0;
+    $("lote-guardar").closest(".panel-lateral__pie").hidden = lote.length === 0;
+    $("lote-guardar").disabled = marcadas.length === 0;
+    $("lote-guardar-texto").textContent = P("captura.lote.guardar", marcadas.length);
+  }
+  // Ver una del lote en grande: la vista previa de siempre, pero cerrarla no la descarta
+  // (sigue en el lote hasta «Guardar» o «Descartar todas»).
+  function abrirCapturaDeLote(id) {
+    capturaDeLote = true;
+    abrirCaptura(id);
+  }
+  $("lote-tomar").addEventListener("click", () => {
+    const b = $("lote-tomar");
+    const ids = objetivoLote().filter((s) => s.canSnapshot).map((s) => s.id);
+    ocupado(b, true);
+    $("lote-guardadas").hidden = true;
+    api.TakeSnapshots(ids).then((r) => {
+      for (const c of r.snapshots) {
+        capturas.set(c.id, c);
+        lote.push(c.id);
+        marcadasLote.add(c.id);
+      }
+      if (r.skipped.length) toast("info", T("captura.lote.omitidos"), r.skipped.join(", "));
+      pintarLote();
+    }, fallo).finally(() => ocupado(b, false));
+  });
+  $("lote-guardar").addEventListener("click", () => {
+    const b = $("lote-guardar");
+    const ids = lote.filter((id) => marcadasLote.has(id) && !(capturas.get(id) || {}).path);
+    ocupado(b, true);
+    api.SaveSnapshots(ids).then((l) => {
+      for (const c of l) capturas.set(c.id, c);
+      // Las guardadas salen de la memoria; las demás siguen en el lote.
+      api.DiscardSnapshots(l.map((c) => c.id));
+      lote = lote.filter((id) => !l.some((c) => c.id === id));
+      for (const c of l) marcadasLote.delete(c.id);
+      $("lote-guardadas").hidden = l.length === 0;
+      $("lote-guardadas-titulo").textContent = P("captura.lote.guardadas", l.length);
+      pintarCarpetaCapturas().then(() => { $("lote-guardadas-ruta").textContent = carpetaCapturas; });
+      pintarLote();
+    }, fallo).finally(() => ocupado(b, false));
+  });
+  $("lote-descartar").addEventListener("click", () => {
+    api.DiscardSnapshots(lote);
+    lote = [];
+    marcadasLote.clear();
+    pintarLote();
+  });
+  $("lote-abrir").addEventListener("click", () => api.OpenSnapshotFolder("").catch(fallo));
+
+  // Dónde se guardan (Ajustes › Acerca de).
+  let carpetaCapturas = "";
+  function pintarCarpetaCapturas() {
+    return api.SnapshotFolder().then((f) => {
+      carpetaCapturas = f.path;
+      $("aj-capturas-ruta").textContent = f.path || f.error;
+      $("aj-capturas-nota").hidden = f.exists || !f.path;
+      $("aj-capturas-abrir").disabled = !f.exists;
+    });
+  }
+  $("aj-capturas-abrir").addEventListener("click", () => api.OpenSnapshotFolder("").catch(fallo));
+
   // El nombre del botón de la miniatura incluye el texto que se ve
   // («Esperando imagen…»), para que quien lo dice en voz alta lo encuentre.
   function nombrarPantalla(pantalla, equipo) {
@@ -793,6 +1031,7 @@
     const destino = n === 0 ? T("destino.todos", { n: conectados().length }) : P("destino.seleccion", n);
     for (const p of $$("[data-destino]")) p.textContent = destino;
     pintarDestinoEquipos();
+    if (panel === "captura") pintarLote();
   }
 
   // --- Información junto a los campos técnicos -------------------------------------------
@@ -848,6 +1087,7 @@
     if (id === "pantalla") pintarPanelPantalla();
     if (id === "restricciones") pintarPanelRestricciones();
     if (id === "energia") pintarPanelEnergia();
+    if (id === "captura") pintarLote();
     if (id === "alumno") pintarFicha();
     $("h-panel-" + id).focus();
   }
@@ -1274,7 +1514,7 @@
 
   // --- Aula simulada ---------------------------------------------------------------------
   const FALLAS = [["none", "simulada.fallaNinguna"], ["slow", "simulada.fallaLenta"], ["noack", "simulada.fallaNoAcusa"], ["disconnected", "simulada.fallaDesconectado"]];
-  const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla" };
+  const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla", "screen.snapshot": "simulada.capCaptura" };
   function pintarSimulacion(v) {
     simulada = v;
     $("f-simulada").hidden = !v.active;
@@ -1843,6 +2083,7 @@
     $("aj-atajo").textContent = hotkey.active ? T(AT + "Activo", { combo: hotkey.combo })
       : T(AT + (hotkey.reason || "Inactivo"), { combo: hotkey.combo });
     api.InstallerInfo().then((i) => { $("aj-datos").textContent = datosInstalador(i); });
+    pintarCarpetaCapturas();
     aplicarTema(tema);
     elegirPestana($("tab-" + (pestana || "clase")), false);
     $("ajustes").showModal();
@@ -1935,6 +2176,7 @@
   rt.EventsOn(ev.FRAME, alCuadro);
   rt.EventsOn(ev.REMOTE, pintarControl);
   rt.EventsOn(ev.REMOTE_FRAME, alCuadroControl);
+  rt.EventsOn(ev.SNAPSHOTS, (l) => alCapturas(l.snapshots));
   rt.EventsOn(ev.BROADCAST, pintarTransmision);
   rt.EventsOn(ev.RESTRICTIONS, pintarRestricciones);
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);

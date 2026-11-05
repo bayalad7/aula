@@ -138,6 +138,7 @@ func (a *App) studentsIn(class classroom) Students {
 	st.CanCode += sims.CanCode
 	st.CanNotice += sims.CanNotice
 	st.CanThumb += sims.CanThumb
+	st.CanSnapshot += sims.CanSnapshot
 	present := map[string]bool{}
 	for i := range st.Students {
 		s := &st.Students[i]

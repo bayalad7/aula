@@ -20,8 +20,9 @@
     canThumb: s.capabilities.includes("screen.thumb"), canBroadcast: s.capabilities.includes("screen.broadcast"),
     canAppBlock: s.capabilities.includes("app.block"), canWebFilter: s.capabilities.includes("web.filter"),
     canPower: s.capabilities.includes("power"), canRemote: s.capabilities.includes("remote"),
+    canSnapshot: s.capabilities.includes("screen.snapshot"),
   });
-  const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote"];
+  const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -46,7 +47,7 @@
     student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL }),
   ];
   const simStudents = [1, 2].map((i) => student({ hostname: "Simulado " + i, username: "Alumno de prueba", osVersion: "simulado",
-    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb"], simulated: true,
+    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot"], simulated: true,
     lastCodeAck: i === 1 ? "sn-3" : "", ackedAt: i === 1 ? "10:42:09" : "" }));
   let list = scene === "simulada-sola" ? simStudents.slice() : scene === "simulada" ? [...sims.slice(0, 1), ...simStudents] : scene === "vacia" || scene.startsWith("setup") ? [] : scene.startsWith("lab") ? lab : [...sims,
     student({ hostname: "SIM-03", username: "simulado", osVersion: "simulado", agentVersion: "0.1.0-sim",
@@ -63,7 +64,8 @@
     const r = (k) => real.filter((s) => s[k]).length;
     return { students: list, connected: real.length, simulated: c.length - real.length,
       canCode: n("canCode"), canNotice: n("canNotice"), canThumb: n("canThumb"),
-      canBroadcast: r("canBroadcast"), canAppBlock: r("canAppBlock"), canWebFilter: r("canWebFilter"), canPower: r("canPower") };
+      canBroadcast: r("canBroadcast"), canAppBlock: r("canAppBlock"), canWebFilter: r("canWebFilter"), canPower: r("canPower"),
+      canSnapshot: n("canSnapshot") };
   };
 
   const code3 = "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(5))\n";
@@ -99,17 +101,36 @@
   const despues = (fn) => setTimeout(fn, 60);
   const cuadroControl = () => window.__emit("aula:remote-frame", { sessionId: remote.sessionID, seq: 1, width: 320, height: 180,
     jpeg: window.__thumb("main.py - Visual Studio Code", 210), detail: true, at: new Date().toISOString() });
+  // Capturas (apps/teacher/snapshot.go, snapshot.Snapshot): llegan «ready» poco después de
+  // pedirlas; en lab-captura-falla, la de LAB3-PC12 falla como con la sesión bloqueada.
+  const DOCS = "C:\\Users\\profe\\Documents\\Aula\\capturas";
+  let snaps = [];
+  let nSnap = 0;
+  const emitSnaps = () => window.__emit("aula:snapshots", { snapshots: snaps.slice() });
+  const pedirCaptura = (id) => {
+    const s = list.find((x) => x.id === id) || {};
+    const c = { id: "cap-" + ++nSnap, sessionId: id, hostname: s.hostname, username: s.username || "", simulated: !!s.simulated,
+      status: "pending", requestedAt: new Date().toISOString() };
+    snaps.push(c);
+    despues(() => {
+      const falla = scene === "lab-captura-falla" && s.hostname === "LAB3-PC12";
+      Object.assign(c, falla ? { status: "failed", reason: "capture" }
+        : { status: "ready", width: 1920, height: 1080, size: 1843211, takenAt: "2026-11-05T10:42:06-06:00" });
+      emitSnaps();
+    });
+    return Object.assign({}, c);
+  };
   const view = () => ({
     active: !scene.startsWith("setup"), class: cls, students: studentsView(), history, deliveries,
     hotkey: scene === "atajo-ocupado"
       ? { combo: "Ctrl+Alt+Shift+C", active: false, reason: "InUse", error: "" }
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true },
-    restrictions, remote,
+    restrictions, remote, snapshots: snaps,
   });
 
 
-  const simView = () => ({ active: scene.startsWith("simulada"), max: 40, capabilities: ["code.view", "msg.show", "screen.thumb"],
+  const simView = () => ({ active: scene.startsWith("simulada"), max: 40, capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot"],
     students: scene.startsWith("simulada") ? [
       { id: "x1", name: "Simulado 1", os: "windows", capabilities: ["code.view", "msg.show", "screen.thumb"], connected: true, fault: "none", delayMs: 0, viewed: false,
         snippets: [{ exercise: "3", title: "Factorial recursivo", lang: "python", lines: 6 }], notices: 1, lastNotice: "Guarden su trabajo" },
@@ -185,6 +206,23 @@
     }),
     ShowControl: call("ShowControl", (visible) => { remote = Object.assign({}, remote, { viewing: visible }); if (visible) despues(cuadroControl); return null; }),
     SendRemoteInput: call("SendRemoteInput"),
+    TakeSnapshot: call("TakeSnapshot", (id) => pedirCaptura(id)),
+    TakeSnapshots: call("TakeSnapshots", (ids) => {
+      const pueden = ids.map((id) => list.find((x) => x.id === id)).filter((s) => s && s.canSnapshot);
+      const omitidos = ids.map((id) => list.find((x) => x.id === id)).filter((s) => s && !s.canSnapshot).map((s) => s.hostname);
+      return { snapshots: pueden.map((s) => pedirCaptura(s.id)), skipped: omitidos };
+    }),
+    SnapshotImage: call("SnapshotImage", (id) => {
+      const c = snaps.find((x) => x.id === id);
+      return window.__thumb((c ? c.hostname : "") + " - main.py - Visual Studio Code", 200);
+    }),
+    SaveSnapshots: call("SaveSnapshots", (ids) => snaps.filter((c) => ids.includes(c.id) && c.status === "ready").map((c) => {
+      c.path = DOCS + "\\" + c.hostname + (c.username ? " (" + c.username + ")" : "") + (c.simulated ? " (simulado)" : "") + "\\2026-11-05\\10-42-06.jpg";
+      return Object.assign({}, c);
+    })),
+    DiscardSnapshots: call("DiscardSnapshots", (ids) => { snaps = snaps.filter((c) => !ids.includes(c.id)); emitSnaps(); return null; }),
+    SnapshotFolder: call("SnapshotFolder", { path: DOCS, exists: true, error: "" }),
+    OpenSnapshotFolder: call("OpenSnapshotFolder", null),
     SetRestriction: call("SetRestriction", restrictions),
     ClearRestriction: call("ClearRestriction", restrictions),
     ClearAllRestrictions: call("ClearAllRestrictions", restrictions),

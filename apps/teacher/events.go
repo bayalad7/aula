@@ -6,6 +6,7 @@ import (
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/remote"
+	"github.com/bayalad7/aula/internal/snapshot"
 )
 
 // UI contract between this Go backend and frontend/dist (documented in
@@ -45,6 +46,10 @@ const (
 	// EventConnectCheck carries a connectcheck.Report whenever a step of
 	// CheckConnection starts or ends; the last one has done set.
 	EventConnectCheck = "aula:connectcheck"
+	// EventSnapshots carries Snapshots whenever a screenshot of a student is
+	// asked for, arrives, fails, is saved or discarded (docs/protocol.md
+	// §5.17). Never the image: the window asks for it with SnapshotImage.
+	EventSnapshots = "aula:snapshots"
 )
 
 // Setup is what the channel selection screen needs.
@@ -90,6 +95,7 @@ type Student struct {
 	CanWebFilter bool     `json:"canWebFilter"` // web.filter (Windows service agents)
 	CanPower     bool     `json:"canPower"`     // power (Windows agents)
 	CanRemote    bool     `json:"canRemote"`    // remote (Windows agents with their screen)
+	CanSnapshot  bool     `json:"canSnapshot"`  // screen.snapshot (Windows agents and simulated students)
 	// Power is the last power order sent to this session and its state.
 	Power       *power.Entry `json:"power"`
 	AppsActive  bool         `json:"appsActive"`  // acknowledged the class's app policy
@@ -118,6 +124,9 @@ type Students struct {
 	CanAppBlock  int `json:"canAppBlock"`
 	CanWebFilter int `json:"canWebFilter"`
 	CanPower     int `json:"canPower"` // connected agents with power
+	// CanSnapshot counts connected agents with screen.snapshot, simulated
+	// ones included.
+	CanSnapshot int `json:"canSnapshot"`
 	// Connected counts real students only; Simulated counts the connected
 	// simulated ones. CanCode, CanNotice and CanThumb include both.
 	Simulated int `json:"simulated"`
@@ -197,6 +206,27 @@ type View struct {
 	Restrictions RestrictionsView `json:"restrictions"`
 	// Remote is the remote control on record (the last one, if it ended).
 	Remote remote.Control `json:"remote"`
+	// Snapshots are the screenshots in memory (pending, ready or failed).
+	Snapshots []snapshot.Snapshot `json:"snapshots"`
+}
+
+// Snapshots is the list of screenshots in memory, oldest request first.
+type Snapshots struct {
+	Snapshots []snapshot.Snapshot `json:"snapshots"`
+}
+
+// SnapshotBatch answers TakeSnapshots: the screenshots asked for, and the
+// selected students whose computer cannot take one.
+type SnapshotBatch struct {
+	Snapshots []snapshot.Snapshot `json:"snapshots"`
+	Skipped   []string            `json:"skipped"` // hostnames
+}
+
+// SnapshotFolder is where saved screenshots go (Ajustes › Acerca de).
+type SnapshotFolder struct {
+	Path   string `json:"path"`   // <Documentos>/Aula/capturas
+	Exists bool   `json:"exists"` // false until the first one is saved
+	Error  string `json:"error"`  // why the folder is unknown, if it is
 }
 
 // EmitRequest is the code panel content when an emit button is pressed.

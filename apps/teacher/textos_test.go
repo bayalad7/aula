@@ -10,6 +10,7 @@ import (
 	"github.com/bayalad7/aula/internal/connectcheck"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/remote"
+	"github.com/bayalad7/aula/internal/snapshot"
 )
 
 // Every text the console shows lives in frontend/dist/textos.es-MX.js
@@ -102,6 +103,17 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, r := range []string{string(protocol.RemoteByTeacher), string(protocol.RemoteReplaced), string(protocol.RemoteIdle),
 		string(protocol.RemoteSession), string(protocol.RemoteError), string(remote.StatusGone), string(remote.StatusFailed)} {
 		need("control.fin."+r, "main.js (remote.Control.Reason or Status)")
+	}
+
+	// Screenshots: the preview and the batch word why one failed and where
+	// each one is (snapshot.Snapshot.Reason and Status).
+	for _, r := range []string{snapshot.ReasonTimeout, snapshot.ReasonUnsupported, snapshot.ReasonCapture,
+		snapshot.ReasonBusy, snapshot.ReasonTooLarge, snapshot.ReasonCorrupt, snapshot.ReasonGone} {
+		need("captura.fallo."+r+".titulo", "main.js (snapshot.Snapshot.Reason)")
+		need("captura.fallo."+r+".texto", "main.js (snapshot.Snapshot.Reason)")
+	}
+	for _, s := range []snapshot.Status{snapshot.StatusPending, snapshot.StatusReady} {
+		need("captura.lote.estado."+string(s), "main.js (snapshot.Snapshot.Status)")
 	}
 
 	// Error texts are chosen by the code Go returns (errores.go).

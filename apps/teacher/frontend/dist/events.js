@@ -14,4 +14,5 @@ window.AulaEvents = Object.freeze({
   CONNECT_CHECK: "aula:connectcheck",
   REMOTE: "aula:remote",
   REMOTE_FRAME: "aula:remote-frame",
+  SNAPSHOTS: "aula:snapshots",
 });

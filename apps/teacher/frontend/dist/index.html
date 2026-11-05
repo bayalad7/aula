@@ -139,6 +139,7 @@
                 <button type="button" class="btn" data-panel="aviso" aria-expanded="false" data-t-title="panel.aviso"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#aviso"/></svg><span class="btn__texto" data-t="panel.aviso"></span></button>
                 <button type="button" class="btn" data-panel="restricciones" aria-expanded="false" data-t-title="panel.restricciones"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg><span class="btn__texto" data-t="panel.restricciones"></span></button>
                 <button type="button" class="btn" data-panel="energia" aria-expanded="false" data-t-title="panel.energia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg><span class="btn__texto" data-t="panel.energia"></span></button>
+                <button type="button" class="btn" data-panel="captura" aria-expanded="false" data-t-title="panel.captura"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span class="btn__texto" data-t="panel.captura"></span></button>
               </div>
             </div>
           </section>
@@ -351,6 +352,10 @@
               <button type="button" class="btn btn--primario" id="ficha-tomar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span id="ficha-tomar-texto"></span></button>
               <span class="pequeno suave" data-t="control.fichaNota"></span>
             </div>
+            <div class="pila-mini" id="ficha-captura" hidden>
+              <button type="button" class="btn" id="ficha-capturar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span data-t="captura.tomar"></span></button>
+              <span class="pequeno suave" data-t="captura.fichaNota"></span>
+            </div>
             <div class="pila-mini">
               <h3 class="con-info"><span data-t="ficha.puede"></span><button type="button" class="info-boton" data-info="capacidades" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></h3>
               <ul class="lista-limpia" id="ficha-puede"></ul>
@@ -426,6 +431,30 @@
           <div class="panel-lateral__pie">
             <button type="button" class="btn btn--fantasma" id="restr-quitar" data-t="restr.quitar"></button>
             <button type="button" class="btn btn--primario" id="restr-aplicar" data-t="restr.aplicar"></button>
+          </div>
+        </aside>
+
+        <aside class="panel-lateral" id="panel-captura" hidden aria-labelledby="h-panel-captura">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg>
+            <h2 id="h-panel-captura" tabindex="-1" data-t="panel.captura"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo pila">
+            <p data-destino></p>
+            <p class="aviso-en-linea" id="lote-sin-soporte" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="lote-sin-soporte-texto"></span></p>
+            <button type="button" class="btn btn--primario" id="lote-tomar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span id="lote-tomar-texto"></span></button>
+            <p class="pequeno suave" id="lote-vacio" data-t="captura.lote.vacio"></p>
+            <ul class="lista-limpia lote-capturas" id="lote-lista" data-t-aria-label="captura.lote.lista"></ul>
+            <div class="aviso-en-linea aviso-en-linea--exito" id="lote-guardadas" role="status" hidden>
+              <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#hecho"/></svg>
+              <div class="pila-mini"><strong id="lote-guardadas-titulo"></strong><span class="ruta mono pequeno" id="lote-guardadas-ruta"></span>
+                <button type="button" class="btn btn--sm" id="lote-abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="captura.abrirCarpeta"></span></button></div>
+            </div>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" id="lote-descartar" data-t="captura.lote.descartarTodas" hidden></button>
+            <button type="button" class="btn btn--primario" id="lote-guardar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span id="lote-guardar-texto"></span></button>
           </div>
         </aside>
 
@@ -517,12 +546,39 @@
     <div class="dialogo__cuerpo">
       <div class="fila"><h2 id="pg-titulo" class="crece"></h2>
         <button type="button" class="btn btn--primario btn--sm" id="pg-tomar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span data-t="control.tomar"></span></button>
+        <button type="button" class="btn btn--sm" id="pg-capturar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span data-t="captura.tomar"></span></button>
         <button type="button" class="btn btn--peligro btn--sm" id="pg-soltar" data-t="control.soltar" hidden></button>
         <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
       <p class="aviso-en-linea" id="pg-control-estado" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span id="pg-control-estado-texto"></span></p>
       <img id="pg-imagen" alt="">
       <p class="pequeno suave" id="pg-nota" data-t="alumnos.avisoMiniaturas"></p>
       <p class="pequeno suave" id="pg-control-nota" data-t="control.nota" hidden></p>
+    </div>
+  </dialog>
+
+  <!-- Vista previa de una captura (docs/privacidad.md regla 45): solo «Guardar» la escribe en disco. -->
+  <dialog class="dialogo dialogo--grande" id="captura" aria-labelledby="cap-titulo">
+    <div class="dialogo__cuerpo">
+      <div class="fila"><h2 id="cap-titulo" class="crece"></h2><span id="cap-simulado"></span>
+        <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <p class="aviso-en-linea" id="cap-estado" role="status"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pendiente"/></svg><span id="cap-estado-texto"></span></p>
+      <div class="aviso-en-linea aviso-en-linea--error" id="cap-error" role="alert" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#error"/></svg>
+        <div class="pila-mini"><strong id="cap-error-titulo"></strong><span id="cap-error-texto"></span></div>
+      </div>
+      <button type="button" class="cap-marco" id="cap-marco" aria-pressed="false" hidden><img id="cap-imagen" alt=""></button>
+      <p class="pequeno suave" id="cap-meta"></p>
+      <p class="pequeno suave" id="cap-simulado-nota" data-t="captura.simulada" hidden></p>
+      <div class="aviso-en-linea aviso-en-linea--exito" id="cap-guardada" role="status" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#hecho"/></svg>
+        <div class="pila-mini"><strong data-t="captura.guardadaEn"></strong><span class="ruta mono pequeno" id="cap-ruta"></span></div>
+      </div>
+    </div>
+    <div class="dialogo__acciones">
+      <button type="button" class="btn" id="cap-descartar" data-t="captura.descartar"></button>
+      <button type="button" class="btn" id="cap-abrir" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="captura.abrirCarpeta"></span></button>
+      <button type="button" class="btn btn--primario" id="cap-guardar" disabled><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span data-t="captura.guardar"></span></button>
+      <button type="button" class="btn btn--primario" id="cap-listo" data-cerrar-dialogo data-t="captura.listo" hidden></button>
     </div>
   </dialog>
 
@@ -577,6 +633,11 @@
           <div class="ajuste__texto"><strong data-t="ajustes.atajo"></strong><span id="aj-atajo"></span></div>
         </div>
         <div class="ajuste">
+          <div class="ajuste__texto"><strong data-t="ajustes.capturas"></strong><span data-t="ajustes.capturasAyuda"></span>
+            <span class="ruta mono pequeno" id="aj-capturas-ruta"></span><span class="pequeno suave" id="aj-capturas-nota" data-t="ajustes.capturasNoExiste" hidden></span></div>
+          <button type="button" class="btn" id="aj-capturas-abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="captura.abrirCarpeta"></span></button>
+        </div>
+        <div class="ajuste">
           <div class="ajuste__texto"><span class="con-info"><strong data-t="instalador.titulo"></strong><button type="button" class="info-boton" data-info="puertos" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></span><span data-t="instalador.ayuda"></span></div>
           <div class="bloque-codigo ajuste__ancho">
             <div class="bloque-codigo__cabecera"><span data-t="instalador.estaConsola"></span>
@@ -625,6 +686,14 @@
         <button type="button" class="btn btn--sm abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#editar"/></svg><span></span></button>
         <button type="button" class="btn btn--sm reemitir"></button></div></td>
     </tr>
+  </template>
+  <template id="t-lote-captura">
+    <li class="lote-captura">
+      <input type="checkbox" class="marca" checked>
+      <span class="lote-captura__mini"><img alt=""></span>
+      <span class="lote-captura__texto"><strong class="equipo"></strong><span class="pequeno estado"></span></span>
+      <button type="button" class="btn btn--fantasma btn--sm ver" hidden></button>
+    </li>
   </template>
   <template id="t-fila-simulado">
     <tr>

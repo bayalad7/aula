@@ -19,6 +19,9 @@ const (
 	// CapRemote lets the teacher see and control the keyboard and mouse (§5.16).
 	// Windows, in window mode or as a service with its helper.
 	CapRemote Capability = "remote"
+	// CapScreenSnapshot sends one still image of the screen (§5.17). Windows,
+	// with the same capture and indicator as screen.thumb.
+	CapScreenSnapshot Capability = "screen.snapshot"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -55,6 +58,8 @@ var requiredCapability = map[Type]Capability{
 	TypeRemoteStart: CapRemote,
 	TypeRemoteInput: CapRemote,
 	TypeRemoteStop:  CapRemote,
+
+	TypeScreenSnapshotRequest: CapScreenSnapshot,
 }
 
 // RequiredCapability reports the capability needed to receive a message of

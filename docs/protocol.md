@@ -300,6 +300,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `code.view` | `code.share`, `code.clear` | v0 |
 | `msg.show` | `msg.show` | v0 |
 | `screen.thumb` | `screen.thumb.start`, `screen.thumb.stop` | v0.3 (Windows) |
+| `screen.snapshot` | `screen.snapshot.request` | v0.7 (§5.17). Windows, con la misma condición que `screen.thumb` (captura y distintivo); también los alumnos simulados. Linux y macOS no la declaran. |
 | `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Documentada, **pendiente** (§5.9) |
 | `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). Linux y macOS no la declaran. |
 | `app.block` | `app.block.set`, `app.block.clear` | v0.4 (§5.13). Windows, solo con el agente como servicio y su ayudante (D-016). |
@@ -351,6 +352,8 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `remote.input` | P → A | `remote` | `control_id`, `seq`, `events` | — (solo `error`) |
 | `remote.stop` | P → A | `remote` | `control_id` | `remote.ack` (`ended`); sin control vigente se ignora |
 | `remote.ack` | A → P | — | `ref_id`, `control_id`, `status`, `reason`? | — |
+| `screen.snapshot.request` | P → A | `screen.snapshot` | `snapshot_id`, `quality`, `max_width` | `screen.snapshot.response` (1 a 32 partes) o `error` |
+| `screen.snapshot.response` | A → P | — | `ref_id`, `snapshot_id`, `part`, `parts`, `data`; la parte 1 además `taken_at`, `hostname`, `username`, `width`, `height`, `size`, `sha256` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -435,7 +438,8 @@ Reglas del agente:
 - Si no puede capturar (por ejemplo, la sesión está bloqueada), responde **una vez** `error`
   `internal` con ese `ref_id` y lo sigue intentando en cada intervalo; el indicador sigue visible.
 - La transmisión termina con `screen.thumb.stop` o al **cerrarse la conexión**. Las capturas
-  solo viven en memoria; el agente no las escribe en disco.
+  solo viven en memoria; el agente no las escribe en disco. Una foto fija a resolución completa
+  es otro mensaje (`screen.snapshot.request`, §5.17).
 
 ### 5.7 `screen.thumb.frame` (A → P)
 
@@ -452,7 +456,8 @@ Reglas del agente:
 | `jpeg` | string | Imagen JPEG en Base64, ≤ **640 KiB** antes de codificar. Si la excede, el agente baja la calidad y lo reintenta. |
 
 La consola tampoco guarda los cuadros en disco: muestra el último de cada equipo y lo descarta
-al cerrar la vista, salvo que el profesor pida explícitamente guardar una captura (etapa futura).
+al cerrar la vista. Guardar una captura es otro mensaje y una acción explícita del profesor
+(§5.17).
 
 ### 5.8 `screen.thumb.stop` (P → A)
 
@@ -875,6 +880,9 @@ Reglas:
   `remote.input` por segundo. El agente descarta, sin error, los que excedan 60 por segundo y los
   que lleguen en pausa o fuera de un control activo, y lo registra una vez por control.
 - Antes de `auth.ok`, como cualquier otro mensaje, → `error` `unauthorized` y cierre `1008`.
+- **Una captura no interrumpe el control.** Durante el control, la consola puede pedir
+  `screen.snapshot.request` (§5.17) al mismo equipo: no termina ni pausa el control, y el video
+  sigue (como mucho se salta un cuadro mientras se codifica la captura).
 
 #### 5.16.1 Permisos del sistema operativo
 
@@ -883,6 +891,101 @@ Reglas:
 | Windows | `SendInput` con `MOUSEEVENTF_ABSOLUTE` y `KEYEVENTF_SCANCODE`, **desde la sesión del alumno**: en modo servicio lo hace el ayudante (D-016), con el token del alumno y sin elevar; en modo ventana, el propio agente. Sin ayudante no se declara `remote`. | Ningún privilegio. Windows **no** deja inyectar Ctrl+Alt+Supr ni entrada en el escritorio seguro (pantalla de bloqueo, aviso de UAC). Por UIPI, el ayudante no controla ventanas de administrador, y Windows no avisa del fallo. Las teclas que atiende el Windows del profesor (Win, Alt+Tab, Ctrl+Alt+Supr) no llegan a la consola y no se envían. |
 | Linux (pendiente) | X11: extensión XTest. | Wayland no deja que un cliente inyecte entrada: haría falta el portal `org.freedesktop.portal.RemoteDesktop`, que pide aprobación en cada sesión. No se declara `remote`. |
 | macOS (pendiente) | `CGEventPost`. | Permisos de **Accesibilidad** y **Grabación de pantalla** (TCC), que concede el usuario o un perfil MDM. No se declara `remote`. |
+
+### 5.17 Captura de pantalla de un alumno (`screen.snapshot.*`)
+
+> Implementado en v0.7 (Windows), aprobado el 2026-11-05. Implementación en `internal/snapshot`;
+> avisos en `docs/privacidad.md` reglas 7 y 44–49.
+
+El profesor pide **una** imagen fija, a resolución completa, de la pantalla de un alumno, para
+revisarla o guardarla como evidencia. A diferencia de las miniaturas (§5.6), que son un flujo
+efímero en memoria, la consola **puede guardar** esta imagen en su disco, pero solo cuando el
+profesor pulsa «Guardar». El agente nunca la escribe en disco.
+
+```
+Consola (P)                                        Agente (A)
+   |-- screen.snapshot.request (snapshot_id) ------->|  distintivo «tomando una captura» (5 s)
+   |                                                 |  captura el monitor principal, en memoria
+   |                                                 |  aviso en la ventana del alumno (notify)
+   |<-- screen.snapshot.response part 1/N (+ datos) -|
+   |<-- screen.snapshot.response part 2/N -----------|
+   |<-- …                         part N/N ----------|  libera la imagen
+   |  ensambla, comprueba size y sha256,             |
+   |  vista previa; «Guardar» la escribe en disco    |
+```
+
+**`screen.snapshot.request` (P → A)**
+
+```json
+{ "snapshot_id": "9a3c…", "quality": 90, "max_width": 0 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `snapshot_id` | string | UUID v4 de la consola; identifica la captura en sus partes. |
+| `quality` | entero | Calidad JPEG, 50–95. La consola envía **90**. |
+| `max_width` | entero | `0` = resolución nativa del monitor (lo que envía la consola), o 640–7680. La imagen se reduce conservando la proporción; nunca se amplía. |
+
+**`screen.snapshot.response` (A → P)**
+
+```json
+{ "ref_id": "<id del request>", "snapshot_id": "9a3c…", "part": 1, "parts": 4,
+  "taken_at": 1793883726000, "hostname": "LAB3-PC07", "username": "alumno07",
+  "width": 1920, "height": 1080, "size": 1843211,
+  "sha256": "5f0c…", "data": "/9j/4AAQSkZJRgABAQ…" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `ref_id` | string | `id` del `screen.snapshot.request`. |
+| `snapshot_id` | string | El del pedido. |
+| `part`, `parts` | entero | 1 ≤ `part` ≤ `parts` ≤ 32. Las partes salen en orden. |
+| `data` | string | Un trozo del JPEG en Base64: ≤ **512 KiB** antes de codificar, no vacío. Todos los trozos miden 512 KiB salvo el último. |
+| `taken_at` | entero | Solo en la parte 1: hora de la captura en milisegundos Unix. |
+| `hostname`, `username` | string | Solo en la parte 1: el equipo (1–255) y el usuario de la sesión (0–256) en el momento de la captura. |
+| `width`, `height` | entero | Solo en la parte 1: tamaño de la imagen, 1–8192. |
+| `size` | entero | Solo en la parte 1: bytes del JPEG completo, 1–16 MiB; `parts` = ⌈`size` / 512 KiB⌉. |
+| `sha256` | string | Solo en la parte 1: huella SHA-256 del JPEG completo, 64 caracteres hexadecimales en minúsculas. |
+
+**Troceo.** Un mensaje no puede pasar de 1 MiB (§7) y una captura nativa pesa de 0.5 a 4 MB:
+el agente parte el JPEG en trozos de 512 KiB (≈ 683 KiB en Base64, con la envoltura por debajo
+de 1 MiB). El troceo es común (`protocol.SplitParts` y `protocol.Reassembly`) para que lo
+reutilice la recolección de archivos (`file.collect`).
+
+Reglas del agente:
+
+- **Aviso antes de capturar.** Muestra el distintivo nativo de la regla 6 con «Tu profesor está
+  tomando una captura de tu pantalla» durante 5 s, y **después** captura: el distintivo sale en
+  la imagen. Si el profesor ya ve la pantalla (miniaturas) o la controla (§5.16), el distintivo
+  ya está a la vista y no cambia de texto. Si no lo puede mostrar, no captura y responde `error`
+  `internal`. Tras capturar, la ventana del alumno muestra el aviso «Captura de pantalla»
+  (`docs/privacidad.md` regla 44), sin quitar el foco.
+- Captura el **monitor principal** a `max_width` (o nativo) y la calidad pedida. Si el JPEG pasa
+  de 16 MiB, baja la calidad de 10 en 10 hasta 50; si aun así no cabe → `error`
+  `message_too_large`.
+- **Una a la vez.** Una petición mientras otra se captura o se envía → `error` `internal`
+  («ya hay una captura en curso»). No depende de las miniaturas ni del control remoto.
+- Si no puede capturar (sesión bloqueada, escritorio seguro) → `error` `internal`.
+- La imagen vive **solo en memoria** y se libera al enviar la última parte o al cerrarse la
+  conexión. Si la conexión se cierra a mitad, no se reanuda.
+
+Reglas de la consola:
+
+- Solo la pide a equipos que declararon `screen.snapshot`, reales o simulados.
+- Ensambla por `snapshot_id` y descarta partes de un pedido que no es suyo, repetidas o fuera de
+  rango. Al completar, comprueba `size` y `sha256`; si no coinciden, la captura falla.
+- Si no llega completa en **30 s** desde el pedido, la descarta.
+- La captura queda **en memoria** hasta que el profesor la guarda o la descarta; se descarta
+  también al cerrar la clase o cambiar de canal. Solo «Guardar» la escribe en disco
+  (`docs/privacidad.md` reglas 45–46).
+
+#### 5.17.1 Permisos del sistema operativo
+
+| SO | Cómo | Requiere y límites |
+|---|---|---|
+| Windows | GDI (`BitBlt` del escritorio), la misma captura de las miniaturas (`platform.ScreenCapture`), **desde la sesión del alumno**: en modo servicio la hace el ayudante (`CallScreenCapture`, D-016), con el token del alumno y sin elevar. | Ningún privilegio. La pantalla de bloqueo y el aviso de UAC (escritorio seguro) no se pueden capturar: `error` `internal`. Sin ayudante no se declara `screen.snapshot`. |
+| Linux (pendiente) | X11: `XGetImage` del root window. | Sin permiso en X11. En **Wayland** un cliente no puede capturar la pantalla: haría falta el portal `org.freedesktop.portal.Screenshot`, que pide la aprobación del alumno en cada captura o sesión. No se declara. |
+| macOS (pendiente) | `CGDisplayCreateImage` / ScreenCaptureKit. | Permiso de **Grabación de pantalla** (TCC), que concede el usuario o un perfil MDM. No se declara. |
 
 ---
 
@@ -910,6 +1013,8 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `msg.show.text` | 2000 caracteres | `error` `invalid_message` |
 | `screen.thumb.start.interval_ms` | 500–10 000 ms (≤ 2 cuadros/s) | `error` `invalid_message` |
 | `screen.thumb.frame.jpeg` | 640 KiB antes de Base64 | `error` `message_too_large`; la sesión sigue. |
+| `screen.snapshot.request.quality` / `max_width` | 50–95 / 0 o 640–7680 | `error` `invalid_message` |
+| `screen.snapshot.response.data` | 512 KiB por parte antes de Base64; ≤ 32 partes; 16 MiB en total | `error` `message_too_large` (parte) o `invalid_message`; la sesión sigue. |
 | `screen.freeze.message` (pendiente) | 300 caracteres | `error` `invalid_message` |
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
 | `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
@@ -953,6 +1058,8 @@ emisor verifica el tamaño final de la envoltura.
 - De `remote.*` se registran `control_id`, `status`, `reason` y la cantidad de eventos y de
   descartes. **Nunca** qué teclas se enviaron, ni las coordenadas, ni la entrada del alumno que
   causó una pausa (el agente solo sabe *que* la hubo).
+- De `screen.snapshot.*` se registran `snapshot_id`, `part`/`parts`, tamaños, dimensiones y el
+  resultado. **Nunca** `data`, ni la ruta donde la consola guardó la imagen.
 - `hello` revela al profesor el usuario y el equipo del alumno. Es intencional (monitoreo
   transparente) y se explica en `docs/privacidad.md`.
 

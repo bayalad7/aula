@@ -72,6 +72,12 @@ func samplePayloads() []Payload {
 		RemoteStop{ControlID: testRefID},
 		RemoteAck{RefID: testSnippetID, ControlID: testRefID, Status: RemoteActive},
 		RemoteAck{RefID: testSnippetID, ControlID: testRefID, Status: RemoteEnded, Reason: RemoteIdle},
+		ScreenSnapshotRequest{SnapshotID: testRefID, Quality: DefaultSnapshotQuality},
+		ScreenSnapshotRequest{SnapshotID: testRefID, Quality: 70, MaxWidth: 1920},
+		ScreenSnapshotResponse{RefID: testSnippetID, SnapshotID: testRefID, Part: 1, Parts: 1, Data: []byte{0xff, 0xd8, 0xff, 0xd9},
+			TakenAt: 1792771200300, Hostname: "LAB3-PC07", Username: "alumno07", Width: 1920, Height: 1080, Size: 4,
+			SHA256: strings.Repeat("ab", 32)},
+		ScreenSnapshotResponse{RefID: testSnippetID, SnapshotID: testRefID, Part: 2, Parts: 3, Data: []byte{1, 2, 3}},
 	}
 }
 
@@ -368,12 +374,13 @@ func TestRequiredCapability(t *testing.T) {
 		TypeWebFilterSet: CapWebFilter, TypeWebFilterClear: CapWebFilter,
 		TypePowerAction: CapPower, TypePowerCancel: CapPower,
 		TypeRemoteStart: CapRemote, TypeRemoteInput: CapRemote, TypeRemoteStop: CapRemote,
+		TypeScreenSnapshotRequest: CapScreenSnapshot,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}

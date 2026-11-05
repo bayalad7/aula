@@ -57,6 +57,9 @@ const (
 	TypeRemoteInput Type = "remote.input"
 	TypeRemoteStop  Type = "remote.stop"
 	TypeRemoteAck   Type = "remote.ack"
+	// Still screenshot of one student (docs/protocol.md §5.17).
+	TypeScreenSnapshotRequest  Type = "screen.snapshot.request"
+	TypeScreenSnapshotResponse Type = "screen.snapshot.response"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -252,6 +255,9 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeRemoteInput: decodeAs[RemoteInput],
 	TypeRemoteStop:  decodeAs[RemoteStop],
 	TypeRemoteAck:   decodeAs[RemoteAck],
+
+	TypeScreenSnapshotRequest:  decodeAs[ScreenSnapshotRequest],
+	TypeScreenSnapshotResponse: decodeAs[ScreenSnapshotResponse],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

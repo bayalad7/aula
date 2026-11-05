@@ -33,12 +33,14 @@
   function aplicarTextos(root) {
     for (const e of root.querySelectorAll("[data-t]")) e.textContent = T(e.dataset.t);
     for (const e of root.querySelectorAll("[data-t-aria-label]")) e.setAttribute("aria-label", T(e.dataset.tAriaLabel));
+    for (const e of root.querySelectorAll("[data-t-title]")) e.title = T(e.dataset.tTitle);
   }
 
   // --- Estado: tira de identidad, bandas y título ----------------------------------------------
   // El título junta el estado, lo que el profesor hace con este equipo y las
   // órdenes pendientes, como piden las reglas 1, 6, 12, 20 y 26.
   let status = { state: "searching", channel: "", teacher: "" };
+  const ES = "estado."; // + estado de la conexión
   let restricted = false;
   let pendingPower = "";
 
@@ -48,22 +50,54 @@
     let t = status.viewed ? T("titulo.vista", v) : status.watching ? T("titulo.recibiendo", v) : T(TI + status.state, v);
     if (restricted && status.state === "connected") t += T("titulo.restricciones");
     if (pendingPower && status.state !== "unconfigured") t += T(TI + "pendiente." + pendingPower);
+    // Lo nuevo que el alumno aún no mira, al frente del título (barra de tareas).
+    const n = sinVer();
+    if (n > 0) t = T("titulo.nuevos", { n }) + t;
+    if (t === document.title) return;
     document.title = t;
     if (rt.WindowSetTitle) rt.WindowSetTitle(t); // también en la barra de tareas
+    api.ReportWindow(t).catch(() => {}); // y en el icono del área de notificación
+    pintarCompacto();
   }
 
   function renderStatus(s) {
     status = s;
     const v = { canal: s.channel, profesor: s.teacher };
     $("estado").dataset.estado = s.state;
-    const ES = "estado."; // + estado de la conexión
     $("estado-texto").textContent = T(ES + s.state, v);
     $("estado-detalles").hidden = !s.detail;
     $("estado-detalle").textContent = s.detail || "";
     $("banda-vista").hidden = !s.viewed;
     $("banda-vista-texto").textContent = s.viewed ? T("banda.vista", v) : "";
     title();
+    pintarCompacto();
   }
+
+  // --- Modo compacto (prompt 19) ----------------------------------------------------------------
+  // La ventana se encoge a una tira en una esquina: el estado, lo nuevo y la
+  // pantalla vista. No queda encima de las demás ni toma el foco.
+  let compacto = false;
+  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length;
+  function pintarCompacto() {
+    const v = { canal: status.channel, profesor: status.teacher };
+    $("compacto").dataset.estado = status.state;
+    $("compacto-texto").textContent = status.state === "connected" ? T("compacto.conectado", v) : T(ES + status.state, v);
+    const n = sinVer();
+    $("compacto-nuevos").hidden = n === 0;
+    $("compacto-nuevos").textContent = n ? P("compacto.nuevos", n) : "";
+    $("compacto").dataset.nuevo = String(n > 0);
+    $("compacto-vista").hidden = !status.viewed;
+  }
+  function ponerCompacto(on, avisarAGo) {
+    compacto = on;
+    document.body.classList.toggle("compacto", on);
+    $("compacto").hidden = !on;
+    pintarCompacto();
+    if (avisarAGo) api.SetCompact(on).catch(() => {});
+    $(on ? "restaurar" : "compactar").focus();
+  }
+  $("compactar").addEventListener("click", () => ponerCompacto(true, true));
+  $("restaurar").addEventListener("click", () => ponerCompacto(false, true));
 
   // --- Código ---------------------------------------------------------------------------------
   const list = $("snippets");
@@ -175,6 +209,7 @@
     $("codigos-atajo").hidden = snippets.length === 0;
     if (!eligio || !orden.some((s) => s.id === seleccionado)) seleccionado = orden.length ? orden[0].id : "";
     marcarSeleccion();
+    title();
   }
 
   function marcarSeleccion() {
@@ -189,6 +224,7 @@
     const li = nodoPorId(id);
     if (li) li.querySelector(".nuevo").hidden = true; // ya lo vio
     marcarSeleccion();
+    title();
   }
   const nodoPorId = (id) => [...list.children].find((li) => li.dataset.id === id);
 
@@ -462,6 +498,8 @@
   rt.EventsOn(ev.STATUS, renderStatus);
   rt.EventsOn(ev.BOARD, (b) => renderBoard(b.snippets));
   rt.EventsOn(ev.NOTICES, (n) => renderNotices(n.notices));
+  // Go sale del modo compacto cuando el profesor hace algo que el alumno debe ver.
+  rt.EventsOn(ev.COMPACT, (c) => { if (!c.on && compacto) ponerCompacto(false, false); });
   api.View().then((v) => {
     renderStatus(v.status);
     renderBoard(v.snippets);

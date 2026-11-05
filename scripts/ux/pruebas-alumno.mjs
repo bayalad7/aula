@@ -132,6 +132,33 @@ await caso("copia-falla", "copia-falla", async (p) => {
   ok(t.includes("portapapeles"), "el motivo no se ve: «" + t + "»");
 });
 
+// Modo compacto: el botón encoge la ventana (SetCompact) y muestra la tira;
+// Go la devuelve con aula:compact cuando el profesor hace algo que se debe ver.
+await caso("compacto", "pantalla-vista", async (p) => {
+  await p.click("#compactar");
+  await sleep(100);
+  ok(await p.evaluate(() => !document.getElementById("compacto").hidden && document.body.classList.contains("compacto")), "no se encogió");
+  ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "SetCompact" && c[1][0] === true)), "no avisó a Go");
+  ok(await p.evaluate(() => !document.getElementById("compacto-vista").hidden), "en compacto no se ve que la pantalla se está viendo");
+  await emitir(p, "aula:compact", { on: false });
+  await sleep(100);
+  ok(await p.evaluate(() => document.getElementById("compacto").hidden && !document.body.classList.contains("compacto")), "aula:compact no la devolvió");
+});
+
+// Lo nuevo sin ver va al frente del título (barra de tareas) y al icono del
+// área de notificación (ReportWindow); al verlo, se quita.
+await caso("titulo-nuevos", "varios-codigos", async (p) => {
+  const prev = await p.evaluate(() => window.go.main.App.View().then((v) => v.snippets));
+  await emitir(p, "aula:board", { snippets: [...prev, { id: "sn-9", exercise: "9", title: "Otro", lang: "go", content: "x\n", receivedAt: new Date().toISOString() }] });
+  await sleep(100);
+  let t = await p.evaluate(() => window.__title);
+  ok(t.startsWith("(1) Aula — conectado"), "título: " + t);
+  ok(await p.evaluate((x) => window.__calls.some((c) => c[0] === "ReportWindow" && c[1][0] === x), t), "el icono no recibió el título");
+  await p.click('#snippets > li[data-id="sn-9"] .codigo-recibido__titulo');
+  t = await p.evaluate(() => window.__title);
+  ok(t.startsWith("Aula — conectado"), "tras verlo, el título sigue con el contador: " + t);
+});
+
 await cerrar();
 pasaron.forEach((n) => console.log("✓ " + n));
 fallas.forEach((n) => console.error("✗ " + n));

@@ -79,6 +79,9 @@ func runHelper(channel string, log *slog.Logger) int {
 		go func() {
 			_ = link.Run(ctx)
 			log.Info("helper channel closed")
+			if app.quitWindow != nil {
+				app.quitWindow()
+			}
 			runtime.Quit(ctx)
 		}()
 	}, func() {
@@ -153,6 +156,8 @@ func (h *helper) event(ctx context.Context, app *App, name string, data json.Raw
 		runtime.EventsEmit(ctx, e.Event, e.Data) // the window sets its own title from the status
 	case agentsvc.EventRaise:
 		app.raise()
+	case agentsvc.EventNotify:
+		app.notify()
 	case agentsvc.EventMaximize:
 		var on bool
 		if json.Unmarshal(data, &on) == nil {

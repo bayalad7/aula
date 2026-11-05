@@ -11,12 +11,21 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
    - Buscando: "Aula — buscando canal <X>"
    - Sin conexión: "Aula — sin conexión (canal <X>); reintentando"
    - Sin configurar: "Aula — sin configurar" (con la explicación)
-2. **Al cerrar la ventana, el agente no se detiene y debe quedar ejecutandose en un proceso en segundo plano.**
+2. **Al cerrar la ventana, el agente no se detiene: sigue en segundo plano, a la vista.** Cerrar
+   la ventana la oculta y deja el icono de Aula en el área de notificación de Windows («Mostrar
+   iconos ocultos»), con el estado al pasar el puntero y «Abrir Aula». Mientras está oculta, el
+   código y los avisos que llegan solo marcan el icono; la ventana no reaparece sola, salvo por
+   una acción del profesor sobre el equipo (energía, restricciones o su transmisión, reglas 12, 20
+   y 26). El distintivo de pantalla vista (regla 6) no depende de la ventana: se ve igual. Donde no
+   hay área de notificación (Linux y macOS por ahora), cerrar minimiza.
 3. **El agente se presenta con su nombre real** (equipo y usuario del sistema) y solo después de
    comprobar que la consola es la autorizada (`docs/protocol.md` §3.1). Sabe quién lo ve.
-4. **Lo que recibe el alumno se ve.** El código y los avisos aparecen en pantalla y la ventana
-   se trae al frente. Las confirmaciones (`code.ack`, `msg.ack`) solo dicen "se mostró", no
-   "se leyó" ni "se copió".
+4. **Lo que recibe el alumno se ve, sin quitarle el teclado.** El código y los avisos aparecen en
+   la ventana de Aula, pero nunca le quitan el foco ni la mueven (prompt 19). Si está visible, se
+   actualizan en su lugar; si está minimizada, el botón de la barra de tareas parpadea y el título
+   dice cuántos hay nuevos; si está cerrada al área de notificación, el icono se marca. Solo las
+   acciones del profesor sobre el equipo traen la ventana al frente (reglas 12, 20 y 26). Las
+   confirmaciones (`code.ack`, `msg.ack`) solo dicen "se mostró", no "se leyó" ni "se copió".
 5. **Registros.** No se registran el código, los textos de los avisos, las claves, los nonces ni
    las firmas. Sí el tipo de mensaje, los identificadores, el equipo y los tamaños.
 

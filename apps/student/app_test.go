@@ -25,9 +25,10 @@ func (f *fakeClipboard) WriteText(_ context.Context, s string) error { f.text = 
 func (f *fakeClipboard) ReadText(context.Context) (string, error)    { return f.text, nil }
 
 type recorder struct {
-	mu     sync.Mutex
-	events map[string][]any
-	raised int
+	mu       sync.Mutex
+	events   map[string][]any
+	raised   int
+	notified int
 }
 
 func (r *recorder) emit(name string, data any) {
@@ -58,6 +59,7 @@ func newTestApp(clip *fakeClipboard) (*App, *recorder) {
 	}
 	a.emit = rec.emit
 	a.raise = func() { rec.mu.Lock(); rec.raised++; rec.mu.Unlock() }
+	a.notify = func() { rec.mu.Lock(); rec.notified++; rec.mu.Unlock() }
 	return a, rec
 }
 
@@ -74,8 +76,9 @@ func TestCodeShareShowsAndCopiesExactly(t *testing.T) {
 	if !ok || len(b.Snippets) != 1 || b.Snippets[0].Content != indented {
 		t.Fatalf("board event = %#v", rec.last(EventBoard))
 	}
-	if rec.raised != 1 {
-		t.Fatal("window not raised on code.share")
+	// Code never takes the keyboard (prompt 19): it notifies, never raises.
+	if rec.notified != 1 || rec.raised != 0 {
+		t.Fatalf("code.share: notified %d, raised %d; want 1 and 0", rec.notified, rec.raised)
 	}
 	if err := a.Copy(share.SnippetID); err != nil {
 		t.Fatal(err)
@@ -93,6 +96,19 @@ func TestCodeShareShowsAndCopiesExactly(t *testing.T) {
 	}
 	if v := a.View(); v.Snippets == nil || len(v.Snippets) != 0 {
 		t.Fatal("View after clear")
+	}
+}
+
+// Notices, like code, notify without raising the window: the student keeps
+// the keyboard focus. Only the teacher's actions on the computer raise it
+// (power, restrictions, broadcast; their own tests check it).
+func TestNoticesNeverRaise(t *testing.T) {
+	a, rec := newTestApp(nil)
+	a.recv.Handle(protocol.New(protocol.MsgShow{Text: "Guarden su trabajo", Level: protocol.LevelWarning}))
+	a.recv.Handle(protocol.New(protocol.CodeShare{SnippetID: protocol.NewID(), Title: "F", Lang: "go", Content: "x", Mode: protocol.ModeAppend}))
+	a.recv.Handle(protocol.New(protocol.CodeClear{}))
+	if rec.raised != 0 || rec.notified != 2 {
+		t.Fatalf("raised %d, notified %d; want 0 and 2 (clear says nothing)", rec.raised, rec.notified)
 	}
 }
 

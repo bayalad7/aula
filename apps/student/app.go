@@ -45,10 +45,16 @@ type App struct {
 	log    *slog.Logger
 
 	// UI hooks, set at startup (replaced in tests).
-	emit     func(event string, data any)
-	raise    func()        // bring the window to the front
-	maximize func(on bool) // maximize (broadcast) or restore the window
-	onTop    func(on bool) // keep the window above the others (power notice)
+	emit   func(event string, data any)
+	raise  func() // bring the window to the front: power, restrictions, broadcast (window.go)
+	notify func() // code or a notice arrived: tell without taking the focus (window.go)
+	// compactHook and trayText act on this process's window (window.go);
+	// nil until it exists.
+	compactHook func(on bool) error
+	trayText    func(text string)
+	quitWindow  func()        // before runtime.Quit: let the window close (window.go)
+	maximize    func(on bool) // maximize (broadcast) or restore the window
+	onTop       func(on bool) // keep the window above the others (power notice)
 
 	// The frontend reports whether it can play the broadcast; start waits up
 	// to mediaWait for it (0: do not wait) before declaring the capability.
@@ -98,7 +104,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a := &App{
 		cfg: cfg, pub: pub, cfgErr: cfgErr, hello: hello,
 		board: codedist.NewBoard(0), clip: clip, clipEr: clipErr, log: log,
-		emit: func(string, any) {}, raise: func() {}, maximize: func(bool) {}, onTop: func(bool) {},
+		emit: func(string, any) {}, raise: func() {}, notify: func() {}, maximize: func(bool) {}, onTop: func(bool) {},
 		mediaReady: make(chan struct{}), restart: make(chan struct{}, 1),
 	}
 	a.recv = &codedist.Receiver{Board: a.board, OnBoard: a.onBoard, OnNotice: a.onNotice}
@@ -379,7 +385,7 @@ func (a *App) onBoard(snippets []codedist.Snippet) {
 	}
 	a.emit(EventBoard, Board{Snippets: snippets})
 	if len(snippets) > 0 {
-		a.raise()
+		a.notify() // never raise: the student keeps the keyboard (prompt 19)
 	}
 }
 
@@ -392,7 +398,7 @@ func (a *App) onNotice(n codedist.Notice) {
 	list := slices.Clone(a.notices)
 	a.mu.Unlock()
 	a.emit(EventNotices, Notices{Notices: list})
-	a.raise()
+	a.notify()
 }
 
 func (a *App) setStatus(s Status) {
@@ -455,6 +461,24 @@ func (a *App) Copy(snippetID string) error {
 	}
 	a.log.Info("snippet copied", "snippet", snippetID, "bytes", len(s.Content))
 	return nil
+}
+
+// SetCompact shrinks the window to a strip in a corner of the screen, or
+// restores it (prompt 19). It acts on this process's window, also in the
+// service's helper: it is never forwarded.
+func (a *App) SetCompact(on bool) error {
+	if a.compactHook == nil {
+		return nil
+	}
+	return a.compactHook(on)
+}
+
+// ReportWindow receives the window's title, as the page wrote it, for the
+// notification area icon's text. Local to this process, like SetCompact.
+func (a *App) ReportWindow(title string) {
+	if a.trayText != nil {
+		a.trayText(title)
+	}
 }
 
 // DismissNotice hides a notice.

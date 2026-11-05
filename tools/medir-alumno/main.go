@@ -6,6 +6,12 @@
 // ventana de Aula pasa a primer plano cuando llega un código (le quitaría el
 // foco al alumno).
 //
+// Con -ventana, en lugar de medir comprueba la ventana (prompt 19, entrega D)
+// actuando solo sobre la ventana del agente, nunca con teclado ni mouse: la
+// minimiza y le manda código (debe seguir minimizada y sin tomar el primer
+// plano), le manda WM_CLOSE como la X (el agente debe seguir vivo con la
+// ventana oculta) y le manda otro código (no debe reaparecer).
+//
 // Uso (Windows):
 //
 //	go run ./tools/medir-alumno -exe apps/student/build/bin/aula-cliente.exe
@@ -34,12 +40,16 @@ import (
 
 const channel = "7"
 
+var soloVentana bool
+
 func main() {
 	exe := flag.String("exe", "", "aula-cliente.exe a medir (vacío: se compila ./apps/student)")
 	reposo := flag.Duration("reposo", 60*time.Second, "tiempo de medición en reposo")
 	recibiendo := flag.Duration("recibiendo", 60*time.Second, "tiempo de medición recibiendo código")
 	cada := flag.Duration("cada", 2*time.Second, "cada cuánto llega un código mientras recibe")
+	ventana := flag.Bool("ventana", false, "comprobar la ventana en vez de medir")
 	flag.Parse()
+	soloVentana = *ventana
 	if err := run(*exe, *reposo, *recibiendo, *cada); err != nil {
 		fmt.Fprintln(os.Stderr, "medir-alumno:", err)
 		os.Exit(1)
@@ -105,6 +115,9 @@ func run(exe string, reposo, recibiendo, cada time.Duration) error {
 	}
 	fmt.Println("Conectado. Se asienta 10 s…")
 	time.Sleep(10 * time.Second)
+	if soloVentana {
+		return checkWindow(ctx, con, pid)
+	}
 
 	idle, err := measure(pid, reposo, nil)
 	if err != nil {
@@ -162,3 +175,46 @@ func run(exe string, reposo, recibiendo, cada time.Duration) error {
 
 // sample is a 25-line snippet, about what a class sends.
 var sample = strings.Repeat("def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\n", 5)
+
+// checkWindow runs the window checks of -ventana.
+func checkWindow(ctx context.Context, con *session.Console, pid int) error {
+	n := 0
+	send := func() {
+		n++
+		_, _ = con.Broadcast(ctx, protocol.CodeShare{SnippetID: fmt.Sprintf("v-%d", n), Title: "Ventana",
+			Lang: "python", Content: "print(1)\n", Mode: protocol.ModeAppend})
+		time.Sleep(2 * time.Second)
+	}
+	ok := true
+	check := func(cond bool, what string) {
+		mark := "✓"
+		if !cond {
+			mark, ok = "✗", false
+		}
+		fmt.Println(mark, what)
+	}
+
+	w, err := agentWindow(pid)
+	if err != nil {
+		return err
+	}
+	minimize(w)
+	time.Sleep(time.Second)
+	fg := foreground()
+	send()
+	check(iconic(w), "minimizada, llega código: sigue minimizada")
+	check(foreground().pid == fg.pid, "minimizada, llega código: el primer plano no cambia ("+foreground().String()+")")
+
+	closeWindow(w)
+	time.Sleep(time.Second)
+	check(alive(pid), "cerrar (WM_CLOSE): el agente sigue en ejecución")
+	check(!visible(w), "cerrar: la ventana queda oculta")
+	send()
+	check(!visible(w), "oculta, llega código: no reaparece")
+	check(len(windowsAlive(pid)) > 0, "oculta: la ventana sigue existiendo")
+	if !ok {
+		return fmt.Errorf("la ventana no se comporta como se espera")
+	}
+	fmt.Println("La ventana se comporta como se espera (falta a ojo: el icono del área de notificación y el modo compacto).")
+	return nil
+}

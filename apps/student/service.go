@@ -283,6 +283,7 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 		sa.helper.Notify(agentsvc.EventEmit, emitted{Event: event, Data: data})
 	}
 	app.raise = func() { sa.helper.Notify(agentsvc.EventRaise, nil) }
+	app.notify = func() { sa.helper.Notify(agentsvc.EventNotify, nil) }
 	app.maximize = func(on bool) { sa.helper.Notify(agentsvc.EventMaximize, on) }
 	app.onTop = func(on bool) { sa.helper.Notify(agentsvc.EventOnTop, on) }
 	app.power.Session = sa.session

@@ -632,10 +632,11 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
   font-size: var(--t-sm); color: var(--c-texto-suave);
 }
 .estado-conexion__punto { flex: none; width: 0.625rem; height: 0.625rem; border-radius: 50%; background: var(--c-desconectado-solido); }
-.estado-conexion[data-estado="connected"] .estado-conexion__punto { background: var(--c-conectado-solido); }
-.estado-conexion[data-estado="searching"] .estado-conexion__punto,
-.estado-conexion[data-estado="disconnected"] .estado-conexion__punto { background: var(--c-advertencia-solido); }
-.estado-conexion[data-estado="unconfigured"] .estado-conexion__punto { background: var(--c-error-solido); }
+/* El punto toma el color del estado de su contenedor (la tira o el modo compacto). */
+[data-estado="connected"] > .estado-conexion__punto { background: var(--c-conectado-solido); }
+[data-estado="searching"] > .estado-conexion__punto,
+[data-estado="disconnected"] > .estado-conexion__punto { background: var(--c-advertencia-solido); }
+[data-estado="unconfigured"] > .estado-conexion__punto { background: var(--c-error-solido); }
 .estado-conexion__texto { color: var(--c-texto); font-weight: var(--peso-medio); }
 .estado-conexion__acciones { margin-left: auto; display: flex; gap: var(--e-1); }
 .estado-conexion__detalles { flex-basis: 100%; }

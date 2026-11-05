@@ -13,7 +13,7 @@ body { margin: 0; }
 .franja__detalle[hidden] { display: none; }
 .franja__detalle p { margin: var(--e-1) 0 0; overflow-wrap: anywhere; }
 
-main { padding: var(--e-4); display: grid; gap: var(--e-3); }
+#contenido { padding: var(--e-4); display: grid; gap: var(--e-3); }
 .vacio[hidden], .codigos:empty { display: none; }
 .avisos { display: grid; gap: var(--e-2); }
 .avisos:empty { display: none; }
@@ -25,9 +25,16 @@ main { padding: var(--e-4); display: grid; gap: var(--e-3); }
 .codigos__atajo { margin: 0; font-size: var(--t-sm); color: var(--c-texto-suave); }
 .codigos__atajo[hidden] { display: none; }
 
+/* Modo compacto: solo la tira; el resto vuelve al restaurar. */
+.modo-compacto[hidden] { display: none; }
+body.compacto .arriba, body.compacto #contenido, body.compacto .broadcast { display: none; }
+body.compacto .modo-compacto { min-height: 100vh; box-sizing: border-box; }
+.compacto-vista { display: inline-flex; align-items: center; gap: var(--e-1); background: var(--c-vista-solido); color: var(--c-vista-solido-texto); }
+.compacto-vista[hidden] { display: none; }
+
 /* La pantalla del profesor (regla 12): ocupa la ventana. */
 body.watching { display: flex; flex-direction: column; height: 100vh; }
-body.watching main { display: none; }
+body.watching #contenido { display: none; }
 .broadcast { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .broadcast[hidden] { display: none; }
 .bc-stage { position: relative; flex: 1; min-height: 0; overflow: auto; background: var(--c-video-fondo); }

@@ -52,6 +52,14 @@ await f("19-energia-cuenta", "energia-cuenta");
 await f("20-energia-forzada", "energia-forzada");
 await f("21-energia-fallida", "energia-fallida");
 
+// Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
+await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
+await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {
+  const prev = await p.evaluate(() => window.go.main.App.View().then((v) => v.snippets));
+  await emitir("aula:board", { snippets: [...prev, { id: "sn-4", exercise: "4", title: "Tabla", lang: "python", content: "print(5)\n",
+    receivedAt: new Date().toISOString() }] })(p);
+}) });
+
 // Tema y tamaño
 await f("22-oscuro-varios-codigos", "varios-codigos", { oscuro: true });
 await f("23-oscuro-aviso-y-restricciones", "restricciones", { oscuro: true, pasos: emitir("aula:notices",

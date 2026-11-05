@@ -25,7 +25,14 @@ type fgInfo struct {
 	name string
 }
 
-func (f fgInfo) String() string  { return f.name }
-func (f fgInfo) inTree(int) bool { return false }
-func foreground() fgInfo         { return fgInfo{name: "?"} }
-func aboveForeground(int) bool   { return false }
+func (f fgInfo) String() string        { return f.name }
+func (f fgInfo) inTree(int) bool       { return false }
+func foreground() fgInfo               { return fgInfo{name: "?"} }
+func aboveForeground(int) bool         { return false }
+func agentWindow(int) (uintptr, error) { return 0, errors.New("solo en Windows") }
+func windowsAlive(int) []uintptr       { return nil }
+func visible(uintptr) bool             { return false }
+func iconic(uintptr) bool              { return false }
+func minimize(uintptr)                 {}
+func closeWindow(uintptr)              {}
+func alive(int) bool                   { return false }

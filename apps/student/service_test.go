@@ -209,6 +209,14 @@ func TestServiceAgentFollowsItsHelper(t *testing.T) {
 	if len(clip) != 1 || clip[0] != "print(1)\n" || !sawEmit {
 		t.Fatalf("clipboard %q, events seen %v", clip, sawEmit)
 	}
+	// The code reached the window without taking the student's focus: the
+	// helper is told to notify, never to raise (prompt 19).
+	h.mu.Lock()
+	notified, raised := slices.Contains(h.evs, agentsvc.EventNotify), slices.Contains(h.evs, agentsvc.EventRaise)
+	h.mu.Unlock()
+	if !notified || raised {
+		t.Fatalf("code.share through the helper: notify %v, raise %v; want true and false", notified, raised)
+	}
 
 	// The helper goes (logoff, or the student killed it): no capabilities.
 	h.link.Close()

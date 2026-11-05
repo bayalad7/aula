@@ -13,7 +13,7 @@ import (
 // Backend → frontend: runtime.EventsEmit with one of the events below.
 // Frontend → backend: the bound methods of App (View, Copy, DismissNotice,
 // ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed,
-// PowerPostpone, DismissPower).
+// PowerPostpone, DismissPower, SetCompact, ReportWindow).
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -35,7 +35,15 @@ const (
 	// EventPower carries a PowerView when a power order starts, is
 	// postponed, runs, fails or ends (docs/privacidad.md rules 26-28).
 	EventPower = "aula:power"
+	// EventCompact carries a Compact when Go leaves the compact mode by
+	// itself: an action of the teacher brought the window forward.
+	EventCompact = "aula:compact"
 )
+
+// Compact is the compact mode of the window (prompt 19).
+type Compact struct {
+	On bool `json:"on"`
+}
 
 // PowerView is the power notice as the window shows it. Notice is nil when
 // there is none; the window counts RemainingS down by itself and words it by

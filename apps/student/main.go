@@ -10,6 +10,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v2"
@@ -96,6 +97,15 @@ func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func())
 	if err != nil {
 		return fmt.Errorf("frontend: %w", err)
 	}
+	var (
+		win     *appWindow
+		winOnce sync.Once
+	)
+	app.quitWindow = func() {
+		if win != nil {
+			win.quit() // let runtime.Quit close the window
+		}
+	}
 	return wails.Run(&options.App{
 		Title:     "Aula — Cliente",
 		Width:     900,
@@ -106,7 +116,7 @@ func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func())
 			Assets: files,
 		},
 		OnStartup: func(ctx context.Context) {
-			app.raise = func() { raiseWindow(ctx) }
+			app.raise = func() { raiseWindow(ctx) } // until the page is loaded (attachWindow)
 			app.maximize = func(on bool) {
 				if on {
 					runtime.WindowMaximise(ctx)
@@ -117,8 +127,24 @@ func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func())
 			app.onTop = func(on bool) { runtime.WindowSetAlwaysOnTop(ctx, on) }
 			onStartup(ctx)
 		},
-		OnShutdown: func(context.Context) { onShutdown() },
-		Bind:       []any{app},
+		// The window exists once the page is loaded: then its notification
+		// area icon and native controls (window.go).
+		OnDomReady: func(ctx context.Context) {
+			winOnce.Do(func() { win = app.attachWindow(ctx) })
+		},
+		OnBeforeClose: func(ctx context.Context) bool {
+			if win == nil {
+				return false
+			}
+			return win.beforeClose(ctx)
+		},
+		OnShutdown: func(context.Context) {
+			if win != nil {
+				win.quit()
+			}
+			onShutdown()
+		},
+		Bind: []any{app},
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId:               singleInstanceID,
 			OnSecondInstanceLaunch: func(options.SecondInstanceData) { app.raise() },
@@ -161,13 +187,4 @@ func openLog() *slog.Logger {
 
 func isVersionFlag(s string) bool {
 	return s == "version" || s == "-version" || s == "--version"
-}
-
-// raiseWindow shows the window when something arrives. Toggling always-on-top
-// gets past Windows' focus-stealing rules without keeping it on top.
-func raiseWindow(ctx context.Context) {
-	runtime.WindowUnminimise(ctx)
-	runtime.WindowShow(ctx)
-	runtime.WindowSetAlwaysOnTop(ctx, true)
-	time.AfterFunc(1500*time.Millisecond, func() { runtime.WindowSetAlwaysOnTop(ctx, false) })
 }

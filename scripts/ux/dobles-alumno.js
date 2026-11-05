@@ -83,5 +83,7 @@
     BroadcastFailed: call("BroadcastFailed"),
     PowerPostpone: call("PowerPostpone"),
     DismissPower: call("DismissPower"),
+    SetCompact: call("SetCompact"),
+    ReportWindow: call("ReportWindow"),
   } } };
 })();

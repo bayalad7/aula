@@ -17,6 +17,10 @@ var (
 	procEnumWindows          = user32.NewProc("EnumWindows")
 	procIsWindowVisible      = user32.NewProc("IsWindowVisible")
 	procIsIconic             = user32.NewProc("IsIconic")
+	procShowWindow           = user32.NewProc("ShowWindow")
+	procPostMessageW         = user32.NewProc("PostMessageW")
+	procGetWindowLongPtrW    = user32.NewProc("GetWindowLongPtrW")
+	procGetWindow            = user32.NewProc("GetWindow")
 )
 
 // processMemoryCountersEx is PROCESS_MEMORY_COUNTERS_EX.
@@ -230,4 +234,58 @@ func aboveForeground(root int) bool {
 	})
 	procEnumWindows.Call(cb, 0) // top-level windows, top of the z-order first
 	return found
+}
+
+// windowsAlive lists the top-level windows of the agent process that have a
+// taskbar button (not tool windows, not owned): its Wails window.
+func windowsAlive(pid int) []uintptr {
+	var out []uintptr
+	cb := windows.NewCallback(func(hwnd, _ uintptr) uintptr {
+		var p uint32
+		procGetWindowThreadPID.Call(hwnd, uintptr(unsafe.Pointer(&p)))
+		if int(p) != pid {
+			return 1
+		}
+		if ex, _, _ := procGetWindowLongPtrW.Call(hwnd, ^uintptr(19)); ex&0x80 != 0 { // WS_EX_TOOLWINDOW
+			return 1
+		}
+		if o, _, _ := procGetWindow.Call(hwnd, 4); o != 0 { // GW_OWNER
+			return 1
+		}
+		out = append(out, hwnd)
+		return 1
+	})
+	procEnumWindows.Call(cb, 0)
+	return out
+}
+
+// agentWindow is the visible main window of the agent.
+func agentWindow(pid int) (uintptr, error) {
+	for _, w := range windowsAlive(pid) {
+		if visible(w) {
+			return w, nil
+		}
+	}
+	return 0, fmt.Errorf("el agente %d no tiene una ventana visible", pid)
+}
+
+func visible(w uintptr) bool { r, _, _ := procIsWindowVisible.Call(w); return r != 0 }
+func iconic(w uintptr) bool  { r, _, _ := procIsIconic.Call(w); return r != 0 }
+
+// minimize and closeWindow act on the agent's own window, like its buttons;
+// they do not send keyboard or mouse input.
+func minimize(w uintptr)    { procShowWindow.Call(w, 6) }            // SW_MINIMIZE
+func closeWindow(w uintptr) { procPostMessageW.Call(w, 0x10, 0, 0) } // WM_CLOSE
+
+func alive(pid int) bool {
+	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
+	if err != nil {
+		return false
+	}
+	defer windows.CloseHandle(h)
+	var code uint32
+	if err := windows.GetExitCodeProcess(h, &code); err != nil {
+		return false
+	}
+	return code == 259 // STILL_ACTIVE
 }

@@ -18,6 +18,16 @@ window.AulaTextos = Object.freeze({
   "titulo.pendiente.reboot": " · reinicio pendiente",
   "titulo.pendiente.shutdown": " · apagado pendiente",
   "titulo.pendiente.logoff": " · cierre de sesión pendiente",
+  "titulo.nuevos": "({n}) ",
+
+  // Ventana y modo compacto
+  "ventana.compactar": "Hacer pequeña la ventana",
+  "ventana.restaurar": "Volver al tamaño normal",
+  "compacto.etiqueta": "Aula en modo compacto",
+  "compacto.conectado": "Canal {canal} · {profesor}",
+  "compacto.nuevos.uno": "1 nuevo",
+  "compacto.nuevos.varios": "{n} nuevos",
+  "compacto.vista": "Pantalla vista",
 
   // Tira de identidad
   "estado.connected": "Conectado al canal {canal} · {profesor}",

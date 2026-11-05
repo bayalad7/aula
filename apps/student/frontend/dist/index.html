@@ -16,8 +16,12 @@
   <div class="arriba">
   <!-- Tira de identidad: siempre visible (docs/privacidad.md, regla 1). -->
   <header id="estado" class="estado-conexion" data-estado="searching">
+    <h1 class="solo-lector" data-t="app.titulo"></h1>
     <span class="estado-conexion__punto" aria-hidden="true"></span>
     <span id="estado-texto" class="estado-conexion__texto" role="status"></span>
+    <span class="estado-conexion__acciones">
+      <button type="button" id="compactar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.compactar" data-t-title="ventana.compactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#contraer"/></svg></button>
+    </span>
     <details id="estado-detalles" class="detalles estado-conexion__detalles" hidden>
       <summary data-t="estado.detalles"></summary>
       <pre id="estado-detalle"></pre>
@@ -51,6 +55,18 @@
   </div>
   </div>
 
+  <!-- Modo compacto: la ventana encogida a una tira. La pantalla vista se sigue
+       viendo aquí; lo demás que hace el profesor (energía, restricciones, transmisión)
+       devuelve la ventana a su tamaño. -->
+  <main id="compacto" class="modo-compacto" data-t-aria-label="compacto.etiqueta" hidden>
+    <h1 class="solo-lector" data-t="app.titulo"></h1>
+    <span id="compacto-punto" class="estado-conexion__punto" aria-hidden="true"></span>
+    <span id="compacto-texto" class="modo-compacto__texto"></span>
+    <span id="compacto-nuevos" class="insignia insignia--info" hidden></span>
+    <span id="compacto-vista" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg><span data-t="compacto.vista"></span></span>
+    <button type="button" id="restaurar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.restaurar" data-t-title="ventana.restaurar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#expandir"/></svg></button>
+  </main>
+
   <!-- La pantalla del profesor (docs/privacidad.md, regla 12): franja fija y conexión solo de recepción. -->
   <section id="broadcast" class="broadcast" hidden aria-labelledby="bc-notice">
     <div class="franja franja--recibiendo" role="status">
@@ -65,7 +81,6 @@
   </section>
 
   <main id="contenido" data-t-aria-label="app.contenido">
-    <h1 class="solo-lector" data-t="app.titulo"></h1>
     <section id="notices" class="avisos" aria-live="polite"></section>
     <p id="empty" class="vacio" data-t="codigos.vacio"></p>
     <p id="codigos-atajo" class="codigos__atajo" data-t="codigos.atajo" hidden></p>

@@ -10,4 +10,5 @@ window.AulaEvents = Object.freeze({
   RESTRICTIONS: "aula:restrictions",
   APP_CLOSED: "aula:app-closed",
   POWER: "aula:power",
+  COMPACT: "aula:compact",
 });

@@ -21,6 +21,7 @@ const (
 	CallPower          = "power.run" // shut down, reboot or log off from the student's session: PowerArgs
 	EventEmit          = "emit"      // a Wails event for the window
 	EventRaise         = "raise"     // bring the window forward
+	EventNotify        = "notify"    // something arrived: tell without taking the focus
 	EventMaximize      = "maximize"  // maximize (true) or restore (false)
 	EventOnTop         = "ontop"     // keep the window above the others (true) or not
 )

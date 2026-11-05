@@ -40,6 +40,7 @@ que no es parte de la página.
 | `aula:broadcast-signal` | `broadcast.Signal` | Una oferta SDP (`kind: "offer"`) o un candidato ICE del profesor (`kind: "ice"`), ya validados por Go. |
 | `aula:restrictions` | `policy.State` | Empiezan, cambian o terminan las restricciones de la clase. Llega **antes** de aplicarlas. `{apps, web}`: cada uno `null` o `{policyId, mode, items (≤ 15), total}`. |
 | `aula:app-closed` | `AppClosed` | El agente cerró una app bloqueada: `{app: "steam.exe"}`, como mucho uno por app cada 30 s. |
+| `aula:compact` | `Compact` | Go sacó la ventana del modo compacto porque el profesor hizo algo que el alumno debe ver (energía, restricciones, transmisión): `{on: false}`. |
 | `aula:power` | `PowerView` | Llega, se pospone, se ejecuta, falla o se anula una orden de energía (`power.*`). Llega **antes** de que la consola reciba el `power.ack`. `notice` es `null` cuando no hay aviso. |
 
 ```jsonc
@@ -91,6 +92,8 @@ llevar estado propio.
 | `App.BroadcastFailed(broadcastId, attempt)` | error | La interfaz no pudo abrir la conexión: Go responde `error` `internal` a la oferta y la consola reintenta. |
 | `App.PowerPostpone()` | error | "Posponer 5 min": suma 5 minutos, como máximo 2 veces; emite `aula:power` y avisa a la consola. |
 | `App.DismissPower()` | — | Cierra el aviso de una orden de energía que falló. |
+| `App.SetCompact(on)` | error | Modo compacto: encoge la ventana a 380×112 en la esquina inferior derecha de su monitor, sin activarla ni dejarla encima, o la devuelve a su lugar. Actúa sobre la ventana de este proceso (también en el ayudante del servicio: no se reenvía). |
+| `App.ReportWindow(title)` | — | El título que escribió la página, para el texto del icono del área de notificación. Local, como `SetCompact`. |
 
 `Copy` recibe solo el **ID**: el texto sale de la copia que guarda Go, no de la página. Así lo
 que se pega es exactamente lo que envió el profesor, sin depender de cómo lo dibujó el

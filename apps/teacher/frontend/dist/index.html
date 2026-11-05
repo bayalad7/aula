@@ -68,6 +68,12 @@
         <span class="franja__texto"><span id="f-transmitiendo-texto"></span> <span class="franja__nota" data-t="transmitir.nota"></span></span>
         <button type="button" class="btn btn--sm" id="f-transmitiendo-detener" data-t="transmitir.detener"></button>
       </p>
+      <p class="franja franja--control" id="f-control" role="status" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg>
+        <span class="franja__texto" id="f-control-texto"></span>
+        <button type="button" class="btn btn--sm btn--sobre-color" id="f-control-ver" data-t="control.ver"></button>
+        <button type="button" class="btn btn--sm btn--sobre-color" id="f-control-soltar" data-t="control.soltar"></button>
+      </p>
       <p class="franja franja--energia" id="f-energia" role="status" hidden>
         <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg>
         <span class="franja__texto" id="f-energia-texto"></span>
@@ -341,6 +347,10 @@
               <div class="pila-mini"><strong id="ficha-error-titulo"></strong><span id="ficha-error-texto"></span><a id="ficha-error-ayuda" data-t="ayuda.verEnManual"></a></div>
             </div>
             <dl class="ficha" id="ficha-datos"></dl>
+            <div class="pila-mini" id="ficha-control" hidden>
+              <button type="button" class="btn btn--primario" id="ficha-tomar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span id="ficha-tomar-texto"></span></button>
+              <span class="pequeno suave" data-t="control.fichaNota"></span>
+            </div>
             <div class="pila-mini">
               <h3 class="con-info"><span data-t="ficha.puede"></span><button type="button" class="info-boton" data-info="capacidades" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></h3>
               <ul class="lista-limpia" id="ficha-puede"></ul>
@@ -506,9 +516,13 @@
   <dialog class="dialogo dialogo--grande" id="pantalla-grande" aria-labelledby="pg-titulo">
     <div class="dialogo__cuerpo">
       <div class="fila"><h2 id="pg-titulo" class="crece"></h2>
+        <button type="button" class="btn btn--primario btn--sm" id="pg-tomar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span data-t="control.tomar"></span></button>
+        <button type="button" class="btn btn--peligro btn--sm" id="pg-soltar" data-t="control.soltar" hidden></button>
         <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <p class="aviso-en-linea" id="pg-control-estado" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span id="pg-control-estado-texto"></span></p>
       <img id="pg-imagen" alt="">
-      <p class="pequeno suave" data-t="alumnos.avisoMiniaturas"></p>
+      <p class="pequeno suave" id="pg-nota" data-t="alumnos.avisoMiniaturas"></p>
+      <p class="pequeno suave" id="pg-control-nota" data-t="control.nota" hidden></p>
     </div>
   </dialog>
 

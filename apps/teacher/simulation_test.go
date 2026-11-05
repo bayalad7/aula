@@ -97,6 +97,10 @@ func TestSimulatedClassEndToEnd(t *testing.T) {
 	if _, err := app.PowerAction(PowerRequest{Action: "reboot"}); err == nil {
 		t.Error("PowerAction with only simulated students should fail: they never get power")
 	}
+	// Nor remote control: they do not declare it, and only real sessions are looked up.
+	if _, err := app.TakeControl(app.View().Students.Students[0].ID); errorCode(err) != codeRemoteUnsupported {
+		t.Errorf("TakeControl of a simulated student = %v, want %s", err, codeRemoteUnsupported)
+	}
 
 	// Their screens show in the screens view.
 	if err := app.OpenScreens(); err != nil {

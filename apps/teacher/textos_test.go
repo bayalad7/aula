@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/bayalad7/aula/internal/connectcheck"
+	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/remote"
 )
 
 // Every text the console shows lives in frontend/dist/textos.es-MX.js
@@ -89,6 +91,17 @@ func TestTextsAreComplete(t *testing.T) {
 		default:
 			t.Errorf("main.js uses %q, which is neither a text key nor the base of one", lit)
 		}
+	}
+
+	// Remote control: the dialog words the status and the toast the reason
+	// (remote.Control, internal/remote).
+	for _, s := range []protocol.RemoteStatus{remote.StatusStarting, protocol.RemoteActive, protocol.RemotePaused,
+		protocol.RemoteEnded, remote.StatusGone, remote.StatusFailed} {
+		need("control.estado."+string(s), "main.js (remote.Control.Status)")
+	}
+	for _, r := range []string{string(protocol.RemoteByTeacher), string(protocol.RemoteReplaced), string(protocol.RemoteIdle),
+		string(protocol.RemoteSession), string(protocol.RemoteError), string(remote.StatusGone), string(remote.StatusFailed)} {
+		need("control.fin."+r, "main.js (remote.Control.Reason or Status)")
 	}
 
 	// Error texts are chosen by the code Go returns (errores.go).

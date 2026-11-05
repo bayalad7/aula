@@ -17,6 +17,7 @@ import (
 	"github.com/bayalad7/aula/internal/policy"
 	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/remote"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
@@ -72,6 +73,7 @@ type App struct {
 
 	restr *policy.ClassPolicy // class restrictions: who has what (D-017)
 	power *power.Tracker      // power orders and each agent's answer (§5.15)
+	desk  *remote.Desk        // remote control: one computer at a time (§5.16)
 	sim   *simclass.Class     // the aula simulada's students; nil while closed (guarded by mu)
 
 	agentErrs agentErrors // the last error each student reported
@@ -99,6 +101,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.broadcastUDPPort = a.port + 1
 	a.restr = policy.NewClassPolicy()
 	a.power = &power.Tracker{Now: func() time.Time { return a.now() }}
+	a.desk = &remote.Desk{Now: func() time.Time { return a.now() }}
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	a.checks = newConnectChecks(log)
 	return a
@@ -194,7 +197,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
 		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage,
-		onError: a.onAgentError}, a.log)
+		onRemote: a.onRemoteMessage, onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -224,6 +227,7 @@ func (a *App) EndClass() {
 	if class != nil {
 		a.stopSimulationOf(class)
 		a.StopBroadcast() // agents also stop when the connection closes
+		a.endControl(class)
 		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
 		class.Stop()
@@ -246,6 +250,7 @@ func (a *App) View() View {
 	}
 	v.Restrictions = a.Restrictions()
 	v.Broadcast = a.stateOf(a.bc.Status())
+	v.Remote = a.desk.Current()
 	return v
 }
 
@@ -536,12 +541,16 @@ func (a *App) onChange() {
 	}
 	a.emit(EventStudents, a.studentsIn(class))
 	a.syncScreens()
+	a.syncRemote(class.Sessions())
 	a.bc.Sync(class.Sessions())
 	a.sendRestrictions(class, a.restr.Plan(class.Sessions())) // students who reconnect get them again
 }
 
 // onFrame forwards a thumbnail of the stream in force to the screens view.
 func (a *App) onFrame(sessionID string, f protocol.ScreenThumbFrame) {
+	if a.onRemoteFrame(sessionID, f) {
+		return
+	}
 	if t, ok := a.wall.Frame(sessionID, f); ok {
 		a.emit(EventFrame, t)
 	}
@@ -578,7 +587,7 @@ func studentsOf(list []session.Session) Students {
 			CanCode: s.Can(protocol.CapCodeView), CanNotice: s.Can(protocol.CapMsgShow),
 			CanThumb: s.Can(protocol.CapScreenThumb), CanBroadcast: s.Can(protocol.CapScreenBroadcast),
 			CanAppBlock: s.Can(protocol.CapAppBlock), CanWebFilter: s.Can(protocol.CapWebFilter),
-			CanPower: s.Can(protocol.CapPower), LastCodeAck: s.LastCodeAck,
+			CanPower: s.Can(protocol.CapPower), CanRemote: s.Can(protocol.CapRemote), LastCodeAck: s.LastCodeAck,
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))

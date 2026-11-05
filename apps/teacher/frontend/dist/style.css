@@ -94,3 +94,6 @@ body[data-panel] .col-sistema { display: none; }
 #falta-pasos .btn { white-space: normal; height: auto; min-height: 1.875rem; padding-block: var(--e-1); text-align: start; }
 .tarjeta__cabecera.con-info { display: flex; }
 .manual .lista-limpia { padding: 0; }
+
+/* --- Control remoto: la imagen en vivo recibe el mouse y el teclado ---------------------- */
+#pantalla-grande img.pg-control { cursor: crosshair; touch-action: none; user-select: none; }

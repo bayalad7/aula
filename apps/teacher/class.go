@@ -42,6 +42,9 @@ type classHooks struct {
 	onPolicyAck func(sessionID string, p protocol.Payload)
 	// onPower receives power.ack and the errors (which may answer an order).
 	onPower func(sessionID string, env protocol.Envelope)
+	// onRemote receives remote.ack and the errors (which may answer a
+	// remote.start).
+	onRemote func(sessionID string, env protocol.Envelope)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
 }
@@ -295,6 +298,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onPower != nil {
 					hooks.onPower(conn.ID(), env)
 				}
+			case protocol.RemoteAck:
+				if hooks.onRemote != nil {
+					hooks.onRemote(conn.ID(), env)
+				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {
 					hooks.onBroadcast(conn.ID(), env)
@@ -302,6 +309,9 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if p, isErr := env.Payload.(protocol.ErrorPayload); isErr {
 					if hooks.onPower != nil {
 						hooks.onPower(conn.ID(), env)
+					}
+					if hooks.onRemote != nil {
+						hooks.onRemote(conn.ID(), env)
 					}
 					if hooks.onError != nil {
 						hooks.onError(conn.ID(), p)

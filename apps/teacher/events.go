@@ -5,6 +5,7 @@ import (
 
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/power"
+	"github.com/bayalad7/aula/internal/remote"
 )
 
 // UI contract between this Go backend and frontend/dist (documented in
@@ -26,6 +27,11 @@ const (
 	// EventFrame carries a screen.Thumb for every screen thumbnail received
 	// while the screens view is open. Frames only live in memory.
 	EventFrame = "aula:frame"
+	// EventRemote carries a remote.Control whenever the remote control starts,
+	// pauses, resumes or ends (docs/protocol.md §5.16).
+	EventRemote = "aula:remote"
+	// EventRemoteFrame carries a screen.Thumb of the controlled screen.
+	EventRemoteFrame = "aula:remote-frame"
 	// EventBroadcast carries a BroadcastState when the broadcast of the
 	// teacher's screen starts, stops or its receiver count changes.
 	EventBroadcast = "aula:broadcast"
@@ -83,6 +89,7 @@ type Student struct {
 	CanAppBlock  bool     `json:"canAppBlock"`  // app.block (Windows service agents)
 	CanWebFilter bool     `json:"canWebFilter"` // web.filter (Windows service agents)
 	CanPower     bool     `json:"canPower"`     // power (Windows agents)
+	CanRemote    bool     `json:"canRemote"`    // remote (Windows agents with their screen)
 	// Power is the last power order sent to this session and its state.
 	Power       *power.Entry `json:"power"`
 	AppsActive  bool         `json:"appsActive"`  // acknowledged the class's app policy
@@ -188,6 +195,8 @@ type View struct {
 	Broadcast  BroadcastState          `json:"broadcast"`
 	// Restrictions are the class restrictions.
 	Restrictions RestrictionsView `json:"restrictions"`
+	// Remote is the remote control on record (the last one, if it ended).
+	Remote remote.Control `json:"remote"`
 }
 
 // EmitRequest is the code panel content when an emit button is pressed.

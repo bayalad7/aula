@@ -19,9 +19,9 @@
     canCode: s.capabilities.includes("code.view"), canNotice: s.capabilities.includes("msg.show"),
     canThumb: s.capabilities.includes("screen.thumb"), canBroadcast: s.capabilities.includes("screen.broadcast"),
     canAppBlock: s.capabilities.includes("app.block"), canWebFilter: s.capabilities.includes("web.filter"),
-    canPower: s.capabilities.includes("power"),
+    canPower: s.capabilities.includes("power"), canRemote: s.capabilities.includes("remote"),
   });
-  const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power"];
+  const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -90,13 +90,22 @@
   const cls = { channel: "1", consoleName: "Prof. Ayala", publicKey: "aula-ed25519:Hq0rB7Gm1o5dYH0yXx3l0k3pG2b8m2w7m0K1q0b9JzA=",
     fingerprint: "K7QD-3MX2-9PLA-W4TZ", keySource: personal ? "personal" : "centro", port: 47830, certExpires: "2036-10-29" };
   const bcActive = scene === "lab-transmitiendo";
+  // Control remoto (apps/teacher/remote.go, remote.Control): LAB3-PC07 en lab-control*.
+  const pc07 = { sessionID: "s-LAB3-PC07", hostname: "LAB3-PC07", controlID: "c-1", viewing: true };
+  let remote = scene === "lab-control" ? Object.assign({ status: "active" }, pc07)
+    : scene === "lab-control-pausa" ? Object.assign({ status: "paused" }, pc07)
+    : { sessionID: "", hostname: "", controlID: "", status: "", viewing: false };
+  // Lo que el agente contesta solo: active y una imagen al tomar, ended al soltar.
+  const despues = (fn) => setTimeout(fn, 60);
+  const cuadroControl = () => window.__emit("aula:remote-frame", { sessionId: remote.sessionID, seq: 1, width: 320, height: 180,
+    jpeg: window.__thumb("main.py - Visual Studio Code", 210), detail: true, at: new Date().toISOString() });
   const view = () => ({
     active: !scene.startsWith("setup"), class: cls, students: studentsView(), history, deliveries,
     hotkey: scene === "atajo-ocupado"
       ? { combo: "Ctrl+Alt+Shift+C", active: false, reason: "InUse", error: "" }
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true },
-    restrictions,
+    restrictions, remote,
   });
 
 
@@ -164,6 +173,18 @@
           : { id: "network", status: "ok", port: 47830 },
       ] };
     }),
+    TakeControl: call("TakeControl", (id) => {
+      const s = list.find((x) => x.id === id) || {};
+      remote = { sessionID: id, hostname: s.hostname, controlID: "c-1", status: "starting", viewing: true };
+      despues(() => { remote = Object.assign({}, remote, { status: "active" }); window.__emit("aula:remote", remote); cuadroControl(); });
+      return remote;
+    }),
+    ReleaseControl: call("ReleaseControl", () => {
+      despues(() => { remote = Object.assign({}, remote, { status: "ended", reason: "teacher" }); window.__emit("aula:remote", remote); });
+      return null;
+    }),
+    ShowControl: call("ShowControl", (visible) => { remote = Object.assign({}, remote, { viewing: visible }); if (visible) despues(cuadroControl); return null; }),
+    SendRemoteInput: call("SendRemoteInput"),
     SetRestriction: call("SetRestriction", restrictions),
     ClearRestriction: call("ClearRestriction", restrictions),
     ClearAllRestrictions: call("ClearAllRestrictions", restrictions),

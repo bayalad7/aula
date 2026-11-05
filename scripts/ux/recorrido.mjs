@@ -38,6 +38,17 @@ await f("12-panel-restricciones-activas", "lab-restr-activa", { pasos: click('[d
 await f("13-panel-aviso-error", "lab", { pasos: seq(click('[data-panel="aviso"]'), click("#aviso-enviar")) });
 await f("14-transmitiendo", "lab-transmitiendo");
 await f("15-energia-pendiente", "lab-energia-pendiente");
+// Control remoto (docs/protocol.md §5.16): la ficha, la vista en vivo, la franja, la pausa y el fin.
+const tomar = seq(click(`${fila("LAB3-PC07")} .ficha`), click("#ficha-tomar"), async () => { await sleep(400); });
+await f("54-ficha-tomar-control", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+await f("55-control-vista", "lab", { pasos: tomar });
+await f("56-control-franja", "lab-control");
+await f("57-control-pausa", "lab-control-pausa", { pasos: seq(click("#f-control-ver"), async () => { await sleep(300); }) });
+await f("58-control-oscuro-900x600", "lab-control", { oscuro: true, w: 900, h: 600, pasos: seq(click("#f-control-ver"), async () => { await sleep(300); }) });
+await f("59-control-terminado", "lab", { pasos: seq(tomar, click("#pg-soltar"), async () => { await sleep(400); }) });
+const grande = seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB3-PC12"]), click(".alumno__pantalla:not([disabled])"), cuadros(["LAB3-PC07"]));
+await f("60-miniatura-grande-tomar-control", "lab", { pasos: grande });
+await f("61-miniatura-grande-controlando", "lab", { pasos: seq(grande, click("#pg-tomar"), async () => { await sleep(400); }) });
 
 // Código
 await f("16-codigo", "datos", { ruta: "codigo", pasos: async (p) => {

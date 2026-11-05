@@ -319,6 +319,7 @@
     pintarAlumnos(v.students);
     pintarTransmision(v.broadcast);
     pintarRestricciones(v.restrictions);
+    if (v.remote) pintarControl(v.remote);
     pintarHistorial(v.history);
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
@@ -446,12 +447,18 @@
       return [el("dt", "", T(k)), dd];
     }));
     const puede = [["canCode", "ficha.codigo"], ["canNotice", "ficha.avisos"], ["canThumb", "ficha.miniaturas"],
-      ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"]];
+      ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"], ["canRemote", "ficha.control"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k]) => {
       const li = el("li", "fila");
       li.append(s[c] ? insignia("conectado", "hecho", T("ficha.si")) : insignia("", "cerrar", T("ficha.no")), el("span", "", T(k)));
       return li;
     }));
+    // Tomar el control: solo de un alumno real, conectado, cuyo equipo lo permite.
+    const controlable = !s.simulated && s.state === "connected" && s.canRemote;
+    $("ficha-control").hidden = !controlable;
+    const esEste = control.live && control.sessionID === s.id;
+    $("ficha-tomar-texto").textContent = T(esEste ? "control.verPantalla" : "control.tomar");
+    $("ficha-tomar").onclick = () => (esEste ? abrirControl() : tomarControl(s, $("ficha-tomar")));
     const e = s.lastError;
     $("ficha-error").hidden = !e;
     if (e) {
@@ -518,7 +525,12 @@
   function verEnGrande(k) {
     const s = alumnos.students.find((x) => clave(x) === k);
     if (!s || s.state !== "connected") return;
+    if (control.live && control.sessionID === s.id) { abrirControl(); return; } // ya se ve en vivo
     enGrande = s.id;
+    modoControl(false);
+    // Aquí es donde el profesor ve si el alumno está en la actividad: puede tomar el control
+    // sin ir a la ficha (solo reales cuyo equipo lo permite).
+    $("pg-tomar").hidden = !s.canRemote || s.simulated;
     $("pg-titulo").textContent = s.hostname + (s.username ? " · " + s.username : "");
     const li = tarjetas.get(k);
     const src = li && li.querySelector("img").getAttribute("src");
@@ -528,10 +540,182 @@
     api.ViewScreen(s.id);
   }
   $("pantalla-grande").addEventListener("close", () => {
-    enGrande = "";
     $("pg-imagen").removeAttribute("src");
+    if (enControl) {
+      // Cerrar la vista no suelta el control: queda la franja con «Ver» y «Soltar».
+      soltarTeclas();
+      modoControl(false);
+      if (control.live) api.ShowControl(false).catch(() => {});
+      return;
+    }
+    enGrande = "";
     api.ViewScreen("");
   });
+
+  // --- Control remoto (docs/protocol.md §5.16) ---------------------------------------------
+  // La vista es este mismo diálogo: la imagen en vivo captura el mouse y, con el foco, el
+  // teclado. Ctrl+Alt+Fin devuelve el teclado a la consola. Los eventos salen en lotes cada
+  // 33 ms; Go los junta y los acota a 60 mensajes por segundo.
+  let control = { live: false, status: "", sessionID: "", hostname: "", reason: "" };
+  let enControl = false;      // el diálogo está en modo control
+  let cola = [];              // eventos por mandar
+  const presionadas = new Set(); // teclas y botones que mandamos presionados
+  const VIVO = ["starting", "active", "paused", "resumed"];
+  const BOTON = ["left", "middle", "right"];
+  function modoControl(on) {
+    enControl = on;
+    const img = $("pg-imagen");
+    $("pg-soltar").hidden = !on;
+    if (on) $("pg-tomar").hidden = true;
+    $("pg-control-estado").hidden = !on;
+    $("pg-control-nota").hidden = !on;
+    $("pg-nota").hidden = on;
+    img.classList.toggle("pg-control", on);
+    if (on) img.tabIndex = 0; else img.removeAttribute("tabindex");
+  }
+  function abrirControl() {
+    const s = alumnoPorSesion(control.sessionID);
+    // Si se venía de la pantalla en grande de Miniaturas, esa vista en detalle termina: el
+    // control trae su propio video, y al soltar el alumno vuelve a su miniatura.
+    if (enGrande) api.ViewScreen("");
+    enGrande = "";
+    modoControl(true);
+    $("pg-titulo").textContent = T("control.titulo", { equipo: control.hostname }) + (s && s.username ? " · " + s.username : "");
+    $("pg-imagen").removeAttribute("src");
+    $("pg-imagen").alt = T("control.imagen", { equipo: control.hostname });
+    pintarEstadoControl();
+    const d = $("pantalla-grande");
+    if (!d.open) d.showModal();
+    $("pg-imagen").focus();
+    api.ShowControl(true).catch(fallo);
+  }
+  const CONTROL_ESTADO = "control.estado."; // + status de remote.ack o de la consola
+  function pintarEstadoControl() {
+    $("pg-control-estado-texto").textContent = T(CONTROL_ESTADO + (control.status === "resumed" ? "active" : control.status), { equipo: control.hostname });
+    $("pg-control-estado").classList.toggle("aviso-en-linea--advertencia", control.status === "paused");
+  }
+  const CONTROL_FIN = "control.fin."; // + motivo (remote.ack reason o estado de la consola)
+  function pintarControl(c) {
+    const antes = control.live;
+    control = Object.assign({}, c, { live: VIVO.includes(c.status) });
+    $("f-control").hidden = !control.live;
+    if (control.live) {
+      $("f-control-texto").textContent = T("control.franja", { equipo: control.hostname }) +
+        (control.status === "paused" ? " · " + T("control.franjaPausa") : "");
+    }
+    if (enControl) pintarEstadoControl();
+    if (antes && !control.live) {
+      const motivo = control.reason || control.status; // teacher, idle, session, error, replaced; gone, failed
+      toast(control.status === "failed" || control.reason === "error" ? "advertencia" : "info",
+        T("control.terminado", { equipo: control.hostname }), T(CONTROL_FIN + motivo, { equipo: control.hostname }));
+      if (enControl) $("pantalla-grande").close();
+    }
+    if (panel === "alumno") pintarFicha();
+  }
+  function encolar(e) {
+    if (!enControl || !control.live) return;
+    cola.push(e);
+  }
+  setInterval(() => {
+    if (!cola.length) return;
+    const lote = cola;
+    cola = [];
+    api.SendRemoteInput(lote).catch(() => {}); // si el control terminó, lo dice su evento
+  }, 33);
+  function posicion(e) {
+    const r = $("pg-imagen").getBoundingClientRect();
+    // La imagen se dibuja con object-fit: contain: se descuentan las barras.
+    const img = $("pg-imagen");
+    const iw = img.naturalWidth || r.width, ih = img.naturalHeight || r.height;
+    const escala = Math.min(r.width / iw, r.height / ih);
+    const w = iw * escala, h = ih * escala;
+    const x0 = r.left + (r.width - w) / 2, y0 = r.top + (r.height - h) / 2;
+    const lim = (v) => Math.min(1, Math.max(0, Math.round(v * 10000) / 10000));
+    return { x: lim((e.clientX - x0) / w), y: lim((e.clientY - y0) / h) };
+  }
+  function soltarTeclas() {
+    for (const k of presionadas) {
+      if (k.startsWith("b:")) encolar(Object.assign({ t: "button", b: k.slice(2), down: false }, ultimaPos));
+      else encolar({ t: "key", code: k, down: false });
+    }
+    presionadas.clear();
+  }
+  let ultimaPos = { x: 0, y: 0 };
+  const imgControl = $("pg-imagen");
+  imgControl.addEventListener("pointermove", (e) => {
+    if (!enControl) return;
+    ultimaPos = posicion(e);
+    encolar(Object.assign({ t: "move" }, ultimaPos));
+  });
+  imgControl.addEventListener("pointerdown", (e) => {
+    if (!enControl) return;
+    e.preventDefault();
+    imgControl.focus();
+    imgControl.setPointerCapture(e.pointerId);
+    const b = BOTON[e.button];
+    if (!b) return;
+    ultimaPos = posicion(e);
+    presionadas.add("b:" + b);
+    encolar(Object.assign({ t: "button", b, down: true }, ultimaPos));
+  });
+  imgControl.addEventListener("pointerup", (e) => {
+    if (!enControl) return;
+    const b = BOTON[e.button];
+    if (!b) return;
+    ultimaPos = posicion(e);
+    presionadas.delete("b:" + b);
+    encolar(Object.assign({ t: "button", b, down: false }, ultimaPos));
+  });
+  imgControl.addEventListener("contextmenu", (e) => { if (enControl) e.preventDefault(); });
+  imgControl.addEventListener("dragstart", (e) => { if (enControl) e.preventDefault(); });
+  imgControl.addEventListener("wheel", (e) => {
+    if (!enControl) return;
+    e.preventDefault();
+    // En Windows, positivo es hacia arriba (rueda hacia adelante); en el navegador, al revés.
+    const paso = (d) => Math.max(-1200, Math.min(1200, Math.round(-d * (e.deltaMode === 1 ? 40 : 1.2))));
+    const dy = paso(e.deltaY), dx = -paso(e.deltaX);
+    if (dy) encolar({ t: "wheel", dx: 0, dy });
+    if (dx) encolar({ t: "wheel", dx, dy: 0 });
+  }, { passive: false });
+  function tecla(e, down) {
+    if (!enControl) return;
+    if (down && e.ctrlKey && e.altKey && e.code === "End") {
+      e.preventDefault();
+      soltarTeclas();
+      $("pg-soltar").focus(); // el teclado vuelve a la consola
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.code) return;
+    if (down) presionadas.add(e.code); else presionadas.delete(e.code);
+    encolar({ t: "key", code: e.code, down });
+  }
+  imgControl.addEventListener("keydown", (e) => tecla(e, true));
+  imgControl.addEventListener("keyup", (e) => tecla(e, false));
+  imgControl.addEventListener("blur", () => { if (enControl) soltarTeclas(); });
+  // Con el foco en la imagen, Esc es del alumno: no cierra el diálogo.
+  $("pantalla-grande").addEventListener("cancel", (e) => {
+    if (enControl && document.activeElement === imgControl) e.preventDefault();
+  });
+  function alCuadroControl(t) {
+    if (enControl && t.sessionId === control.sessionID) $("pg-imagen").src = "data:image/jpeg;base64," + t.jpeg;
+  }
+  function tomarControl(s, b) {
+    ocupado(b, true);
+    api.TakeControl(s.id).then((c) => { pintarControl(c); abrirControl(); }, fallo).finally(() => ocupado(b, false));
+  }
+  function soltarControl() {
+    soltarTeclas();
+    api.ReleaseControl().catch(fallo);
+  }
+  $("pg-soltar").addEventListener("click", soltarControl);
+  $("pg-tomar").addEventListener("click", () => {
+    const s = alumnoPorSesion(enGrande);
+    if (s) tomarControl(s, $("pg-tomar"));
+  });
+  $("f-control-soltar").addEventListener("click", soltarControl);
+  $("f-control-ver").addEventListener("click", abrirControl);
   // El nombre del botón de la miniatura incluye el texto que se ve
   // («Esperando imagen…»), para que quien lo dice en voz alta lo encuentre.
   function nombrarPantalla(pantalla, equipo) {
@@ -1749,6 +1933,8 @@
   rt.EventsOn(ev.DELIVERIES, (d) => pintarEnvios(d.deliveries));
   rt.EventsOn(ev.CAPTURE, alCapturar);
   rt.EventsOn(ev.FRAME, alCuadro);
+  rt.EventsOn(ev.REMOTE, pintarControl);
+  rt.EventsOn(ev.REMOTE_FRAME, alCuadroControl);
   rt.EventsOn(ev.BROADCAST, pintarTransmision);
   rt.EventsOn(ev.RESTRICTIONS, pintarRestricciones);
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);

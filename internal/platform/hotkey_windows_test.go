@@ -13,8 +13,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-var procSendInput = user32.NewProc("SendInput")
-
 type keyInput struct {
 	typ   uint32
 	_     uint32 // padding to the union on 64-bit

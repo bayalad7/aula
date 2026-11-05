@@ -83,6 +83,10 @@ type Agent struct {
 	// OnMessage receives every message from the console except heartbeat. It
 	// runs on the agent goroutine: keep it short.
 	OnMessage func(ctx context.Context, c *transport.Client, env protocol.Envelope)
+	// OnConnect is called once per established session, after hello, with the
+	// connection the agent may send on (messages it starts itself, such as a
+	// raised hand). It runs on the agent goroutine: keep it short.
+	OnConnect func(ctx context.Context, c *transport.Client)
 	// OnState is called on state changes; console is empty while searching.
 	OnState func(state AgentState, console discovery.Console)
 	// OnDiagnostic explains, in Spanish for the student's screen, why the agent
@@ -226,6 +230,9 @@ func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.
 	a.diagnose(CauseNone, "")
 	a.state(AgentConnected, target)
 	log.Info("connected to console", "console", target.Name, "addr", cl.RemoteAddr())
+	if a.OnConnect != nil {
+		a.OnConnect(ctx, cl)
+	}
 
 	for env := range cl.Incoming() {
 		if env.Type == protocol.TypeHeartbeat {

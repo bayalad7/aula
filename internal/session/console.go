@@ -253,6 +253,13 @@ func (c *Console) route(ctx context.Context, log *slog.Logger, ev transport.Even
 	case protocol.TypeHello, protocol.TypeAuthChallenge, protocol.TypeAuthOK:
 		c.sendError(ctx, log, ev, protocol.CodeInvalidMessage, "session already established")
 	default:
+		// A message the agent starts needs its capability (docs/protocol.md §4).
+		if cp, ok := protocol.AgentCapability(ev.Envelope.Type); ok {
+			if s, known := c.Registry.Get(ev.Conn.ID()); !known || !s.Can(cp) {
+				c.sendError(ctx, log, ev, protocol.CodeUnsupportedCapability, "capability not declared: "+string(cp))
+				return
+			}
+		}
 		if c.OnMessage != nil {
 			c.OnMessage(ctx, ev.Conn, ev.Envelope)
 		}

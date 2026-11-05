@@ -63,7 +63,7 @@ func connOpts() transport.Options {
 }
 
 // startTeacher wires transport.Server (TLS), Console and Registry on loopback.
-func startTeacher(t *testing.T, addr string, k keys, log *slog.Logger) *teacher {
+func startTeacher(t *testing.T, addr string, k keys, log *slog.Logger, onMessage ...func(context.Context, *transport.Conn, protocol.Envelope)) *teacher {
 	t.Helper()
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -78,6 +78,9 @@ func startTeacher(t *testing.T, addr string, k keys, log *slog.Logger) *teacher 
 	console := &Console{
 		Channel: testChannel, Registry: reg, Identity: k.id, CertSHA256: k.cert.SHA256,
 		HelloTimeout: 500 * time.Millisecond, Logger: log,
+	}
+	if len(onMessage) > 0 {
+		console.OnMessage = onMessage[0]
 	}
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -111,6 +114,7 @@ type agentOpts struct {
 	log       *slog.Logger
 	onMessage func(context.Context, *transport.Client, protocol.Envelope)
 	onState   func(AgentState, discovery.Console)
+	onConnect func(context.Context, *transport.Client)
 	caps      []protocol.Capability // nil: code.view and msg.show
 }
 
@@ -130,6 +134,7 @@ func startAgent(t *testing.T, host string, src ConsoleSource, o agentOpts) conte
 		Conn:             connOpts(),
 		OnMessage:        o.onMessage,
 		OnState:          o.onState,
+		OnConnect:        o.onConnect,
 		Logger:           o.log,
 	}
 	done := make(chan struct{})
@@ -709,6 +714,49 @@ func TestSendRefusesMissingCapability(t *testing.T) {
 	}
 	if _, err := tc.console.Send(context.Background(), "no-such-session", protocol.CodeClear{}); !errors.Is(err, ErrUnknownSession) {
 		t.Fatalf("Send to unknown = %v", err)
+	}
+}
+
+// A message the agent starts reaches the console only if the agent declared
+// its capability (docs/protocol.md §4); OnConnect lets the agent send it.
+func TestAgentStartedMessageNeedsItsCapability(t *testing.T) {
+	got := make(chan protocol.Type, 4)
+	tc := startTeacher(t, "127.0.0.1:0", newKeys(t), quiet, func(_ context.Context, _ *transport.Conn, env protocol.Envelope) {
+		got <- env.Type
+	})
+	for _, c := range []struct {
+		host string
+		caps []protocol.Capability
+		want protocol.Type
+	}{
+		{"PC32", []protocol.Capability{protocol.CapMsgShow}, protocol.TypeError},
+		{"PC33", []protocol.Capability{protocol.CapMsgShow, protocol.CapHand}, protocol.TypeHandRaise},
+	} {
+		answers := make(chan protocol.Envelope, 4)
+		stop := startAgent(t, c.host, tc.source(), agentOpts{
+			pub: tc.keys.id.Public(), caps: c.caps,
+			onConnect: func(ctx context.Context, cl *transport.Client) {
+				if _, err := cl.Send(ctx, protocol.HandRaise{HandID: protocol.NewID()}); err != nil {
+					t.Errorf("send hand.raise: %v", err)
+				}
+			},
+			onMessage: func(_ context.Context, _ *transport.Client, env protocol.Envelope) { answers <- env },
+		})
+		select {
+		case env := <-answers:
+			if c.want != protocol.TypeError {
+				t.Errorf("%s: unexpected answer %s", c.host, env.Type)
+			} else if p, ok := env.Payload.(protocol.ErrorPayload); !ok || p.Code != protocol.CodeUnsupportedCapability {
+				t.Errorf("%s: answer %+v, want unsupported_capability", c.host, env.Payload)
+			}
+		case typ := <-got:
+			if typ != c.want {
+				t.Errorf("%s: console got %s, want %s", c.host, typ, c.want)
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatalf("%s: nothing arrived", c.host)
+		}
+		stop()
 	}
 }
 

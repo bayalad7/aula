@@ -35,6 +35,10 @@ Si su equipo lo permite, la ficha tiene el botón **Tomar control**: ves su pant
 manejas su mouse y su teclado para ayudarlo (ver
 [Tareas frecuentes](tareas-frecuentes#ayudar-a-un-alumno-tomando-el-control)).
 
+Con **Tomar captura** guardas una foto de su pantalla: primero ves la vista previa y solo se
+guarda en tu equipo si pulsas **Guardar**. Funciona también con los alumnos simulados y mientras lo
+controlas (ver [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno)).
+
 ![La ficha de un alumno con un problema reciente](img/ficha-alumno.png)
 
 ## Seleccionar alumnos
@@ -53,6 +57,7 @@ La barra de abajo abre un panel a la derecha, sin tapar la lista:
 | Aviso | Un mensaje que aparece en su pantalla. | [Tareas frecuentes](tareas-frecuentes#mandar-un-aviso) |
 | Restricciones | Bloquea aplicaciones o sitios web durante la clase. | [Tareas frecuentes](tareas-frecuentes#bloquear-aplicaciones-o-sitios) |
 | Energía | Apaga, reinicia o cierra la sesión de los equipos. | [Tareas frecuentes](tareas-frecuentes#apagar-o-reiniciar-los-equipos) |
+| Captura | Toma una foto de la pantalla de cada uno; guardas las que elijas. | [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno) |
 
 ## Estados de un alumno
 

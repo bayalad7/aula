@@ -1,6 +1,6 @@
 ---
 titulo: "Transparencia: avisos e indicadores al alumno"
-descripcion: "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le transmite, lo restringe o apaga su equipo"
+descripcion: "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, lo restringe o apaga su equipo"
 audiencia: [profesor, alumno, desarrollador]
 pantallas: [alumnos, ayuda]
 secciones_manual: [v1/administracion/como-funciona, privacidad]
@@ -22,6 +22,7 @@ flowchart LR
         pol["app.block.set · web.filter.set"]
         pwr["power.action"]
         rmt["remote.start"]
+        snap["screen.snapshot.request"]
     end
 
     subgraph avisos["Lo que ve el alumno (antes de actuar)"]
@@ -32,9 +33,11 @@ flowchart LR
         restr["«Restricciones de la clase activas…»<br/>y aviso por cada app cerrada<br/>reglas 20–22"]
         energia["Aviso siempre encima con cuenta<br/>y «Posponer 5 min»; con force,<br/>«El profesor … está apagando»<br/>reglas 26–28"]
         control["La ventana pasa al frente con la banda<br/>«… está controlando tu equipo» y el<br/>aviso fijo dice que lo controlan<br/>reglas 36–41"]
+        captura["Aviso fijo 5 s «Tu profesor está tomando<br/>una captura…» y después, sin quitar<br/>el foco, «Captura de pantalla» en la esquina<br/>regla 44"]
     end
 
     fin["Se quita con stop o clear,<br/>al cerrar la vista o la clase,<br/>o al caerse la conexión"]
+    puntual["Hecho puntual: el alumno lo cierra<br/>con «Entendido»; la imagen solo se<br/>guarda si el profesor pulsa «Guardar»<br/>reglas 45–47"]
     sigue["La cuenta de apagado sigue<br/>sin conexión (regla 30)"]
 
     conexion --> distintivo
@@ -44,6 +47,8 @@ flowchart LR
     pol --> restr
     pwr --> energia
     rmt --> control
+    snap --> captura
+    captura --> puntual
     visto --> fin
     franja --> fin
     restr --> fin
@@ -54,9 +59,9 @@ flowchart LR
     classDef aula fill:#dcfce7,stroke:#15803d,color:#111827
     classDef datos fill:#ffedd5,stroke:#c2410c,color:#111827
     classDef seguridad fill:#fee2e2,stroke:#b91c1c,color:#111827
-    class conexion,share,thumb,bcast,pol,pwr,rmt seguridad
-    class distintivo,frente,visto,franja,restr,energia,control aula
-    class fin,sigue externo
+    class conexion,share,thumb,bcast,pol,pwr,rmt,snap seguridad
+    class distintivo,frente,visto,franja,restr,energia,control,captura aula
+    class fin,sigue,puntual externo
 ```
 
 ## Lo que no es obvio
@@ -64,7 +69,11 @@ flowchart LR
 - **El aviso va antes que la acción**, y el código lo hace cumplir: `Streamer` no captura si no
   pudo mostrar el distintivo; `Viewer` muestra la vista antes de procesar la oferta WebRTC;
   `policy.Manager` avisa antes de aplicar; `Countdown` llama a `OnChange` con el aviso antes de
-  responder a la consola; `remote.Agent` muestra la banda y el aviso fijo antes de aceptar entrada.
+  responder a la consola; `remote.Agent` muestra la banda y el aviso fijo antes de aceptar entrada;
+  `snapshot.Taker` muestra el aviso fijo antes de capturar.
+- **La captura es el único aviso que no es una banda**: no sigue activa, así que va como aviso en
+  la esquina (`notify`, nunca `raise`). Si el profesor ya ve o controla la pantalla, el aviso fijo
+  conserva su texto; el de la esquina aparece igual.
 - **Toda orden viene de una consola autenticada** (rojo): nada de esto se procesa antes de
   `auth.ok` (diagrama 04).
 - **Al perderse la conexión el alumno no queda vigilado ni restringido**: miniaturas,
@@ -80,8 +89,9 @@ flowchart LR
 
 ## Fuentes en el código
 
-- `docs/privacidad.md` reglas 1–31 y 36–43
+- `docs/privacidad.md` reglas 1–31 y 36–49
 - `apps/student/app.go` (`setStatus`, `onViewed`, `onBoard`, `onNotice`, `setRestrictions`,
   `appClosed`), `apps/student/events.go`, `apps/student/power.go`, `apps/student/broadcast.go`
 - `internal/screen/streamer.go`, `internal/broadcast/viewer.go`, `internal/policy/manager.go`,
-  `internal/power/countdown.go`, `internal/remote/agent.go`, `apps/student/remote.go`
+  `internal/power/countdown.go`, `internal/remote/agent.go`, `apps/student/remote.go`,
+  `internal/snapshot/agent.go`, `apps/student/snapshot.go`

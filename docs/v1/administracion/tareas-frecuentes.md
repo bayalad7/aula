@@ -1,6 +1,6 @@
 ---
 titulo: "Tareas frecuentes"
-resumen: "Mostrar tu pantalla, mandar avisos, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo y cambiar de canal."
+resumen: "Mostrar tu pantalla, mandar avisos, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla y cambiar de canal."
 grupo: "Tareas frecuentes"
 orden: 60
 pantallas: []
@@ -93,6 +93,39 @@ controlar. La imagen va por la red del laboratorio a unas 8 imágenes por segund
 ayudar, no para ver videos.
 
 {{diagrama:17-control-remoto}}
+
+## Tomar una captura de la pantalla de un alumno
+
+Una foto fija de su pantalla, a resolución completa, para revisarla después o dejar evidencia.
+
+1. En [Alumnos](alumnos#la-ficha-de-un-alumno), abre la **ficha** del alumno.
+2. Pulsa **Tomar captura**. En unos segundos ves la **vista previa**; haz clic en la imagen para
+   verla a tamaño real.
+3. Pulsa **Guardar** para guardarla en tu equipo, o **Descartar** si no la necesitas. Al guardar,
+   la consola te dice dónde quedó y te deja **Abrir carpeta**.
+
+También desde la vista en grande de **Miniaturas** y **mientras controlas** a un alumno: el botón
+**Tomar captura** está arriba, junto a **Soltar**. Tomarla no suelta el control; tu teclado
+deja de llegar a su equipo mientras ves la vista previa, y al cerrarla vuelves a la vista del
+control (haz clic en su pantalla para seguir).
+
+**De varios alumnos a la vez:** selecciónalos, abre **Captura** en la barra de abajo y pulsa
+**Tomar captura de N alumnos**. Cada una aparece con su miniatura; desmarca las que no quieras y
+pulsa **Guardar**. Los equipos que no lo permiten se omiten y se nombran.
+
+- **Se guarda solo si pulsas «Guardar».** Hasta entonces la imagen está únicamente en la memoria
+  de la consola; al descartarla, cerrar la clase o cambiar de canal, desaparece.
+- **Dónde:** en `Documentos\Aula\capturas\<equipo> (<usuario>)\<fecha>\<hora>.jpg`, una carpeta por
+  alumno y por día. La de los alumnos simulados termina en «(simulado)». La carpeta está en
+  [Ajustes › Acerca de](ajustes#capturas-de-pantalla). Aula no las borra ni las comparte: son
+  tuyas, y conviene borrarlas cuando ya no las necesites.
+- **El alumno siempre lo sabe:** un aviso fijo arriba de su pantalla dice «Tu profesor está
+  tomando una captura de tu pantalla» antes de tomarla (sale en la imagen), y su ventana de Aula
+  le muestra después «Prof. … tomó una captura de tu pantalla (10:42)». Nunca se guarda en
+  su equipo.
+- **Cuándo no se puede:** con su sesión bloqueada o un aviso de administrador en pantalla
+  («¿Quieres permitir que esta aplicación haga cambios?»), y en equipos sin Windows o con una
+  versión de Aula anterior (su ficha dice «Tomar una captura de su pantalla: No»).
 
 ## Cambiar de canal o de nombre
 

@@ -63,10 +63,11 @@ pantalla en blanco (`screen.freeze`, §5.9–5.11, **pendiente**: reglas 9 y 10)
    El distintivo no roba clics ni el foco, no se puede ocultar desde Aula y desaparece solo
    cuando la transmisión termina (`screen.thumb.stop`, desconexión o cierre del agente). Es
    visible también en las miniaturas: el profesor ve lo mismo que sabe el alumno.
-7. **Sin capturas en disco.** Ni el agente ni la consola escriben capturas en disco. La consola
-   conserva en memoria el último cuadro de cada equipo mientras la vista de pantallas está
-   abierta y lo descarta al cerrarla. Guardar una captura será, cuando exista, una acción
-   explícita del profesor, y se documentará aquí antes de implementarla.
+7. **Sin capturas en disco, salvo que el profesor pulse «Guardar».** El agente nunca escribe
+   capturas en disco. La consola conserva en memoria el último cuadro de cada equipo mientras la
+   vista de pantallas está abierta y lo descarta al cerrarla. **La única excepción** es la captura
+   de pantalla de un alumno (reglas 44–49): la consola la escribe en disco solo cuando el profesor
+   pulsa «Guardar», nunca sola, nunca en el equipo del alumno y nunca en los registros.
 8. **Solo se transmite mientras el profesor mira.** La consola envía `screen.thumb.start` al
    abrir la vista de pantallas y `screen.thumb.stop` al cerrarla. Como máximo 2 cuadros por
    segundo y solo del monitor principal.
@@ -229,8 +230,10 @@ Alumnos de prueba que la consola crea dentro de sí misma para probar Aula sin l
     no se anuncia por mDNS; ningún equipo del laboratorio lo alcanza. Hablan el protocolo real,
     sin mensajes nuevos.
 34. **No reciben lo que tiene efecto en un equipo.** Ni energía, ni restricciones, ni la
-    transmisión: un simulado no puede declararlo, y la consola no se lo envía. Así nadie cree
-    que funcionó en un equipo real cuando solo fue una prueba.
+    transmisión, ni el control remoto: un simulado no puede declararlo, y la consola no se lo
+    envía. Así nadie cree que funcionó en un equipo real cuando solo fue una prueba. La captura
+    de pantalla sí les llega, porque no cambia ningún equipo: es su pantalla dibujada, que dice
+    «alumno simulado», y se guarda aparte (regla 46).
 35. **No guarda nada.** Los simulados viven en memoria y desaparecen al cerrar el aula simulada,
     al cambiar de canal o de nombre y al cerrar la clase. Su «pantalla» se dibuja en memoria y,
     como la de un equipo real, muestra «Tu pantalla está siendo vista por el profesor» mientras
@@ -290,8 +293,62 @@ en **Wayland** la inyección de entrada puede no ser posible sin que el alumno l
 sesión (portal RemoteDesktop). Linux y macOS no declaran `remote` hasta que se documente aquí su
 aviso.
 
+## Captura de pantalla de un alumno (v0.7, Windows)
+
+Reglas para `screen.snapshot.*` (`docs/protocol.md` §5.17), aprobadas el 2026-11-05. El profesor
+toma **una** foto fija de la pantalla de un alumno, a resolución completa, para revisarla o dejar
+evidencia. Es la única función de Aula que guarda una imagen del alumno en disco (regla 7), y por
+eso el alumno lo sabe en el momento y el profesor decide, una por una, qué se guarda.
+
+44. **El alumno sabe que se le tomó una captura, en el momento.** Al llegar la petición, y
+    **antes** de capturar, el distintivo nativo de la regla 6 (siempre encima, sin tomar clics ni
+    el foco) dice durante 5 segundos:
+
+    > **● Tu profesor está tomando una captura de tu pantalla**
+
+    Por eso el distintivo sale en la propia imagen: el profesor ve lo mismo que sabe el alumno. Si
+    el distintivo no se puede mostrar, no se captura. Si el profesor ya está viendo la pantalla
+    (miniaturas, regla 6) o la controla (reglas 37–38), el distintivo ya está a la vista y **no
+    cambia de texto**: quitar el aviso de control, aunque sea un momento, debilitaría la regla 38.
+
+    Después de capturar, la ventana de Aula muestra un aviso en la esquina, de nivel «Importante»:
+
+    > **Captura de pantalla** · <profesor> (canal <X>) tomó una captura de tu pantalla (10:42).
+
+    No es una banda (es un hecho puntual, no algo que sigue activo): se cierra con «Entendido» o
+    Esc. Cuenta como «sin ver» en el título y, con la ventana cerrada, marca el icono del área de
+    notificación. **No actúa sobre el equipo**, así que no trae la ventana al frente ni le quita el
+    foco al alumno (regla 4). Durante el control remoto la imagen sale con la banda de control,
+    que es lo que el alumno estaba viendo.
+45. **Guardar es explícito.** La imagen llega a la memoria de la consola y se muestra en una vista
+    previa. Solo el botón **«Guardar»** la escribe en disco; «Descartar», cerrar la vista previa,
+    cerrar la clase o cambiar de canal la borran de la memoria. No hay guardado automático,
+    periódico ni oculto. En lote, el profesor ve una miniatura de cada una y elige cuáles guardar.
+46. **Dónde se guarda, y que el profesor lo vea.** En la carpeta Documentos del profesor:
+    `Documentos\Aula\capturas\<equipo> (<usuario>)\<AAAA-MM-DD>\<HH-MM-SS>.jpg`, una carpeta por
+    alumno y por día dentro de `capturas`, que agrupa todas. Las de un alumno simulado van en
+    `… (simulado)`, para que una prueba nunca se mezcle con evidencia real. Al guardar, la consola
+    muestra la ruta con «Abrir carpeta», y la carpeta está siempre en Ajustes › Acerca de.
+47. **Nunca en el equipo del alumno.** El agente captura en memoria, envía la imagen en partes y
+    la libera; no escribe archivos temporales. Si la conexión se cierra a mitad, la imagen se
+    descarta en los dos extremos y no se reanuda.
+48. **Registros.** Se registran la petición, el `snapshot_id`, las partes, el tamaño, las
+    dimensiones, el resultado y que se guardó. **Nunca** la imagen ni la ruta del archivo (que
+    nombra al alumno).
+49. **Las capturas son del profesor, y las borra él.** Aula no las sube, no las comparte y no las
+    borra: quedan en la carpeta personal del profesor. El manual recomienda borrarlas cuando ya
+    no se necesiten.
+
+Permisos del SO (detalle en `docs/protocol.md` §5.17.1): en Windows, la misma captura de las
+miniaturas, desde la sesión del alumno (en modo servicio, el ayudante, sin elevar), sin
+privilegios especiales; la pantalla de bloqueo y el aviso de UAC no se pueden capturar. En macOS
+hará falta el permiso de **Grabación de pantalla**; en Linux, X11 lo permite sin permiso, y en
+**Wayland** la captura pasa por el portal `Screenshot`, que pide la aprobación del alumno en cada
+captura o sesión. Linux y macOS no declaran `screen.snapshot` hasta que se documente aquí su
+aviso.
+
 ## Pendiente para etapas futuras
 
-- Guardar una captura por petición explícita del profesor, y Linux y macOS (incluida la
-  recepción de la transmisión, las restricciones y el control remoto): sus textos de aviso se
-  agregarán aquí antes de implementarlos, con las mismas reglas 6–43.
+- Linux y macOS (incluida la recepción de la transmisión, las restricciones, el control remoto
+  y la captura de pantalla): sus textos de aviso se agregarán aquí antes de implementarlos, con
+  las mismas reglas 6–49.

@@ -35,7 +35,7 @@ que no es parte de la página.
 |---|---|---|
 | `aula:status` | `Status` | Cambia la conexión: buscando, conectado, desconectado, sin configurar. |
 | `aula:board` | `Board` | Llega `code.share` o `code.clear`. |
-| `aula:notices` | `Notices` | Llega `msg.show` o el alumno cierra un aviso. |
+| `aula:notices` | `Notices` | Llega `msg.show`, el profesor toma una captura de esta pantalla (aviso `kind: "snapshot"`, con `notify`, nunca `raise`) o el alumno cierra un aviso. |
 | `aula:broadcast` | `BroadcastView` | Empieza o termina la transmisión de la pantalla del profesor. Llega **antes** que la oferta: la vista y su franja se muestran primero. |
 | `aula:broadcast-signal` | `broadcast.Signal` | Una oferta SDP (`kind: "offer"`) o un candidato ICE del profesor (`kind: "ice"`), ya validados por Go. |
 | `aula:restrictions` | `policy.State` | Empiezan, cambian o terminan las restricciones de la clase. Llega **antes** de aplicarlas. `{apps, web}`: cada uno `null` o `{policyId, mode, items (≤ 15), total}`. |
@@ -75,8 +75,12 @@ que no es parte de la página.
               "remaining_s": 30, "postpones_left": 2, "force": false },
   "teacher": "Lab 3 — Prof. Ayala", "channel": "1" }        // quién dio la orden
 
-// Notices: avisos no cerrados, el más antiguo primero (máx. 10)
-{ "notices": [ { "id": "5b0e…", "text": "Guarden su trabajo", "level": "warning", "at": "…" } ] }
+// Notices: avisos no cerrados, el más antiguo primero (máx. 10). Los del profesor
+// (msg.show) traen su texto; los del propio agente traen kind y ningún texto, y la
+// ventana los arma: "snapshot" = «Captura de pantalla · <profesor> (canal X) tomó una
+// captura de tu pantalla (HH:MM)» (docs/privacidad.md regla 44). Cuentan como «sin ver».
+{ "notices": [ { "id": "5b0e…", "text": "Guarden su trabajo", "level": "warning", "at": "…" },
+               { "id": "9a3c…", "text": "", "level": "warning", "at": "…", "kind": "snapshot" } ] }
 ```
 
 Cada evento lleva la lista **completa**, no un cambio incremental: la interfaz redibuja sin
@@ -173,6 +177,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:simulation` | `SimulationView` | El aula simulada se abre o se cierra, o uno de sus alumnos cambia (conecta, recibe código o un aviso, se ve su pantalla, cambia de falla). Sus sesiones también llegan en `aula:students` con `simulated: true`. |
 | `aula:connectcheck` | `connectcheck.Report` | Mientras corre `CheckConnection()`, cada vez que un paso empieza o termina; el último trae `done: true`. |
 | `aula:remote` | `remote.Control` | El control remoto empieza (`starting`), el agente muestra su banda (`active`), se pausa porque el alumno usa su equipo (`paused`), sigue (`active`) o termina: `ended` con `reason` `teacher`, `replaced`, `idle`, `session` o `error`; `gone` si el alumno se desconectó; `failed` si el agente no pudo mostrar su aviso. `{sessionID, hostname, controlID, status, reason, viewing}`. |
+| `aula:snapshots` | `Snapshots` | Una captura de un alumno se pide, llega (`ready`), falla (`failed` con `reason` `timeout`, `capture`, `busy`, `unsupported`, `tooLarge`, `corrupt` o `gone`), se guarda (`path`) o se descarta. Lista completa `{snapshots: [{id, sessionId, hostname, username, simulated, status, reason, width, height, size, requestedAt, takenAt, path}]}`, **sin la imagen** (`SnapshotImage`). |
 | `aula:remote-frame` | `Thumb` | Cada imagen de la pantalla controlada (hasta 8 por segundo con la vista abierta, 1 con la vista cerrada). No pasa por `aula:frame` ni se guarda. |
 
 ```jsonc
@@ -290,7 +295,7 @@ cada código tenga su enlace y que la sección exista.
 | `PowerCancel(hosts)` | `PowerResult` | **Cancelar.** `power.cancel` a quien tiene una orden en cuenta regresiva (`sent`, `countdown`, `postponed`); `hosts` vacío: todo el canal. |
 | `Simulation()` | `SimulationView` | Estado del aula simulada. |
 | `SimulationStart(n)` | `SimulationView` / error | Abre el aula simulada con `n` alumnos (0 = 2), o agrega `n` si ya está abierta. Los alumnos simulados corren dentro de la consola y se conectan por un puerto local (`127.0.0.1`) que no se anuncia: ningún alumno real lo alcanza. Error si no hay clase. |
-| `SimulationAdd({os, capabilities})` | `SimulationView` / error | Agrega un alumno simulado: `os` `windows`, `linux` o `darwin`; `capabilities` entre `code.view`, `msg.show` y `screen.thumb` (vacío: las tres). Máximo 40. |
+| `SimulationAdd({os, capabilities})` | `SimulationView` / error | Agrega un alumno simulado: `os` `windows`, `linux` o `darwin`; `capabilities` entre `code.view`, `msg.show`, `screen.thumb` y `screen.snapshot` (vacío: las cuatro). Máximo 40. |
 | `SimulationRemove(id)` | `SimulationView` / error | Quita uno. |
 | `SimulationFault(id, fault, delayMs)` | `SimulationView` / error | Hace fallar a uno: `slow` (contesta con `delayMs` de retraso, 500–10 000), `noack` (muestra pero no confirma), `disconnected` (se va hasta volver a `none`). |
 | `Manual()` | `ManualView` / error | El manual embebido (`docs/v1/administracion`), ya leído y validado: `{pages, diagrams, images, errors, diagnosis}`. `pages[]` = `{slug, title, summary, group, order, screens, blocks, headings}`; los bloques no traen HTML (la interfaz los dibuja con el DOM). `diagrams[id]` = `{id, title, description, audience, screens, alt, explanation, mermaid, light, dark}`: `light` y `dark` son los SVG claro y oscuro como data URI para un `<img>` (vacíos si el dibujo no está vigente: la interfaz muestra `mermaid`), `explanation` son los bloques de «Lo que no es obvio» y `screens` las vistas cuyo «?» lo muestra. `images`: `img/x.png` → data URI. `errors`: código de error → `página#sección`; `agentErrors`, lo mismo para los códigos del protocolo que mandan los alumnos. `diagnosis`: el árbol de «¿Falta un alumno?» sacado del diagrama 12 (`{start, nodes}`). |
@@ -298,6 +303,13 @@ cada código tenga su enlace y que la sección exista.
 | `ReleaseControl()` | error | **Soltar** (en la vista y en la franja): `remote.stop`. El control termina con el `remote.ack ended` del agente o con su desconexión. `remoteGone` si no había ninguno. |
 | `ShowControl(visible)` | error | La vista de control se abre (`true`) o se cierra sin soltar (`false`): ajusta el video con un `remote.start` del mismo `control_id` (125 ms y 1280 px, o 1000 ms y 640 px). Sin la vista no se manda entrada. |
 | `SendRemoteInput(events)` | error | Eventos de la imagen en vivo, en lotes cada 33 ms: `{t: "move", x, y}`, `{t: "button", b, down, x, y}`, `{t: "wheel", dx, dy}`, `{t: "key", code, down}` (`docs/protocol.md` §5.16). Go descarta las teclas fuera de la lista, junta los movimientos y manda como máximo 60 `remote.input` por segundo; nada sale antes de `active` ni en pausa. |
+| `TakeSnapshot(sessionID)` | `snapshot.Snapshot` / error | **Tomar captura** desde la ficha o desde la pantalla en grande (también en modo control: no lo termina ni lo pausa). `screen.snapshot.request` (calidad 90, resolución nativa) a un alumno conectado, real o simulado, que declaró `screen.snapshot`; si no, `snapshotUnsupported`. Con 64 en memoria, `snapshotTooMany`. Sigue con `aula:snapshots`. |
+| `TakeSnapshots(sessionIDs)` | `SnapshotBatch` / error | El panel **Captura** de la barra de acciones: pide una a cada seleccionado que puede. `{snapshots, skipped}`: `skipped` son los equipos que no la permiten. Error `snapshotUnsupported` si nadie puede. |
+| `SnapshotImage(id)` | string (Base64) / error | El JPEG de una captura `ready`, para la vista previa y las miniaturas del lote. No toca el disco. `snapshotGone` si ya no está. |
+| `SaveSnapshots(ids)` | `snapshot.Snapshot[]` / error | **Guardar**: escribe las `ready` en `<Documentos>\Aula\capturas\<equipo> (<usuario>)\<AAAA-MM-DD>\<HH-MM-SS>.jpg` (los simulados, en `… (simulado)`) y las devuelve con `path`. Es lo único que escribe una captura en disco (`docs/privacidad.md` regla 45). `snapshotSaveFailed` si no se pudo escribir. |
+| `DiscardSnapshots(ids)` | — | **Descartar**, cerrar la vista previa o «Descartar todas»: las olvida y libera la imagen. Un archivo ya guardado se queda. |
+| `SnapshotFolder()` | `SnapshotFolder` | Para Ajustes › Acerca de: `{path, exists, error}` de la carpeta `capturas`. |
+| `OpenSnapshotFolder(path)` | error | **Abrir carpeta**: la de capturas (`""`) o la de una captura guardada (su `path`). Nada fuera de `capturas`. `snapshotFolder` si aún no existe. |
 | `ManualSearch(q)` | `Result[]` | Búsqueda local, sin distinguir acentos ni mayúsculas, en títulos, secciones y texto de las páginas y en los títulos y descripciones de los diagramas. Hasta 12 `{slug, anchor, diagram, title, snippet}`. |
 | `CheckConnection()` | `connectcheck.Report` / error | **Comprobar la conexión** (`internal/connectcheck`): recorre desde este equipo el camino de un alumno y dice en qué paso fallaría. `{channel, steps, cause, done}`; cada paso `{id, status, cause, reason, addrs, port, others, networks}` con `id` `announce`, `port`, `secure` o `network` y `status` `pending`, `running`, `ok`, `warn`, `fail` o `unknown`. El texto de un paso es `comprobar.<id>.<reason \| cause \| status>` (`connectcheck.Outcomes` los lista, y la prueba de textos exige uno por cada). `cause` es la del primer paso que falla, con los mismos valores que `session.Cause` del agente. Tarda unos segundos; no llega a ningún alumno, ni real ni simulado (la conexión de prueba se cierra antes de `hello`). Error `noClass` sin clase y `checkRunning` si ya hay una en curso. |
 | `SimulationStop()` | `SimulationView` | Cierra el aula simulada: sus alumnos se van y se olvidan. También ocurre al cambiar de canal o de nombre, o al cerrar la clase. Los alumnos reales no se tocan. |
@@ -321,6 +333,11 @@ cada código tenga su enlace y que la sección exista.
 - **La transmisión de la pantalla es visible para los dos lados:** la consola muestra la franja
   roja con "Detener" mientras dura y su propia ventana no aparece en el video
   (`docs/privacidad.md`, regla 15).
+- **Captura: vista previa en memoria, guardar es explícito** (`docs/privacidad.md` reglas 44–49).
+  La vista previa es el diálogo `#captura`; cerrarlo descarta la captura de la memoria. En modo
+  control, antes de pedirla se sueltan las teclas y botones presionados, y el teclado no vuelve
+  solo a la imagen al cerrar la vista previa. El lote es el panel `#panel-captura`, con una
+  miniatura por alumno y casillas para elegir cuáles guardar.
 - **Los cuadros solo viven en memoria:** Go guarda el último de cada alumno mientras la vista
   está abierta y la interfaz solo los tiene en sus `<img>`. Nada se escribe en disco
   (`docs/privacidad.md`, regla 7). La CSP permite `img-src data:` para mostrarlos.

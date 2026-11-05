@@ -1101,3 +1101,30 @@ prueba en una VM: nunca con clics ni teclas sintéticas en el escritorio de quie
 | **RC-I** Registros | Revisa `aula-agente.log` y el log de la consola. | "remote control started/ended" con `control_id`, motivo, eventos y descartes; **ninguna** tecla ni coordenada. |
 
 **Para aceptar** bastan RC-A, RC-B y RC-C en ✅.
+
+## 17. Captura de la pantalla de un alumno (10.5)
+
+Comprueba que el profesor toma una foto fija de la pantalla de un alumno, la ve, la guarda solo si
+quiere y sabe dónde quedó, y que el alumno lo sabe en el momento (`docs/privacidad.md`, reglas
+44–49). Se prueba en una VM: nunca con clics ni teclas sintéticas en el escritorio de quien prueba.
+
+### 17.1 Preparación
+
+- Consola en el equipo del profesor y una VM de alumno con Windows y el agente como servicio
+  (§13), con una sesión iniciada y el Bloc de notas abierto con algo escrito.
+- En la ficha del alumno, «Qué puede hacer su equipo» dice Sí en «Tomar una captura de su
+  pantalla» y está el botón **Tomar captura**.
+
+### 17.2 Casos
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **SN-A** Tomar, ver y guardar (**aceptación**) | Ficha → **Tomar captura**; en la vista previa, clic en la imagen y luego **Guardar** y **Abrir carpeta**. | La vista previa muestra la pantalla de la VM a su resolución (dice, por ejemplo, «1920×1080 · 10:42:06 · 1.6 MB») y el texto del Bloc de notas se lee a tamaño real. Al guardar dice «Guardada en …\Documentos\Aula\capturas\<equipo> (<usuario>)\<fecha>\<hora>.jpg» y el Explorador abre esa carpeta. |
+| **SN-B** Aviso al alumno (**aceptación**) | Mira la VM durante SN-A; repite con Aula cerrada. | Antes de la captura, arriba, «● Tu profesor está tomando una captura de tu pantalla» unos 5 s (y se ve en la imagen); en Aula, el aviso «Captura de pantalla · … tomó una captura de tu pantalla (HH:MM)» sin quitar el foco al Bloc de notas. Con Aula cerrada, el icono se marca y la ventana no aparece. |
+| **SN-C** Nada sin «Guardar», nada en el alumno (**aceptación**) | Toma otra y pulsa **Descartar**. Busca en la VM archivos `.jpg` recientes (`%TEMP%`, Documentos, `C:\ProgramData\Aula`) y revisa `aula-agente.log` y el log de la consola. | No se creó ningún archivo nuevo en la consola ni en la VM. Los logs dicen «screenshot requested/sent/received/discarded» con `snapshot_id`, partes y tamaños; **ni** la imagen **ni** la ruta del archivo. |
+| **SN-D** Lote | Selecciona la VM y un alumno simulado; panel **Captura** › **Tomar captura de 2 alumnos**; **Guardar 2**. | Dos miniaturas con «Lista»; se guardan en carpetas distintas, la del simulado termina en «(simulado)». |
+| **SN-E** Durante el control | Toma el control de la VM y, en su vista, **Tomar captura**; escribe con la vista previa abierta; ciérrala. | La captura sale con la banda roja de control en la imagen; el aviso fijo de la VM sigue diciendo que la controlan; lo que escribes con la vista previa abierta no llega; al cerrar sigues controlando (clic en su pantalla). |
+| **SN-F** Sesión bloqueada | Bloquea la sesión de la VM (Win+L) y toma una captura. | La vista previa dice «Su equipo no pudo capturar la pantalla» con qué hacer; nada se guarda. |
+| **SN-G** Resolución alta | Si la VM permite 2560×1440 o más, cámbiala y toma una captura. | Llega completa (en varias partes) y la vista previa dice esa resolución. |
+
+**Para aceptar** bastan SN-A, SN-B y SN-C en ✅.

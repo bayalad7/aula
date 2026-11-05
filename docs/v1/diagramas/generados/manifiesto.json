@@ -112,8 +112,8 @@
     },
     {
       "id": "08-monitoreo-pantalla",
-      "titulo": "Monitoreo: miniaturas y pantalla",
-      "descripcion": "Cómo ve el profesor las pantallas de sus alumnos y cómo sabe cada alumno que lo están viendo",
+      "titulo": "Monitoreo: miniaturas, pantalla y captura",
+      "descripcion": "Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura y cómo sabe cada alumno que lo están viendo",
       "audiencia": [
         "profesor",
         "desarrollador"
@@ -121,15 +121,15 @@
       "pantallas": [
         "alumnos"
       ],
-      "hash": "sha256:a4630b579351134ac4bec29bd3401933d1dd98f497eda9a46a1ef70d1bd66738",
-      "alt": "Monitoreo: miniaturas y pantalla: Cómo ve el profesor las pantallas de sus alumnos y cómo sabe cada alumno que lo están viendo",
+      "hash": "sha256:d983ac3cbec3469d703928612defc4b6abe6acf0afd5f0bb1aa049a6c3a90754",
+      "alt": "Monitoreo: miniaturas, pantalla y captura: Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura y cómo sabe cada alumno que lo están viendo",
       "claro": "generados/08-monitoreo-pantalla.claro.svg",
       "oscuro": "generados/08-monitoreo-pantalla.oscuro.svg"
     },
     {
       "id": "09-transparencia-avisos",
       "titulo": "Transparencia: avisos e indicadores al alumno",
-      "descripcion": "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le transmite, lo restringe o apaga su equipo",
+      "descripcion": "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, lo restringe o apaga su equipo",
       "audiencia": [
         "profesor",
         "alumno",
@@ -139,8 +139,8 @@
         "alumnos",
         "ayuda"
       ],
-      "hash": "sha256:bed3aeca0e19f8656c852c2e2f619f9127c69bfffe43000697472fa541f403ee",
-      "alt": "Transparencia: avisos e indicadores al alumno: Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le transmite, lo restringe o apaga su equipo",
+      "hash": "sha256:0b84fdc53c2d5c50f903b2b55ea4be945ba334318accc823811feb66a1b48410",
+      "alt": "Transparencia: avisos e indicadores al alumno: Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, lo restringe o apaga su equipo",
       "claro": "generados/09-transparencia-avisos.claro.svg",
       "oscuro": "generados/09-transparencia-avisos.oscuro.svg"
     },
@@ -271,7 +271,7 @@
       "pantallas": [
         "alumnos"
       ],
-      "hash": "sha256:f3a042d96b49f5aad81f8ba24718d0b8fd32667fe74dbd5cd38b130769f6e9ea",
+      "hash": "sha256:be03afe40b5203d87a9cd0b9ea1fa9c0319bfe5a679448aca5ea616c432f665d",
       "alt": "Control remoto de un alumno: Cómo toma el profesor el teclado y el mouse de un alumno, cómo lo sabe el alumno y cómo termina",
       "claro": "generados/17-control-remoto.claro.svg",
       "oscuro": "generados/17-control-remoto.oscuro.svg"

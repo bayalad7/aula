@@ -1,14 +1,14 @@
 ---
-titulo: "Monitoreo: miniaturas y pantalla"
-descripcion: "Cómo ve el profesor las pantallas de sus alumnos y cómo sabe cada alumno que lo están viendo"
+titulo: "Monitoreo: miniaturas, pantalla y captura"
+descripcion: "Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura y cómo sabe cada alumno que lo están viendo"
 audiencia: [profesor, desarrollador]
 pantallas: [alumnos]
 secciones_manual: [privacidad, protocol]
 ---
 
-# Monitoreo: miniaturas y pantalla
+# Monitoreo: miniaturas, pantalla y captura
 
-¿Qué ocurre al abrir «Ver pantallas», y qué garantiza que el alumno lo sepa?
+¿Qué ocurre al abrir «Ver pantallas» o al tomar una captura, y qué garantiza que el alumno lo sepa?
 
 ```mermaid
 %%{init: {"htmlLabels": false}}%%
@@ -46,6 +46,21 @@ sequenceDiagram
     end
     S->>I: quita el distintivo
     W->>W: Close olvida todos los cuadros
+
+    Note over P,K: Captura: una foto fija a resolución completa (§5.17)
+    P->>W: Tomar captura (ficha, pantalla en grande o panel Captura)
+    W->>S: screen.snapshot.request {calidad 90, nativa}<br/>solo a quien declaró screen.snapshot
+    S->>I: «Tu profesor está tomando una captura…» 5 s<br/>(sin cambiar el texto si ya se ve la pantalla)
+    S->>K: captura del monitor principal, en memoria
+    S->>S: aviso «Captura de pantalla» en la ventana (notify)
+    S-->>W: screen.snapshot.response, partes de 512 KiB
+    W->>W: snapshot.Store ensambla y comprueba size y sha256
+    W->>P: vista previa (la imagen sigue en memoria)
+    alt el profesor pulsa Guardar
+        W->>W: Documentos › Aula › capturas › equipo (usuario) › fecha › hora.jpg
+    else Descartar, cerrar la vista previa o la clase
+        W->>W: la olvida: nada en disco
+    end
 ```
 
 ## Lo que no es obvio
@@ -55,9 +70,16 @@ sequenceDiagram
 - **El distintivo va antes del primer cuadro**, y si no se puede mostrar no hay captura. Con el
   agente como servicio, la captura solo existe en el ayudante, que es quien muestra el distintivo
   (diagrama 13).
-- **Sin disco en ningún extremo**: las imágenes solo viven en memoria; la consola muestra la
+- **Las miniaturas no tocan el disco en ningún extremo**: viven en memoria; la consola muestra la
   última de cada equipo y la olvida al cerrar la vista. Los logs registran `seq` y tamaños, nunca
   la imagen.
+- **La captura es la única excepción, y solo en la consola**: se escribe en disco cuando el
+  profesor pulsa «Guardar» (`docs/privacidad.md` reglas 7 y 45–46). El agente la tiene en memoria
+  lo justo para enviarla. Una captura nativa pesa más que el límite de 1 MiB por mensaje: va en
+  partes (`protocol.SplitParts`, `protocol.Reassembly`), y la consola la descarta si no llega
+  completa en 30 s o si la huella no coincide.
+- **El aviso de la captura no es una banda**: es un hecho puntual. El distintivo nativo va antes
+  de capturar (por eso sale en la imagen) y el aviso en la esquina de la ventana, después.
 - Si la captura falla (sesión bloqueada, por ejemplo), el agente responde **una sola vez**
   `error internal` y sigue intentando; el distintivo sigue visible.
 - Hoy solo Windows declara `screen.thumb`; Linux y macOS devuelven «no soportado».
@@ -67,9 +89,12 @@ sequenceDiagram
 
 ## Fuentes en el código
 
-- `internal/screen/wall.go`, `internal/screen/streamer.go`
+- `internal/screen/wall.go`, `internal/screen/streamer.go` (`Announce`)
+- `internal/snapshot/agent.go` (`Taker`), `internal/snapshot/console.go` (`Store`),
+  `internal/snapshot/files.go`, `internal/protocol/parts.go`
 - `internal/platform/screen.go`, `internal/platform/screen_windows.go`,
   `internal/platform/screen_other.go`
-- `apps/teacher/app.go` (`OpenScreens`, `CloseScreens`, `ViewScreen`, `onFrame`)
-- `apps/student/app.go` (`enableScreen`, `onViewed`)
-- `docs/protocol.md` §5.6–5.8, `docs/privacidad.md` reglas 6–8
+- `apps/teacher/app.go` (`OpenScreens`, `CloseScreens`, `ViewScreen`, `onFrame`),
+  `apps/teacher/snapshot.go` (`TakeSnapshot`, `TakeSnapshots`, `SaveSnapshots`)
+- `apps/student/app.go` (`enableScreen`, `onViewed`), `apps/student/snapshot.go` (`onSnapshot`)
+- `docs/protocol.md` §5.6–5.8 y §5.17, `docs/privacidad.md` reglas 6–8 y 44–49

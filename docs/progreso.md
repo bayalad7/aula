@@ -1,7 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-05 (10.4 control remoto implementado, falta la prueba en VM; etapa 19
-cerrada; prompts y comandos al día con las etapas 18 y 19).
+Última actualización: 2026-11-05 (10.5 captura de pantalla de un alumno implementada, falta la
+prueba en VM; 10.4 control remoto implementado, falta la prueba en VM; etapa 19 cerrada).
 
 La columna «Etapa» es el número del prompt en `docs/v1/prompts/`. Entre paréntesis, el número con
 el que se trabajó antes; las notas de abajo lo conservan.
@@ -22,7 +22,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
 | 10.3 | Energía: apagar, reiniciar y cerrar sesión con cuenta regresiva (Windows) | ✅ Implementado; apagado con cuenta y posponer probado en el laboratorio (faltan los demás casos de `docs/prueba-vms.md` §15) |
 | 10.4 | Control remoto del alumno | ✅ Implementado y probado en CI con dobles (falta la prueba en VM, `docs/prueba-vms.md` §16, y los casos C-44 a C-48 y A-09 a A-11) |
-| 10.5 | Captura de pantalla de un alumno | ⏳ Pendiente |
+| 10.5 | Captura de pantalla de un alumno | ✅ Implementado y probado en CI con dobles (falta la prueba en VM, `docs/prueba-vms.md` §17, y los casos C-49 a C-53 y A-12 y A-13) |
 | 10.6 | Mensajería del alumno y «levantar la mano» | ⏳ Pendiente (crea la vista «Clase» si es la primera) |
 | 10.7 | Mensaje directo a un alumno | ⏳ Pendiente (casi todo existe: el aviso a una selección; quizá es una mejora) |
 | 10.8 | Temporizador compartido | ⏳ Pendiente |
@@ -45,11 +45,13 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
 
 **Siguiente:**
-1. Probar en la ventana real los casos C-01 a C-48 y A-01 a A-11, y el control remoto en VM
-   (`docs/prueba-vms.md` §16: RC-A, RC-B y RC-C para aceptar).
+1. Probar en la ventana real los casos C-01 a C-53 y A-01 a A-13, el control remoto en VM
+   (`docs/prueba-vms.md` §16: RC-A, RC-B y RC-C para aceptar) y la captura (§17: SN-A, SN-B y
+   SN-C).
 2. La revisión 11.
-3. Publicar `v0.6.0-rc.1` (etapas 18, 19 y 10.4). Las 0.x son borradores: al integrar todas las
-   funciones se borran y empieza la versión 1 oficial.
+3. ~~Publicar `v0.6.0-rc.1`~~: publicado el 05/11/2026 (etapas 10.2, 10.3, 18, 19 y 10.4, instaladores
+   de Windows y checksums firmados). Las 0.x son borradores: al integrar todas las funciones se
+   borran y empieza la versión 1 oficial. Probar sus instaladores en las VMs (§14 a §16).
 4. Cualquier función de 10.5 a 10.13 con `/funcionalidad-nueva <número>`.
 
 ## Etapa 02: notas
@@ -1119,6 +1121,56 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.5: captura de pantalla de un alumno — notas
+
+- **Diseño aprobado** (2026-11-05) con un agregado del usuario: «Tomar captura» también en la vista
+  del control remoto, sin terminarlo ni pausarlo. Decisiones aprobadas: distintivo nativo de 5 s
+  antes de capturar (sin cambiar el de pantalla vista o control), `Documentos\Aula\capturas`,
+  JPEG a calidad 90 y resolución nativa, captura también a los simulados (guardada aparte) y el
+  límite del canal local del ayudante a 24 MiB.
+- **Protocolo** (`docs/protocol.md` §5.17, permisos en §5.17.1): `screen.snapshot.request`
+  (`snapshot_id`, `quality` 50–95, `max_width` 0 = nativa) y `screen.snapshot.response` en partes
+  de 512 KiB (hasta 32, 16 MiB) con `taken_at`, equipo, usuario, tamaño y `sha256` en la parte 1;
+  capacidad `screen.snapshot`, aparte de `screen.thumb` para no mandarla a agentes 0.6. Troceo
+  común en `protocol.SplitParts` y `protocol.Reassembly` (lo reutilizará 10.10).
+- **`internal/snapshot`** (nuevo, sin APIs del SO): `Taker` del agente (aviso antes de capturar,
+  una a la vez, baja la calidad hasta que cabe, partes, aviso a la ventana, nada en disco ni en el
+  log) y `Store` de la consola (ensambla, comprueba tamaño, huella y JPEG, 30 s de límite, máximo
+  64 en memoria, `Save` en `capturas\<equipo> (<usuario>)\<fecha>\<hora>.jpg` sin sobrescribir;
+  la ruta no va al log).
+- **`internal/screen`:** `Streamer.Announce`: el distintivo con otro texto por un rato, salvo que
+  ya haya una transmisión o un control (entonces no cambia).
+- **`internal/platform`:** `DocumentsDir` (`FOLDERID_Documents`) y `OpenFolder` (Explorador), con
+  fallback. `ScreenCapture` no cambió. **`internal/agentsvc`:** `maxFrame` de 4 a 24 MiB.
+- **Alumno:** declara `screen.snapshot` con la captura (en servicio, si el ayudante captura). El
+  aviso es un `Notice` con `kind: "snapshot"` y sin texto: la ventana arma «Captura de pantalla ·
+  … tomó una captura de tu pantalla (HH:MM)» (icono nuevo `captura`). `notify`, nunca `raise`.
+  Sin bindings nuevos.
+- **Consola:** «Tomar captura» en la ficha y en la pantalla grande (también en modo control: suelta
+  lo presionado antes de pedirla); vista previa `#captura` (tamaño real con un clic, Guardar,
+  Descartar, ruta y «Abrir carpeta»); panel «Captura» en la barra de acciones con miniaturas y
+  casillas; carpeta en Ajustes › Acerca de; «Tomar una captura de su pantalla» en «Qué puede
+  hacer su equipo»; errores `snapshotUnsupported`, `snapshotTooMany`, `snapshotGone`,
+  `snapshotSaveFailed` y `snapshotFolder`; evento `aula:snapshots`; iconos `captura`, `guardar` y
+  `carpeta` y `.aviso-en-linea--exito` en `internal/ui`.
+- **Simulados:** declaran `screen.snapshot` (su pantalla dibujada dice «alumno simulado») y cuentan
+  las capturas; la guía de capacidades inofensivas lo permite a propósito (regla 34).
+- **Documentación:** `docs/privacidad.md` regla 7 reescrita y reglas 44–49; manual (Tareas
+  frecuentes › «Tomar una captura de la pantalla de un alumno», la ficha y la barra en Alumnos,
+  Ajustes › «Capturas de pantalla»); diagramas 08, 09 y 17 con sus SVG; `docs/eventos-ui.md`;
+  casos C-49 a C-53, A-12 y A-13 y `docs/prueba-vms.md` §17; `CLAUDE.md` lista
+  `internal/snapshot`.
+- **Pruebas:** troceo y validación en `protocol`; `Taker` y `Store` con un doble de
+  `ScreenCapture` (orden aviso → captura → aviso a la ventana → partes, una a la vez, calidad,
+  errores, partes ajenas, corrupta, tiempo límite, guardado organizado y sin sobrescribir, nada en
+  disco sin «Guardar», **nada en disco ni en el log del agente**); `Announce`; la app del alumno
+  (`notify` y no `raise`); simulados; los bindings de la consola, el lote y la captura durante el
+  control (no manda `remote.stop` y la entrada sigue).
+- **Arnés:** escenas `lab-captura-falla` y las capturas 62–71 en `recorrido.mjs`; escenas
+  `captura` y `captura-vista` y capturas 41–44 en `recorrido-alumno.mjs`; caso `aviso-captura` en
+  `pruebas-alumno.mjs`.
+- **Falta de tu lado:** la prueba en VM (§17) y los casos manuales.
 
 ## Etapa 10.4: control remoto (D-019) — notas
 

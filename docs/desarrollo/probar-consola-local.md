@@ -118,6 +118,11 @@ consola agrega aquí sus casos.
 | C-46 | Con la imagen enfocada pulsa Esc, luego Ctrl+Alt+Fin; cierra la vista con la X | Esc llega al alumno (no cierra la vista); Ctrl+Alt+Fin lleva el foco a «Soltar»; al cerrar, la franja sigue y «Ver» vuelve a abrir la vista |
 | C-47 | Con un alumno controlado, toma el control de otro | Aviso «Ya estás controlando otro equipo» con «Ver en el manual»; el primero sigue controlado |
 | C-48 | En Miniaturas, haz clic en la pantalla de un alumno real y pulsa «Tomar control» arriba | La misma vista pasa a «Controlando …» con «Soltar»; al soltar, su miniatura sigue actualizándose en la cuadrícula. En un simulado no aparece el botón |
+| C-49 | Abre el aula simulada; en la ficha de «Simulado 1», «Tomar captura» | La vista previa dice «Tomando la captura…» y en un segundo muestra su pantalla dibujada, con la insignia «Simulado» y la nota de que se guarda aparte; un clic en la imagen la ve a tamaño real |
+| C-50 | En esa vista previa pulsa «Guardar»; luego «Abrir carpeta» | Dice «Guardada en …\Documentos\Aula\capturas\Simulado 1 (Alumno de prueba) (simulado)\<fecha>\<hora>.jpg»; el Explorador abre esa carpeta y el archivo se ve igual que la vista previa |
+| C-51 | Ajustes › Acerca de, «Capturas de pantalla» | Muestra la ruta de `capturas` y «Abrir carpeta» la abre. En un equipo donde nunca se guardó ninguna, dice «Se crea al guardar la primera captura» y el botón está desactivado |
+| C-52 | Selecciona dos simulados, panel «Captura» › «Tomar captura de 2 alumnos»; desmarca uno y pulsa «Guardar 1» | Aparece una miniatura por alumno con «Lista»; se guarda solo la marcada, el panel dice «1 captura guardada en …» con «Abrir carpeta» y la otra sigue en la lista hasta «Descartar todas» |
+| C-53 | Toma el control de un alumno real y, en la vista del control, pulsa «Tomar captura»; con la vista previa abierta escribe algo; ciérrala | Lo que escribes no llega al alumno; al cerrar vuelves a «Controlando …» (la franja nunca se fue) y, tras un clic en su pantalla, tu teclado vuelve a manejar su equipo |
 
 ### Diagramas
 
@@ -165,6 +170,8 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-09 | Con Aula compacta o cerrada, toma el control desde la ficha del alumno en la consola | La ventana vuelve a su tamaño y al frente con la banda roja «… está controlando tu equipo» (sin botón para cerrarla) y la de pantalla vista; el distintivo nativo dice «El profesor está controlando tu equipo» |
 | A-10 | Mientras te controlan, mueve tu propio mouse | La banda dice «Su control está en pausa…» y la consola «En pausa»; a los 2 s sin moverte vuelve a «Controlando» |
 | A-11 | Pulsa «Soltar» en la consola con el foco en tu editor | La banda y el distintivo se van; en la esquina aparece «… dejó de controlar tu equipo» sin quitarle el foco a tu editor |
+| A-12 | Con tu editor al frente, toma una captura desde la ficha del alumno en la consola | Arriba de la pantalla, 5 s, «● Tu profesor está tomando una captura de tu pantalla» (sale también en la imagen de la consola); en la esquina de Aula, «Captura de pantalla · Prof. … tomó una captura de tu pantalla (HH:MM)», sin quitarle el foco a tu editor; el título dice «(1) Aula — …» |
+| A-13 | Cierra Aula y vuelve a tomar una captura; busca archivos nuevos en el equipo del alumno | La ventana no aparece: el icono del área de notificación se marca y al abrirla está el aviso. En `%TEMP%`, Documentos y `C:\ProgramData\Aula` no hay ninguna imagen nueva, y `aula-agente.log` solo dice «screenshot sent» con partes y tamaños |
 
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 

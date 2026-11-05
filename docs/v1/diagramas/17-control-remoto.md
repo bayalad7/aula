@@ -40,6 +40,13 @@ sequenceDiagram
         A->>H: input.inject (SendInput en la sesión)
     end
 
+    opt el profesor toma una captura durante el control
+        D->>D: la consola suelta sus teclas y botones (vista previa)
+        D->>A: screen.snapshot.request (no es remote.stop)
+        Note over A,H: el aviso fijo sigue diciendo que lo controlan,<br/>el control no se pausa ni termina
+        H-->>D: screen.snapshot.response, en partes
+    end
+
     opt el alumno mueve su mouse o escribe
         A->>H: input.local (cada 200 ms)
         A->>H: suelta teclas y botones
@@ -77,6 +84,9 @@ sequenceDiagram
   se atrasa.
 - **Nada queda presionado.** El agente suelta lo que presionó al pausar, terminar o perder la
   conexión; el ayudante también, si el servicio desaparece.
+- **Una captura no interrumpe el control** (`docs/protocol.md` §5.16 y §5.17): el profesor la toma
+  desde la vista del control; mientras ve la vista previa su teclado no llega al alumno, y el
+  aviso fijo no cambia de texto (`docs/privacidad.md` regla 44).
 - **Uno a la vez**: `remote.Desk` rechaza un segundo control (`alreadyControlling`). Los alumnos
   simulados no declaran `remote` y nunca reciben estos mensajes.
 - **Lo que Windows no deja**: Ctrl+Alt+Supr, la pantalla de bloqueo, el aviso de UAC y las ventanas

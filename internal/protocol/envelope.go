@@ -70,6 +70,9 @@ const (
 	TypeTimerExtend Type = "timer.extend"
 	TypeTimerStop   Type = "timer.stop"
 	TypeTimerAck    Type = "timer.ack"
+	// Files the teacher sends (docs/protocol.md §5.20).
+	TypeFilePush    Type = "file.push"
+	TypeFilePushAck Type = "file.push.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -278,6 +281,9 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeTimerExtend: decodeAs[TimerExtend],
 	TypeTimerStop:   decodeAs[TimerStop],
 	TypeTimerAck:    decodeAs[TimerAck],
+
+	TypeFilePush:    decodeAs[FilePush],
+	TypeFilePushAck: decodeAs[FilePushAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

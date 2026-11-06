@@ -92,6 +92,15 @@ func samplePayloads() []Payload {
 		TimerStop{TimerID: testRefID},
 		TimerAck{RefID: testSnippetID, TimerID: testRefID, Status: TimerRunning, RemainingMS: 599980},
 		TimerAck{RefID: testSnippetID, TimerID: testRefID, Status: TimerEnded},
+		FilePush{PushID: testRefID, FileID: testSnippetID, Part: 1, Parts: 1, Data: []byte("id,n\n"),
+			Name: "datos.csv", Dest: "Ejercicio 4/datos", Size: 5, SHA256: strings.Repeat("ab", 32),
+			Overwrite: true, Label: "Ejercicio 4", Index: 2, Files: 3},
+		FilePush{PushID: testRefID, FileID: testSnippetID, Part: 1, Parts: 1, Data: []byte{},
+			Name: "__init__.py", SHA256: strings.Repeat("ab", 32), Index: 1, Files: 1},
+		FilePush{PushID: testRefID, FileID: testSnippetID, Part: 3, Parts: 4, Data: []byte{1, 2, 3}},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushSaved, Path: "Ejercicio 4/datos (2).csv", Renamed: true},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushSaved, Path: "datos.csv", Replaced: true},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushFailed, Reason: FilePushNoSpace},
 	}
 }
 
@@ -604,5 +613,70 @@ func TestTimerLimits(t *testing.T) {
 	ok := TimerStart{TimerID: testRefID, Label: strings.Repeat("ñ", MaxTimerLabel), DurationS: MaxTimerDurationS, RemainingMS: MaxTimerRemaining}
 	if err := ok.Validate(); err != nil {
 		t.Errorf("the limits must be valid: %v", err)
+	}
+}
+
+func TestFilePushLimits(t *testing.T) {
+	sum := strings.Repeat("ab", 32)
+	first := func(f func(*FilePush)) FilePush {
+		p := FilePush{PushID: testRefID, FileID: testSnippetID, Part: 1, Parts: 1, Data: []byte("x"),
+			Name: "a.txt", Size: 1, SHA256: sum, Index: 1, Files: 1}
+		f(&p)
+		return p
+	}
+	for _, p := range []Payload{
+		first(func(p *FilePush) { p.PushID = "x" }),
+		first(func(p *FilePush) { p.FileID = "" }),
+		first(func(p *FilePush) { p.Part = 2 }),
+		first(func(p *FilePush) { p.Parts = MaxFilePushParts + 1; p.Size = MaxFilePushBytes + 1 }),
+		first(func(p *FilePush) { p.Name = "" }),
+		first(func(p *FilePush) { p.Name = strings.Repeat("ñ", MaxFilePushName+1) }),
+		first(func(p *FilePush) { p.Dest = strings.Repeat("d", MaxFilePushDest+1) }),
+		first(func(p *FilePush) { p.Label = strings.Repeat("l", MaxFilePushLabel+1) }),
+		first(func(p *FilePush) { p.Size = -1 }),
+		first(func(p *FilePush) { p.Size = FilePushPartSize + 1 }), // needs 2 parts
+		first(func(p *FilePush) { p.Size = 0 }),                    // empty file with data
+		first(func(p *FilePush) { p.Data = nil }),                  // size 1 without data
+		first(func(p *FilePush) { p.SHA256 = strings.ToUpper(sum) }),
+		first(func(p *FilePush) { p.Files = 0 }),
+		first(func(p *FilePush) { p.Index = 2 }),
+		first(func(p *FilePush) { p.Files = MaxFilePushFiles + 1; p.Index = 1 }),
+		first(func(p *FilePush) { p.Name = "a\xffb" }),
+		FilePush{PushID: testRefID, FileID: testSnippetID, Part: 2, Parts: 2},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: "kept", Path: "a"},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushSaved},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushSaved, Path: "a", Reason: FilePushBusy},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushSaved, Path: "a", Renamed: true, Replaced: true},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushFailed},
+		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushFailed, Reason: FilePushBusy, Path: "a"},
+		FilePushAck{RefID: "x", PushID: testRefID, FileID: testSnippetID, Status: FilePushFailed, Reason: FilePushBusy},
+	} {
+		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
+		}
+	}
+	big := FilePush{PushID: testRefID, FileID: testSnippetID, Part: 2, Parts: 2, Data: make([]byte, FilePushPartSize+1)}
+	if err := big.Validate(); !errors.Is(err, ErrMessageTooLarge) {
+		t.Errorf("oversized part: Validate = %v, want message_too_large", err)
+	}
+	ok := first(func(p *FilePush) {
+		p.Size, p.Parts, p.Data = MaxFilePushBytes, MaxFilePushParts, make([]byte, FilePushPartSize)
+		p.Name = strings.Repeat("ñ", MaxFilePushName)
+		p.Dest = strings.Repeat("d", MaxFilePushDest)
+		p.Label = strings.Repeat("l", MaxFilePushLabel)
+		p.Index, p.Files = MaxFilePushFiles, MaxFilePushFiles
+	})
+	if err := ok.Validate(); err != nil {
+		t.Errorf("the limits must be valid: %v", err)
+	}
+	// A whole part of the largest size fits in one message.
+	if _, err := Encode(New(ok)); err != nil {
+		t.Errorf("a full part must fit in a message: %v", err)
+	}
+	if c, has := RequiredCapability(TypeFilePush); !has || c != CapFilePush {
+		t.Errorf("file.push requires %q, %v", c, has)
+	}
+	if _, has := RequiredCapability(TypeFilePushAck); has {
+		t.Error("file.push.ack goes to the console and must not require a capability")
 	}
 }

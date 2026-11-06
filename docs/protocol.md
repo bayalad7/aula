@@ -312,6 +312,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `hand` | `hand.raise`, `hand.lower` | v0.8 (§5.18). Todos los SO: no toca el sistema, solo la ventana del alumno. Se declara cuando hay ventana (en modo servicio, con el ayudante en la sesión del alumno); también los alumnos simulados. |
 | `msg.student` | `msg.student`, `msg.student.ack` | v0.8 (§5.18). Igual que `hand`. |
 | `timer` | `timer.start`, `timer.extend`, `timer.stop` | v0.9 (§5.19). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana; también los alumnos simulados. |
+| `file.push` | `file.push` | v0.10 (§5.20). Windows, en modo ventana y como servicio con su ayudante (escribe en la sesión del alumno); también los alumnos simulados, que acusan sin escribir. Linux y macOS no la declaran. |
 | `poll` | `poll.*` | Reservada |
 
 Las dos últimas habilitan mensajes que **inicia el agente**: la consola acepta `hand.*` y
@@ -369,6 +370,8 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `timer.extend` | P → A | `timer` | `timer_id`, `add_s`, `remaining_ms` | `timer.ack`; con otro `timer_id` se ignora |
 | `timer.stop` | P → A | `timer` | `timer_id` | `timer.ack` (`stopped`); sin temporizador vigente se ignora |
 | `timer.ack` | A → P | — | `ref_id`, `timer_id`, `status`, `remaining_ms` | — |
+| `file.push` | P → A | `file.push` | `push_id`, `file_id`, `part`, `parts`, `data`; la parte 1 además `name`, `dest`, `size`, `sha256`, `overwrite`, `label`, `index`, `files` | `file.push.ack` al completar o rechazar, o `error` |
+| `file.push.ack` | A → P | — | `ref_id`, `push_id`, `file_id`, `status`, `path`, `renamed`, `replaced`, `reason`? | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -1192,6 +1195,131 @@ Reglas:
 - Los registros llevan `timer_id`, `duration_s` y `remaining_ms`, nunca `label`
   (`docs/privacidad.md` regla 54).
 
+### 5.20 Enviar archivos a los alumnos (`file.push`)
+
+> Aprobado el 2026-11-05 (prompt 10.9), para v0.10. Implementación en `internal/filepush`;
+> reglas en `docs/privacidad.md` 55–59. En la consola, la pestaña «Archivos» del módulo Código.
+
+El profesor envía uno o varios archivos (un dataset, el esqueleto de un ejercicio, una
+plantilla) a todos los alumnos o a una selección. Cada agente los guarda **solo** dentro de su
+**carpeta de trabajo**, `Documentos\Aula` del usuario de la sesión, y la ventana del alumno
+muestra qué llegó y dónde quedó. El agente nunca abre ni ejecuta lo que recibe.
+
+```
+Consola (P)                                               Agente (A)
+   |-- file.push part 1/N (push_id, file_id, name, dest…) -->|  valida la ruta; reserva memoria
+   |-- file.push part 2/N ---------------------------------->|
+   |-- …                part N/N --------------------------->|  ensambla, comprueba size y sha256
+   |                                                         |  escribe en Documentos\Aula\<dest>\<name>
+   |<-- file.push.ack (saved, path) -------------------------|  tarjeta en la ventana (notify)
+   |-- file.push (siguiente archivo del envío) ------------->|
+```
+
+Un **envío** (`push_id`) agrupa de 1 a 20 archivos; cada archivo (`file_id`) viaja en sus
+propias partes y recibe su propio acuse. El troceo es el común (`protocol.SplitParts` y
+`protocol.Reassembly`, §5.17), con partes de 512 KiB.
+
+**`file.push` (P → A)**
+
+```json
+{ "push_id": "3f2a…", "file_id": "9c1d…", "part": 1, "parts": 2,
+  "name": "datos.csv", "dest": "Ejercicio 4", "size": 860160,
+  "sha256": "5f0c…", "overwrite": false, "label": "Ejercicio 4", "index": 1, "files": 3,
+  "data": "aWQsbm9tYnJl…" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `push_id` | string | UUID v4 de la consola; el mismo para todos los archivos del envío. |
+| `file_id` | string | UUID v4 de la consola; identifica el archivo en sus partes y en el acuse. |
+| `part`, `parts` | entero | 1 ≤ `part` ≤ `parts` ≤ 32. Las partes salen en orden. |
+| `data` | string | Un trozo del archivo en Base64: ≤ **512 KiB** antes de codificar. Todos miden 512 KiB salvo el último; solo un archivo vacío (`size` 0) lleva una única parte con `data` vacío. |
+| `name` | string | Solo en la parte 1. Nombre del archivo, 1–100 caracteres (reglas de ruta abajo). |
+| `dest` | string | Solo en la parte 1. Subcarpeta dentro de la carpeta de trabajo, con `/` como separador, 0–200 caracteres y hasta 4 niveles. `""` = la carpeta de trabajo misma. |
+| `size` | entero | Solo en la parte 1. Bytes del archivo completo, 0–16 MiB; `parts` = máx(1, ⌈`size` / 512 KiB⌉). |
+| `sha256` | string | Solo en la parte 1. Huella SHA-256 del archivo completo, 64 caracteres hexadecimales en minúsculas. |
+| `overwrite` | bool | Solo en la parte 1. `true`: reemplaza un archivo con el mismo nombre. `false`: si existe, se guarda con otro nombre (`datos (2).csv`). |
+| `label` | string | Solo en la parte 1. Nombre del envío para la ventana del alumno (p. ej. la plantilla), 0–80 caracteres, texto plano. |
+| `index`, `files` | entero | Solo en la parte 1. Posición del archivo en el envío y total de archivos, 1 ≤ `index` ≤ `files` ≤ 20. |
+
+**`file.push.ack` (A → P)**
+
+```json
+{ "ref_id": "<id de la última parte>", "push_id": "3f2a…", "file_id": "9c1d…",
+  "status": "saved", "path": "Ejercicio 4/datos (2).csv", "renamed": true, "replaced": false }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `ref_id` | string | `id` de la parte que completó el archivo, o de la parte con la que el agente lo rechazó. |
+| `push_id`, `file_id` | string | Los del archivo. |
+| `status` | string | `saved` (quedó en disco) o `failed`. |
+| `path` | string | Con `saved`: la ruta final, relativa a la carpeta de trabajo, con `/`. Con `failed`: vacío. |
+| `renamed` | bool | Ya existía y se guardó con otro nombre (`overwrite` era `false`). |
+| `replaced` | bool | Ya existía y se reemplazó (`overwrite` era `true`). |
+| `reason` | string | Solo con `failed`: uno de la tabla siguiente. |
+
+| `reason` | Cuándo |
+|---|---|
+| `invalid_path` | `name` o `dest` no pasan las reglas de ruta, o la ruta cruza un enlace o *junction*. |
+| `too_large` | El archivo no cabe en la memoria del agente para envíos (32 MiB en curso). |
+| `busy` | Ya hay 4 archivos ensamblándose. |
+| `incomplete` | No llegaron todas las partes en **60 s** desde la parte 1. |
+| `corrupt` | El tamaño o el `sha256` del archivo ensamblado no coinciden. |
+| `exists` | Con `overwrite` `false`, ya existen el nombre y sus alternativas hasta `(99)`. |
+| `no_space` | El disco está lleno. |
+| `denied` | El SO negó la escritura (permisos, archivo abierto por otro programa). |
+| `path_too_long` | La ruta absoluta pasa del límite del SO (260 caracteres en Windows). |
+| `unsupported` | La carpeta de trabajo no se pudo resolver (sin sesión, sin ayudante). |
+| `internal` | Cualquier otro fallo. |
+
+**Reglas de ruta.** Las comprueba la consola antes de enviar y el agente al recibir
+(`filepush.CheckName` y `filepush.CheckDest`). Cada segmento de `dest` y el `name`:
+
+- tiene 1–100 caracteres, sin caracteres de control ni `< > : " / \ | ? *`;
+- no es `.` ni `..`, ni termina en punto o espacio;
+- no es un nombre reservado de Windows (`CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`,
+  `LPT1`–`LPT9`), tampoco con extensión (`nul.txt`).
+
+`dest` no empieza ni termina en `/`, no tiene `//`, tiene como mucho 4 niveles y no es absoluta
+(ni `C:`, ni UNC). Lo que no cumple se rechaza con `invalid_path`; el agente **nunca** corrige
+una ruta. Todos los tipos de archivo se aceptan.
+
+Reglas del agente:
+
+- **Solo en la carpeta de trabajo.** La resuelve en cada archivo (`Documentos\Aula` del usuario
+  de la sesión) y la crea si no existe. En modo servicio escribe el **ayudante**, con la identidad
+  del alumno, nunca SYSTEM (D-016). No sigue enlaces simbólicos ni *junctions* dentro de la
+  carpeta.
+- **Atómico.** Escribe en un archivo temporal de la misma carpeta y lo mueve a su nombre: nunca
+  queda un archivo a medias. Sin `overwrite` no reemplaza nunca: prueba `nombre (2).ext` hasta
+  `(99)`, sin sobrescribir lo que aparezca mientras tanto.
+- Ensambla por `file_id`, en memoria, hasta 4 archivos y 32 MiB a la vez. Descarta partes de un
+  archivo que no conoce, repetidas o fuera de rango; las de un archivo rechazado se ignoran sin
+  más respuesta. Si la conexión se cierra a mitad, descarta lo ensamblado.
+- Un `file_id` ya resuelto en esta conexión se acusa de nuevo con el mismo resultado, sin volver
+  a escribir.
+- Avisa en la ventana (`docs/privacidad.md` regla 56) **después** de guardar, sin quitar el
+  foco. Nunca abre ni ejecuta el archivo.
+
+Reglas de la consola:
+
+- Solo envía a equipos que declararon `file.push`, reales o simulados (los simulados acusan sin
+  escribir en disco).
+- Envía los archivos de un envío **uno tras otro** a cada sesión y atiende hasta 4 sesiones a la
+  vez, para no saturar la red. Un envío pesa como máximo 32 MiB.
+- Un alumno **tiene** el envío cuando acusó `saved` todos sus archivos. Si no acusa un archivo en
+  60 s desde su última parte, cuenta como fallido para ese alumno. Si se reconecta a medias, no
+  se reanuda: queda en «Quién falta» y el profesor lo reenvía.
+
+#### 5.20.1 Permisos del sistema operativo
+
+| SO | Cómo | Requiere y límites |
+|---|---|---|
+| Windows | `Documentos` real (`FOLDERID_Documents`, también redirigida a OneDrive) + `\Aula`, con `CreateFile` y `MoveFileEx` **desde la sesión del alumno**: en modo ventana, el propio agente; en modo servicio, el ayudante (`CallFileWrite`, D-016) con el token del alumno. | Ningún privilegio. Sin sesión iniciada o sin ayudante no se declara `file.push`. |
+| Linux (pendiente) | `$XDG_DOCUMENTS_DIR` (o `~/Documents`) + `/Aula`, con `O_NOFOLLOW`. | Sin permisos especiales. No se declara. |
+| macOS (pendiente) | `~/Documents/Aula`. | TCC puede pedir acceso a Documentos si el agente no está firmado. No se declara. |
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -1227,6 +1355,9 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `screen.thumb.frame.jpeg` | 640 KiB antes de Base64 | `error` `message_too_large`; la sesión sigue. |
 | `screen.snapshot.request.quality` / `max_width` | 50–95 / 0 o 640–7680 | `error` `invalid_message` |
 | `screen.snapshot.response.data` | 512 KiB por parte antes de Base64; ≤ 32 partes; 16 MiB en total | `error` `message_too_large` (parte) o `invalid_message`; la sesión sigue. |
+| `file.push.data` | 512 KiB por parte antes de Base64; ≤ 32 partes; 16 MiB por archivo | `error` `message_too_large` (parte) o `invalid_message`; la sesión sigue. |
+| `file.push.name` / `dest` | 1–100 caracteres / 0–200 caracteres y 4 niveles | `error` `invalid_message` (longitud); `file.push.ack` `invalid_path` (reglas de ruta) |
+| `file.push.label` / `files` | 80 caracteres / 1–20 archivos por envío (32 MiB) | `error` `invalid_message` |
 | `screen.freeze.message` (pendiente) | 300 caracteres | `error` `invalid_message` |
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
 | `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
@@ -1272,6 +1403,8 @@ emisor verifica el tamaño final de la envoltura.
   causó una pausa (el agente solo sabe *que* la hubo).
 - De `screen.snapshot.*` se registran `snapshot_id`, `part`/`parts`, tamaños, dimensiones y el
   resultado. **Nunca** `data`, ni la ruta donde la consola guardó la imagen.
+- De `file.push*` se registran `push_id`, `file_id`, `part`/`parts`, tamaños, `status` y
+  `reason`. **Nunca** `data`, ni `name`, `dest`, `label` o la ruta final.
 - De un `msg.show` `personal` se registran el equipo, el `id` y la longitud; **nunca** el texto.
   En «Últimos envíos» la consola lo etiqueta «Mensaje privado a <equipo>», sin el texto.
 - De `hand.*` y `msg.student*` se registran `hand_id`, `message_id`, `by`, la longitud y el

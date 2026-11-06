@@ -29,6 +29,9 @@ const (
 	// CapTimer shows the class countdown in the window (§5.19). Every OS,
 	// whenever the agent has a window.
 	CapTimer Capability = "timer"
+	// CapFilePush saves the files the teacher sends in the work folder (§5.20).
+	// Windows, in window mode or as a service with its helper.
+	CapFilePush Capability = "file.push"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -74,6 +77,8 @@ var requiredCapability = map[Type]Capability{
 	TypeTimerStart:  CapTimer,
 	TypeTimerExtend: CapTimer,
 	TypeTimerStop:   CapTimer,
+
+	TypeFilePush: CapFilePush,
 }
 
 // agentCapability lists the capability an agent must have declared before the

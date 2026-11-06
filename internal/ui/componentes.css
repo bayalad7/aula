@@ -267,6 +267,10 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
 .franja--energia { background: var(--c-error-fondo); color: var(--c-error); }
 .franja--simulada { background: var(--c-simulado-fondo); color: var(--c-simulado); }
 .franja--advertencia { background: var(--c-advertencia-fondo); color: var(--c-advertencia); }
+.franja--temporizador { background: var(--c-info-fondo); color: var(--c-info); }
+/* El tiempo de un temporizador (prompt 10.8): cifras de ancho fijo para que el texto
+   no baile al cambiar cada segundo. */
+.cuenta { font-variant-numeric: tabular-nums; }
 
 /* --- Diálogo de confirmación --------------------------------------------------------------- */
 .dialogo {

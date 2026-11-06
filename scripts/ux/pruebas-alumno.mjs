@@ -199,6 +199,56 @@ await caso("aviso-captura", "un-codigo", async (p) => {
   ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "DismissNotice" && c[1][0] === "c-1")), "Esc no cerró el aviso de captura");
 });
 
+// Archivos del profesor (prompt 10.9; reglas 55-58): una tarjeta en la lista, como el código,
+// no una banda. Dice dónde quedó; lo que llega con la ventana abierta es «Nuevo» y cuenta en el
+// título; no quita el foco; «Abrir carpeta» pasa solo el id del envío.
+const envio = (pushId, name, extra) => ({ pushId, label: "", files: 1, folder: "Ejercicio 4", at: ahora(),
+  items: [Object.assign({ pushId, fileId: pushId + "-1", label: "", index: 1, files: 1, name, dest: "Ejercicio 4",
+    path: "Ejercicio 4/" + name, size: 10, renamed: false, replaced: false, reason: "", at: ahora() }, extra)] });
+await caso("archivo-recibido", "un-codigo", async (p) => {
+  await p.focus("#snippets > li .copy");
+  await emitir(p, "aula:files", { received: [envio("fp-9", "datos.csv")], folder: "Aula" });
+  await sleep(150);
+  const a = await p.evaluate(() => {
+    const li = document.querySelector("#archivos > li");
+    return li && { titulo: li.querySelector(".archivo-titulo").textContent, donde: li.querySelector(".archivo-recibido__donde").textContent,
+      nuevo: !li.querySelector(".nuevo").hidden, enBandas: !!li.closest(".bandas"), foco: document.activeElement.className,
+      vacio: !document.getElementById("empty").hidden };
+  });
+  ok(a, "no apareció la tarjeta del archivo");
+  ok(a.titulo === "Archivo recibido: datos.csv", "título: " + a.titulo);
+  ok(a.donde === "Guardado en Documentos\\Aula\\Ejercicio 4", "dónde: " + a.donde);
+  ok(a.nuevo, "lo que llegó no dice «Nuevo»");
+  ok(!a.enBandas, "un archivo recibido no es una banda");
+  ok(a.foco.includes("copy"), "la tarjeta le quitó el foco al alumno: " + a.foco);
+  ok(!a.vacio, "con un archivo no debe verse el estado vacío");
+  ok((await p.evaluate(() => window.__title)).startsWith("(1) "), "el título no lo cuenta como sin ver");
+  await p.click("#archivos > li .abrir");
+  await sleep(100);
+  ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "OpenReceivedFolder" && c[1].length === 1 && c[1][0] === "fp-9")),
+    "«Abrir carpeta» no pasó solo el id del envío");
+  ok(await p.evaluate(() => document.querySelector("#archivos > li .nuevo").hidden), "«Nuevo» no se quitó al abrir la carpeta");
+});
+await caso("archivo-renombrado-y-fallo", "conectado", async (p) => {
+  await emitir(p, "aula:files", { folder: "Aula", received: [
+    envio("fp-1", "datos.csv", { path: "Ejercicio 4/datos (2).csv", renamed: true }),
+    Object.assign(envio("fp-2", "grande.zip", { path: "", reason: "no_space" }), { folder: "" })] });
+  await sleep(150);
+  const t = await p.evaluate(() => [...document.querySelectorAll("#archivos > li")].map((li) => ({
+    lista: li.querySelector(".archivo-recibido__lista").textContent, abrir: !li.querySelector(".abrir").hidden,
+    titulo: li.querySelector(".archivo-titulo").textContent })));
+  ok(t.length === 2, "tarjetas: " + t.length);
+  ok(t[0].lista.includes("datos (2).csv") && t[0].lista.includes("El tuyo no cambió"), "renombrado: " + t[0].lista);
+  ok(t[1].titulo === "Archivo sin guardar: grande.zip" && t[1].lista.includes("El disco está lleno"), "fallo: " + JSON.stringify(t[1]));
+  ok(!t[1].abrir, "sin nada guardado no hay carpeta que abrir");
+});
+await caso("archivo-sin-carpeta", "archivo-sin-carpeta", async (p) => {
+  await p.click("#archivos > li .abrir");
+  await sleep(100);
+  const e = await p.evaluate(() => { const x = document.querySelector("#archivos > li .archivo-recibido__error"); return !x.hidden && x.textContent; });
+  ok(e && e.startsWith("No se pudo abrir la carpeta: "), "error: " + e);
+});
+
 // Levantar la mano y escribir al profesor (prompt 10.6): lo hace el alumno, con el teclado;
 // nada de esto es una banda ni le quita el foco, y lo que llega del profesor tampoco.
 const bandasVisibles = (p) => p.evaluate(() => [...document.querySelectorAll("#bandas > *")].filter((b) => !b.hidden).length);

@@ -102,6 +102,14 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, c := range partErrorCodes {
 		need("mano.error."+c, "participation.go (partErrorCodes)")
 	}
+	// Why a file was not saved (protocol.FilePushReason), in camelCase.
+	for _, r := range protocol.FilePushReasons {
+		parts := strings.Split(string(r), "_")
+		for i := 1; i < len(parts); i++ {
+			parts[i] = strings.ToUpper(parts[i][:1]) + parts[i][1:]
+		}
+		need("archivo.motivo."+strings.Join(parts, ""), "filepush.Item.Reason")
+	}
 	for _, c := range []string{ControlActive, ControlPaused} {
 		need("banda.control."+c, "events.go (Status.Control)")
 	}

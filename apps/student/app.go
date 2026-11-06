@@ -17,6 +17,7 @@ import (
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
+	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
@@ -48,6 +49,9 @@ type App struct {
 	snap      *snapshot.Taker       // still screenshots; inert until enableScreen
 	desk      *participation.Desk   // the student's hand and messages to the teacher (§5.18)
 	countdown *classtimer.Countdown // the exercise timer (§5.19)
+	files     *filepush.Receiver    // file.push; inert until enableFiles (§5.20)
+	inbox     *filepush.Inbox       // what arrived, for the window
+	work      platform.WorkFolder   // «Abrir carpeta»; nil without a work folder
 	clip      platform.Clipboard    // nil when the system has none
 	clipEr    error
 	log       *slog.Logger
@@ -128,6 +132,8 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a.power = &power.Countdown{OnChange: a.onPower, Logger: log}
 	a.control = &remote.Agent{Video: a.screen, OnState: a.onControl, Logger: log}
 	a.snap = &snapshot.Taker{Indicator: a.screen, Identity: a.identity, OnTaken: a.onSnapshot, Logger: log}
+	a.files = &filepush.Receiver{OnFile: a.onFile, Logger: log}
+	a.inbox = &filepush.Inbox{}
 	if cfgErr != nil {
 		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Detail: cfgErr.Error()}
 	} else {
@@ -280,6 +286,7 @@ func (a *App) stop() {
 	a.screen.Stop()
 	a.viewer.Stop()
 	a.snap.Wait() // its connection is closed: it drops the image
+	a.files.Wait()
 	a.stopTimer()
 }
 
@@ -333,6 +340,7 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 		a.control.Stop() // first: it releases the keys and gives the stream back
 		a.screen.Stop()
 		a.viewer.Stop()
+		a.files.Reset() // a file half received is dropped, never written
 		if a.onLeave != nil {
 			a.onLeave()
 		}
@@ -408,6 +416,9 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 	if !ok {
 		// Only after auth.ok: the session rejects everything earlier.
 		reply, ok = a.power.Handle(ctx, power.Sender(send), env)
+	}
+	if !ok {
+		reply, ok = a.files.Handle(ctx, filepush.Sender(send), env)
 	}
 	if !ok {
 		// Before the control: a screenshot does not end or pause it (§5.16).
@@ -496,7 +507,7 @@ func (a *App) View() View {
 	}
 	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...),
 		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
-		Participation: a.desk.View(), Timer: a.countdown.View()}
+		Participation: a.desk.View(), Timer: a.countdown.View(), Files: a.filesView(a.inbox.List())}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

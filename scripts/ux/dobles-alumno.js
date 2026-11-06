@@ -102,6 +102,26 @@
     "temporizador-final": { state: "running", timerId: "t-1", label: "Ejercicio 1", remainingMs: 42000, justEnded: false },
     "temporizador-fin": { state: "ended", timerId: "t-1", label: "Ejercicio 1", remainingMs: 0, justEnded: false },
   }[scene] || { state: "none", timerId: "", label: "", remainingMs: 0, justEnded: false };
+  // Los archivos que envió el profesor (Files de apps/student/files.go, prompt 10.9).
+  // Escenas: archivos (una plantilla de 3 y un archivo suelto), archivo-renombrado (ya
+  // tenía uno con ese nombre) y archivo-fallo (disco lleno).
+  const item = (pushId, i, files, name, extra) => Object.assign({ pushId, fileId: pushId + "-" + i, label: "Ejercicio 4", index: i,
+    files, name, dest: "Ejercicio 4", path: "Ejercicio 4/" + name, size: 2048, renamed: false, replaced: false, reason: "", at: ahora }, extra);
+  const plantilla = { pushId: "fp-1", label: "Ejercicio 4", files: 3, folder: "Ejercicio 4", at: ahora, items: [
+    item("fp-1", 1, 3, "main.py"), item("fp-1", 2, 3, "datos.csv"), item("fp-1", 3, 3, "LEEME.txt")] };
+  const suelto = { pushId: "fp-2", label: "", files: 1, folder: "", at: ahora,
+    items: [item("fp-2", 1, 1, "ventas.xlsx", { label: "", dest: "", path: "ventas.xlsx" })] };
+  const received = {
+    archivos: [suelto, plantilla],
+    "archivo-renombrado": [{ pushId: "fp-3", label: "", files: 1, folder: "Ejercicio 4", at: ahora,
+      items: [item("fp-3", 1, 1, "datos.csv", { label: "", path: "Ejercicio 4/datos (2).csv", renamed: true })] }],
+    "archivo-sin-carpeta": [suelto],
+    "archivo-fallo": [{ pushId: "fp-4", label: "Proyecto final", files: 2, folder: "Proyecto", at: ahora,
+      items: [item("fp-4", 1, 2, "base.sql", { label: "Proyecto final", dest: "Proyecto", path: "Proyecto/base.sql" }),
+        item("fp-4", 2, 2, "imagenes.zip", { label: "Proyecto final", dest: "Proyecto", path: "", reason: "no_space" })] }],
+  }[scene] || [];
+  const files = { received, folder: "Aula" };
+
   // Lo que Go contestaría: el acuse llega poco después («Enviando…» → «Recibido»).
   let nMsg = 0;
   let ultimo = 0;
@@ -123,7 +143,7 @@
     return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
   };
   window.go = { main: { App: {
-    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer })),
+    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
     ReportMedia: call("ReportMedia"),
@@ -137,5 +157,6 @@
     RaiseHand: call("RaiseHand", (note) => { part.hand = "up"; part.note = (note || "").trim(); return copia(); }),
     LowerHand: call("LowerHand", () => { part.hand = "down"; part.note = ""; return copia(); }),
     SendTeacherMessage: call("SendTeacherMessage", escribir),
+    OpenReceivedFolder: call("OpenReceivedFolder", (id) => (scene === "archivo-sin-carpeta" ? new Error("esa carpeta ya no está disponible") : null)),
   } } };
 })();

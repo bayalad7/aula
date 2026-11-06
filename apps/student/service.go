@@ -281,6 +281,9 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	app.screen.Indicator = agentsvc.Indicator{Helper: sa.helper}
 	app.snap.Capture = agentsvc.Capture{Helper: sa.helper} // the helper captures; the service cannot
 	app.control.Input = agentsvc.Input{Helper: sa.helper}
+	// The helper writes: the files belong to the student, never to SYSTEM.
+	app.files.Writer = agentsvc.WorkFolder{Helper: sa.helper}
+	app.work = agentsvc.WorkFolder{Helper: sa.helper}
 	app.emit = func(event string, data any) {
 		sa.helper.Notify(agentsvc.EventEmit, emitted{Event: event, Data: data})
 	}
@@ -327,6 +330,10 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	}
 	if sa.ready.Broadcast {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenBroadcast)
+	}
+	if sa.ready.Files {
+		// The helper saves in the work folder of the session's user (§5.20).
+		h.Capabilities = append(h.Capabilities, protocol.CapFilePush)
 	}
 	if sa.ready.Capture && sa.ready.Input {
 		// The input goes into the session, with the screen and its notice.
@@ -455,6 +462,11 @@ func (sa *serviceAgent) binding(_ context.Context, name string, data json.RawMes
 			return nil, err
 		}
 		return a.SendTeacherMessage(s1)
+	case "OpenReceivedFolder":
+		if err := b.Arg(0, &id); err != nil {
+			return nil, err
+		}
+		return nil, a.OpenReceivedFolder(id)
 	case "PowerPostpone":
 		return nil, a.PowerPostpone()
 	case "DismissPower":

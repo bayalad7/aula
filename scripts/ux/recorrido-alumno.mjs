@@ -98,6 +98,17 @@ await f("62-temporizador-oscuro", "temporizador", { oscuro: true });
 await f("63-temporizador-angosta", "temporizador", { w: 480, h: 360 });
 await f("64-compacto-temporizador", "temporizador", { w: 380, h: 80, pasos: click("#compactar") });
 
+// Archivos del profesor (prompt 10.9): tarjetas en la lista, renombrado, fallo, oscuro, angosta y compacto.
+await f("65-archivos-recibidos", "archivos");
+await f("66-archivo-renombrado", "archivo-renombrado");
+await f("67-archivo-fallo", "archivo-fallo");
+await f("68-archivos-oscuro", "archivos", { oscuro: true });
+await f("69-archivos-angosta", "archivos", { w: 480, h: 360 });
+await f("70-compacto-archivo-nuevo", "conectado", { w: 380, h: 80, pasos: seq(click("#compactar"), emitir("aula:files", { folder: "Aula",
+  received: [{ pushId: "fp-9", label: "", files: 1, folder: "", at: new Date().toISOString(), items: [{ pushId: "fp-9", fileId: "f", label: "",
+    index: 1, files: 1, name: "datos.csv", dest: "", path: "datos.csv", size: 10, renamed: false, replaced: false, reason: "",
+    at: new Date().toISOString() }] }] })) });
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

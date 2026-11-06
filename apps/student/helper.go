@@ -11,6 +11,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/bayalad7/aula/internal/agentsvc"
+	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/platform"
 )
 
@@ -26,7 +27,8 @@ type helper struct {
 	clip      platform.Clipboard
 	capture   platform.ScreenCapture
 	indicator platform.ScreenIndicator
-	input     *heldInput // nil when the OS cannot inject
+	input     *heldInput          // nil when the OS cannot inject
+	work      platform.WorkFolder // nil when the OS has no work folder (file.push)
 	log       *slog.Logger
 }
 
@@ -52,6 +54,9 @@ func runHelper(channel string, log *slog.Logger) int {
 	if in, err := platform.NewInputInjector(); err == nil {
 		h.input = &heldInput{in: in}
 	}
+	if wf, err := platform.NewWorkFolder(); err == nil {
+		h.work = wf
+	}
 
 	// The App only serves the window's bindings, forwarding them to the
 	// agent in the service; it does not connect to any console.
@@ -69,8 +74,8 @@ func runHelper(channel string, log *slog.Logger) int {
 	ready := func(webrtc, h264 bool) {
 		once.Do(func() {
 			r := agentsvc.Ready{Capture: h.capture != nil, Clipboard: clipErr == nil, Broadcast: webrtc && h264,
-				Input: h.input != nil}
-			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input)
+				Input: h.input != nil, Files: h.work != nil}
+			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input, "files", r.Files)
 			_ = link.Notify(agentsvc.EventReady, r)
 		})
 	}
@@ -154,6 +159,36 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 			return nil, platform.ErrNotSupported
 		}
 		return h.input.LocalInput()
+	case agentsvc.CallFileWrite:
+		// The service reassembled and checked the file; the work folder
+		// checks again that it stays inside and follows no link.
+		var a agentsvc.FileWriteArgs
+		if err := json.Unmarshal(data, &a); err != nil {
+			return nil, err
+		}
+		if h.work == nil {
+			return agentsvc.FileWriteResult{Error: agentsvc.FileWriteError(platform.ErrNotSupported)}, nil
+		}
+		if filepush.CheckRel(a.Rel) != nil {
+			return agentsvc.FileWriteResult{Error: agentsvc.FileWriteError(platform.ErrLinkInPath)}, nil
+		}
+		replaced, err := h.work.Create(a.Rel, a.Data, a.Overwrite)
+		if err != nil {
+			h.log.Warn("file not written", "err", err)
+		}
+		return agentsvc.FileWriteResult{Replaced: replaced, Error: agentsvc.FileWriteError(err)}, nil
+	case agentsvc.CallFolderOpen:
+		var rel string
+		if err := json.Unmarshal(data, &rel); err != nil {
+			return nil, err
+		}
+		if h.work == nil {
+			return nil, platform.ErrNotSupported
+		}
+		if rel != "" && filepush.CheckDest(rel) != nil {
+			return nil, platform.ErrLinkInPath
+		}
+		return nil, h.work.Open(rel)
 	case agentsvc.CallPower:
 		var a agentsvc.PowerArgs
 		if err := json.Unmarshal(data, &a); err != nil {

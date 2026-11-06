@@ -13,4 +13,5 @@ window.AulaEvents = Object.freeze({
   COMPACT: "aula:compact",
   PARTICIPATION: "aula:participation",
   TIMER: "aula:timer",
+  FILES: "aula:files",
 });

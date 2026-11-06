@@ -2,7 +2,8 @@
 // de Wails y llama a sus métodos (View, Copy, DismissNotice y los de la
 // transmisión del profesor: ReportMedia, BroadcastAnswer, BroadcastCandidate,
 // BroadcastFailed; los del aviso de energía: PowerPostpone, DismissPower; y los
-// de la mano y los mensajes al profesor: RaiseHand, LowerHand, SendTeacherMessage).
+// de la mano y los mensajes al profesor: RaiseHand, LowerHand, SendTeacherMessage; y
+// «Abrir carpeta» de los archivos recibidos: OpenReceivedFolder).
 // Go manda estados; los textos salen de textos.es-MX.js (T) y el título de la
 // ventana lo pone esta página (docs/privacidad.md, regla 1).
 // Seguridad: todo texto recibido se inserta con textContent; el único HTML es
@@ -101,8 +102,8 @@
   // La ventana se encoge a una tira en una esquina: el estado, lo nuevo y la
   // pantalla vista. No queda encima de las demás ni toma el foco.
   let compacto = false;
-  // Lo que el alumno aún no ve: código «Nuevo» y avisos abiertos.
-  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + avisos.length;
+  // Lo que el alumno aún no ve: código y archivos «Nuevo» y avisos abiertos.
+  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + archivosNuevos() + avisos.length;
   function pintarCompacto() {
     const v = { canal: status.channel, profesor: status.teacher };
     $("compacto").dataset.estado = status.state;
@@ -135,6 +136,9 @@
   const list = $("snippets");
   const empty = $("empty");
   const snippetTpl = $("snippet-template");
+  // El estado vacío se va con el primer código o el primer archivo.
+  let nCodigos = 0;
+  function pintarListaVacia() { empty.hidden = nCodigos + nArchivos > 0; }
 
   // Identificadores de Monaco/protocolo → gramática de Prism.
   const aliases = {
@@ -237,7 +241,8 @@
     }
     primeraVez = false;
     if (ancla && ancla.li.isConnected) window.scrollBy(0, ancla.li.getBoundingClientRect().top - ancla.top);
-    empty.hidden = snippets.length > 0;
+    nCodigos = snippets.length;
+    pintarListaVacia();
     $("codigos-atajo").hidden = snippets.length === 0;
     if (!eligio || !orden.some((s) => s.id === seleccionado)) seleccionado = orden.length ? orden[0].id : "";
     marcarSeleccion();
@@ -386,6 +391,107 @@
   }
   $("control-fin-ok").addEventListener("click", ocultarFinControl);
   $("control-fin").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); ocultarFinControl(); } });
+
+  // --- Archivos que envió el profesor (docs/protocol.md §5.20) ---------------------------------------
+  // Una tarjeta por envío, como el código: qué llegó y dónde quedó (reglas 55-58). Go manda el
+  // estado (filepush.Received) y aquí se arma el texto. «Abrir carpeta» pasa solo el id del envío:
+  // la carpeta la decide Go. Nunca se abre ni se ejecuta un archivo. Lo que llega con la ventana
+  // abierta queda «Nuevo» hasta que el alumno lo toca o abre su carpeta.
+  const archivosLista = $("archivos");
+  const archivoTpl = $("archivo-template");
+  const nodosArchivo = new Map(); // pushId → li
+  let archivosPrimeraVez = true;
+  let nArchivos = 0;
+  let carpetaRaiz = "Aula";
+  // Tarjetas de archivos que el alumno aún no ve.
+  function archivosNuevos() { return archivosLista.querySelectorAll(".nuevo:not([hidden])").length; }
+  const MOTIVO = "archivo.motivo."; // + protocol.FilePushReason en camelCase
+  const camel = (s) => String(s).replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+  const ultimoDe = (ruta) => ruta.split("/").pop();
+  const rutaWindows = (folder) => [carpetaRaiz].concat(folder ? folder.split("/") : []).join("\\");
+
+  function nodoArchivo(r, nuevo) {
+    const li = archivoTpl.content.firstElementChild.cloneNode(true);
+    li.dataset.push = r.pushId;
+    li.tabIndex = -1;
+    li.querySelector(".nuevo").textContent = T("codigo.nuevo");
+    li.querySelector(".nuevo").hidden = !nuevo;
+    const visto = () => { li.querySelector(".nuevo").hidden = true; title(); };
+    li.addEventListener("focusin", visto);
+    li.addEventListener("pointerdown", visto);
+    const abrir = li.querySelector(".abrir");
+    abrir.querySelector("span").textContent = T("archivo.abrir");
+    abrir.addEventListener("click", () => {
+      visto();
+      const error = li.querySelector(".archivo-recibido__error");
+      error.hidden = true;
+      api.OpenReceivedFolder(r.pushId).catch((err) => {
+        error.textContent = T("archivo.noSeAbrio", { motivo: String(err && err.message ? err.message : err) });
+        error.hidden = false;
+      });
+    });
+    return li;
+  }
+
+  function pintarArchivo(li, r) {
+    const guardados = r.items.filter((i) => !i.reason);
+    const primero = r.items[0] || { name: "" };
+    let titulo;
+    if (r.files === 1) titulo = guardados.length ? T("archivo.titulo.uno", { nombre: primero.name }) : T("archivo.tituloFallo", { nombre: primero.name });
+    else titulo = r.label ? T("archivo.tituloEtiqueta", { etiqueta: r.label }) : P("archivo.titulo", r.files);
+    li.querySelector(".archivo-titulo").textContent = titulo;
+    li.querySelector(".archivo-hora").textContent = hora(r.at);
+    const carpeta = T("archivo.carpeta", { ruta: rutaWindows(r.folder) });
+    let donde = guardados.length ? P("archivo.guardado", guardados.length, { carpeta }) : T("archivo.nadaGuardado");
+    if (r.items.length < r.files) donde += " " + T("archivo.llegando", { n: r.items.length, total: r.files });
+    li.querySelector(".archivo-recibido__donde").textContent = donde;
+    // La lista dice cada archivo cuando son varios, y siempre lo que no salió como se esperaba.
+    const lista = li.querySelector(".archivo-recibido__lista");
+    lista.replaceChildren();
+    for (const it of r.items) {
+      const final = it.path ? ultimoDe(it.path) : it.name;
+      let texto, estado = "saved";
+      if (it.reason) { estado = "failed"; texto = T("archivo.itemFallo", { nombre: it.name, motivo: T(MOTIVO + camel(it.reason)) }); }
+      else if (it.renamed) { estado = "renamed"; texto = T("archivo.itemRenombrado", { nombre: it.name, final }); }
+      else if (it.replaced) { estado = "replaced"; texto = T("archivo.itemReemplazado", { nombre: it.name }); }
+      else if (r.files > 1) texto = T("archivo.item", { nombre: final });
+      else continue;
+      const item = document.createElement("li");
+      item.dataset.estado = estado;
+      item.textContent = texto;
+      lista.appendChild(item);
+    }
+    const abrir = li.querySelector(".abrir");
+    abrir.hidden = guardados.length === 0;
+    abrir.setAttribute("aria-label", T("archivo.abrirDe", { titulo }));
+  }
+
+  function renderArchivos(f) {
+    if (!f) return;
+    carpetaRaiz = f.folder || "Aula";
+    const recibidos = f.received || [];
+    const vivos = new Set(recibidos.map((r) => r.pushId));
+    for (const [id, li] of nodosArchivo) {
+      if (!vivos.has(id)) { li.remove(); nodosArchivo.delete(id); }
+    }
+    let anterior = null;
+    for (const r of recibidos) { // lo más nuevo primero
+      let li = nodosArchivo.get(r.pushId);
+      if (!li) {
+        li = nodoArchivo(r, !archivosPrimeraVez);
+        nodosArchivo.set(r.pushId, li);
+      }
+      pintarArchivo(li, r);
+      const lugar = anterior ? anterior.nextSibling : archivosLista.firstChild;
+      if (li !== lugar) archivosLista.insertBefore(li, lugar);
+      anterior = li;
+    }
+    archivosPrimeraVez = false;
+    nArchivos = recibidos.length;
+    pintarListaVacia();
+    title();
+    pintarCompacto();
+  }
 
   // --- Temporizador del profesor (docs/protocol.md §5.19) -------------------------------------------
   // Una insignia en la tira (y en el modo compacto) con lo que falta. Go manda el estado
@@ -809,6 +915,7 @@
   rt.EventsOn(ev.COMPACT, (c) => { if (!c.on && compacto) ponerCompacto(false, false); });
   rt.EventsOn(ev.PARTICIPATION, renderParticipacion);
   rt.EventsOn(ev.TIMER, renderTemporizador);
+  rt.EventsOn(ev.FILES, renderArchivos);
   api.View().then((v) => {
     renderStatus(v.status);
     renderBoard(v.snippets);
@@ -818,6 +925,7 @@
     renderPower(v.power);
     if (v.participation) renderParticipacion(v.participation);
     if (v.timer) renderTemporizador(v.timer);
+    renderArchivos(v.files);
   });
   probeMedia();
 })();

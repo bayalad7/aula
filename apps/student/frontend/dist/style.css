@@ -68,3 +68,12 @@ body.watching #contenido { display: none; }
 .enviado { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--e-1) var(--e-2); font-size: var(--t-sm); }
 .enviado__texto { flex: 1; min-width: 10rem; overflow-wrap: anywhere; }
 .notice-cita { font-size: var(--t-sm); color: var(--c-texto-suave); overflow-wrap: anywhere; }
+
+/* Archivos que envió el profesor (prompt 10.9): la tarjeta del código, sin código. */
+.archivo-recibido__cuerpo { display: grid; gap: var(--e-2); padding: var(--e-3) var(--e-4); }
+.archivo-recibido__donde { margin: 0; overflow-wrap: anywhere; }
+.archivo-recibido__lista { margin: 0; padding-inline-start: var(--e-5); display: grid; gap: var(--e-1); }
+.archivo-recibido__lista:empty, .archivo-recibido .nuevo[hidden], .archivo-recibido .abrir[hidden], .archivo-recibido__error[hidden] { display: none; }
+.archivo-recibido__lista li { overflow-wrap: anywhere; }
+.archivo-recibido__lista li[data-estado="failed"] { color: var(--c-error); }
+.archivo-recibido__lista li[data-estado="renamed"], .archivo-recibido__lista li[data-estado="replaced"] { color: var(--c-texto-suave); }

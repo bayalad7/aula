@@ -74,6 +74,11 @@ func main() {
 	} else {
 		log.Info("remote control not available", "err", err)
 	}
+	if wf, err := platform.NewWorkFolder(); err == nil {
+		app.enableFiles(wf)
+	} else {
+		log.Info("receiving files not available", "err", err)
+	}
 	if p, err := platform.NewPower(); err == nil {
 		app.enablePower(p)
 	} else {

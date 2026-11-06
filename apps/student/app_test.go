@@ -240,7 +240,7 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 		}
 	}
 	main, _ := os.ReadFile(filepath.Join("frontend", "dist", "main.js"))
-	for _, method := range []string{"View", "Copy", "DismissNotice", "ReportMedia", "BroadcastAnswer", "BroadcastCandidate", "BroadcastFailed", "PowerPostpone", "DismissPower"} {
+	for _, method := range []string{"View", "Copy", "DismissNotice", "ReportMedia", "BroadcastAnswer", "BroadcastCandidate", "BroadcastFailed", "PowerPostpone", "DismissPower", "OpenReceivedFolder"} {
 		if !strings.Contains(string(main), "api."+method+"(") {
 			t.Errorf("main.js does not call App.%s", method)
 		}

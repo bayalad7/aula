@@ -73,6 +73,12 @@ const (
 	// Files the teacher sends (docs/protocol.md §5.20).
 	TypeFilePush    Type = "file.push"
 	TypeFilePushAck Type = "file.push.ack"
+	// Collecting the students' work (docs/protocol.md §5.21).
+	TypeFileCollectOpen        Type = "file.collect.open"
+	TypeFileCollectRequest     Type = "file.collect.request"
+	TypeFileCollectAck         Type = "file.collect.ack"
+	TypeFileCollectResponse    Type = "file.collect.response"
+	TypeFileCollectResponseAck Type = "file.collect.response.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -284,6 +290,12 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 
 	TypeFilePush:    decodeAs[FilePush],
 	TypeFilePushAck: decodeAs[FilePushAck],
+
+	TypeFileCollectOpen:        decodeAs[FileCollectOpen],
+	TypeFileCollectRequest:     decodeAs[FileCollectRequest],
+	TypeFileCollectAck:         decodeAs[FileCollectAck],
+	TypeFileCollectResponse:    decodeAs[FileCollectResponse],
+	TypeFileCollectResponseAck: decodeAs[FileCollectResponseAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

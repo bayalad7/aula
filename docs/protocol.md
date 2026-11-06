@@ -305,7 +305,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). Linux y macOS no la declaran. |
 | `app.block` | `app.block.set`, `app.block.clear` | v0.4 (§5.13). Windows, solo con el agente como servicio y su ayudante (D-016). |
 | `web.filter` | `web.filter.set`, `web.filter.clear` | v0.4 (§5.14). Windows, solo con el agente como servicio y su ayudante. |
-| `file.collect` | `file.collect` | Reservada |
+| `file.collect` | `file.collect.open`, `file.collect.request`, `file.collect.response.ack` | v0.11 (§5.21). Windows, en modo ventana y como servicio con su ayudante (lee en la sesión del alumno); también los alumnos simulados, que devuelven su último código. Linux y macOS no la declaran. |
 | `code.collect` | `code.collect` | Reservada |
 | `power` | `power.action`, `power.cancel` | v0.5 (§5.15). Windows, en modo ventana y como servicio (también sin sesión iniciada). Linux y macOS no la declaran. |
 | `remote` | `remote.start`, `remote.input`, `remote.stop` | v0.6 (§5.16). Windows, en modo ventana y como servicio con su ayudante (la entrada se inyecta en la sesión del alumno). Linux y macOS no la declaran. |
@@ -372,6 +372,11 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `timer.ack` | A → P | — | `ref_id`, `timer_id`, `status`, `remaining_ms` | — |
 | `file.push` | P → A | `file.push` | `push_id`, `file_id`, `part`, `parts`, `data`; la parte 1 además `name`, `dest`, `size`, `sha256`, `overwrite`, `label`, `index`, `files` | `file.push.ack` al completar o rechazar, o `error` |
 | `file.push.ack` | A → P | — | `ref_id`, `push_id`, `file_id`, `status`, `path`, `renamed`, `replaced`, `reason`? | — |
+| `file.collect.open` | P → A | `file.collect` | `collect_id`, `date`, `activity`, `patterns` | `file.collect.ack` (`ready`) o `error` |
+| `file.collect.request` | P → A | `file.collect` | `collect_id`, `date`, `activity`, `round`, `patterns`, `max_file_size`, `max_total`, `max_files` | `file.collect.ack` y, con `sending`, las `file.collect.response`; o `error` |
+| `file.collect.ack` | A → P | — | `ref_id`, `collect_id`, `round`, `status`, `path`?, `files`?, `total`?, `skipped`?, `reason`? | — |
+| `file.collect.response` | A → P | — | `collect_id`, `round`, `file_id`, `part`, `parts`, `data`; la parte 1 además `path`, `size`, `sha256`, `modified_at`, `index`, `files` | `file.collect.response.ack` al completar o rechazar |
+| `file.collect.response.ack` | P → A | `file.collect` | `ref_id`, `collect_id`, `round`, `file_id`, `status`, `reason`? | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -1320,6 +1325,171 @@ Reglas de la consola:
 | Linux (pendiente) | `$XDG_DOCUMENTS_DIR` (o `~/Documents`) + `/Aula`, con `O_NOFOLLOW`. | Sin permisos especiales. No se declara. |
 | macOS (pendiente) | `~/Documents/Aula`. | TCC puede pedir acceso a Documentos si el agente no está firmado. No se declara. |
 
+### 5.21 Recoger el trabajo de los alumnos (`file.collect.*`)
+
+> Aprobado el 2026-11-06 (prompt 10.10), para v0.11. Implementación en `internal/collect`;
+> reglas en `docs/privacidad.md` 60–65. En la consola, la vista «Archivos», pestaña
+> «Recolecciones».
+
+El profesor abre una **recolección** (una fecha y una actividad) y cada equipo crea su carpeta
+dentro de la carpeta de trabajo del alumno: `Documentos\Aula\recolecciones\<fecha>\<actividad>`.
+El alumno guarda ahí su ejercicio. Cuando el profesor pulsa «Recoger», cada agente lee esa
+carpeta (y **solo** esa), manda los archivos en partes y la consola los guarda organizados por
+alumno. Se puede recoger las veces que haga falta (`round`).
+
+```
+Consola (P)                                                 Agente (A)
+   |-- file.collect.open (collect_id, date, activity) -------->|  crea recolecciones/<date>/<activity>
+   |<-- file.collect.ack (ready, path) ------------------------|  tarjeta «Guarda tu ejercicio en…» (notify)
+   |                    … el alumno trabaja …                  |
+   |-- file.collect.request (round, patterns, límites) ------->|  aviso «El profesor solicitó recoger…»
+   |                                                           |  lista y lee la carpeta, en memoria
+   |<-- file.collect.ack (sending, files, total, skipped) -----|
+   |<-- file.collect.response archivo 1, partes 1..N ----------|
+   |  ensambla, comprueba size y sha256, guarda                |
+   |-- file.collect.response.ack (saved) --------------------->|
+   |<-- file.collect.response archivo 2 … ---------------------|
+   |-- file.collect.response.ack (saved) --------------------->|  aviso «Tu profesor recogió…» y la
+   |                                                           |  tarjeta anota qué y cuándo
+```
+
+**La consola nunca manda una ruta.** Manda `date` y `activity`; el agente arma la carpeta
+(`recolecciones/<date>/<activity>`, relativa a su carpeta de trabajo) y la comprueba. Las rutas
+que vuelven en `file.collect.response.path` son relativas a esa carpeta de la actividad.
+
+**`file.collect.open` (P → A)**
+
+```json
+{ "collect_id": "7d3e…", "date": "2026-11-06", "activity": "Ejercicio 4", "patterns": ["*.py"] }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `collect_id` | string | UUID v4 de la consola; identifica la recolección en todos sus mensajes. |
+| `date` | string | `AAAA-MM-DD`, una fecha válida. La consola manda la del día en que se abrió. |
+| `activity` | string | Nombre de la actividad, 1–80 caracteres, con las reglas de ruta de un segmento (§5.20, `filepush.CheckName`). Es el nombre de la carpeta. |
+| `patterns` | lista | 0–10 patrones de nombre de archivo (`*.py`, `main.*`), 1–20 caracteres cada uno, sin `/` ni `\`. Vacía = todos los archivos. Solo informa al alumno qué se recogerá. |
+
+El agente crea la carpeta si no existe (como el alumno; en modo servicio, el ayudante) y
+responde `file.collect.ack` con `status` `ready` y `path`. Un `open` repetido (la consola lo
+reenvía a quien se conecta tarde) no cambia nada y vuelve a acusar `ready`.
+
+**`file.collect.request` (P → A)**
+
+```json
+{ "collect_id": "7d3e…", "date": "2026-11-06", "activity": "Ejercicio 4", "round": 1,
+  "patterns": ["*.py"], "max_file_size": 1048576, "max_total": 8388608, "max_files": 20 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `collect_id`, `date`, `activity`, `patterns` | | Como en `open`. Aquí `patterns` sí filtra: se recogen los archivos cuyo nombre coincide con alguno, sin distinguir mayúsculas. |
+| `round` | entero | 1–1000. Cada «Recoger» de la consola sube la ronda; las partes y acuses la llevan. |
+| `max_file_size` | entero | 1 – 16 MiB. Un archivo mayor no se recoge (`skipped`, `too_large`). |
+| `max_total` | entero | 1 – 32 MiB. Lo que no cabe después de ordenar por ruta no se recoge (`skipped`, `too_large`). |
+| `max_files` | entero | 1–50. Los que pasan del límite, por orden de ruta, no se recogen (`skipped`, `too_many`). |
+
+Si la carpeta no existe, el agente la crea y responde `empty`. Un `request` sin `open` previo
+vale (el agente reinició): crea la carpeta igual.
+
+**`file.collect.ack` (A → P)**
+
+```json
+{ "ref_id": "<id del open o request>", "collect_id": "7d3e…", "round": 1, "status": "sending",
+  "path": "recolecciones/2026-11-06/Ejercicio 4", "files": 2, "total": 3412,
+  "skipped": [ { "path": "video.mp4", "size": 52428800, "reason": "too_large" } ] }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `ref_id` | string | `id` del `file.collect.open` o del `file.collect.request`. |
+| `collect_id` | string | El de la recolección. |
+| `round` | entero | `0` para `open`; la del `request`. |
+| `status` | string | `ready` (respuesta a `open`), `sending` (siguen `files` archivos), `empty` (nada que recoger) o `failed`. |
+| `path` | string | Con `ready`, `sending` y `empty`: la carpeta de la actividad, relativa a la carpeta de trabajo, con `/`. |
+| `files`, `total` | entero | Con `sending`: cuántos archivos siguen (1–50) y cuántos bytes en total. |
+| `skipped` | lista | Con `sending` y `empty`: 0–50 archivos que coincidían pero no se recogen, con `path`, `size` y `reason` (`too_large`, `too_many`, `link`, `denied`, `offline`, `invalid_path`). |
+| `reason` | string | Solo con `failed`: `invalid_path` (fecha o actividad inválidas), `busy` (ya está mandando otra ronda), `denied`, `unsupported` (sin carpeta de trabajo: sin sesión o sin ayudante) o `internal`. |
+
+**`file.collect.response` (A → P)**
+
+```json
+{ "collect_id": "7d3e…", "round": 1, "file_id": "4b8a…", "part": 1, "parts": 1,
+  "path": "20231234-Ana.py", "size": 3072, "sha256": "5f0c…", "modified_at": 1793955720000,
+  "index": 1, "files": 2, "data": "ZGVmIG1haW4oKTo…" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `collect_id`, `round` | | Los del `request`. |
+| `file_id` | string | UUID v4 del agente; identifica el archivo en sus partes y en su acuse. |
+| `part`, `parts` | entero | 1 ≤ `part` ≤ `parts` ≤ 32. Las partes salen en orden. |
+| `data` | string | Un trozo en Base64: ≤ **512 KiB** antes de codificar. Todos miden 512 KiB salvo el último; un archivo vacío lleva una sola parte con `data` vacío. |
+| `path` | string | Solo en la parte 1. Ruta relativa a la carpeta de la actividad, con `/`, hasta 4 niveles; cada segmento cumple las reglas de ruta de §5.20. |
+| `size` | entero | Solo en la parte 1. 0 – 16 MiB; `parts` = máx(1, ⌈`size` / 512 KiB⌉). |
+| `sha256` | string | Solo en la parte 1. 64 caracteres hexadecimales en minúsculas. |
+| `modified_at` | entero | Solo en la parte 1. Última modificación, en milisegundos Unix. |
+| `index`, `files` | entero | Solo en la parte 1. 1 ≤ `index` ≤ `files` ≤ 50; `files` es el del `ack`. |
+
+**Troceo y ensamblado.** El común (`protocol.SplitParts` y `protocol.Reassembly`, §5.17), con
+partes de 512 KiB (≈ 683 KiB en Base64; la envoltura queda por debajo de 1 MiB). El agente manda
+**un archivo a la vez**: todas sus partes, y espera su `file.collect.response.ack` (60 s como
+mucho) antes del siguiente. La consola ensambla por `file_id` y, al completar, comprueba `size` y
+`sha256`.
+
+**`file.collect.response.ack` (P → A)**
+
+```json
+{ "ref_id": "<id de la última parte>", "collect_id": "7d3e…", "round": 1, "file_id": "4b8a…",
+  "status": "saved" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `ref_id` | string | `id` de la parte que completó el archivo o con la que la consola lo rechazó. |
+| `collect_id`, `round`, `file_id` | | Los del archivo. |
+| `status` | string | `saved` (la consola lo guardó) o `failed`. |
+| `reason` | string | Solo con `failed`: `incomplete`, `corrupt`, `no_space`, `denied` o `internal`. |
+
+Reglas del agente:
+
+- **Solo la carpeta de la actividad.** Lista `recolecciones/<date>/<activity>` hasta 4 niveles,
+  **sin seguir** enlaces ni *junctions* (se informan como `skipped` `link`). Fuera de ella no lee
+  nada. En modo servicio lee el **ayudante**, con el token del alumno (D-016).
+- **Aviso antes de leer.** Al llegar el `request` muestra el aviso «El profesor solicitó recoger
+  tu ejercicio en …» y **después** lee (`docs/privacidad.md` regla 61). Al terminar la ronda, el
+  aviso «Tu profesor recogió…» y la tarjeta anota qué se recogió y cuándo (regla 62).
+- **Solo lee.** No borra, no mueve ni cambia nada. Lee todos los archivos de la ronda en memoria
+  (≤ 32 MiB) antes de responder, así los `files` y `total` del `ack` son exactos. Un archivo que
+  no se puede leer (abierto en exclusiva por otro programa) va en `skipped` `denied`; uno que solo
+  está en la nube (OneDrive «a petición»), en `skipped` `offline`, sin descargarlo.
+- **Una ronda a la vez.** Otro `request` mientras manda → `ack` `failed` `busy`. Si un archivo no
+  se acusa en 60 s, o la conexión se cierra, abandona la ronda y libera la memoria.
+
+Reglas de la consola:
+
+- Solo manda `file.collect.*` a equipos que declararon `file.collect`, reales o simulados (los
+  simulados devuelven como `<equipo>.<ext>` el último código que recibieron).
+- Manda el `request` en **tandas de 4 equipos**: al terminar uno, pide al siguiente. Si el `ack`
+  no llega en 30 s, o un archivo no termina de llegar en 60 s desde su parte 1, ese alumno queda
+  como fallido en esa ronda.
+- Ensambla en memoria y descarta partes de un archivo que no conoce, repetidas o fuera de rango.
+- **Guarda al llegar** cada archivo íntegro en su carpeta personal:
+  `Documentos\Aula\recolecciones\<date>\<activity>\<equipo> (<usuario>)\<path>` (`… (simulado)`
+  para los simulados), y al terminar la ronda escribe allí `aula-recoleccion.json` con la ronda,
+  la hora y cada archivo con su `sha256`. Una ronda nueva reemplaza lo de la anterior de ese
+  alumno (lo que ya no está en la ronda nueva se borra de la copia del profesor, nunca del alumno).
+- Reenvía `file.collect.open` de las recolecciones abiertas de la clase a quien se conecta tarde.
+  Al cerrar la clase, las recolecciones abiertas se olvidan; las carpetas quedan.
+
+#### 5.21.1 Permisos del sistema operativo
+
+| SO | Cómo | Requiere y límites |
+|---|---|---|
+| Windows | La misma carpeta de trabajo de §5.20.1, con `CreateFile` sin seguir *reparse points* (`FILE_FLAG_OPEN_REPARSE_POINT`) **desde la sesión del alumno**: en modo ventana, el propio agente; en modo servicio, el ayudante (`CallFolderCreate`, `CallFolderList`, `CallFileRead`) con el token del alumno. | Ningún privilegio. Sin sesión iniciada o sin ayudante no se declara `file.collect`. |
+| Linux (pendiente) | `$XDG_DOCUMENTS_DIR/Aula`, con `O_NOFOLLOW`. | No se declara. |
+| macOS (pendiente) | `~/Documents/Aula`. | TCC puede pedir acceso a Documentos. No se declara. |
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -1329,7 +1499,6 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | Tipo | Descripción |
 |---|---|
 | `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
-| `file.collect` | Recolectar un archivo que el alumno elige entregar. |
 | `code.collect` | Recolectar el código que el alumno entrega desde el overlay. |
 | `poll.*` | Encuestas y preguntas rápidas a los alumnos. |
 
@@ -1358,6 +1527,10 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `file.push.data` | 512 KiB por parte antes de Base64; ≤ 32 partes; 16 MiB por archivo | `error` `message_too_large` (parte) o `invalid_message`; la sesión sigue. |
 | `file.push.name` / `dest` | 1–100 caracteres / 0–200 caracteres y 4 niveles | `error` `invalid_message` (longitud); `file.push.ack` `invalid_path` (reglas de ruta) |
 | `file.push.label` / `files` | 80 caracteres / 1–20 archivos por envío (32 MiB) | `error` `invalid_message` |
+| `file.collect.*.activity` / `patterns` | 1–80 caracteres / 0–10 patrones de 1–20 caracteres | `error` `invalid_message` (longitud); `file.collect.ack` `failed` `invalid_path` (reglas de ruta) |
+| `file.collect.request` límites | `max_file_size` 1 B – 16 MiB, `max_total` 1 B – 32 MiB, `max_files` 1–50, `round` 1–1000 | `error` `invalid_message` |
+| `file.collect.response.data` | 512 KiB por parte antes de Base64; ≤ 32 partes; 16 MiB por archivo | `error` `message_too_large` (parte) o `invalid_message`; la sesión sigue. |
+| `file.collect.ack.skipped` | 50 entradas | `error` `invalid_message` |
 | `screen.freeze.message` (pendiente) | 300 caracteres | `error` `invalid_message` |
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
 | `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
@@ -1405,6 +1578,9 @@ emisor verifica el tamaño final de la envoltura.
   resultado. **Nunca** `data`, ni la ruta donde la consola guardó la imagen.
 - De `file.push*` se registran `push_id`, `file_id`, `part`/`parts`, tamaños, `status` y
   `reason`. **Nunca** `data`, ni `name`, `dest`, `label` o la ruta final.
+- De `file.collect.*` se registran `collect_id`, `round`, `file_id`, `part`/`parts`, tamaños,
+  cuántos archivos y omitidos, `status` y `reason`. **Nunca** `data`, `activity`, `patterns`,
+  `path` ni la carpeta donde la consola guardó (todas nombran al alumno o su trabajo).
 - De un `msg.show` `personal` se registran el equipo, el `id` y la longitud; **nunca** el texto.
   En «Últimos envíos» la consola lo etiqueta «Mensaje privado a <equipo>», sin el texto.
 - De `hand.*` y `msg.student*` se registran `hand_id`, `message_id`, `by`, la longitud y el

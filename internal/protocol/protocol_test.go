@@ -101,6 +101,108 @@ func samplePayloads() []Payload {
 		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushSaved, Path: "Ejercicio 4/datos (2).csv", Renamed: true},
 		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushSaved, Path: "datos.csv", Replaced: true},
 		FilePushAck{RefID: testRefID, PushID: testRefID, FileID: testSnippetID, Status: FilePushFailed, Reason: FilePushNoSpace},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-11-06", Activity: "Ejercicio 4", Patterns: []string{"*.py"}},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-11-06", Activity: "Tarea"},
+		FileCollectRequest{CollectID: testRefID, Date: "2026-11-06", Activity: "Ejercicio 4", Round: 2,
+			Patterns: []string{"*.py", "*.txt"}, MaxFileSize: 1 << 20, MaxTotal: 8 << 20, MaxFiles: 20},
+		FileCollectAck{RefID: testSnippetID, CollectID: testRefID, Status: FileCollectReady, Path: "recolecciones/2026-11-06/Ejercicio 4"},
+		FileCollectAck{RefID: testSnippetID, CollectID: testRefID, Round: 1, Status: FileCollectSending,
+			Path: "recolecciones/2026-11-06/Ejercicio 4", Files: 2, Total: 3412,
+			Skipped: []FileCollectSkipped{{Path: "video.mp4", Size: 52428800, Reason: CollectTooLarge}}},
+		FileCollectAck{RefID: testSnippetID, CollectID: testRefID, Round: 1, Status: FileCollectEmpty, Path: "recolecciones/2026-11-06/Ejercicio 4"},
+		FileCollectAck{RefID: testSnippetID, CollectID: testRefID, Round: 1, Status: FileCollectFailed, Reason: CollectBusy},
+		FileCollectResponse{CollectID: testRefID, Round: 1, FileID: testSnippetID, Part: 1, Parts: 1, Data: []byte("print(1)\n"),
+			Path: "src/20231234-Ana.py", Size: 9, SHA256: strings.Repeat("ab", 32), ModifiedAt: 1793955720000, Index: 1, Files: 2},
+		FileCollectResponse{CollectID: testRefID, Round: 1, FileID: testSnippetID, Part: 1, Parts: 1, Data: []byte{},
+			Path: "vacio.txt", SHA256: strings.Repeat("ab", 32), Index: 2, Files: 2},
+		FileCollectResponse{CollectID: testRefID, Round: 1, FileID: testSnippetID, Part: 2, Parts: 3, Data: []byte{1, 2}},
+		FileCollectResponseAck{RefID: testRefID, CollectID: testRefID, Round: 1, FileID: testSnippetID, Status: FilePushSaved},
+		FileCollectResponseAck{RefID: testRefID, CollectID: testRefID, Round: 1, FileID: testSnippetID, Status: FilePushFailed, Reason: CollectCorrupt},
+	}
+}
+
+func TestFileCollectLimits(t *testing.T) {
+	sum := strings.Repeat("ab", 32)
+	req := func(f func(*FileCollectRequest)) FileCollectRequest {
+		p := FileCollectRequest{CollectID: testRefID, Date: "2026-11-06", Activity: "Ej", Round: 1,
+			MaxFileSize: 1, MaxTotal: 1, MaxFiles: 1}
+		f(&p)
+		return p
+	}
+	resp := func(f func(*FileCollectResponse)) FileCollectResponse {
+		p := FileCollectResponse{CollectID: testRefID, Round: 1, FileID: testSnippetID, Part: 1, Parts: 1,
+			Data: []byte("x"), Path: "a.py", Size: 1, SHA256: sum, Index: 1, Files: 1}
+		f(&p)
+		return p
+	}
+	ack := func(f func(*FileCollectAck)) FileCollectAck {
+		p := FileCollectAck{RefID: testRefID, CollectID: testRefID, Round: 1, Status: FileCollectSending, Path: "p", Files: 1, Total: 1}
+		f(&p)
+		return p
+	}
+	for _, p := range []Payload{
+		FileCollectOpen{CollectID: "x", Date: "2026-11-06", Activity: "a"},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-13-01", Activity: "a"},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-1-01", Activity: "a"},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-11-06", Activity: ""},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-11-06", Activity: strings.Repeat("ñ", MaxCollectActivity+1)},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-11-06", Activity: "a", Patterns: []string{"src/*.py"}},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-11-06", Activity: "a", Patterns: []string{""}},
+		FileCollectOpen{CollectID: testRefID, Date: "2026-11-06", Activity: "a", Patterns: make([]string, MaxCollectPatterns+1)},
+		req(func(p *FileCollectRequest) { p.Round = 0 }),
+		req(func(p *FileCollectRequest) { p.Round = MaxFileCollectRound + 1 }),
+		req(func(p *FileCollectRequest) { p.MaxFileSize = MaxFileCollectBytes + 1 }),
+		req(func(p *FileCollectRequest) { p.MaxTotal = 0 }),
+		req(func(p *FileCollectRequest) { p.MaxTotal = MaxFileCollectTotal + 1 }),
+		req(func(p *FileCollectRequest) { p.MaxFiles = MaxFileCollectFiles + 1 }),
+		ack(func(p *FileCollectAck) { p.Status = "done" }),
+		ack(func(p *FileCollectAck) { p.Files = 0 }),
+		ack(func(p *FileCollectAck) { p.Path = "" }),
+		ack(func(p *FileCollectAck) { p.Status = FileCollectReady }), // round 1 and files
+		ack(func(p *FileCollectAck) { p.Status = FileCollectEmpty }), // files
+		ack(func(p *FileCollectAck) { p.Status, p.Reason = FileCollectFailed, CollectBusy }),
+		ack(func(p *FileCollectAck) { p.Skipped = []FileCollectSkipped{{Path: "a", Reason: CollectCorrupt}} }),
+		ack(func(p *FileCollectAck) { p.Skipped = make([]FileCollectSkipped, MaxFileCollectFiles+1) }),
+		FileCollectAck{RefID: testRefID, CollectID: testRefID, Round: 1, Status: FileCollectFailed, Reason: CollectTooLarge},
+		resp(func(p *FileCollectResponse) { p.Round = 0 }),
+		resp(func(p *FileCollectResponse) { p.Path = "" }),
+		resp(func(p *FileCollectResponse) { p.Size = FileCollectPartSize + 1 }),
+		resp(func(p *FileCollectResponse) { p.Size = 0 }),
+		resp(func(p *FileCollectResponse) { p.SHA256 = strings.ToUpper(sum) }),
+		resp(func(p *FileCollectResponse) { p.Index = 2 }),
+		resp(func(p *FileCollectResponse) { p.Files = MaxFileCollectFiles + 1; p.Index = 1 }),
+		resp(func(p *FileCollectResponse) { p.ModifiedAt = -1 }),
+		FileCollectResponse{CollectID: testRefID, Round: 1, FileID: testSnippetID, Part: 2, Parts: 2},
+		FileCollectResponseAck{RefID: testRefID, CollectID: testRefID, Round: 1, FileID: testSnippetID, Status: FilePushFailed, Reason: CollectBusy},
+		FileCollectResponseAck{RefID: testRefID, CollectID: testRefID, Round: 1, FileID: testSnippetID, Status: FilePushSaved, Reason: CollectCorrupt},
+		FileCollectResponseAck{RefID: testRefID, CollectID: testRefID, FileID: testSnippetID, Status: FilePushSaved},
+	} {
+		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
+		}
+	}
+	big := FileCollectResponse{CollectID: testRefID, Round: 1, FileID: testSnippetID, Part: 2, Parts: 2, Data: make([]byte, FileCollectPartSize+1)}
+	if err := big.Validate(); !errors.Is(err, ErrMessageTooLarge) {
+		t.Errorf("oversized part: Validate = %v, want message_too_large", err)
+	}
+	ok := resp(func(p *FileCollectResponse) {
+		p.Size, p.Parts, p.Data = MaxFileCollectBytes, MaxFileCollectParts, make([]byte, FileCollectPartSize)
+		p.Index, p.Files = MaxFileCollectFiles, MaxFileCollectFiles
+	})
+	if err := ok.Validate(); err != nil {
+		t.Errorf("the limits must be valid: %v", err)
+	}
+	okReq := req(func(p *FileCollectRequest) {
+		p.MaxFileSize, p.MaxTotal, p.MaxFiles, p.Round = MaxFileCollectBytes, MaxFileCollectTotal, MaxFileCollectFiles, MaxFileCollectRound
+		p.Patterns = []string{strings.Repeat("p", MaxCollectPattern)}
+		p.Activity = strings.Repeat("ñ", MaxCollectActivity)
+	})
+	if err := okReq.Validate(); err != nil {
+		t.Errorf("the request limits must be valid: %v", err)
+	}
+	// One full part with the envelope stays under the message limit.
+	if b, err := Encode(New(ok)); err != nil || len(b) > MaxMessageSize {
+		t.Errorf("a full part encodes to %d bytes (%v), limit %d", len(b), err, MaxMessageSize)
 	}
 }
 

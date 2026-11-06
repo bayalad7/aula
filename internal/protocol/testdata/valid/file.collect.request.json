@@ -1,0 +1,1 @@
+{"v": 1, "id": "5b0e8f3c-2a6d-4c1e-9b7a-0f3d2e1c4b5a", "ts": 1792771200000, "type": "file.collect.request", "payload": {"collect_id": "7d3e1a2b-4c5d-4e6f-8a9b-0c1d2e3f4a5b", "date": "2026-11-06", "activity": "Ejercicio 4", "round": 1, "patterns": ["*.py"], "max_file_size": 1048576, "max_total": 8388608, "max_files": 20}}

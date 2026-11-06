@@ -32,12 +32,14 @@ const (
 	// CapFilePush saves the files the teacher sends in the work folder (§5.20).
 	// Windows, in window mode or as a service with its helper.
 	CapFilePush Capability = "file.push"
+	// CapFileCollect reads the activity folder of a collection (§5.21).
+	// Windows, in window mode or as a service with its helper.
+	CapFileCollect Capability = "file.collect"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
 const (
 	CapScreenFreeze Capability = "screen.freeze" // documented, pending (§6)
-	CapFileCollect  Capability = "file.collect"
 	CapCodeCollect  Capability = "code.collect"
 	CapPoll         Capability = "poll"
 )
@@ -79,6 +81,10 @@ var requiredCapability = map[Type]Capability{
 	TypeTimerStop:   CapTimer,
 
 	TypeFilePush: CapFilePush,
+
+	TypeFileCollectOpen:        CapFileCollect,
+	TypeFileCollectRequest:     CapFileCollect,
+	TypeFileCollectResponseAck: CapFileCollect,
 }
 
 // agentCapability lists the capability an agent must have declared before the

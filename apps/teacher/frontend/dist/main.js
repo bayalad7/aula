@@ -224,6 +224,10 @@
   let restricciones = { apps: null, web: null };
   let simulada = { active: false, students: [], capabilities: [] };
   let participacion = { hands: [], messages: [], pending: 0 };
+  // El temporizador de la clase: Go manda lo que faltaba al enviarlo (remainingMs)
+  // y aquí se cuenta con el reloj monotónico de la página (performance.now).
+  let temporizador = { active: false, receivers: [], unsupported: [] };
+  let temporizadorEn = 0;
   let modo = "lista";
   let vista = "alumnos";
   // La selección se guarda por equipo (sobrevive a las reconexiones, que
@@ -330,6 +334,7 @@
     if (v.remote) pintarControl(v.remote);
     alCapturas(v.snapshots || []);
     pintarParticipacion(v.participation || participacion);
+    pintarTemporizador(v.timer || temporizador);
     pintarHistorial(v.history);
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
@@ -466,7 +471,7 @@
     }));
     const puede = [["canCode", "ficha.codigo"], ["canNotice", "ficha.avisos"], ["canThumb", "ficha.miniaturas"],
       ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"], ["canRemote", "ficha.control"],
-      ["canSnapshot", "ficha.captura"], ["canHand", "ficha.mano"], ["canMessage", "ficha.mensajes"]];
+      ["canSnapshot", "ficha.captura"], ["canHand", "ficha.mano"], ["canMessage", "ficha.mensajes"], ["canTimer", "ficha.temporizador"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k]) => {
       const li = el("li", "fila");
       li.append(s[c] ? insignia("conectado", "hecho", T("ficha.si")) : insignia("", "cerrar", T("ficha.no")), el("span", "", T(k)));
@@ -1133,6 +1138,7 @@
     for (const p of $$("[data-destino]")) p.textContent = destino;
     pintarDestinoEquipos();
     if (panel === "captura") pintarLote();
+    if (panel === "temporizador") pintarPanelTemporizador();
   }
 
   // --- Información junto a los campos técnicos -------------------------------------------
@@ -1189,6 +1195,7 @@
     if (id === "restricciones") pintarPanelRestricciones();
     if (id === "energia") pintarPanelEnergia();
     if (id === "captura") pintarLote();
+    if (id === "temporizador") pintarPanelTemporizador();
     if (id === "alumno") pintarFicha();
     $("h-panel-" + id).focus();
   }
@@ -1433,6 +1440,132 @@
   setInterval(() => { if (pendientes().length) { pintarEnergia(); pintarAlumnos(alumnos); } }, 1000);
   $("f-energia-cancelar").addEventListener("click", () => {
     api.PowerCancel([]).then((r) => toast("info", P("energia.canceladaEn", r.sent)), fallo);
+  });
+
+  // --- Temporizador de ejercicio (docs/protocol.md §5.19) -----------------------------------
+  // Panel de la barra de acciones (todos o la selección), franja mientras corre y su
+  // sección de Participación. Sin animación: el número cambia una vez por segundo.
+  const hmmss = (ms) => {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    if (s < 3600) return mmss(ms);
+    return Math.floor(s / 3600) + ":" + String(Math.floor((s % 3600) / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  };
+  const faltaTemporizador = () => Math.max(0, temporizador.remainingMs - (performance.now() - temporizadorEn));
+  const nombreTemporizador = (t) => t.label || T("temporizador.sinNombre");
+  let terminoAnunciado = "";
+
+  function alTemporizador(t) {
+    const antes = temporizador;
+    pintarTemporizador(t);
+    // El fin se anuncia una vez (la franja no tiene aria-live: leería cada segundo).
+    if (t.active && t.ended && terminoAnunciado !== t.timerId && antes.active && !antes.ended) {
+      terminoAnunciado = t.timerId;
+      toast("info", T("temporizador.franjaTermino", { nombre: nombreTemporizador(t) }), "");
+    }
+  }
+
+  function pintarTemporizador(t) {
+    temporizador = t;
+    temporizadorEn = performance.now();
+    pintarCuentaTemporizador();
+    if (panel === "temporizador") pintarPanelTemporizador();
+  }
+
+  // Se llama al llegar un estado y una vez por segundo mientras corre.
+  function pintarCuentaTemporizador() {
+    const t = temporizador;
+    $("f-temporizador").hidden = !t.active;
+    $("temporizador-vacio").hidden = !!t.active;
+    $("temporizador-activo").hidden = !t.active;
+    if (!t.active) {
+      $("f-temporizador-mas").hidden = true;
+      $("f-temporizador-extender").setAttribute("aria-expanded", "false");
+      return;
+    }
+    const falta = faltaTemporizador();
+    const termino = t.ended || falta <= 0;
+    const nombre = nombreTemporizador(t);
+    const tiempo = hmmss(falta);
+    $("f-temporizador-texto").textContent = termino ? T("temporizador.franjaTermino", { nombre }) : T("temporizador.franja", { nombre, tiempo });
+    const ven = t.receivers.filter((r) => r.status !== "sent").length;
+    $("f-temporizador-nota").textContent = T("temporizador.loVen", { r: ven, n: t.eligible });
+    const quitar = T(termino ? "temporizador.quitar" : "temporizador.detener");
+    $("f-temporizador-detener").textContent = quitar;
+    $("temporizador-detener").textContent = quitar;
+    $("temporizador-estado").textContent = T(termino ? "temporizador.termino" : "temporizador.queda");
+    $("temporizador-cuenta").textContent = termino ? "0:00" : tiempo;
+    $("temporizador-nombre").textContent = nombre;
+    $("temporizador-para").textContent = t.all ? T("temporizador.paraTodos") : P("temporizador.paraSeleccion", t.hosts.length);
+    const faltan = t.receivers.filter((r) => r.status === "sent").map((r) => r.hostname);
+    $("temporizador-confirman").textContent = faltan.length ? T("temporizador.sinConfirmar", { lista: faltan.join(", ") }) : T("temporizador.todosLoVen");
+    $("temporizador-no-pueden").hidden = !t.unsupported.length;
+    $("temporizador-no-pueden").textContent = T("temporizador.noPueden", { lista: t.unsupported.join(", ") });
+    for (const b of $$("[data-extender]")) b.disabled = Number(b.dataset.extender) > t.maxExtendS;
+  }
+  setInterval(() => { if (temporizador.active && !temporizador.ended) pintarCuentaTemporizador(); }, 1000);
+
+  for (const b of $$("[data-extender]")) {
+    const n = Number(b.dataset.extender) / 60;
+    b.textContent = T("temporizador.mas", { n });
+    b.addEventListener("click", () => {
+      api.ExtendTimer(Number(b.dataset.extender)).then((t) => {
+        pintarTemporizador(t);
+        toast("exito", T("temporizador.extendido", { n }), "");
+      }, fallo);
+    });
+  }
+  $("f-temporizador-extender").addEventListener("click", () => {
+    const abrir = $("f-temporizador-mas").hidden;
+    $("f-temporizador-mas").hidden = !abrir;
+    $("f-temporizador-extender").setAttribute("aria-expanded", String(abrir));
+    if (abrir) $("f-temporizador-mas").querySelector("button:not(:disabled)")?.focus();
+  });
+  const detenerTemporizador = () => api.StopTimer().then((t) => {
+    pintarTemporizador(t);
+    toast("info", T("temporizador.detenido"), T("temporizador.detenidoTexto"));
+  }, fallo);
+  $("f-temporizador-detener").addEventListener("click", detenerTemporizador);
+  $("temporizador-detener").addEventListener("click", detenerTemporizador);
+  $("temporizador-nuevo").addEventListener("click", () => { irA("alumnos"); abrirPanel("temporizador"); });
+
+  for (const b of $$("[data-minutos]")) {
+    b.textContent = T("temporizador.preset", { n: b.dataset.minutos });
+    b.addEventListener("click", () => {
+      $("temporizador-minutos").value = b.dataset.minutos;
+      limpiarCampo($("temporizador-minutos"), $("temporizador-error"));
+      marcarPreset();
+    });
+  }
+  function marcarPreset() {
+    for (const b of $$("[data-minutos]")) b.setAttribute("aria-pressed", String(b.dataset.minutos === $("temporizador-minutos").value));
+  }
+  $("temporizador-minutos").addEventListener("input", () => { limpiarCampo($("temporizador-minutos"), $("temporizador-error")); marcarPreset(); });
+
+  function pintarPanelTemporizador() {
+    const objetivo = seleccion.size ? seleccionados() : conectados();
+    const pueden = objetivo.filter((s) => s.canTimer).length;
+    $("temporizador-iniciar").disabled = pueden === 0;
+    $("temporizador-sin-soporte").hidden = pueden === objetivo.length && pueden > 0;
+    $("temporizador-sin-soporte-texto").textContent = pueden === 0 ? T("temporizador.nadiePuede") : P("temporizador.algunosNo", objetivo.length - pueden);
+    const t = temporizador;
+    $("temporizador-reemplaza").hidden = !(t.active && !t.ended);
+    if (t.active) $("temporizador-reemplaza-texto").textContent = T("temporizador.reemplaza", { nombre: nombreTemporizador(t), tiempo: hmmss(faltaTemporizador()) });
+  }
+  $("temporizador-iniciar").addEventListener("click", () => {
+    const min = Number($("temporizador-minutos").value);
+    if (!Number.isInteger(min) || min < 1 || min > 240) {
+      errorEnCampo($("temporizador-minutos"), $("temporizador-error"), T("temporizador.minutosMal"));
+      return;
+    }
+    // La selección va por equipo, simulados incluidos: el temporizador no cambia nada en el equipo.
+    const hosts = seleccion.size ? seleccionados().map((s) => s.hostname) : [];
+    const b = $("temporizador-iniciar");
+    ocupado(b, true);
+    api.StartTimer({ label: $("temporizador-etiqueta").value.trim(), durationS: min * 60, hosts }).then((t) => {
+      pintarTemporizador(t);
+      cerrarPanel();
+      toast("exito", T("temporizador.iniciado"), T("temporizador.iniciadoTexto", { nombre: nombreTemporizador(t), tiempo: hmmss(t.remainingMs) }));
+    }, fallo).finally(() => ocupado(b, false));
   });
 
   // --- Código ----------------------------------------------------------------------------
@@ -2453,6 +2586,7 @@
   rt.EventsOn(ev.RESTRICTIONS, pintarRestricciones);
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);
   rt.EventsOn(ev.PARTICIPATION, alParticipar);
+  rt.EventsOn(ev.TIMER, alTemporizador);
   rt.EventsOn(ev.CONNECT_CHECK, pintarComprobacion);
   rt.EventsOn(ev.CLASS, (v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
 

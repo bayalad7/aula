@@ -80,6 +80,19 @@
         <span class="franja__texto" id="f-energia-texto"></span>
         <button type="button" class="btn btn--sm" id="f-energia-cancelar" data-t="energia.cancelarPendientes"></button>
       </p>
+      <!-- El temporizador sigue mientras corre la clase (prompt 10.8): sin aria-live,
+           que leería cada segundo; el inicio y el fin se anuncian con un toast. -->
+      <section class="franja franja--temporizador" id="f-temporizador" data-t-aria-label="temporizador.franjaEtiqueta" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg>
+        <span class="franja__texto"><span class="cuenta" id="f-temporizador-texto"></span> <span class="franja__nota" id="f-temporizador-nota"></span></span>
+        <button type="button" class="btn btn--sm" id="f-temporizador-extender" aria-expanded="false" aria-controls="f-temporizador-mas" data-t="temporizador.extender"></button>
+        <span class="grupo-botones" id="f-temporizador-mas" role="group" data-t-aria-label="temporizador.extenderEtiqueta" hidden>
+          <button type="button" class="btn btn--sm" data-extender="60"></button>
+          <button type="button" class="btn btn--sm" data-extender="300"></button>
+          <button type="button" class="btn btn--sm" data-extender="600"></button>
+        </span>
+        <button type="button" class="btn btn--sm" id="f-temporizador-detener"></button>
+      </section>
       <p class="franja franja--simulada" id="f-simulada" role="status" hidden>
         <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg>
         <span class="franja__texto"><span id="f-simulada-texto"></span> <span class="franja__nota" data-t="simulada.franjaNota"></span></span>
@@ -141,6 +154,7 @@
                 <button type="button" class="btn" data-panel="restricciones" aria-expanded="false" data-t-title="panel.restricciones"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg><span class="btn__texto" data-t="panel.restricciones"></span></button>
                 <button type="button" class="btn" data-panel="energia" aria-expanded="false" data-t-title="panel.energia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg><span class="btn__texto" data-t="panel.energia"></span></button>
                 <button type="button" class="btn" data-panel="captura" aria-expanded="false" data-t-title="panel.captura"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span class="btn__texto" data-t="panel.captura"></span></button>
+                <button type="button" class="btn" data-panel="temporizador" aria-expanded="false" data-t-title="panel.temporizador"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span class="btn__texto" data-t="panel.temporizador"></span></button>
               </div>
             </div>
           </section>
@@ -231,6 +245,31 @@
                   <div id="mensajes" class="pila-mini" hidden>
                     <h3 id="h-mensajes"></h3>
                     <ul class="lista-limpia" id="mensajes-lista" aria-labelledby="h-mensajes"></ul>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Temporizador de ejercicio (prompt 10.8) -->
+              <section class="tarjeta" aria-labelledby="h-temporizador">
+                <div class="tarjeta__cabecera"><h2 id="h-temporizador" data-t="temporizador.titulo"></h2>
+                  <button type="button" class="btn btn--sm" id="temporizador-nuevo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span data-t="temporizador.nuevo"></span></button></div>
+                <div class="tarjeta__cuerpo pila">
+                  <div id="temporizador-vacio" class="vacio">
+                    <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg>
+                    <p data-t="temporizador.vacio"></p>
+                    <p class="pequeno suave" data-t="temporizador.vacioNota"></p>
+                  </div>
+                  <div id="temporizador-activo" class="pila-mini" hidden>
+                    <p><span class="suave" id="temporizador-estado"></span> <strong class="cuenta" id="temporizador-cuenta"></strong> · <span id="temporizador-nombre"></span></p>
+                    <p class="pequeno suave" id="temporizador-para"></p>
+                    <p class="pequeno" id="temporizador-confirman"></p>
+                    <p class="pequeno suave" id="temporizador-no-pueden" hidden></p>
+                    <div class="grupo-botones">
+                      <button type="button" class="btn btn--sm" data-extender="60"></button>
+                      <button type="button" class="btn btn--sm" data-extender="300"></button>
+                      <button type="button" class="btn btn--sm" data-extender="600"></button>
+                      <button type="button" class="btn btn--sm" id="temporizador-detener"></button>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -507,6 +546,40 @@
           <div class="panel-lateral__pie">
             <button type="button" class="btn" id="lote-descartar" data-t="captura.lote.descartarTodas" hidden></button>
             <button type="button" class="btn btn--primario" id="lote-guardar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span id="lote-guardar-texto"></span></button>
+          </div>
+        </aside>
+
+        <aside class="panel-lateral" id="panel-temporizador" hidden aria-labelledby="h-panel-temporizador">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg>
+            <h2 id="h-panel-temporizador" tabindex="-1" data-t="panel.temporizador"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p data-destino></p>
+            <p class="aviso-en-linea" id="temporizador-sin-soporte" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="temporizador-sin-soporte-texto"></span></p>
+            <p class="aviso-en-linea" id="temporizador-reemplaza" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg><span id="temporizador-reemplaza-texto"></span></p>
+            <label class="campo"><span class="campo__etiqueta" data-t="temporizador.nombre"></span>
+              <input type="text" id="temporizador-etiqueta" maxlength="40" autocomplete="off" data-t-placeholder="temporizador.ejemplo" aria-describedby="temporizador-etiqueta-ayuda">
+              <span class="campo__ayuda" id="temporizador-etiqueta-ayuda" data-t="temporizador.nombreAyuda"></span></label>
+            <fieldset class="campo"><legend class="campo__etiqueta" data-t="temporizador.duracion"></legend>
+              <div class="grupo-botones" id="temporizador-presets">
+                <button type="button" class="btn btn--sm" data-minutos="1" aria-pressed="false"></button>
+                <button type="button" class="btn btn--sm" data-minutos="5" aria-pressed="false"></button>
+                <button type="button" class="btn btn--sm" data-minutos="10" aria-pressed="true"></button>
+                <button type="button" class="btn btn--sm" data-minutos="15" aria-pressed="false"></button>
+                <button type="button" class="btn btn--sm" data-minutos="20" aria-pressed="false"></button>
+              </div>
+              <label class="campo"><span class="campo__etiqueta" data-t="temporizador.minutos"></span>
+                <input type="number" id="temporizador-minutos" min="1" max="240" step="1" value="10" inputmode="numeric" aria-describedby="temporizador-minutos-ayuda temporizador-error">
+                <span class="campo__ayuda" id="temporizador-minutos-ayuda" data-t="temporizador.minutosAyuda"></span>
+                <span class="campo__error" id="temporizador-error" hidden></span></label>
+            </fieldset>
+            <p class="pequeno suave" data-t="temporizador.discreto"></p>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel data-t="comun.cancelar"></button>
+            <button type="button" class="btn btn--primario" id="temporizador-iniciar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span data-t="temporizador.iniciar"></span></button>
           </div>
         </aside>
 

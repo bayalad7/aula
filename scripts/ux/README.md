@@ -30,7 +30,7 @@ binario: `go build` no necesita Node.
   aislado del navegador (el tema guardado no pasa de una a otra).
 - `dobles.js` reemplaza `window.go.main.App` y `window.runtime`. La escena (`window.__SCENE`)
   elige los datos: `vacia`, `datos`, `lab`, `lab-errores`, `lab-restr-activa`,
-  `lab-transmitiendo`, `lab-energia-pendiente`, `simulada`, `simulada-sola`, `clave-personal`,
+  `lab-transmitiendo`, `lab-energia-pendiente`, `lab-temporizador`, `lab-temporizador-fin`, `simulada`, `simulada-sola`, `clave-personal`,
   `setup-cargando`, `setup-error`, `atajo-ocupado`. `window.__emit(evento, datos)` simula un evento de Go.
 - **Si cambia un binding o un evento** (`apps/teacher/events.go`, `docs/eventos-ui.md`), cambia
   también `dobles.js`; si no, el recorrido prueba una consola que ya no existe.

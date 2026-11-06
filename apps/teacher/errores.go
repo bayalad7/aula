@@ -62,6 +62,10 @@ const (
 	codeStudentGone          = "studentGone"
 	codeSimTooSoon           = "simTooSoon"
 	codeNoticeUnsupported    = "noticeUnsupported"
+	codeInvalidTimer         = "invalidTimer"
+	codeNoTimerTargets       = "noTimerTargets"
+	codeTimerGone            = "timerGone"
+	codeTimerTooLong         = "timerTooLong"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -75,6 +79,7 @@ var errorCodes = []string{
 	codeCheckRunning, codeAlreadyControlling, codeRemoteUnsupported, codeRemoteGone,
 	codeSnapshotUnsupported, codeSnapshotTooMany, codeSnapshotGone, codeSnapshotSaveFailed, codeSnapshotFolder,
 	codeHandGone, codeMessageGone, codeStudentGone, codeSimTooSoon, codeNoticeUnsupported,
+	codeInvalidTimer, codeNoTimerTargets, codeTimerGone, codeTimerTooLong,
 }
 
 // errorHelp is the section of the manual (docs/v1/administracion) that each
@@ -130,6 +135,10 @@ var errorHelp = map[string]string{
 	codeStudentGone:          "participacion#responder-a-un-alumno",
 	codeSimTooSoon:           "probar-sin-laboratorio#qué-hacen-los-alumnos-simulados",
 	codeNoticeUnsupported:    "tareas-frecuentes#mandar-un-mensaje-privado-a-un-alumno",
+	codeInvalidTimer:         "participacion#temporizador",
+	codeNoTimerTargets:       "participacion#temporizador",
+	codeTimerGone:            "participacion#temporizador",
+	codeTimerTooLong:         "participacion#temporizador",
 }
 
 // codedError is an error the UI can explain by its code.

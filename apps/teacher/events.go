@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/remote"
@@ -54,6 +55,10 @@ const (
 	// lowered, a student's message arrives or is answered (docs/protocol.md
 	// §5.18). Arrival is set only when a hand or a message just arrived.
 	EventParticipation = "aula:participation"
+	// EventTimer carries a classtimer.Snapshot whenever the exercise timer
+	// starts, is extended, stops, ends or a student acknowledges it
+	// (docs/protocol.md §5.19). The window counts the seconds by itself.
+	EventTimer = "aula:timer"
 )
 
 // Setup is what the channel selection screen needs.
@@ -102,6 +107,7 @@ type Student struct {
 	CanSnapshot  bool     `json:"canSnapshot"`  // screen.snapshot (Windows agents and simulated students)
 	CanHand      bool     `json:"canHand"`      // hand (every OS with a window, simulated students)
 	CanMessage   bool     `json:"canMessage"`   // msg.student (the same)
+	CanTimer     bool     `json:"canTimer"`     // timer (every OS with a window, simulated students)
 	// Hand is this student's place in the line of raised hands (0: down);
 	// NewMessages, their messages not answered yet. The badge in Notas.
 	Hand        int `json:"hand"`
@@ -137,6 +143,8 @@ type Students struct {
 	// CanSnapshot counts connected agents with screen.snapshot, simulated
 	// ones included.
 	CanSnapshot int `json:"canSnapshot"`
+	// CanTimer counts connected agents with timer, simulated ones included.
+	CanTimer int `json:"canTimer"`
 	// Connected counts real students only; Simulated counts the connected
 	// simulated ones. CanCode, CanNotice and CanThumb include both.
 	Simulated int `json:"simulated"`
@@ -220,6 +228,8 @@ type View struct {
 	Snapshots []snapshot.Snapshot `json:"snapshots"`
 	// Participation is the «Participación» view: hands and messages.
 	Participation Participation `json:"participation"`
+	// Timer is the exercise timer of the class, if any.
+	Timer classtimer.Snapshot `json:"timer"`
 }
 
 // Snapshots is the list of screenshots in memory, oldest request first.

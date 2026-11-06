@@ -22,9 +22,10 @@
     canPower: s.capabilities.includes("power"), canRemote: s.capabilities.includes("remote"),
     canSnapshot: s.capabilities.includes("screen.snapshot"),
     canHand: s.capabilities.includes("hand"), canMessage: s.capabilities.includes("msg.student"),
+    canTimer: s.capabilities.includes("timer"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student"];
+    "hand", "msg.student", "timer"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -44,7 +45,7 @@
       lastCodeAck: "sn-3", ackedAt: "10:42:08" }),
     student({ hostname: "LAB3-PC15", username: "", capabilities: ["power"] }),
     student({ hostname: "lab-ubuntu-02", username: "maria", os: "linux", osVersion: "Ubuntu 24.04",
-      capabilities: ["code.view", "msg.show", "hand", "msg.student"], lastCodeAck: "sn-2", ackedAt: "10:39:50",
+      capabilities: ["code.view", "msg.show", "hand", "msg.student", "timer"], lastCodeAck: "sn-2", ackedAt: "10:39:50",
       lastError: scene === "lab-errores" ? { code: "unsupported_capability", at: "10:43:12" } : null }),
     student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL }),
   ];
@@ -105,7 +106,7 @@
     return { students: list, connected: real.length, simulated: c.length - real.length,
       canCode: n("canCode"), canNotice: n("canNotice"), canThumb: n("canThumb"),
       canBroadcast: r("canBroadcast"), canAppBlock: r("canAppBlock"), canWebFilter: r("canWebFilter"), canPower: r("canPower"),
-      canSnapshot: n("canSnapshot") };
+      canSnapshot: n("canSnapshot"), canTimer: n("canTimer") };
   };
 
   const code3 = "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(5))\n";
@@ -160,6 +161,20 @@
     });
     return Object.assign({}, c);
   };
+  // Temporizador (apps/teacher/timer.go, classtimer.Snapshot): «Ejercicio 1» con 4:32 en
+  // lab-temporizador; terminado en lab-temporizador-fin. LAB3-PC15 no lo puede ver.
+  const sinTemporizador = () => ({ active: false, timerId: "", label: "", durationS: 0, remainingMs: 0, ended: false, all: true,
+    hosts: [], maxExtendS: 0, receivers: [], eligible: 0, unsupported: [] });
+  const receptores = (estado) => list.filter((s) => s.state === "connected" && s.canTimer).map((s, i) => ({
+    sessionId: s.id, hostname: s.hostname, username: s.username, simulated: !!s.simulated,
+    status: estado || (i === 2 ? "sent" : "running") }));
+  const temporizadorDe = (label, durationS, remainingMs, hosts) => ({ active: true, timerId: "t-" + Date.now(), label, durationS,
+    remainingMs, ended: remainingMs <= 0, all: hosts.length === 0, hosts, maxExtendS: 4 * 3600 - Math.ceil(remainingMs / 1000),
+    receivers: receptores(remainingMs <= 0 ? "ended" : ""), eligible: list.filter((s) => s.state === "connected" && s.canTimer).length,
+    unsupported: list.filter((s) => s.state === "connected" && !s.canTimer).map((s) => s.hostname) });
+  let timer = scene === "lab-temporizador" ? temporizadorDe("Ejercicio 1", 600, 272000, [])
+    : scene === "lab-temporizador-fin" ? temporizadorDe("Ejercicio 1", 600, 0, []) : sinTemporizador();
+  const emitTimer = () => window.__emit("aula:timer", Object.assign({}, timer));
   const view = () => ({
     active: !scene.startsWith("setup"), class: cls, students: studentsView(), history, deliveries,
     hotkey: scene === "atajo-ocupado"
@@ -167,6 +182,7 @@
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true },
     restrictions, remote, snapshots: snaps, participation: Object.assign({}, part, { arrival: null }),
+    timer: Object.assign({}, timer),
   });
 
 
@@ -240,6 +256,20 @@
       return Object.assign({}, deliveries[1], { id: "d-r", label: "Respuesta a " + r.hostname, sent: 1, acked: 0 });
     }),
     SendNoticeTo: call("SendNoticeTo", () => deliveries[1]),
+    Timer: call("Timer", () => Object.assign({}, timer)),
+    StartTimer: call("StartTimer", (r) => {
+      timer = temporizadorDe(r.label, r.durationS, r.durationS * 1000, r.hosts || []);
+      timer.receivers = timer.receivers.map((x) => Object.assign(x, { status: "sent" }));
+      despues(() => { timer.receivers = receptores(); emitTimer(); }); // los agentes acusan
+      return Object.assign({}, timer);
+    }),
+    ExtendTimer: call("ExtendTimer", (addS) => {
+      if (!timer.active) return new Error("aula:timerGone: ya no hay un temporizador en marcha");
+      const falta = Math.max(0, timer.remainingMs) + addS * 1000;
+      timer = Object.assign({}, timer, { remainingMs: falta, ended: false, maxExtendS: 4 * 3600 - falta / 1000, receivers: receptores() });
+      return Object.assign({}, timer);
+    }),
+    StopTimer: call("StopTimer", () => { timer = sinTemporizador(); return Object.assign({}, timer); }),
     // Mensaje privado (prompt 10.7): la etiqueta no lleva el texto; el alumno lo ve poco después.
     SendPrivateNotice: call("SendPrivateNotice", (id) => {
       const s = list.find((x) => x.id === id) || {};

@@ -86,6 +86,19 @@ await f("76-participacion-llega-mano", "lab-participacion", { pasos: async (p) =
 } });
 await f("77-participacion-vacia", "lab", { ruta: "participacion" });
 await f("78-participacion-oscuro-900x600", "lab-participacion", { oscuro: true, w: 900, h: 600, ruta: "participacion" });
+
+// Temporizador de ejercicio (prompt 10.8): panel, franja mientras corre, extender, fin y Participación.
+const panelTemporizador = seq(click(fila("LAB3-PC07")), click(fila("lab-ubuntu-02")), click('[data-panel="temporizador"]'), async (p) => {
+  await p.type("#temporizador-etiqueta", "Ejercicio 1");
+});
+await f("87-panel-temporizador", "lab", { pasos: panelTemporizador });
+await f("88-temporizador-franja", "lab", { pasos: seq(panelTemporizador, click('[data-minutos="5"]'), click("#temporizador-iniciar"),
+  async () => { await sleep(300); }) });
+await f("89-temporizador-extender", "lab-temporizador", { pasos: click("#f-temporizador-extender") });
+await f("90-temporizador-termino", "lab-temporizador-fin");
+await f("91-participacion-temporizador", "lab-temporizador", { ruta: "participacion" });
+await f("92-temporizador-oscuro-900x600", "lab-temporizador", { oscuro: true, w: 900, h: 600, pasos: seq(click('[data-panel="temporizador"]')) });
+await f("93-temporizador-reemplaza", "lab-temporizador", { pasos: click('[data-panel="temporizador"]') });
 await f("79-participacion-ficha", "lab-participacion", { pasos: click(`${fila("LAB3-PC12")} .ficha`) });
 // Mensaje privado a un alumno (prompt 10.7): la ficha, escribiendo, el acuse y oscuro a 900×600.
 const privado = seq(click(`${fila("LAB3-PC07")} .ficha`), click("#privado-abrir"),

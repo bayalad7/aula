@@ -51,6 +51,8 @@ type classHooks struct {
 	// onClassroom receives hand.raise, hand.lower and msg.student, from real
 	// and simulated students (docs/protocol.md §5.18).
 	onClassroom func(sessionID string, env protocol.Envelope)
+	// onTimer receives timer.ack, from real and simulated students (§5.19).
+	onTimer func(sessionID string, p protocol.TimerAck)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
 }
@@ -261,6 +263,10 @@ func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, prot
 			if h.onClassroom != nil {
 				h.onClassroom(conn.ID(), env)
 			}
+		case protocol.TimerAck:
+			if h.onTimer != nil {
+				h.onTimer(conn.ID(), p)
+			}
 		case protocol.ErrorPayload:
 			if h.onSnapshot != nil {
 				h.onSnapshot(conn.ID(), env)
@@ -326,6 +332,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 			case protocol.HandRaise, protocol.HandLower, protocol.MsgStudent:
 				if hooks.onClassroom != nil {
 					hooks.onClassroom(conn.ID(), env)
+				}
+			case protocol.TimerAck:
+				if hooks.onTimer != nil {
+					hooks.onTimer(conn.ID(), p)
 				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {

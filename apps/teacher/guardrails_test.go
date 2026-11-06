@@ -125,8 +125,9 @@ func TestSimulatedStudentsOnlyDeclareHarmlessCapabilities(t *testing.T) {
 	// screen.snapshot only reads the drawn screen (rule 46: filed apart).
 	// hand and msg.student start on the student's side and change nothing on
 	// a computer (rules 34 and 50-52; prompt 10.6).
+	// timer only shows a countdown in the window (rule 54; prompt 10.8).
 	allowed := []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-		protocol.CapHand, protocol.CapMsgStudent}
+		protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer}
 	for _, c := range simclass.Capabilities {
 		if !slices.Contains(allowed, c) {
 			t.Errorf("simulated students may declare %q; review docs/privacidad.md (rules 32–35) before allowing it", c)

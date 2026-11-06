@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/bayalad7/aula/internal/broadcast"
+	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
@@ -78,6 +79,9 @@ type App struct {
 	desk  *remote.Desk         // remote control: one computer at a time (§5.16)
 	snaps *snapshot.Store      // screenshots of students, in memory until saved (§5.17)
 	board *participation.Board // raised hands and students' messages, in memory (§5.18)
+	timer *classtimer.Class    // the exercise timer of the class (§5.19)
+	// timerEnd tells the window when the timer reaches zero; guarded by mu.
+	timerEnd *time.Timer
 	// documents is the teacher's Documents folder and openFolder shows a
 	// folder in Explorer (replaced in tests: never a window on the desktop).
 	documents  func() (string, error)
@@ -113,6 +117,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.snaps = &snapshot.Store{Now: func() time.Time { return a.now() }, Logger: log,
 		OnChange: func(l []snapshot.Snapshot) { a.emit(EventSnapshots, Snapshots{Snapshots: l}) }}
 	a.board = participation.NewBoard()
+	a.timer = classtimer.NewClass(nil)
 	a.documents, a.openFolder = platform.DocumentsDir, platform.OpenFolder
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	a.checks = newConnectChecks(log)
@@ -210,7 +215,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
 		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage,
 		onRemote: a.onRemoteMessage, onSnapshot: a.onSnapshotMessage, onClassroom: a.onClassroomMessage,
-		onError: a.onAgentError}, a.log)
+		onTimer: a.onTimerAck, onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -220,6 +225,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	a.class, a.info, a.startErr = class, info, ""
 	a.mu.Unlock()
 	a.power.Reset() // orders of another class are not followed
+	a.resetTimer()  // nor its timer
 
 	s := loadSettings(a.dir)
 	s.remember(channel, consoleName)
@@ -244,6 +250,7 @@ func (a *App) EndClass() {
 		a.snaps.Reset() // unsaved screenshots never outlive the class (rule 45)
 		a.board.Reset() // nor hands and messages (rule 51)
 		a.emit(EventParticipation, a.participation(nil, nil))
+		a.resetTimer()
 		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
 		class.Stop()
@@ -269,6 +276,11 @@ func (a *App) View() View {
 	v.Remote = a.desk.Current()
 	v.Snapshots = a.snaps.List()
 	v.Participation = a.participation(a.class, nil)
+	if a.class != nil {
+		v.Timer = a.timer.Snapshot(a.class.Sessions(), simSessionsOf(a.class))
+	} else {
+		v.Timer = a.timer.Snapshot(nil, nil)
+	}
 	return v
 }
 
@@ -563,6 +575,7 @@ func (a *App) onChange() {
 	a.syncSnapshots(class)
 	a.bc.Sync(class.Sessions())
 	a.sendRestrictions(class, a.restr.Plan(class.Sessions())) // students who reconnect get them again
+	a.syncTimer(class)                                        // and the timer, with what is left
 }
 
 // onFrame forwards a thumbnail of the stream in force to the screens view.
@@ -608,7 +621,7 @@ func studentsOf(list []session.Session) Students {
 			CanAppBlock: s.Can(protocol.CapAppBlock), CanWebFilter: s.Can(protocol.CapWebFilter),
 			CanPower: s.Can(protocol.CapPower), CanRemote: s.Can(protocol.CapRemote),
 			CanSnapshot: s.Can(protocol.CapScreenSnapshot), LastCodeAck: s.LastCodeAck,
-			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent),
+			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))
@@ -645,6 +658,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanSnapshot {
 				out.CanSnapshot++
+			}
+			if st.CanTimer {
+				out.CanTimer++
 			}
 		}
 		out.Students = append(out.Students, st)

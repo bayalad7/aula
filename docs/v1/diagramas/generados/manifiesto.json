@@ -98,15 +98,15 @@
     {
       "id": "07-acuses-recoleccion",
       "titulo": "Acuses y recolección de código/archivos",
-      "descripcion": "Cómo cuenta la consola quién recibió cada envío, y qué falta para recoger trabajos de los alumnos",
+      "descripcion": "Cómo cuenta la consola quién recibió cada envío (código, avisos y archivos), y qué falta para recoger trabajos de los alumnos",
       "audiencia": [
         "desarrollador"
       ],
       "pantallas": [
         "codigo"
       ],
-      "hash": "sha256:d4738eed69dda2a622129a2254aa725da3e09fa62b7e2b9ae1d4a44b5f43f97d",
-      "alt": "Acuses y recolección de código/archivos: Cómo cuenta la consola quién recibió cada envío, y qué falta para recoger trabajos de los alumnos",
+      "hash": "sha256:14e2b4c0a26f7af19a5ca3c61e89602c12f9f706c7559ff0b9e858a9658732b4",
+      "alt": "Acuses y recolección de código/archivos: Cómo cuenta la consola quién recibió cada envío (código, avisos y archivos), y qué falta para recoger trabajos de los alumnos",
       "claro": "generados/07-acuses-recoleccion.claro.svg",
       "oscuro": "generados/07-acuses-recoleccion.oscuro.svg"
     },
@@ -204,7 +204,7 @@
       "pantallas": [
         "falta"
       ],
-      "hash": "sha256:6a54937965fd4bd6a0487d086731f88cdf4d04ac6b75673536ab856188bde0cd",
+      "hash": "sha256:d473e7d0e5cc407c18aea4d70f90e963459a01e2cbddb0cfe2f3896649d1a2c6",
       "alt": "El agente como servicio de Windows: Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
       "claro": "generados/13-agente-servicio.claro.svg",
       "oscuro": "generados/13-agente-servicio.oscuro.svg"
@@ -292,6 +292,24 @@
       "alt": "Manos y mensajes del alumno: Cómo llega al profesor una mano levantada o un mensaje del alumno, y cómo vuelven la respuesta y «Bajar la mano»",
       "claro": "generados/18-manos-mensajes.claro.svg",
       "oscuro": "generados/18-manos-mensajes.oscuro.svg"
+    },
+    {
+      "id": "19-enviar-archivos",
+      "titulo": "Enviar archivos y plantillas",
+      "descripcion": "Cómo llegan los archivos del profesor a la carpeta de trabajo de cada alumno, sin salir de ella, y cómo sabe la consola quién los tiene",
+      "audiencia": [
+        "profesor",
+        "alumno",
+        "desarrollador",
+        "auditor"
+      ],
+      "pantallas": [
+        "codigo"
+      ],
+      "hash": "sha256:03fd1a3a313c85a31f7bce2b93911f97372ed7eae47366536198501109d18754",
+      "alt": "Enviar archivos y plantillas: Cómo llegan los archivos del profesor a la carpeta de trabajo de cada alumno, sin salir de ella, y cómo sabe la consola quién los tiene",
+      "claro": "generados/19-enviar-archivos.claro.svg",
+      "oscuro": "generados/19-enviar-archivos.oscuro.svg"
     }
   ]
 }

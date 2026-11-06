@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-05 (10.8 temporizador de ejercicio implementado, falta la prueba en
+Última actualización: 2026-11-05 (10.9 enviar archivos y plantillas implementado, falta la prueba en
+VM; 10.8 temporizador de ejercicio implementado, falta la prueba en
 VM; 10.7 mensaje privado a un alumno implementado, falta la prueba
 en VM; 10.6 manos y mensajes del alumno implementada, con la vista
 «Participación»; falta la prueba en VM; 10.5 captura de pantalla de un alumno implementada, falta la
@@ -29,7 +30,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.6 | Mensajería del alumno y «levantar la mano» | ✅ Implementado y probado en CI con dobles y alumnos simulados; creó la vista «Participación» (falta la prueba en VM, `docs/prueba-vms.md` §18, y los casos C-54 a C-58 y A-14 a A-16) |
 | 10.7 | Mensaje directo a un alumno | ✅ Implementado como mejora del aviso (`msg.show` con `personal`) y probado en CI (falta la prueba en VM, `docs/prueba-vms.md` §19, y los casos C-59 a C-62 y A-17) |
 | 10.8 | Temporizador compartido | ✅ Implementado y probado en CI con dobles y alumnos simulados; su sección en «Participación» (falta la prueba en VM, `docs/prueba-vms.md` §20, y los casos C-63 a C-67 y A-18 y A-19) |
-| 10.9 | Enviar archivos y plantillas de ejercicio | ⏳ Pendiente |
+| 10.9 | Enviar archivos y plantillas de ejercicio | ✅ Implementado y probado en CI con dobles y alumnos simulados (falta la prueba en VM, `docs/prueba-vms.md` §21, y los casos C-68 a C-73 y A-20 a A-22) |
 | 10.10 | Recoger código y archivos | ⏳ Pendiente |
 | 10.11 | Enviar una URL o abrir una app | ⏳ Pendiente |
 | 10.12 | Encuestas en vivo | ⏳ Pendiente |
@@ -48,15 +49,16 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
 
 **Siguiente:**
-1. Probar en la ventana real los casos C-01 a C-67 y A-01 a A-19, el control remoto en VM
+1. Probar en la ventana real los casos C-01 a C-73 y A-01 a A-22, el control remoto en VM
    (`docs/prueba-vms.md` §16: RC-A, RC-B y RC-C para aceptar), la captura (§17: SN-A, SN-B y
    SN-C), las manos y mensajes (§18: HM-A, HM-B y HM-C), el mensaje privado (§19: PM-A, PM-B y
-   PM-C) y el temporizador (§20: TM-A, TM-B y TM-C).
+   PM-C), el temporizador (§20: TM-A, TM-B y TM-C) y los archivos (§21: FP-A, FP-B y FP-C).
 2. La revisión 11.
 3. ~~Publicar `v0.6.0-rc.1`~~: publicado el 05/11/2026 (etapas 10.2, 10.3, 18, 19 y 10.4, instaladores
    de Windows y checksums firmados). Las 0.x son borradores: al integrar todas las funciones se
    borran y empieza la versión 1 oficial. Probar sus instaladores en las VMs (§14 a §16).
-4. Cualquier función de 10.9 a 10.13 con `/funcionalidad-nueva <número>`. Las que recogen
+4. Cualquier función de 10.10 a 10.13 con `/funcionalidad-nueva <número>` (10.10 reutiliza
+   el troceo común y la carpeta de trabajo `Documentos\Aula` de 10.9). Las que recogen
    respuestas (10.10, 10.12, 10.13) agregan su sección a la vista «Participación».
 
 ## Etapa 02: notas
@@ -1126,6 +1128,57 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.9: enviar archivos y plantillas — notas
+
+- **Diseño aprobado** (2026-11-05) con las recomendaciones: carpeta de trabajo `Documentos\Aula`
+  del usuario de la sesión; si el nombre existe y no se pidió reemplazar, `nombre (2)`; todos los
+  tipos de archivo; plantillas como carpetas en `Documentos\Aula\plantillas` del profesor.
+- **Protocolo** (`docs/protocol.md` §5.20, permisos en §5.20.1): `file.push` (un mensaje por parte
+  de cada archivo; la parte 1 lleva `name`, `dest`, `size`, `sha256`, `overwrite`, `label`,
+  `index`, `files`) y `file.push.ack` (`saved` con `path`, `renamed`, `replaced`, o `failed` con
+  `reason`); capacidad `file.push`. Partes de 512 KiB con el troceo común de 10.5
+  (`protocol.SplitParts` y `Reassembly`); 16 MiB por archivo, 20 archivos y 32 MiB por envío.
+- **`internal/filepush`** (nuevo, sin APIs del SO): reglas de ruta de los dos lados (`CheckName`,
+  `CheckDest`, `CheckRel`, `CleanDest`, `Alternative`); consola: `NewPush`, `Pusher` (archivo por
+  archivo, espera cada acuse 60 s, 4 sesiones a la vez, se corta al cerrar la clase) y `Templates`;
+  agente: `Receiver` (ensambla en memoria, 4 archivos y 32 MiB, `incomplete` a los 60 s, comprueba
+  `sha256`, nombre alternativo, reacusa un reenvío sin volver a escribir) e `Inbox` (lo que ve la
+  ventana).
+- **`internal/platform`:** `WorkFolder` (`Root`, `Create`, `Open`) con `ErrFileExists`,
+  `ErrLinkInPath`, `ErrNoSpace`, `ErrDenied`, `ErrPathTooLong`. En Windows, `Documentos\Aula`
+  (FOLDERID_Documents), carpetas una por una rechazando *reparse points*, archivo temporal oculto y
+  `MoveFileEx` (sin `REPLACE_EXISTING` si no se pidió reemplazar), límite de 259 caracteres.
+  Fallback «no soportado». Las pruebas usan una carpeta temporal y prueban una *junction* real.
+- **`internal/agentsvc`:** llamadas `file.write` y `folder.open`, *proxy* `WorkFolder`,
+  `Ready.Files` y los códigos de error por el canal (`FileWriteError`). Una línea del canal admite
+  un archivo de 16 MiB (24 MiB en Base64).
+- **Alumno:** declara `file.push` con carpeta de trabajo (modo ventana) o si el ayudante dice
+  `files` (servicio); el ayudante vuelve a comprobar la ruta (`CheckRel`). Tarjeta por envío en la
+  lista (`#archivos`, arriba del código) con «Nuevo», qué se guardó, renombrado, reemplazado o por
+  qué no, y «Abrir carpeta» (`OpenReceivedFolder(pushId)`: la ventana no pasa rutas). `notify`,
+  nunca `raise`; cuenta en el título y en el modo compacto. Icono nuevo `archivo` en `internal/ui`.
+- **Consola:** selector «Código | Archivos» en la tarjeta del módulo Código, con el mismo «Enviar
+  a»; plantilla, «Elegir archivos…» (diálogo de Wails), «Guardar en», «Reemplazar si ya lo
+  tienen», «Guardar como plantilla…» y «Carpeta de plantillas». Acuses en Últimos envíos
+  (`kind: "file"`, uno por alumno al acusar todos; los motivos en «Quién falta», con
+  `errorAlumno.*` y `fileReasonHelp`); «Archivos enviados» en el Historial con «Reenviar»;
+  «Recibir archivos» en la ficha. Errores `pushNoFiles`, `pushTooLarge`, `pushPathInvalid`,
+  `pushFileGone`, `pushUnsupported`, `templateExists`, `templateInvalid`, `templateGone`.
+- **Simulados:** declaran `file.push` y pasan por el mismo `Receiver` con una carpeta en memoria
+  (solo nombres): acusan y renombran sin escribir; `noack` no acusa.
+- **Documentación:** `docs/privacidad.md` reglas 55–59 (y la 34); manual (Código › «Enviar archivos
+  y plantillas», «Plantillas de ejercicio», «Si un alumno no recibió los archivos», con la captura
+  `codigo-archivos.png`); diagrama nuevo 19 y los 07 y 13 actualizados, con sus SVG;
+  `docs/eventos-ui.md`; casos C-68 a C-73, A-20 a A-22 y `docs/prueba-vms.md` §21; `CLAUDE.md`
+  lista `internal/filepush`.
+- **Arnés:** escena `lab-archivos` y capturas 94–105 en `recorrido.mjs`; escenas `archivos`,
+  `archivo-renombrado`, `archivo-fallo` y `archivo-sin-carpeta` y capturas 65–70 en
+  `recorrido-alumno.mjs`; casos `archivo-recibido`, `archivo-renombrado-y-fallo` y
+  `archivo-sin-carpeta` en `pruebas-alumno.mjs`.
+- **Fuera:** abrir el archivo desde la tarjeta (solo la carpeta), la marca «descargado de Internet»,
+  Linux y macOS, y reanudar un envío cortado (se reenvía entero).
+- **Falta de tu lado:** la prueba en VM (§21) y los casos manuales.
 
 ## Etapa 10.8: temporizador de ejercicio — notas
 

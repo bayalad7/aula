@@ -236,6 +236,7 @@ Alumnos de prueba que la consola crea dentro de sí misma para probar Aula sin l
     «alumno simulado», y se guarda aparte (regla 46). Tampoco cambia un equipo levantar la mano
     o escribir al profesor (reglas 50–52): un simulado lo hace solo cuando el profesor lo pulsa
     en su fila, y llega a Participación marcado «Simulado».
+    Recibir archivos tampoco: el simulado los acusa sin guardarlos (regla 59).
 35. **No guarda nada.** Los simulados viven en memoria y desaparecen al cerrar el aula simulada,
     al cambiar de canal o de nombre y al cerrar la clase. Su «pantalla» se dibuja en memoria y,
     como la de un equipo real, muestra «Tu pantalla está siendo vista por el profesor» mientras
@@ -395,6 +396,42 @@ con la ventana cerrada, solo la marca en el icono del área de notificación.
     simulados (regla 34 no aplica). Los registros llevan `timer_id`, la duración y lo que falta,
     **nunca** el nombre que le puso el profesor (`label`), que es texto suyo. La consola lo
     guarda en memoria y lo olvida al cerrar la clase o cambiar de canal.
+
+## Archivos que envía el profesor (v0.10, Windows)
+
+El profesor envía archivos o una plantilla de ejercicio a la clase o a una selección
+(`docs/protocol.md` §5.20) y cada equipo los guarda en la **carpeta de trabajo** del alumno. Es
+lo único que Aula escribe en el equipo del alumno. No observa ni controla: no lleva banda, no
+trae la ventana al frente y no quita el foco; la tarjeta usa `notify`. Con la ventana cerrada,
+solo se marca el icono del área de notificación.
+
+55. **Solo en la carpeta de trabajo, y como el alumno.** La carpeta es `Documentos\Aula` del
+    usuario con la sesión iniciada. Fuera de ella no se escribe nunca.
+    - **Rutas.** La consola y el agente comprueban cada nombre y carpeta: nada de `..`, rutas
+      absolutas, unidades, `:`, nombres reservados de Windows ni caracteres invisibles. El
+      agente nunca corrige una ruta: la rechaza. El ayudante lo comprueba otra vez y la carpeta
+      de trabajo no sigue enlaces ni *junctions*.
+    - **Identidad.** En modo servicio escribe el ayudante, con el token del alumno: el archivo es
+      suyo, nunca de SYSTEM, y un enlace no le da a Aula más permisos que los que ya tiene el
+      alumno.
+    - **Sin sesión.** Sin sesión iniciada no se declara `file.push` y no se escribe nada.
+56. **El alumno ve qué llegó y dónde quedó.** Cada envío es una tarjeta en su lista, como el
+    código: «Archivo recibido: datos.csv · Guardado en Documentos\Aula\Ejercicio 4», con
+    «Abrir carpeta» y la insignia «Nuevo». La tarjeta también dice lo que no se pudo guardar y por
+    qué (disco lleno, nombre no válido…). «Abrir carpeta» solo abre la carpeta de ese envío: la
+    ventana no puede pedir otra ruta.
+57. **Nunca se pisa el trabajo del alumno sin decirlo.** Si ya tiene un archivo con ese nombre, el
+    nuevo se guarda como `nombre (2)` y el suyo no cambia. Solo con «Reemplazar si ya lo tienen»,
+    que el profesor marca a propósito, se reemplaza, y entonces la tarjeta lo dice: «reemplazó al
+    que tenías con ese nombre».
+58. **Lo recibido no se abre ni se ejecuta, y no da acceso al equipo.** Aula guarda el archivo y
+    nada más: el alumno decide si lo abre. Enviar archivos no le permite a la consola leer, listar
+    ni borrar nada del alumno; eso sería la recolección (10.10), con sus propias reglas.
+59. **Registros y simulados.** Los registros llevan `push_id`, `file_id`, partes, tamaños y el
+    resultado, **nunca** el contenido, los nombres de los archivos, la carpeta ni el nombre de la
+    plantilla. Los alumnos simulados acusan los archivos sin escribir nada: su carpeta es una
+    lista de nombres en memoria (regla 35). Las plantillas son carpetas en el equipo del
+    profesor (`Documentos\Aula\plantillas`) y solo él las cambia.
 
 ## Pendiente para etapas futuras
 

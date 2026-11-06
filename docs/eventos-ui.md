@@ -44,6 +44,7 @@ que no es parte de la página.
 | `aula:power` | `PowerView` | Llega, se pospone, se ejecuta, falla o se anula una orden de energía (`power.*`). Llega **antes** de que la consola reciba el `power.ack`. `notice` es `null` cuando no hay aviso. |
 | `aula:participation` | `participation.DeskView` | La mano del alumno sube o baja (también si la baja el profesor: `hand.lower`), o uno de sus mensajes se envía, llega a la consola (`msg.student.ack`) o se rechaza (docs/protocol.md §5.18). Con `notify`, nunca `raise`. |
 | `aula:timer` | `classtimer.View` = `{state, timerId, label, remainingMs, justEnded}` | El temporizador del profesor empieza, se extiende, se detiene, termina o se quita (docs/protocol.md §5.19). `state`: `none`, `running` o `ended`. La ventana cuenta los segundos por su cuenta desde `remainingMs` (lo que faltaba al emitirlo) con `performance.now()`, sin la hora del equipo, y arma el texto de la insignia de la tira y del modo compacto. `justEnded` viene solo en el evento del fin: la ventana muestra el aviso de la esquina una vez. Al terminar Go llama a `notify`, nunca a `raise`. |
+| `aula:files` | `Files` = `{received, folder}` | Llega un archivo del profesor, guardado o no (`file.push`, docs/protocol.md §5.20). `received` es la lista de envíos, lo más nuevo primero; cada uno `filepush.Received` = `{pushId, label, files, folder, items, at}` y cada `item` `{name, path, renamed, replaced, reason…}`. `folder` (`"Aula"`) es cómo se llama la carpeta de trabajo dentro de Documentos: la ruta absoluta nunca llega a la ventana. La ventana arma la tarjeta (`notify`, nunca `raise`). |
 
 ```jsonc
 // Status
@@ -107,7 +108,7 @@ llevar estado propio.
 
 | Método | Devuelve | Uso |
 |---|---|---|
-| `App.View()` | `View` = `{status, snippets, notices, broadcast, restrictions, power, participation, timer}` | Estado completo para el primer dibujo. |
+| `App.View()` | `View` = `{status, snippets, notices, broadcast, restrictions, power, participation, timer, files}` | Estado completo para el primer dibujo. |
 | `App.Copy(snippetId)` | error (promesa rechazada con texto en español) | Copia el fragmento al portapapeles del sistema. |
 | `App.DismissNotice(noticeId)` | — | Cierra un aviso; emite `aula:notices`. |
 | `App.ReportMedia(webrtc, h264)` | — | Al cargar: si hay `RTCPeerConnection` y decodificador H.264. Go espera este aviso (máx. 5 s) antes de conectarse y solo entonces declara `screen.broadcast`. |
@@ -121,6 +122,7 @@ llevar estado propio.
 | `App.RaiseHand(note)` | `participation.DeskView` / error | **Levantar la mano** (botón de la tira, también en el modo compacto), con un motivo opcional (≤ 140). Con la mano arriba, solo cambia el motivo: conserva su lugar. En modo servicio se reenvía al servicio, que tiene la conexión. |
 | `App.LowerHand()` | `participation.DeskView` / error | **Bajar la mano**: `hand.lower {by: student}`. Se puede aun sin conexión. |
 | `App.SendTeacherMessage(text)` | `participation.DeskView` / error | **Mensaje al profesor** (la tarjeta de arriba de la lista: Enter envía, Esc cancela): `msg.student`, 1–500 caracteres, uno cada 3 s y como mucho 5 sin acuse. Si se corta la red, se reenvía al reconectar con el mismo `message_id`. |
+| `App.OpenReceivedFolder(pushId)` | error | **Abrir carpeta** de la tarjeta de un archivo recibido: abre en el Explorador la carpeta de ese envío, dentro de la carpeta de trabajo. La ventana solo pasa el `pushId`; Go decide la carpeta. En modo servicio se reenvía al servicio, que la abre por el ayudante (`folder.open`). |
 
 Los errores de `RaiseHand`, `LowerHand` y `SendTeacherMessage` llegan como `aula:<código>` y la
 ventana los dice con `mano.error.<código>` (`apps/student/participation.go`, `partErrorCodes`):
@@ -210,6 +212,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:snapshots` | `Snapshots` | Una captura de un alumno se pide, llega (`ready`), falla (`failed` con `reason` `timeout`, `capture`, `busy`, `unsupported`, `tooLarge`, `corrupt` o `gone`), se guarda (`path`) o se descarta. Lista completa `{snapshots: [{id, sessionId, hostname, username, simulated, status, reason, width, height, size, requestedAt, takenAt, path}]}`, **sin la imagen** (`SnapshotImage`). |
 | `aula:participation` | `Participation` | Un alumno (real o simulado) levanta o baja la mano, llega o se responde un mensaje, el profesor baja una mano o marca un mensaje como atendido, o la clase se cierra (docs/protocol.md §5.18). `arrival` solo viene en el evento que anuncia una mano o un mensaje recién llegado, para el aviso flotante (sin el texto). Las insignias de cada alumno llegan también en `aula:students` (`hand`, `newMessages`). |
 | `aula:timer` | `classtimer.Snapshot` | El temporizador de la clase empieza, se extiende, se detiene, llega a cero, un alumno lo confirma (`timer.ack`) o se reenvía a quien se reconecta (docs/protocol.md §5.19). `{active, timerId, label, durationS, remainingMs, ended, all, hosts, maxExtendS, receivers, eligible, unsupported}`: `remainingMs` es lo que faltaba al emitirlo (la interfaz cuenta con `performance.now()`); `receivers` = `[{sessionId, hostname, username, simulated, status}]` con `status` `sent` (sin confirmar), `running` o `ended`; `unsupported`, los equipos destinatarios que no declararon `timer`. La franja y la sección de Participación se dibujan con él. |
+| `aula:files` | `FilesView` | Se guarda una plantilla o se envían archivos (el historial cambia). Los acuses de cada alumno van en `aula:deliveries`. |
 | `aula:remote-frame` | `Thumb` | Cada imagen de la pantalla controlada (hasta 8 por segundo con la vista abierta, 1 con la vista cerrada). No pasa por `aula:frame` ni se guarda. |
 
 ```jsonc
@@ -333,6 +336,12 @@ cada código tenga su enlace y que la sección exista.
 | `StartTimer({label, durationS, hosts})` | `classtimer.Snapshot` / error | **Iniciar** del panel **Temporizador**: reemplaza al que corre. `hosts`: los equipos de la selección (reales o simulados); vacío = toda la clase, también quien se conecte después. `label` ≤ 40, `durationS` 10 s–4 h. `noTimerTargets` si ninguno de los destinatarios conectados declaró `timer`; `invalidTimer` si el nombre o la duración no valen. El nombre no se registra (`docs/privacidad.md` regla 54). |
 | `ExtendTimer(addS)` | `classtimer.Snapshot` / error | **Extender** (+1, +5 o +10 min) de la franja y de Participación: `timer.extend` con lo que falta ya extendido; revive uno terminado. `timerGone` si no hay; `timerTooLong` si pasaría de 4 h; `invalidTimer` fuera de 1–60 min. |
 | `StopTimer()` | `classtimer.Snapshot` / error | **Detener** (o **Quitar**, ya terminado): `timer.stop` a quien lo tenía. `timerGone` si no hay. |
+| `Files()` | `FilesView` = `{templates, templatesError, sends}` | La pestaña **Archivos** del módulo Código: las plantillas de `Documentos\Aula\plantillas` (`filepush.Template` = `{name, files: [{rel, size}], size, problem}`; `problem` dice por qué no se puede enviar: `empty`, `too_many`, `too_large`, `bad_name`) y los envíos del historial (`FileSend` = `{id, label, template, names, size, dest, overwrite, times, lastAt}`). |
+| `ChooseFiles(title)` | `[FileChoice]` = `[{path, rel, size}]` / error | **Elegir archivos…**: el diálogo del sistema, con el título que pasa la interfaz (de `textos.es-MX.js`). Cancelar devuelve `[]`. |
+| `SendFiles({files, template, dest, overwrite, targets})` | `Delivery` / error | **Enviar**: `file.push` a quien declaró `file.push` (reales y simulados), o solo a `targets` (sesiones). `files` = `[{path, rel}]`, o `template` (sus archivos se leen al enviar). `dest`: carpeta dentro de `Documentos\Aula` del alumno. Se cuenta en **Últimos envíos** con `kind: "file"`: un alumno lo tiene cuando guardó todos los archivos; si no, queda en `rejected` con el motivo (`no_space`, `timeout`, `gone`…). Errores: `pushNoFiles`, `pushTooLarge`, `pushPathInvalid`, `pushFileGone`, `pushUnsupported`, `templateGone`. Los nombres no se registran (`docs/privacidad.md` regla 59). |
+| `ResendFiles(sendId)` | `Delivery` / error | **Reenviar** de «Archivos enviados» en el Historial: a todos, leyendo los archivos otra vez. `Resend(deliveryId)` de un envío de archivos hace lo mismo solo con los que faltan. |
+| `SaveTemplate(name, files)` | `FilesView` / error | **Guardar como plantilla…**: copia los archivos a `Documentos\Aula\plantillas\<name>`. `templateExists`, `templateInvalid`. Emite `aula:files`. |
+| `OpenTemplates(name)` | error | Abre en el Explorador la carpeta de la plantilla `name`, o la de todas (`""`, se crea si falta). |
 | `InstallerInfo()` | `InstallerInfo` | Datos para quien instala: `{channel, consoleName, hostname, addresses, port, mediaPort, fingerprint, keySource, version}`. |
 | `CaptureClipboard()` | `Draft` / error | Igual que el atajo global; el resultado también llega como `aula:capture`. |
 | `OpenScreens()` | error | Abre la vista de pantallas (botón **Ver pantallas**): envía `screen.thumb.start` (1000 ms, calidad 50, 320 px) a cada alumno conectado con `canThumb`, y también a los que se conecten mientras siga abierta. Error si no hay clase. |

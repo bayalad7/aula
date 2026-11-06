@@ -1188,3 +1188,22 @@ el reloj de la VM 2 unos 5 minutos** (Fecha y hora › desactivar «automática�
 | **TM-E** Detenido sin conexión | Lanza 3 min; desconecta la VM 1, pulsa **Detener** y vuelve a conectarla. | Al reconectar, la insignia de la VM 1 desaparece en unos 3 s. |
 
 **Para aceptar** bastan TM-A, TM-B y TM-C en ✅. Vuelve a poner la hora automática en la VM 2.
+
+## 21. Enviar archivos y plantillas (10.9)
+
+Comprueba que una plantilla llega a la carpeta correcta de dos alumnos, que nada sale de
+`Documentos\Aula`, que los archivos son del alumno (no de SYSTEM) y que no se pisa su trabajo
+(`docs/protocol.md` §5.20, `docs/privacidad.md` reglas 55–59). Con las dos VMs de §18 y el agente
+**como servicio** en la VM 1 y en modo ventana en la VM 2. En la consola, crea una plantilla
+`Ejercicio 4` con `main.py`, `datos\ventas.csv` (en una subcarpeta) y un archivo de unos 5 MB.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **FP-A** Plantilla a 2 alumnos (**aceptación**) | Con el Bloc de notas al frente en las dos VMs: Código › **Archivos** › Plantilla `Ejercicio 4`, «Guardar en» `Ejercicio 4`, **Enviar 3 archivos**. | En las dos aparece la tarjeta «Archivos recibidos: Ejercicio 4» con «Guardados en Documentos\Aula\Ejercicio 4» y la lista de archivos, sin quitar el foco. En el Explorador: `Documentos\Aula\Ejercicio 4\main.py`, `…\datos\ventas.csv` y el grande, idénticos (compara con `Get-FileHash`). Últimos envíos dice «2 de 2». |
+| **FP-B** Propietario y servicio (**aceptación**) | En la VM 1, Propiedades › Seguridad › Opciones avanzadas de `main.py`. | El propietario es el usuario del alumno, no `SYSTEM`. `C:\ProgramData\Aula\alumno\logs\aula-agente.log` dice «file push saved» con tamaños, **sin** nombres. |
+| **FP-C** Rutas peligrosas (**aceptación**) | En la consola, «Guardar en» `..\..\Windows`; luego, en la VM 2, crea una *junction* `mklink /J "%USERPROFILE%\Documents\Aula\atajo" C:\Windows\Temp` y envía a la carpeta `atajo`. | La primera no sale de la consola («Un nombre no se puede usar»). La segunda la rechaza el alumno: su tarjeta dice «no se guardó. El nombre o la carpeta no son válidos.», en la consola «Quién falta» dice «rechazó el nombre» y en `C:\Windows\Temp` no aparece nada. |
+| **FP-D** No pisa el trabajo | En la VM 2 edita `Ejercicio 4\main.py`; reenvía la plantilla sin «Reemplazar»; luego con «Reemplazar si ya lo tienen». | La primera vez queda `main (2).py` y tu edición sigue en `main.py`; la tarjeta lo dice. La segunda, `main.py` se reemplaza y la tarjeta dice «reemplazó al que tenías». |
+| **FP-E** Sin sesión | Cierra la sesión del alumno en la VM 1 (el servicio sigue) y envía. | La VM 1 cuenta como «no puede recibirlo»; nada se escribe. Al iniciar sesión, la ficha vuelve a decir «Recibir archivos: Sí». |
+| **FP-F** Corte a mitad | Envía el archivo grande y desconecta la red de la VM 2 durante el envío. | En la consola queda «se desconectó» o «no respondió» en Quién falta; en la VM 2 no queda ningún archivo a medias ni `.aula-*.tmp`. «Reenviar a los que faltan» lo completa. |
+
+**Para aceptar** bastan FP-A, FP-B y FP-C en ✅. Borra la *junction* de FP-C al terminar.

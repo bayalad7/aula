@@ -65,6 +65,12 @@ Dos aplicaciones, mismo monorepo:
     vigente, para quién es, qué se mandó y acusó cada sesión y el reenvío al reconectar
     (`Class`); del lado del agente, la cuenta por lo que falta (nunca por la hora), el fin una sola
     vez y lo que muestra la ventana (`Countdown`). Solo informa: nada cambia en el equipo.
+  - `internal/filepush`: enviar archivos y plantillas (`file.push`): las reglas de ruta de los dos
+    lados (`CheckName`, `CheckDest`, `CheckRel`, sin corregir nunca una ruta); del lado de la
+    consola, el envío archivo por archivo con sus acuses (`Pusher`) y las plantillas en
+    `Documentos\Aula\plantillas`; del lado del agente, el ensamblado en memoria y el guardado solo
+    en `Documentos\Aula` del alumno, con nombre alternativo (`Receiver`, `Inbox`). Escribe por
+    `platform.WorkFolder` (en servicio, el ayudante).
   - `internal/connectcheck`: el comprobador de conexión de la consola: recorre el camino de un
     alumno (anuncio mDNS, puerto, TLS y clave del centro) y lee la red y el firewall por
     `platform`; da las mismas causas que el agente (`session.Cause`).
@@ -73,7 +79,7 @@ Dos aplicaciones, mismo monorepo:
     frontend Wails bajo `sistema/`. Una sola copia: ninguna app guarda la suya. Su prueba de
     contraste (WCAG AA) vive con él.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `ui` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `filepush`, `ui` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

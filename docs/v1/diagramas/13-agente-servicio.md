@@ -18,7 +18,7 @@ flowchart LR
     subgraph svc["Servicio «Aula — agente del aula» (SYSTEM, sesión 0)"]
         agente["session.Agent<br/>conexión con la consola"]
         sup["agentsvc.Supervisor<br/>lanza, vigila y mueve al ayudante"]
-        proxies["Proxies Clipboard, Capture, Indicator,<br/>Input y power.run"]
+        proxies["Proxies Clipboard, Capture, Indicator,<br/>Input, WorkFolder y power.run"]
         pol["policy.Manager y power.Countdown"]
     end
 
@@ -26,7 +26,7 @@ flowchart LR
 
     subgraph user["Sesión del alumno (sus permisos)"]
         ayud["aula-cliente.exe --ayudante<br/>ventana, distintivo y avisos"]
-        so["Portapapeles, captura, entrada<br/>del control remoto, apagado sin force"]
+        so["Portapapeles, captura, entrada<br/>del control remoto, apagado sin force,<br/>Documentos\Aula del alumno"]
     end
 
     sesiones["platform.SessionManager<br/>sesión activa, Launch con el token del usuario"]
@@ -39,7 +39,7 @@ flowchart LR
     sup -- "comprueba PeerPID" --> pipe
     proxies <-- "Link: JSON por líneas<br/>calls, replies y events" --> pipe
     pipe <--> ayud
-    ayud -- "ready: capture, clipboard, broadcast, input" --> pipe
+    ayud -- "ready: capture, clipboard, broadcast, input, files" --> pipe
     ayud --> so
 
     classDef externo fill:#dbeafe,stroke:#1d4ed8,color:#111827
@@ -65,13 +65,18 @@ flowchart LR
   SID del usuario de la sesión, y el supervisor comprueba que el PID del cliente es el del
   proceso que lanzó (`PeerPID`).
 - **El canal local no es el protocolo de la consola**: es JSON por líneas que nunca sale del
-  equipo (límite de 4 MiB por línea, por los cuadros de pantalla).
+  equipo (límite de 24 MiB por línea, por una captura nativa o un archivo de `file.push`).
 - **Si el alumno cierra el ayudante**, el supervisor lo vuelve a abrir con retroceso; si cambia
   el usuario, lo mueve; al cerrar sesión lo detiene y las restricciones se quitan.
 - **El control remoto inyecta desde el ayudante** (`input.inject`, `input.local`): `SendInput` solo
   llega al escritorio de la sesión que lo llama. El ayudante no está elevado, así que no controla
   ventanas de administrador (UIPI); recuerda lo que quedó presionado y lo suelta si el servicio
   desaparece (diagrama 17).
+- **Los archivos del profesor los escribe el ayudante** (`file.write`, `folder.open`): el servicio
+  arma y comprueba el archivo (`filepush.Receiver`) y el ayudante lo guarda en `Documentos\Aula`
+  del alumno con su token, así que el archivo es del alumno y nunca de SYSTEM. El ayudante vuelve
+  a comprobar la ruta y la carpeta de trabajo no sigue enlaces (diagrama 19, `docs/privacidad.md`
+  regla 55). Un archivo de 16 MiB viaja en una sola línea del canal (≈ 21 MiB en Base64).
 - **Apagar sin `force` con alguien en sesión lo hace el ayudante** (`power.run`): desde SYSTEM,
   Windows lo rechaza con `ERROR_SHUTDOWN_USERS_LOGGED_ON` (diagrama 16).
 - Solo Windows; en los demás SO `NewSessionManager` y `ListenLocal` devuelven «no soportado».
@@ -82,4 +87,5 @@ flowchart LR
 - `internal/platform/service.go`, `internal/platform/service_windows.go`,
   `internal/platform/session_windows.go`, `internal/platform/service_other.go`
 - `apps/student/service.go`, `apps/student/helper.go`
-- `docs/privacidad.md` reglas 17–19, `docs/decisiones.md` D-016
+- `internal/platform/workfolder_windows.go`, `internal/filepush/receiver.go`
+- `docs/privacidad.md` reglas 17–19, `docs/decisiones.md` D-016, 55

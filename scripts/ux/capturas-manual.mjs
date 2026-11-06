@@ -17,6 +17,10 @@ const capturas = {
       "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(5))\n"));
     await click(".envio__desplegar")(p);
   } }],
+  "codigo-archivos.png": ["lab-archivos", { ruta: "codigo", pasos: seq(click('#codigo-que button[data-que="archivos"]'), async (p) => {
+    await p.select("#archivos-plantilla", "Ejercicio 4");
+    await p.evaluate(() => { const d = document.getElementById("archivos-destino"); d.value = "Ejercicio 4"; });
+  }, click(".envio__desplegar")) }],
   "simulada.png": ["simulada", { ruta: "simulada" }],
   "participacion.png": ["lab-participacion", { ruta: "participacion" }],
 };

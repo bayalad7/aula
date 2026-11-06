@@ -152,6 +152,19 @@ Con el aula simulada abierta (C-03) y dos simulados; pon a Simulado 2 la falla �
 | C-66 | Espera a que llegue a cero | Aparece un aviso «Ejercicio 1 · terminó»; la franja dice «… · terminó» con «Extender» y «Quitar». «Quitar» la quita y Participación vuelve a «No hay un temporizador en marcha». En el log de la consola dice «timer started/ended/stopped» con `timer_id` y duraciones, nunca el nombre |
 | C-67 | Marca solo Simulado 1 y abre «Temporizador»; luego a 900×600 y en oscuro | El destino dice «1 alumno seleccionado»; al iniciar, Participación dice «Para 1 equipo elegido». La franja y la sección se leen completas, sin barras horizontales |
 
+### Enviar archivos y plantillas (10.9)
+
+Con el aula simulada abierta (C-03) y dos simulados; pon a Simulado 2 la falla «No confirma lo que recibe». Ten a mano dos archivos pequeños (un `.csv` y un `.py`).
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-68 | Código › «Archivos»; «Elegir archivos…» y marca los dos; en «Guardar en» escribe `Ejercicio 4`; «Enviar 2 archivos» | El diálogo es el del sistema; la lista muestra los dos con su tamaño. Toast «Enviando Archivos: … a 2 alumnos». En Últimos envíos: «1 de 2» con «Quién falta (1)»: Simulado 2 «sin confirmar». En `Documentos` de este equipo no aparece nada nuevo (los simulados no escriben) |
+| C-69 | «Guardar como plantilla…», nombre `Ejercicio 4`, «Guardar»; luego «Abrir su carpeta» | «Plantilla «Ejercicio 4» guardada»; la plantilla queda elegida y la lista muestra sus archivos sin la «x». El Explorador abre `Documentos\Aula\plantillas\Ejercicio 4` con los dos archivos |
+| C-70 | En el Explorador, agrega un tercer archivo a la plantilla; vuelve a la consola y abre otra vez Código | Al elegir la plantilla dice «3 archivos, …». «Enviar 3 archivos» la manda a los dos simulados |
+| C-71 | En «Guardar en» escribe `..\Windows` y envía; luego un nombre `con.txt` (renombra un archivo así) | «Un nombre no se puede usar» con «Ver en el manual», y nada sale: Últimos envíos no cambia |
+| C-72 | Historial de la clase › «Archivos enviados» › «Reenviar» en la plantilla | Pide confirmación «¿Reenviar Plantilla Ejercicio 4 (3)?»; al aceptar, un envío nuevo en Últimos envíos y la columna «Veces» dice 2. El log de la consola dice «file push» con `push_id`, archivos y bytes, **nunca** nombres ni carpetas |
+| C-73 | A 900×600 y en oscuro, la pestaña Archivos con una plantilla elegida; la ficha de un simulado | Todo se lee sin barras horizontales; la ficha dice «Recibir archivos: Sí» |
+
 ### Diagramas
 
 | # | Pasos | Esperado |
@@ -206,6 +219,9 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-16 | Con la mano levantada, cierra la consola y vuelve a abrirla; luego «Bajar la mano» desde la consola | Al reconectar, la mano vuelve a la fila de Participación sola; al bajarla, el alumno ve «Tu profesor bajó tu mano.» sin que la ventana salga al frente. `aula-agente.log` y el log de la consola dicen «hand raised»/«student message» con IDs y longitudes, nunca el texto |
 | A-18 | Con tu editor al frente, lanza desde la consola un temporizador de 1 min | En la tira de Aula aparece «Ejercicio 1 · 1:00», que baja una vez por segundo sin moverse ni parpadear; en el último minuto (todo el minuto, aquí) cambia a color de advertencia. Tu editor conserva el foco. En modo compacto la insignia también se ve |
 | A-19 | Deja que llegue a cero con la ventana abierta; luego con la ventana cerrada al área de notificación | Con la ventana abierta: la insignia dice «Ejercicio 1 · terminó» y en la esquina aparece «Se acabó el tiempo» con «Entendido», sin quitar el foco ni traer la ventana. Con la ventana cerrada: no aparece; solo se marca el icono. «Quitar» en la consola quita la insignia |
+| A-20 | Con tu editor al frente, envía desde la consola un archivo `datos.csv` a la carpeta `Ejercicio 4` | En la lista de Aula aparece arriba la tarjeta «Archivo recibido: datos.csv · Guardado en Documentos\Aula\Ejercicio 4» con «Nuevo» y «Abrir carpeta»; tu editor conserva el foco; el título dice «(1) Aula — …». El archivo está en `Documentos\Aula\Ejercicio 4\datos.csv` y su propietario es tu usuario (Propiedades › Seguridad › Opciones avanzadas), no SYSTEM |
+| A-21 | Envía otra vez el mismo archivo, sin «Reemplazar»; luego con «Reemplazar si ya lo tienen» | La segunda tarjeta dice «Ya tenías datos.csv: el nuevo quedó como datos (2).csv. El tuyo no cambió.»; la tercera, «datos.csv reemplazó al que tenías con ese nombre.» |
+| A-22 | «Abrir carpeta»; luego cierra Aula al área de notificación y envía otro archivo | El Explorador abre `Documentos\Aula\Ejercicio 4` (nada más). Con Aula cerrada, la ventana no aparece: solo se marca el icono, y al abrirla está la tarjeta con «Nuevo». `aula-agente.log` dice «file push saved» con tamaños, nunca nombres |
 
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 

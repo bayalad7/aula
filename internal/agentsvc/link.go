@@ -11,8 +11,8 @@ import (
 )
 
 // maxFrame bounds one line of the channel. The largest is a still screenshot
-// at native resolution (docs/protocol.md §5.17): up to 16 MiB of JPEG, which
-// is ~21.4 MiB in Base64.
+// at native resolution (docs/protocol.md §5.17) or a file of file.push (§5.20):
+// up to 16 MiB, which is ~21.4 MiB in Base64.
 const maxFrame = 24 << 20
 
 // Frame kinds.

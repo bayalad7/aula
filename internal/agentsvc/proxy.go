@@ -21,6 +21,8 @@ const (
 	CallPower          = "power.run"    // shut down, reboot or log off from the student's session: PowerArgs
 	CallInputInject    = "input.inject" // remote control: []platform.InputEvent, injected in the session
 	CallInputLocal     = "input.local"  // remote control: time of the student's last own input
+	CallFileWrite      = "file.write"   // file.push: FileWriteArgs, saved as the student in the work folder
+	CallFolderOpen     = "folder.open"  // file.push: open a folder of the work folder in Explorer
 	EventEmit          = "emit"         // a Wails event for the window
 	EventRaise         = "raise"        // bring the window forward
 	EventNotify        = "notify"       // something arrived: tell without taking the focus
@@ -43,6 +45,7 @@ type Ready struct {
 	Clipboard bool `json:"clipboard"` // system clipboard
 	Broadcast bool `json:"broadcast"` // WebRTC with H.264 in the window
 	Input     bool `json:"input"`     // keyboard and mouse injection, for remote control
+	Files     bool `json:"files"`     // the student's work folder, for file.push
 }
 
 // Binding is a call of the window (View, Copy…) forwarded to the agent.
@@ -209,4 +212,101 @@ func (i Input) LocalInput() (time.Time, error) {
 	var t time.Time
 	err := i.Helper.call(context.Background(), CallInputLocal, nil, &t)
 	return t, err
+}
+
+// FileWriteArgs are the arguments of CallFileWrite: a file of file.push,
+// already reassembled and checked by the service.
+type FileWriteArgs struct {
+	Rel       string `json:"rel"` // "/"-separated, inside the work folder
+	Data      []byte `json:"data"`
+	Overwrite bool   `json:"overwrite"`
+}
+
+// FileWriteResult is the reply of CallFileWrite. Error is one of the
+// fileErr* codes, so the service tells the reasons apart (the channel only
+// carries error text).
+type FileWriteResult struct {
+	Replaced bool   `json:"replaced"`
+	Error    string `json:"error,omitempty"`
+}
+
+// Codes of FileWriteResult.Error.
+const (
+	fileErrExists      = "exists"
+	fileErrLink        = "link"
+	fileErrNoSpace     = "no_space"
+	fileErrDenied      = "denied"
+	fileErrTooLong     = "too_long"
+	fileErrUnsupported = "unsupported"
+	fileErrOther       = "other"
+)
+
+var fileErrs = []struct {
+	code string
+	err  error
+}{
+	{fileErrExists, platform.ErrFileExists}, {fileErrLink, platform.ErrLinkInPath},
+	{fileErrNoSpace, platform.ErrNoSpace}, {fileErrDenied, platform.ErrDenied},
+	{fileErrTooLong, platform.ErrPathTooLong}, {fileErrUnsupported, platform.ErrNotSupported},
+}
+
+// FileWriteError turns an error of platform.WorkFolder.Create into the code
+// the helper replies with ("" for nil).
+func FileWriteError(err error) string {
+	if err == nil {
+		return ""
+	}
+	for _, e := range fileErrs {
+		if errors.Is(err, e.err) {
+			return e.code
+		}
+	}
+	return fileErrOther
+}
+
+// fileWriteErr is the inverse of FileWriteError.
+func fileWriteErr(code string) error {
+	if code == "" {
+		return nil
+	}
+	for _, e := range fileErrs {
+		if e.code == code {
+			return e.err
+		}
+	}
+	return errors.New("the helper could not write the file")
+}
+
+// fileCallTimeout bounds a write: 16 MiB to a Documents folder redirected
+// to a network share can take longer than callTimeout.
+const fileCallTimeout = 60 * time.Second
+
+// WorkFolder saves the files the teacher sends through the helper, in the
+// student's session and with the student's identity: the file belongs to the
+// student, never to SYSTEM (docs/privacidad.md rule 55). It implements
+// platform.WorkFolder and filepush.Writer.
+type WorkFolder struct{ Helper *Current }
+
+// Root implements platform.WorkFolder. The service does not need the path:
+// the helper resolves it in each call.
+func (WorkFolder) Root() (string, error) { return "", platform.ErrNotSupported }
+
+// Create implements platform.WorkFolder.
+func (w WorkFolder) Create(rel string, data []byte, overwrite bool) (bool, error) {
+	l := w.Helper.Get()
+	if l == nil {
+		return false, ErrNoHelper
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), fileCallTimeout)
+	defer cancel()
+	var r FileWriteResult
+	if err := l.Call(ctx, CallFileWrite, FileWriteArgs{Rel: rel, Data: data, Overwrite: overwrite}, &r); err != nil {
+		return false, err
+	}
+	return r.Replaced, fileWriteErr(r.Error)
+}
+
+// Open implements platform.WorkFolder.
+func (w WorkFolder) Open(rel string) error {
+	return w.Helper.call(context.Background(), CallFolderOpen, rel, nil)
 }

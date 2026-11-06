@@ -426,3 +426,64 @@ func TestInputProxy(t *testing.T) {
 		t.Fatalf("local input = %v, %v", l, err)
 	}
 }
+
+func TestWorkFolderProxy(t *testing.T) {
+	cur := &Current{}
+	if _, err := (WorkFolder{Helper: cur}).Create("a.txt", []byte("a"), false); !errors.Is(err, ErrNoHelper) {
+		t.Fatalf("write without helper = %v", err)
+	}
+	var got FileWriteArgs
+	var opened string
+	exists := false
+	service, _ := linkPair(t, nil, func(_ context.Context, name string, data json.RawMessage) (any, error) {
+		switch name {
+		case CallFileWrite:
+			if err := json.Unmarshal(data, &got); err != nil {
+				return nil, err
+			}
+			if exists && !got.Overwrite {
+				return FileWriteResult{Error: FileWriteError(platform.ErrFileExists)}, nil
+			}
+			if got.Rel == "lleno.bin" {
+				return FileWriteResult{Error: FileWriteError(fmtWrap(platform.ErrNoSpace))}, nil
+			}
+			return FileWriteResult{Replaced: exists}, nil
+		case CallFolderOpen:
+			return nil, json.Unmarshal(data, &opened)
+		}
+		return nil, errors.New("unexpected " + name)
+	}, nil)
+	cur.Set(service)
+	w := WorkFolder{Helper: cur}
+	if replaced, err := w.Create("Ejercicio 4/datos.csv", []byte("1,2\n"), false); err != nil || replaced {
+		t.Fatalf("create = %v, %v", replaced, err)
+	}
+	if got.Rel != "Ejercicio 4/datos.csv" || string(got.Data) != "1,2\n" || got.Overwrite {
+		t.Fatalf("helper got %+v", got)
+	}
+	exists = true
+	if _, err := w.Create("x", []byte("x"), false); !errors.Is(err, platform.ErrFileExists) {
+		t.Fatalf("taken name = %v, want ErrFileExists", err)
+	}
+	if replaced, err := w.Create("x", []byte("x"), true); err != nil || !replaced {
+		t.Fatalf("overwrite = %v, %v", replaced, err)
+	}
+	exists = false
+	if _, err := w.Create("lleno.bin", []byte("x"), false); !errors.Is(err, platform.ErrNoSpace) {
+		t.Fatalf("disk full = %v, want ErrNoSpace", err)
+	}
+	if err := w.Open("Ejercicio 4"); err != nil || opened != "Ejercicio 4" {
+		t.Fatalf("open = %v, %q", err, opened)
+	}
+	for _, err := range []error{nil, platform.ErrFileExists, platform.ErrLinkInPath, platform.ErrNoSpace,
+		platform.ErrDenied, platform.ErrPathTooLong, platform.ErrNotSupported} {
+		if back := fileWriteErr(FileWriteError(err)); back != err {
+			t.Errorf("%v does not survive the channel: %v", err, back)
+		}
+	}
+	if fileWriteErr(FileWriteError(errors.New("x"))) == nil {
+		t.Error("an unknown error must stay an error")
+	}
+}
+
+func fmtWrap(err error) error { return errors.Join(errors.New("write"), err) }

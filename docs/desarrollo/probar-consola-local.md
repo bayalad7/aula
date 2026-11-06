@@ -140,6 +140,18 @@ Con el aula simulada abierta (C-03): cada simulado tiene «Levantar la mano» y 
 | C-62 | Toma el control de un alumno real; en su vista pulsa «Mensaje privado», escribe y Enter; luego Esc con el campo abierto | Lo que escribes no aparece en su equipo; le llega «Mensaje para ti»; la franja «Controlando…» nunca se fue. Esc cierra el mensaje, no la vista; tras un clic en su pantalla, tu teclado vuelve a manejarla |
 | C-58 | Cierra el aula simulada | Participación queda vacía («Nadie ha levantado la mano…»); a 900×600 y en oscuro se lee completa, sin barras horizontales |
 
+### Temporizador de ejercicio (10.8)
+
+Con el aula simulada abierta (C-03) y dos simulados; pon a Simulado 2 la falla «No confirma lo que recibe».
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-63 | Sin selección, «Temporizador» en la barra; escribe «Ejercicio 1», pulsa «1 min» e «Iniciar» | Se cierra el panel con «Temporizador iniciado»; arriba aparece la franja azul «Ejercicio 1 · 1:00 · 1 de 2 lo ven», que baja un segundo a la vez en cualquier vista. En Aula simulada los dos muestran el temporizador |
+| C-64 | En la franja, «Extender» › «+5 min» | «Se agregaron 5 min»; la franja salta a unos 6 minutos. Participación › Temporizador dice «Queda …», «Para toda la clase» y «Aún no lo confirma: Simulado 2» |
+| C-65 | Con el temporizador corriendo, abre otra vez «Temporizador» | El panel avisa «Reemplaza a «Ejercicio 1» (…)». Inicia uno de 1 min con otro nombre: la franja muestra solo el nuevo |
+| C-66 | Espera a que llegue a cero | Aparece un aviso «Ejercicio 1 · terminó»; la franja dice «… · terminó» con «Extender» y «Quitar». «Quitar» la quita y Participación vuelve a «No hay un temporizador en marcha». En el log de la consola dice «timer started/ended/stopped» con `timer_id` y duraciones, nunca el nombre |
+| C-67 | Marca solo Simulado 1 y abre «Temporizador»; luego a 900×600 y en oscuro | El destino dice «1 alumno seleccionado»; al iniciar, Participación dice «Para 1 equipo elegido». La franja y la sección se leen completas, sin barras horizontales |
+
 ### Diagramas
 
 | # | Pasos | Esperado |
@@ -192,6 +204,8 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-15 | «Mensaje al profesor», escribe y pulsa Enter; responde desde la consola con tu editor al frente | El mensaje queda en «Tus mensajes» como «Enviando…» y en seguida «Recibido»; la respuesta aparece en la esquina como «Respuesta a tu mensaje» con «Tú escribiste: «…»», sin quitarle el foco a tu editor. En compacto, el botón de mensaje devuelve la ventana a su tamaño |
 | A-17 | Con dos alumnos y tu editor al frente en uno, manda desde la consola un «Mensaje privado» a ese alumno | En su esquina aparece «Mensaje para ti» con el icono del sobre, sin quitarle el foco; el otro alumno no recibe nada. En `aula-agente.log` y en el log de la consola no aparece el texto |
 | A-16 | Con la mano levantada, cierra la consola y vuelve a abrirla; luego «Bajar la mano» desde la consola | Al reconectar, la mano vuelve a la fila de Participación sola; al bajarla, el alumno ve «Tu profesor bajó tu mano.» sin que la ventana salga al frente. `aula-agente.log` y el log de la consola dicen «hand raised»/«student message» con IDs y longitudes, nunca el texto |
+| A-18 | Con tu editor al frente, lanza desde la consola un temporizador de 1 min | En la tira de Aula aparece «Ejercicio 1 · 1:00», que baja una vez por segundo sin moverse ni parpadear; en el último minuto (todo el minuto, aquí) cambia a color de advertencia. Tu editor conserva el foco. En modo compacto la insignia también se ve |
+| A-19 | Deja que llegue a cero con la ventana abierta; luego con la ventana cerrada al área de notificación | Con la ventana abierta: la insignia dice «Ejercicio 1 · terminó» y en la esquina aparece «Se acabó el tiempo» con «Entendido», sin quitar el foco ni traer la ventana. Con la ventana cerrada: no aparece; solo se marca el icono. «Quitar» en la consola quita la insignia |
 
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 

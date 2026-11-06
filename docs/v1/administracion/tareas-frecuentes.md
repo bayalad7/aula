@@ -1,6 +1,6 @@
 ---
 titulo: "Tareas frecuentes"
-resumen: "Mostrar tu pantalla, mandar avisos, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla y cambiar de canal."
+resumen: "Mostrar tu pantalla, mandar avisos, dar tiempo a un ejercicio, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla y cambiar de canal."
 grupo: "Tareas frecuentes"
 orden: 60
 pantallas: []
@@ -29,6 +29,16 @@ pulsa **Detener** en la franja. Por ahora, solo equipos con Windows pueden recib
 3. Pulsa **Enviar aviso**.
 
 En [Código › Últimos envíos](codigo#últimos-envíos) ves quién ya lo vio.
+
+## Dar tiempo a un ejercicio
+
+1. Pulsa **Temporizador**.
+2. Escribe el nombre («Ejercicio 1») y elige la duración.
+3. Pulsa **Iniciar**.
+
+Los alumnos ven cuánto falta en su barra de arriba, sin que les tape el trabajo. En la franja de
+tu consola puedes **Extender** o **Detener**. Más detalles en
+[Participación › Temporizador](participacion#temporizador).
 
 ## Mandar un mensaje privado a un alumno
 

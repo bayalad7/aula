@@ -61,6 +61,10 @@ Dos aplicaciones, mismo monorepo:
     fila de manos levantadas y la bandeja de mensajes de la consola (`Board`), y la mano y los
     mensajes pendientes del agente (`Desk`), con su ritmo. Solo en memoria; nunca registra el
     texto.
+  - `internal/classtimer`: el temporizador de ejercicio (`timer.*`): del lado de la consola, el
+    vigente, para quién es, qué se mandó y acusó cada sesión y el reenvío al reconectar
+    (`Class`); del lado del agente, la cuenta por lo que falta (nunca por la hora), el fin una sola
+    vez y lo que muestra la ventana (`Countdown`). Solo informa: nada cambia en el equipo.
   - `internal/connectcheck`: el comprobador de conexión de la consola: recorre el camino de un
     alumno (anuncio mDNS, puerto, TLS y clave del centro) y lee la red y el firewall por
     `platform`; da las mismas causas que el agente (`session.Cause`).
@@ -69,7 +73,7 @@ Dos aplicaciones, mismo monorepo:
     frontend Wails bajo `sistema/`. Una sola copia: ninguna app guarda la suya. Su prueba de
     contraste (WCAG AA) vive con él.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `ui` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `ui` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

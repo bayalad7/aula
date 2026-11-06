@@ -43,6 +43,7 @@ que no es parte de la página.
 | `aula:compact` | `Compact` | Go sacó la ventana del modo compacto porque el profesor hizo algo que el alumno debe ver (energía, restricciones, transmisión): `{on: false}`. |
 | `aula:power` | `PowerView` | Llega, se pospone, se ejecuta, falla o se anula una orden de energía (`power.*`). Llega **antes** de que la consola reciba el `power.ack`. `notice` es `null` cuando no hay aviso. |
 | `aula:participation` | `participation.DeskView` | La mano del alumno sube o baja (también si la baja el profesor: `hand.lower`), o uno de sus mensajes se envía, llega a la consola (`msg.student.ack`) o se rechaza (docs/protocol.md §5.18). Con `notify`, nunca `raise`. |
+| `aula:timer` | `classtimer.View` = `{state, timerId, label, remainingMs, justEnded}` | El temporizador del profesor empieza, se extiende, se detiene, termina o se quita (docs/protocol.md §5.19). `state`: `none`, `running` o `ended`. La ventana cuenta los segundos por su cuenta desde `remainingMs` (lo que faltaba al emitirlo) con `performance.now()`, sin la hora del equipo, y arma el texto de la insignia de la tira y del modo compacto. `justEnded` viene solo en el evento del fin: la ventana muestra el aviso de la esquina una vez. Al terminar Go llama a `notify`, nunca a `raise`. |
 
 ```jsonc
 // Status
@@ -106,7 +107,7 @@ llevar estado propio.
 
 | Método | Devuelve | Uso |
 |---|---|---|
-| `App.View()` | `View` = `{status, snippets, notices, broadcast, restrictions, power, participation}` | Estado completo para el primer dibujo. |
+| `App.View()` | `View` = `{status, snippets, notices, broadcast, restrictions, power, participation, timer}` | Estado completo para el primer dibujo. |
 | `App.Copy(snippetId)` | error (promesa rechazada con texto en español) | Copia el fragmento al portapapeles del sistema. |
 | `App.DismissNotice(noticeId)` | — | Cierra un aviso; emite `aula:notices`. |
 | `App.ReportMedia(webrtc, h264)` | — | Al cargar: si hay `RTCPeerConnection` y decodificador H.264. Go espera este aviso (máx. 5 s) antes de conectarse y solo entonces declara `screen.broadcast`. |
@@ -208,6 +209,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:remote` | `remote.Control` | El control remoto empieza (`starting`), el agente muestra su banda (`active`), se pausa porque el alumno usa su equipo (`paused`), sigue (`active`) o termina: `ended` con `reason` `teacher`, `replaced`, `idle`, `session` o `error`; `gone` si el alumno se desconectó; `failed` si el agente no pudo mostrar su aviso. `{sessionID, hostname, controlID, status, reason, viewing}`. |
 | `aula:snapshots` | `Snapshots` | Una captura de un alumno se pide, llega (`ready`), falla (`failed` con `reason` `timeout`, `capture`, `busy`, `unsupported`, `tooLarge`, `corrupt` o `gone`), se guarda (`path`) o se descarta. Lista completa `{snapshots: [{id, sessionId, hostname, username, simulated, status, reason, width, height, size, requestedAt, takenAt, path}]}`, **sin la imagen** (`SnapshotImage`). |
 | `aula:participation` | `Participation` | Un alumno (real o simulado) levanta o baja la mano, llega o se responde un mensaje, el profesor baja una mano o marca un mensaje como atendido, o la clase se cierra (docs/protocol.md §5.18). `arrival` solo viene en el evento que anuncia una mano o un mensaje recién llegado, para el aviso flotante (sin el texto). Las insignias de cada alumno llegan también en `aula:students` (`hand`, `newMessages`). |
+| `aula:timer` | `classtimer.Snapshot` | El temporizador de la clase empieza, se extiende, se detiene, llega a cero, un alumno lo confirma (`timer.ack`) o se reenvía a quien se reconecta (docs/protocol.md §5.19). `{active, timerId, label, durationS, remainingMs, ended, all, hosts, maxExtendS, receivers, eligible, unsupported}`: `remainingMs` es lo que faltaba al emitirlo (la interfaz cuenta con `performance.now()`); `receivers` = `[{sessionId, hostname, username, simulated, status}]` con `status` `sent` (sin confirmar), `running` o `ended`; `unsupported`, los equipos destinatarios que no declararon `timer`. La franja y la sección de Participación se dibujan con él. |
 | `aula:remote-frame` | `Thumb` | Cada imagen de la pantalla controlada (hasta 8 por segundo con la vista abierta, 1 con la vista cerrada). No pasa por `aula:frame` ni se guarda. |
 
 ```jsonc
@@ -327,6 +329,10 @@ cada código tenga su enlace y que la sección exista.
 | `SendNoticeTo(text, level, targets)` | `Delivery` / error | Igual, solo a `targets` (vacío = todos). Lo usa el panel **Aviso**. |
 | `SendPrivateNotice(sessionId, text, level)` | `Delivery` / error | **Mensaje privado** de la ficha y de la pantalla en grande (también en modo control: antes se sueltan las teclas presionadas y lo escrito en el campo no sale por `SendRemoteInput`): `msg.show` con `personal` solo a esa sesión (real o simulada). Su etiqueta es «Mensaje privado a <equipo>», sin el texto (`docs/privacidad.md` regla 53); el acuse llega en `aula:deliveries`. `studentGone` si no está conectado, `noticeUnsupported` si su equipo no declaró `msg.show`, `invalidNotice` si el texto no vale. |
 | `Resend(deliveryId)` | `Delivery` / error | **Reenviar a los que faltan**: manda de nuevo el mismo mensaje a las sesiones de `pending` y de `rejected` que siguen conectadas (las de `rejected` vuelven a `pending`). Los acuses tardíos del primer envío ya no cuentan; los nuevos, una vez. |
+| `Timer()` | `classtimer.Snapshot` | El temporizador de la clase (también en `View().timer`). |
+| `StartTimer({label, durationS, hosts})` | `classtimer.Snapshot` / error | **Iniciar** del panel **Temporizador**: reemplaza al que corre. `hosts`: los equipos de la selección (reales o simulados); vacío = toda la clase, también quien se conecte después. `label` ≤ 40, `durationS` 10 s–4 h. `noTimerTargets` si ninguno de los destinatarios conectados declaró `timer`; `invalidTimer` si el nombre o la duración no valen. El nombre no se registra (`docs/privacidad.md` regla 54). |
+| `ExtendTimer(addS)` | `classtimer.Snapshot` / error | **Extender** (+1, +5 o +10 min) de la franja y de Participación: `timer.extend` con lo que falta ya extendido; revive uno terminado. `timerGone` si no hay; `timerTooLong` si pasaría de 4 h; `invalidTimer` fuera de 1–60 min. |
+| `StopTimer()` | `classtimer.Snapshot` / error | **Detener** (o **Quitar**, ya terminado): `timer.stop` a quien lo tenía. `timerGone` si no hay. |
 | `InstallerInfo()` | `InstallerInfo` | Datos para quien instala: `{channel, consoleName, hostname, addresses, port, mediaPort, fingerprint, keySource, version}`. |
 | `CaptureClipboard()` | `Draft` / error | Igual que el atajo global; el resultado también llega como `aula:capture`. |
 | `OpenScreens()` | error | Abre la vista de pantallas (botón **Ver pantallas**): envía `screen.thumb.start` (1000 ms, calidad 50, 320 px) a cada alumno conectado con `canThumb`, y también a los que se conecten mientras siga abierta. Error si no hay clase. |

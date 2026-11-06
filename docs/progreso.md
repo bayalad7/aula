@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-05 (10.7 mensaje privado a un alumno implementado, falta la prueba
+Última actualización: 2026-11-05 (10.8 temporizador de ejercicio implementado, falta la prueba en
+VM; 10.7 mensaje privado a un alumno implementado, falta la prueba
 en VM; 10.6 manos y mensajes del alumno implementada, con la vista
 «Participación»; falta la prueba en VM; 10.5 captura de pantalla de un alumno implementada, falta la
 prueba en VM; 10.4 control remoto implementado, falta la prueba en VM; etapa 19 cerrada).
@@ -27,7 +28,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.5 | Captura de pantalla de un alumno | ✅ Implementado y probado en CI con dobles (falta la prueba en VM, `docs/prueba-vms.md` §17, y los casos C-49 a C-53 y A-12 y A-13) |
 | 10.6 | Mensajería del alumno y «levantar la mano» | ✅ Implementado y probado en CI con dobles y alumnos simulados; creó la vista «Participación» (falta la prueba en VM, `docs/prueba-vms.md` §18, y los casos C-54 a C-58 y A-14 a A-16) |
 | 10.7 | Mensaje directo a un alumno | ✅ Implementado como mejora del aviso (`msg.show` con `personal`) y probado en CI (falta la prueba en VM, `docs/prueba-vms.md` §19, y los casos C-59 a C-62 y A-17) |
-| 10.8 | Temporizador compartido | ⏳ Pendiente |
+| 10.8 | Temporizador compartido | ✅ Implementado y probado en CI con dobles y alumnos simulados; su sección en «Participación» (falta la prueba en VM, `docs/prueba-vms.md` §20, y los casos C-63 a C-67 y A-18 y A-19) |
 | 10.9 | Enviar archivos y plantillas de ejercicio | ⏳ Pendiente |
 | 10.10 | Recoger código y archivos | ⏳ Pendiente |
 | 10.11 | Enviar una URL o abrir una app | ⏳ Pendiente |
@@ -47,16 +48,16 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
 
 **Siguiente:**
-1. Probar en la ventana real los casos C-01 a C-62 y A-01 a A-17, el control remoto en VM
+1. Probar en la ventana real los casos C-01 a C-67 y A-01 a A-19, el control remoto en VM
    (`docs/prueba-vms.md` §16: RC-A, RC-B y RC-C para aceptar), la captura (§17: SN-A, SN-B y
-   SN-C), las manos y mensajes (§18: HM-A, HM-B y HM-C) y el mensaje privado (§19: PM-A, PM-B y
-   PM-C).
+   SN-C), las manos y mensajes (§18: HM-A, HM-B y HM-C), el mensaje privado (§19: PM-A, PM-B y
+   PM-C) y el temporizador (§20: TM-A, TM-B y TM-C).
 2. La revisión 11.
 3. ~~Publicar `v0.6.0-rc.1`~~: publicado el 05/11/2026 (etapas 10.2, 10.3, 18, 19 y 10.4, instaladores
    de Windows y checksums firmados). Las 0.x son borradores: al integrar todas las funciones se
    borran y empieza la versión 1 oficial. Probar sus instaladores en las VMs (§14 a §16).
-4. Cualquier función de 10.8 a 10.13 con `/funcionalidad-nueva <número>`. Las que recogen
-   respuestas (10.8, 10.10, 10.12, 10.13) agregan su sección a la vista «Participación».
+4. Cualquier función de 10.9 a 10.13 con `/funcionalidad-nueva <número>`. Las que recogen
+   respuestas (10.10, 10.12, 10.13) agregan su sección a la vista «Participación».
 
 ## Etapa 02: notas
 
@@ -1125,6 +1126,46 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.8: temporizador de ejercicio — notas
+
+- **Diseño aprobado** (2026-11-05) tal cual: paquete nuevo `internal/classtimer` (no
+  `participation`, que es «lo que responden los alumnos»), sin diagrama nuevo (la secuencia de
+  §5.19 basta), regla 54 de privacidad y «Extender» con +1, +5 y +10 min. Un ajuste al
+  implementar: al reconectar, el agente **no** borra la cuenta al enviar `hello`; espera 3 s a que
+  la consola la reenvíe, y si no llega la quita (evita que la insignia parpadee).
+- **Protocolo** (`docs/protocol.md` §5.19): `timer.start` (`timer_id`, `label` ≤ 40,
+  `duration_s` 10 s–4 h, `remaining_ms`), `timer.extend` (`add_s` 1–60 min, `remaining_ms` ya
+  extendido: un reenvío no suma dos veces), `timer.stop` y `timer.ack` (`running`, `ended`,
+  `stopped`). Capacidad `timer` en todos los SO cuando hay ventana (en servicio, con el ayudante).
+  **Sincronía por lo que falta**: cada lado fija su fin con su reloj monotónico; la hora del
+  equipo no interviene (prueba con relojes desfasados minutos).
+- **Lógica** (`internal/classtimer`): `Class` (consola: vigente, destinatarios por equipo, qué
+  mandó y acusó cada sesión; `Plan` reenvía a quien reconecta o llega, extiende a quien lo tenía y
+  detiene; tope de 4 h) y `Countdown` (agente: aplica los mensajes por `timer_id`, termina una vez,
+  quita el «terminó» a los 5 min). Sin SO.
+- **Consola:** botón y panel «Temporizador» en la barra de acciones (nombre, 1/5/10/15/20 min o
+  1–240, aviso si reemplaza al vigente o si algún equipo no lo puede ver); franja azul
+  «Ejercicio 1 · 4:32 · 2 de 3 lo ven» con «Extender» (+1/+5/+10) y «Detener»/«Quitar»; sección
+  «Temporizador» en Participación (cuánto queda, para quién, quién no confirma, quién no puede).
+  Bindings `Timer`, `StartTimer`, `ExtendTimer`, `StopTimer`; evento `aula:timer`; errores
+  `invalidTimer`, `noTimerTargets`, `timerGone`, `timerTooLong`; «Ver el temporizador» en la
+  ficha. Sistema de diseño: icono `reloj`, `.franja--temporizador` y `.cuenta` (cifras de ancho
+  fijo).
+- **Alumno:** insignia `role="timer"` en la tira y en el modo compacto, que cuenta sola una vez por
+  segundo con `performance.now()`; color de advertencia en el último minuto; al terminar,
+  «Se acabó el tiempo» en la esquina con `notify` (nunca `raise`). No es banda; sin bindings
+  nuevos.
+- **Simulados:** declaran `timer`, cuentan y acusan (con «No confirma lo que recibe», no acusan).
+- **Documentación:** regla 54; manual (Participación › Temporizador y Tareas frecuentes › «Dar
+  tiempo a un ejercicio»); `docs/eventos-ui.md`; `CLAUDE.md` (paquete nuevo); casos C-63 a C-67,
+  A-18 y A-19; `docs/prueba-vms.md` §20.
+- **Pruebas:** protocolo (ida y vuelta, límites, ejemplos válidos e inválidos); `classtimer`
+  (inicio, extender, detener, fin, reconexión, selección, reemplazo, relojes desfasados); el
+  agente con una consola real (acuses, fin con `notify`, sin el nombre en el log); los simulados;
+  los bindings de la consola; arnés (capturas 87–93 de la consola, 59–64 del alumno y los casos
+  `temporizador` y `temporizador-compacto`).
+- **Falta de tu lado:** la prueba en VM (§20) y los casos manuales.
 
 ## Etapa 10.7: mensaje privado a un alumno — notas
 

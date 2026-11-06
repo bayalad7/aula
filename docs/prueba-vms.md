@@ -1171,3 +1171,20 @@ todos, sin quitarle el foco, y que su texto no queda en los registros ni en «Ú
 | **PM-D** Ventana cerrada | Cierra Aula en la VM 1 y manda otro privado. | La ventana no aparece; el icono se marca y al abrirla está el mensaje. |
 
 **Para aceptar** bastan PM-A, PM-B y PM-C en ✅.
+
+## 20. Temporizador de ejercicio (10.8)
+
+Comprueba que el temporizador se ve igual en dos alumnos aunque sus relojes difieran, que
+extender y detener llegan a los dos, y que es discreto: no tapa el trabajo ni quita el foco
+(`docs/protocol.md` §5.19, `docs/privacidad.md` regla 54). Con las dos VMs de §18; **adelanta
+el reloj de la VM 2 unos 5 minutos** (Fecha y hora › desactivar «automática») antes de empezar.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **TM-A** Cuenta consistente (**aceptación**) | Con el Bloc de notas al frente en las dos VMs, **Temporizador** › «Ejercicio 1», **1 min**, **Iniciar**. Pon las dos VMs una junto a otra. | Las dos muestran «Ejercicio 1 · 1:00» en su tira y bajan juntas (a lo más 1 s de diferencia), aunque la VM 2 tenga otra hora. La franja de la consola dice «2 de 2 lo ven». El Bloc de notas no pierde el foco. |
+| **TM-B** Extender y detener (**aceptación**) | A los 30 s, **Extender** › **+1 min**; luego **Detener**. | Las dos saltan a ~1:30 a la vez; al detener, la insignia desaparece en las dos. |
+| **TM-C** Discreto (**aceptación**) | Lanza otro de 1 min y escribe en el Bloc de notas hasta que termine; prueba también con Aula en modo compacto. | La insignia no tapa nada ni se mueve; en el último minuto cambia de color. Al terminar aparece «Se acabó el tiempo» en la esquina sin quitar el foco: lo que escribes sigue entrando en el Bloc de notas. Nada se bloquea. |
+| **TM-D** Reconexión a media cuenta | Lanza 3 min; desconecta la red de la VM 1 15 s y vuelve a conectarla. | Durante el corte la cuenta sigue; al reconectar, la VM 1 sigue con la misma cuenta que la VM 2 (sin saltar a cero ni reiniciarse). |
+| **TM-E** Detenido sin conexión | Lanza 3 min; desconecta la VM 1, pulsa **Detener** y vuelve a conectarla. | Al reconectar, la insignia de la VM 1 desaparece en unos 3 s. |
+
+**Para aceptar** bastan TM-A, TM-B y TM-C en ✅. Vuelve a poner la hora automática en la VM 2.

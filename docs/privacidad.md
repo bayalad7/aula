@@ -382,6 +382,20 @@ con `notify`, sin quitar el foco.
     **nunca** el texto (regla 5). En «Últimos envíos» la consola lo etiqueta «Mensaje privado a
     <equipo>», sin el texto, para que no quede a la vista si el profesor transmite su pantalla.
 
+## Temporizador de ejercicio (v0.9, todos los sistemas)
+
+El profesor da un tiempo con nombre a la clase o a una selección («Ejercicio 1 · 10 min») y cada
+alumno ve cuánto falta en una insignia de su tira de identidad (`docs/protocol.md` §5.19). No
+observa ni controla el equipo: no lleva banda ni aviso fijo, no tapa el trabajo del alumno y nunca
+trae su ventana al frente ni le quita el foco. El fin usa `notify`: un aviso suave en la esquina y,
+con la ventana cerrada, solo la marca en el icono del área de notificación.
+
+54. **El temporizador solo informa.** Al llegar a cero no se bloquea, no se recoge ni se cambia
+    nada en el equipo: el alumno sigue trabajando. Por eso también lo reciben los alumnos
+    simulados (regla 34 no aplica). Los registros llevan `timer_id`, la duración y lo que falta,
+    **nunca** el nombre que le puso el profesor (`label`), que es texto suyo. La consola lo
+    guarda en memoria y lo olvida al cerrar la clase o cambiar de canal.
+
 ## Pendiente para etapas futuras
 
 - Linux y macOS (incluida la recepción de la transmisión, las restricciones, el control remoto

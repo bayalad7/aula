@@ -23,6 +23,10 @@ type Notice struct {
 	// Personal: the teacher sent it to this student only (msg.show personal,
 	// prompt 10.7); the window titles it «Mensaje para ti».
 	Personal bool `json:"personal,omitempty"`
+	// Ref points a notice of the agent to what it is about (the collection
+	// ID for "collect-requested" and "collect-done", docs/privacidad.md
+	// rules 61–62); the window takes the details from that state.
+	Ref string `json:"ref,omitempty"`
 }
 
 // Receiver applies the console's messages on the student side.

@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/participation"
@@ -48,8 +49,9 @@ const (
 // console files it apart (docs/privacidad.md rule 46). Raising a hand and
 // writing to the teacher start on the student's side: the teacher makes a
 // simulated student do it (Raise, Write) to try «Participación» without a lab.
+// The exercise timer only informs: they count it and acknowledge it.
 var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-	protocol.CapHand, protocol.CapMsgStudent}
+	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities
@@ -102,6 +104,8 @@ type Student struct {
 	// it wrote to the teacher.
 	Hand participation.HandState `json:"hand"`
 	Sent int                     `json:"sent"`
+	// Timer is the exercise timer it shows, if any (§5.19).
+	Timer classtimer.View `json:"timer"`
 }
 
 // Class is a set of simulated students connected to one console. It is safe
@@ -161,7 +165,7 @@ func (c *Class) Add(os protocol.OS, caps []protocol.Capability) (Student, error)
 	s := &student{
 		class: c, id: protocol.NewID(), name: "Simulado " + strconv.Itoa(c.next), os: os,
 		caps: slices.Clone(caps), index: c.next, fault: FaultNone, board: codedist.NewBoard(0),
-		desk: participation.NewDesk(),
+		desk: participation.NewDesk(), countdown: classtimer.NewCountdown(nil),
 	}
 	if err := s.hello().Validate(); err != nil {
 		c.mu.Unlock()
@@ -259,14 +263,15 @@ func (c *Class) changed() {
 
 // student is one simulated agent.
 type student struct {
-	class *Class
-	id    string
-	name  string
-	os    protocol.OS
-	caps  []protocol.Capability
-	index int
-	board *codedist.Board
-	desk  *participation.Desk // its hand and messages to the teacher
+	class     *Class
+	id        string
+	name      string
+	os        protocol.OS
+	caps      []protocol.Capability
+	index     int
+	board     *codedist.Board
+	desk      *participation.Desk   // its hand and messages to the teacher
+	countdown *classtimer.Countdown // the exercise timer it shows
 
 	mu         sync.Mutex
 	cl         *transport.Client // the connection, nil while not connected
@@ -283,6 +288,7 @@ type student struct {
 	done       chan struct{}
 	streamer   *screen.Streamer
 	taker      *snapshot.Taker
+	timerT     *time.Timer // the next tick of its countdown
 }
 
 func (s *student) hello() protocol.HelloInfo {
@@ -335,6 +341,8 @@ func (s *student) start() {
 			s.mu.Lock()
 			s.cl = cl
 			s.mu.Unlock()
+			s.countdown.Reconnected()
+			s.armTimer()
 			for _, p := range s.desk.Reconnected() {
 				s.send(ctx, cl, p)
 			}
@@ -375,6 +383,7 @@ func (s *student) stop() {
 	if st != nil {
 		st.Stop()
 	}
+	s.stopTimer()
 }
 
 func (s *student) setFault(f Fault, delay time.Duration) {
@@ -403,6 +412,9 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 		send := func(ctx context.Context, p protocol.Payload) error {
 			_, err := cl.Send(ctx, p)
 			return err
+		}
+		if s.handleTimer(ctx, cl, env, fault) {
+			return
 		}
 		reply, handled := s.taker.Handle(ctx, snapshot.Sender(send), env)
 		if !handled {
@@ -470,7 +482,7 @@ func (s *student) snapshot() Student {
 	out := Student{
 		ID: s.id, Name: s.name, OS: s.os, Capabilities: slices.Clone(s.caps), Connected: s.connected,
 		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, Private: s.private, LastNotice: s.lastNotice, Snapshots: s.snapshots, Snippets: []Snippet{},
-		Hand: s.desk.View().Hand, Sent: s.sent,
+		Hand: s.desk.View().Hand, Sent: s.sent, Timer: s.countdown.View(),
 	}
 	if s.fault == FaultSlow {
 		out.DelayMs = int(s.delay / time.Millisecond)

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
@@ -34,6 +35,7 @@ type console struct {
 	frames map[string]int  // session ID → frames received
 	snaps  *snapshot.Store // screenshots asked to the students
 	hands  []protocol.HandRaise
+	timers []protocol.TimerAck
 	msgs   []protocol.Envelope // msg.student
 }
 
@@ -69,6 +71,8 @@ func startConsole(t *testing.T) *console {
 				c.snaps.Response(conn.ID(), p)
 			case protocol.HandRaise:
 				c.hands = append(c.hands, p)
+			case protocol.TimerAck:
+				c.timers = append(c.timers, p)
 			case protocol.MsgStudent:
 				c.msgs = append(c.msgs, env)
 			}
@@ -358,4 +362,55 @@ func TestSimulatedStudentRaisesItsHandAndWrites(t *testing.T) {
 	if err := cl.Write("nobody", "x"); !errors.Is(err, ErrUnknownStudent) {
 		t.Errorf("unknown student: %v", err)
 	}
+}
+
+func (c *console) timerAck(ref string, st protocol.TimerStatus) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, a := range c.timers {
+		if a.RefID == ref && a.Status == st {
+			return true
+		}
+	}
+	return false
+}
+
+// The exercise timer reaches simulated students: they count it, acknowledge
+// it and end at zero; with "noack" they show it without acknowledging.
+func TestSimulatedStudentsCountTheTimer(t *testing.T) {
+	c := startConsole(t)
+	cl := newClass(t, c)
+	a, _ := cl.Add(protocol.OSWindows, nil)
+	b, _ := cl.Add(protocol.OSWindows, nil)
+	eventually(t, "connected", func() bool { return len(c.connected()) == 2 })
+	if err := cl.SetFault(b.ID, FaultNoAck, 0); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	timerID := protocol.NewID()
+	start := protocol.TimerStart{TimerID: timerID, Label: "Ejercicio 1", DurationS: 10, RemainingMS: 300}
+	refA, err := c.Send(ctx, sessionOf(t, c, a.Name).ID, start)
+	if err != nil {
+		t.Fatal(err)
+	}
+	refB, err := c.Send(ctx, sessionOf(t, c, b.Name).ID, start)
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "running ack", func() bool { return c.timerAck(refA, protocol.TimerRunning) })
+	eventually(t, "ended ack", func() bool { return c.timerAck(refA, protocol.TimerEnded) })
+	eventually(t, "both ended", func() bool {
+		st := cl.Students()
+		return st[0].Timer.State == classtimer.StateEnded && st[1].Timer.State == classtimer.StateEnded
+	})
+	if c.timerAck(refB, protocol.TimerRunning) || c.timerAck(refB, protocol.TimerEnded) {
+		t.Error("a student with the noack fault acknowledged the timer")
+	}
+	stop, err := c.Send(ctx, sessionOf(t, c, a.Name).ID, protocol.TimerStop{TimerID: timerID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "stopped", func() bool {
+		return c.timerAck(stop, protocol.TimerStopped) && cl.Students()[0].Timer.State == classtimer.StateNone
+	})
 }

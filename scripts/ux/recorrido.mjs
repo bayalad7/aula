@@ -219,6 +219,18 @@ await f("103-archivos-900x600", "lab-archivos", { w: 900, h: 600, ruta: "archivo
 await f("104-archivos-oscuro", "lab-archivos", { oscuro: true, ruta: "archivos", pasos: seq(archivos, plantilla("Ejercicio 4")) });
 await f("105-ficha-recibir-archivos", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
 await f("106-plantillas-y-enviados", "lab-archivos", { h: 1250, ruta: "archivos" });
+
+// Recolecciones (prompt 10.10): la pestaña de Archivos. Vacía con la ruta que verá el alumno,
+// recién creada, recogida (cada estado de alumno), error de nombre, 900×600, oscuro y la ficha.
+await f("110-recolecciones-vacia", "lab", { ruta: "archivos/recolecciones", pasos: async (p) => {
+  await p.type("#reco-actividad", "Ejercicio 4"); await p.type("#reco-tipos", "*.py"); await sleep(150); } });
+await f("111-recolecciones-creada", "lab-recolecciones-nueva", { ruta: "archivos/recolecciones" });
+await f("112-recolecciones-recogida", "lab-recolecciones", { h: 1000, ruta: "archivos/recolecciones" });
+await f("113-recolecciones-error-nombre", "lab", { ruta: "archivos/recolecciones", pasos: seq(async (p) => {
+  await p.type("#reco-actividad", "Ejercicio: 4"); }, click("#reco-crear")) });
+await f("114-recolecciones-900x600", "lab-recolecciones", { w: 900, h: 600, ruta: "archivos/recolecciones" });
+await f("115-recolecciones-oscuro", "lab-recolecciones", { oscuro: true, h: 1000, ruta: "archivos/recolecciones" });
+await f("116-ficha-recoger", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
 await f("107-codigo-sin-archivos", "lab-archivos", { ruta: "codigo" });
 await f("108-ficha-capacidades-y-acciones", "lab", { h: 860, pasos: click(`${fila("lab-ubuntu-02")} .ficha`) });
 await f("109-pantalla-grande-acciones", "lab", { pasos: grande });

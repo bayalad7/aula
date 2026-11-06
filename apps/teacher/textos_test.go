@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/connectcheck"
 	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/protocol"
@@ -120,6 +121,21 @@ func TestTextsAreComplete(t *testing.T) {
 	// Why a template cannot be sent (filepush.Template.Problem).
 	for _, p := range []string{filepush.ProblemEmpty, filepush.ProblemTooMany, filepush.ProblemTooLarge, filepush.ProblemBadName} {
 		need("archivos.problema."+agentErrorKey(protocol.ErrorCode(p)), "main.js (filepush.Template.Problem)")
+	}
+	// Collections (internal/collect): each student's status, and why a round
+	// failed or a file was skipped (protocol reasons and the console's own).
+	for _, s := range []collect.Status{collect.StatusWaiting, collect.StatusReady, collect.StatusQueued,
+		collect.StatusCollecting, collect.StatusCollected, collect.StatusEmpty, collect.StatusFailed} {
+		need("reco.estado."+string(s), "main.js (collect.Status)")
+	}
+	reasons := []string{collect.ReasonTimeout, collect.ReasonGone, collect.ReasonSave, string(protocol.CodeUnsupportedCapability)}
+	for _, list := range [][]protocol.FileCollectReason{protocol.FileCollectAckReasons, protocol.FileCollectSkipReasons, protocol.FileCollectSaveReasons} {
+		for _, r := range list {
+			reasons = append(reasons, string(r))
+		}
+	}
+	for _, r := range reasons {
+		need("reco.motivo."+agentErrorKey(protocol.ErrorCode(r)), "main.js (collect reasons)")
 	}
 	// Error texts are chosen by the code Go returns (errores.go).
 	for _, code := range errorCodes {

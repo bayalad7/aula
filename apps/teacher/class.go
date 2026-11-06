@@ -53,8 +53,9 @@ type classHooks struct {
 	onClassroom func(sessionID string, env protocol.Envelope)
 	// onTimer receives timer.ack, from real and simulated students (§5.19).
 	onTimer func(sessionID string, p protocol.TimerAck)
-	// onFile receives file.push.ack and the errors (which may answer a
-	// file.push), from real and simulated students (§5.20).
+	// onFile receives file.push.ack, file.collect.ack, the parts of
+	// file.collect.response and the errors (which may answer a file.push or
+	// a file.collect.request), from real and simulated students (§5.20–5.21).
 	onFile func(sessionID string, env protocol.Envelope)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
@@ -270,7 +271,7 @@ func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, prot
 			if h.onTimer != nil {
 				h.onTimer(conn.ID(), p)
 			}
-		case protocol.FilePushAck:
+		case protocol.FilePushAck, protocol.FileCollectAck, protocol.FileCollectResponse:
 			if h.onFile != nil {
 				h.onFile(conn.ID(), env)
 			}
@@ -347,7 +348,7 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onTimer != nil {
 					hooks.onTimer(conn.ID(), p)
 				}
-			case protocol.FilePushAck:
+			case protocol.FilePushAck, protocol.FileCollectAck, protocol.FileCollectResponse:
 				if hooks.onFile != nil {
 					hooks.onFile(conn.ID(), env)
 				}

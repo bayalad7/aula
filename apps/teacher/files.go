@@ -352,8 +352,11 @@ func (a *App) onFileMessage(sessionID string, env protocol.Envelope) {
 	switch p := env.Payload.(type) {
 	case protocol.FilePushAck:
 		a.pusher.Ack(sessionID, p)
+	case protocol.FileCollectAck, protocol.FileCollectResponse:
+		a.onCollectMessage(sessionID, env) // §5.21
 	case protocol.ErrorPayload:
 		a.pusher.Error(sessionID, p)
+		a.onCollectMessage(sessionID, env)
 	}
 }
 

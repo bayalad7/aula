@@ -74,6 +74,11 @@ const (
 	codeTemplateExists       = "templateExists"
 	codeTemplateInvalid      = "templateInvalid"
 	codeTemplateGone         = "templateGone"
+	codeCollectActivity      = "collectActivity"
+	codeCollectFolder        = "collectFolder"
+	codeCollectGone          = "collectGone"
+	codeCollectNoStudents    = "collectNoStudents"
+	codeCollectNothing       = "collectNothing"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -90,6 +95,7 @@ var errorCodes = []string{
 	codeInvalidTimer, codeNoTimerTargets, codeTimerGone, codeTimerTooLong,
 	codePushNoFiles, codePushTooLarge, codePushPathInvalid, codePushFileGone, codePushUnsupported,
 	codeTemplateExists, codeTemplateInvalid, codeTemplateGone,
+	codeCollectActivity, codeCollectFolder, codeCollectGone, codeCollectNoStudents, codeCollectNothing,
 }
 
 // errorHelp is the section of the manual (docs/v1/administracion) that each
@@ -157,6 +163,11 @@ var errorHelp = map[string]string{
 	codeTemplateExists:       "archivos#plantillas-de-ejercicio",
 	codeTemplateInvalid:      "archivos#plantillas-de-ejercicio",
 	codeTemplateGone:         "archivos#plantillas-de-ejercicio",
+	codeCollectActivity:      "archivos#recolecciones",
+	codeCollectFolder:        "archivos#dónde-queda-lo-recogido",
+	codeCollectGone:          "archivos#recolecciones",
+	codeCollectNoStudents:    "archivos#si-falta-alguien",
+	codeCollectNothing:       "archivos#dónde-queda-lo-recogido",
 }
 
 // codedError is an error the UI can explain by its code.

@@ -14,6 +14,7 @@ import (
 	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
+	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
@@ -86,6 +87,11 @@ type App struct {
 	files       fileState
 	pusher      *filepush.Pusher
 	chooseFiles func(title string) ([]string, error)
+	// collector and coll collect the students' work (§5.21); chooseFolder
+	// opens the system dialog of «Guardar como…» (replaced in tests).
+	collector    *collect.Collector
+	coll         collectState
+	chooseFolder func(title string) (string, error)
 	// timerEnd tells the window when the timer reaches zero; guarded by mu.
 	timerEnd *time.Timer
 	// documents is the teacher's Documents folder and openFolder shows a
@@ -126,6 +132,9 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.timer = classtimer.NewClass(nil)
 	a.pusher = &filepush.Pusher{Send: a.sendToSession, OnOutcome: a.onFileOutcome, Logger: log}
 	a.chooseFiles = a.openFilesDialog
+	a.collector = &collect.Collector{Send: a.sendToSession, Root: a.collectRoot, Logger: log,
+		OnChange: func(string) { a.emitCollections() }}
+	a.chooseFolder = a.openFolderDialog
 	a.documents, a.openFolder = platform.DocumentsDir, platform.OpenFolder
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	a.checks = newConnectChecks(log)
@@ -258,7 +267,8 @@ func (a *App) EndClass() {
 		a.snaps.Reset() // unsaved screenshots never outlive the class (rule 45)
 		a.board.Reset() // nor hands and messages (rule 51)
 		a.emit(EventParticipation, a.participation(nil, nil))
-		a.stopFiles() // what was being sent stops with the class
+		a.stopFiles()       // what was being sent stops with the class
+		a.stopCollections() // and the collections are forgotten; their folders stay
 		a.resetTimer()
 		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
@@ -588,6 +598,7 @@ func (a *App) onChange() {
 	a.bc.Sync(class.Sessions())
 	a.sendRestrictions(class, a.restr.Plan(class.Sessions())) // students who reconnect get them again
 	a.syncTimer(class)                                        // and the timer, with what is left
+	a.syncCollections(class)                                  // and the folders of the open collections
 }
 
 // onFrame forwards a thumbnail of the stream in force to the screens view.
@@ -634,7 +645,7 @@ func studentsOf(list []session.Session) Students {
 			CanPower: s.Can(protocol.CapPower), CanRemote: s.Can(protocol.CapRemote),
 			CanSnapshot: s.Can(protocol.CapScreenSnapshot), LastCodeAck: s.LastCodeAck,
 			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer),
-			CanFiles: s.Can(protocol.CapFilePush),
+			CanFiles: s.Can(protocol.CapFilePush), CanCollect: s.Can(protocol.CapFileCollect),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))
@@ -677,6 +688,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanFiles {
 				out.CanFiles++
+			}
+			if st.CanCollect {
+				out.CanCollect++
 			}
 		}
 		out.Students = append(out.Students, st)

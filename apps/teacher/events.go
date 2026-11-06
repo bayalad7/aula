@@ -109,6 +109,7 @@ type Student struct {
 	CanMessage   bool     `json:"canMessage"`   // msg.student (the same)
 	CanTimer     bool     `json:"canTimer"`     // timer (every OS with a window, simulated students)
 	CanFiles     bool     `json:"canFiles"`     // file.push (Windows agents, simulated students)
+	CanCollect   bool     `json:"canCollect"`   // file.collect (Windows agents, simulated students)
 	// Hand is this student's place in the line of raised hands (0: down);
 	// NewMessages, their messages not answered yet. The badge in Notas.
 	Hand        int `json:"hand"`
@@ -148,6 +149,8 @@ type Students struct {
 	CanTimer int `json:"canTimer"`
 	// CanFiles counts connected agents with file.push, simulated ones included.
 	CanFiles int `json:"canFiles"`
+	// CanCollect counts connected agents with file.collect, simulated ones included.
+	CanCollect int `json:"canCollect"`
 	// Connected counts real students only; Simulated counts the connected
 	// simulated ones. CanCode, CanNotice and CanThumb include both.
 	Simulated int `json:"simulated"`

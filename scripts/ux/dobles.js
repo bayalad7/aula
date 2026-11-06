@@ -24,9 +24,10 @@
     canHand: s.capabilities.includes("hand"), canMessage: s.capabilities.includes("msg.student"),
     canTimer: s.capabilities.includes("timer"),
     canFiles: s.capabilities.includes("file.push"),
+    canCollect: s.capabilities.includes("file.collect"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push"];
+    "hand", "msg.student", "timer", "file.push", "file.collect"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -51,7 +52,7 @@
     student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL }),
   ];
   const simStudents = [1, 2].map((i) => student({ hostname: "Simulado " + i, username: "Alumno de prueba", osVersion: "simulado",
-    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "file.push"], simulated: true,
+    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "file.push", "file.collect"], simulated: true,
     lastCodeAck: i === 1 ? "sn-3" : "", ackedAt: i === 1 ? "10:42:09" : "" }));
   let list = scene === "simulada-sola" ? simStudents.slice() : scene === "simulada" ? [...sims.slice(0, 1), ...simStudents] : scene === "vacia" || scene.startsWith("setup") ? [] : scene.startsWith("lab") ? lab : [...sims,
     student({ hostname: "SIM-03", username: "simulado", osVersion: "simulado", agentVersion: "0.1.0-sim",
@@ -107,7 +108,7 @@
     return { students: list, connected: real.length, simulated: c.length - real.length,
       canCode: n("canCode"), canNotice: n("canNotice"), canThumb: n("canThumb"),
       canBroadcast: r("canBroadcast"), canAppBlock: r("canAppBlock"), canWebFilter: r("canWebFilter"), canPower: r("canPower"),
-      canSnapshot: n("canSnapshot"), canTimer: n("canTimer") };
+      canSnapshot: n("canSnapshot"), canTimer: n("canTimer"), canCollect: n("canCollect") };
   };
 
   const code3 = "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(5))\n";
@@ -212,6 +213,36 @@
     { path: "C:\\Users\\ayala\\Documents\\clase\\main.py", rel: "main.py", size: 2100 }];
   const envioArchivos = (r) => Object.assign({}, { id: "d7", kind: "file", label: r.template ? "Archivos: " + r.template + " (3)" : "Archivos: datos.csv y 1 más",
     sent: 2, acked: 0, failed: 0, noCapability: 1, simSent: 0, simAcked: 0, at: "", pending: ["s-LAB3-PC07", "s-LAB3-PC12"], rejected: [] });
+
+  // Recolecciones (CollectionsView de apps/teacher/collect.go, prompt 10.10). Escenas:
+  // lab-recolecciones (una recogida con alumnos en cada estado) y lab-recolecciones-nueva
+  // (recién creada, sin recoger).
+  const win = (...p) => p.join(String.fromCharCode(92)); // rutas de Windows, sin escapar barras
+  const RECO = win("C:", "Users", "profe", "Documents", "Aula", "recolecciones");
+  const cero = "0001-01-01T00:00:00Z";
+  const recoAlumno = (s, status, extra) => Object.assign({ session: s.id, hostname: s.hostname, username: s.username, simulated: !!s.simulated,
+    key: (s.hostname + "|" + s.username).toLowerCase(), status, reason: "", round: 0, at: cero, files: [], failedFiles: 0, skipped: [],
+    dir: win(RECO, "2026-11-06", "Ejercicio 4", s.hostname + (s.username ? " (" + s.username + ")" : "")) }, extra);
+  const recoData = () => {
+    if (scene === "lab-recolecciones-nueva") return [{ id: "rc-1", date: "2026-11-06", activity: "Ejercicio 4", patterns: ["*.py"],
+      limits: { maxFileSize: 4194304, maxTotal: 16777216, maxFiles: 20 }, openedAt: "2026-11-06T10:05:00-06:00", round: 0, collecting: false,
+      dir: win(RECO, "2026-11-06", "Ejercicio 4"), students: [recoAlumno(lab[0], "ready"), recoAlumno(lab[1], "ready")] }];
+    if (scene !== "lab-recolecciones") return [];
+    return [{ id: "rc-1", date: "2026-11-06", activity: "Ejercicio 4", patterns: ["*.py"],
+      limits: { maxFileSize: 4194304, maxTotal: 16777216, maxFiles: 20 }, openedAt: "2026-11-06T10:05:00-06:00", round: 1, collecting: false,
+      dir: win(RECO, "2026-11-06", "Ejercicio 4"), students: [
+        recoAlumno(lab[0], "collected", { round: 1, at: "2026-11-06T10:42:03-06:00",
+          files: [{ path: "20231234-Ana.py", size: 3120, sha256: "ab".repeat(32) }] }),
+        recoAlumno(lab[1], "collected", { round: 1, at: "2026-11-06T10:42:05-06:00",
+          files: [{ path: "main.py", size: 2048, sha256: "cd".repeat(32) }, { path: "util/datos.py", size: 9216, sha256: "ef".repeat(32) }],
+          skipped: [{ path: "video.py", size: 52428800, reason: "too_large" }] }),
+        recoAlumno({ id: "s-LAB3-PC09", hostname: "LAB3-PC09", username: "alumno09" }, "empty", { round: 1, at: "2026-11-06T10:42:04-06:00" }),
+        recoAlumno({ id: "s-LAB3-PC03", hostname: "LAB3-PC03", username: "alumno03" }, "failed", { round: 1, reason: "gone", at: "2026-11-06T10:42:09-06:00" }),
+      ] }];
+  };
+  let recoList = recoData();
+  const collectionsView = () => ({ list: recoList, folder: RECO, folderError: "", today: "2026-11-06",
+    limits: { maxFileSize: 4194304, maxTotal: 16777216, maxFiles: 20 } });
 
   const ok = (v) => new Promise((r) => setTimeout(() => r(v), 5));
   // Un doble que devuelve un Error rechaza la promesa con su texto, como Wails.
@@ -351,6 +382,27 @@
       ? new Error("aula:templateExists: ya hay una plantilla con ese nombre")
       : (filesView.templates.push({ name, size: 0, problem: "", files: files.map((x) => tplArchivo(x.rel, 1000)) }), filesView))),
     OpenTemplates: call("OpenTemplates", null),
+    Collections: call("Collections", collectionsView),
+    OpenCollection: call("OpenCollection", (r) => {
+      if (!r.activity.trim() || /[\\/:*?"<>|]/.test(r.activity)) return new Error("aula:collectActivity: el nombre de la actividad no sirve como carpeta");
+      const pueden = list.filter((s) => s.state === "connected" && s.canCollect);
+      const c = { id: "rc-" + (recoList.length + 1), date: "2026-11-06", activity: r.activity.trim(),
+        patterns: r.patterns.split(/[ ,;]+/).filter(Boolean), limits: { maxFileSize: 4194304, maxTotal: 16777216, maxFiles: 20 },
+        openedAt: new Date().toISOString(), round: 0, collecting: false, dir: win(RECO, "2026-11-06", r.activity.trim()),
+        students: pueden.map((s) => recoAlumno(s, "ready")) };
+      recoList = [c, ...recoList];
+      setTimeout(() => window.__emit("aula:collections", collectionsView()), 20);
+      return c;
+    }),
+    Collect: call("Collect", (id, keys) => {
+      const c = recoList.find((x) => x.id === id);
+      if (!c) return new Error("aula:collectGone: esa recolección ya no está abierta");
+      c.round++;
+      for (const s of c.students) if (!keys.length || keys.includes(s.key)) s.status = "queued";
+      return c;
+    }),
+    OpenCollectionFolder: call("OpenCollectionFolder", null),
+    SaveCollectionAs: call("SaveCollectionAs", () => win("C:", "Users", "profe", "Desktop", "LAB3-PC07 (alumno07)")),
     SetRestriction: call("SetRestriction", restrictions),
     ClearRestriction: call("ClearRestriction", restrictions),
     ClearAllRestrictions: call("ClearAllRestrictions", restrictions),

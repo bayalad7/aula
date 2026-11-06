@@ -266,6 +266,7 @@
     if (nueva === "simulada") pintarSimulada();
     if (nueva === "participacion") pintarParticipacion(participacion);
     if (nueva === "archivos") cargarArchivos(); // las plantillas pudieron cambiar en el Explorador
+    if (nueva === "archivos") ponerPestanaArchivos(pagina === "recolecciones" ? "recolecciones" : pagina === "enviar" ? "enviar" : pestanaArchivos);
     $("contenido").scrollTop = 0;
     if (nueva === "ayuda") mostrarAyuda(pagina ? decodeURIComponent(pagina) : "", seccion ? decodeURIComponent(seccion) : "");
   }
@@ -476,7 +477,7 @@
       ["canBroadcast", "ficha.transmision", "transmitir"], ["canAppBlock", "ficha.apps", "candado"], ["canWebFilter", "ficha.web", "filtro"],
       ["canPower", "ficha.energia", "energia"], ["canRemote", "ficha.control", "control"], ["canSnapshot", "ficha.captura", "captura"],
       ["canHand", "ficha.mano", "mano"], ["canMessage", "ficha.mensajes", "mensaje"], ["canTimer", "ficha.temporizador", "reloj"],
-      ["canFiles", "ficha.archivos", "archivo"]];
+      ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
       const si = !!s[c];
       const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
@@ -1093,6 +1094,7 @@
     });
   }
   $("aj-capturas-abrir").addEventListener("click", () => api.OpenSnapshotFolder("").catch(fallo));
+  $("aj-reco-abrir").addEventListener("click", () => api.OpenCollectionFolder("", "").catch(fallo));
 
   // El nombre del botón de la miniatura incluye el texto que se ve
   // («Esperando imagen…»), para que quien lo dice en voz alta lo encuentre.
@@ -1646,6 +1648,7 @@
     radioA.disabled = n === 0;
     if (n === 0 && radioA.checked) document.querySelector('input[name="archivos-destino"][value="todos"]').checked = true;
     actualizarAccionesArchivos();
+    actualizarAccionesReco();
   }
   const destinoCodigo = () => (document.querySelector('input[name="codigo-destino"]:checked').value === "seleccion" ? destinos() : []);
   const destinoArchivos = () => (document.querySelector('input[name="archivos-destino"]:checked').value === "seleccion" ? destinos() : []);
@@ -1969,10 +1972,171 @@
   }
   const cargarArchivos = () => api.Files().then(pintarArchivos, () => {});
 
+  // --- Recolecciones (docs/protocol.md §5.21; prompt 10.10) -----------------------------------
+  // La pestaña «Recolecciones» de Archivos. «Crear carpeta en los equipos» abre una recolección
+  // (fecha de hoy y actividad): cada alumno que puede recibe Documentos\Aula\recolecciones\
+  // <fecha>\<actividad>. «Recoger» trae lo que guardó ahí, de 4 en 4, y la consola lo guarda al
+  // llegar en tu Documentos\Aula\recolecciones\… por alumno (reglas 60-65). Por alumno: qué
+  // llegó, cuándo, «Abrir», «Guardar como…» y «Recoger otra vez». Go manda estados.
+  let pestanaArchivos = "enviar";
+  let recolecciones = { list: [], folder: "", folderError: "", today: "", limits: { maxFileSize: 0, maxTotal: 0, maxFiles: 0 } };
+  const ESTADO_RECO = "reco.estado."; // + collect.Status
+  const MOTIVO_RECO = "reco.motivo."; // + razón en camelCase (protocolo o de la consola)
+  const INSIGNIA_RECO = { waiting: "", ready: "info", queued: "", collecting: "info", collected: "conectado", empty: "advertencia", failed: "error" };
+  const motivoReco = (r) => (typeof TX[MOTIVO_RECO + camel(r)] === "string" ? T(MOTIVO_RECO + camel(r)) : errorAlumno(r).titulo);
+  const rutaWin = (partes) => partes.filter(Boolean).join("\\");
+  const nombreAlumno = (s) => (s.username ? T("reco.alumno", { equipo: s.hostname, usuario: s.username }) : s.hostname);
+
+  function ponerPestanaArchivos(p) {
+    pestanaArchivos = p;
+    for (const b of $$("[data-archivos-pestana]")) b.setAttribute("aria-pressed", String(b.dataset.archivosPestana === p));
+    $("archivos-panel-enviar").hidden = p !== "enviar";
+    $("archivos-panel-recolecciones").hidden = p !== "recolecciones";
+    if (p === "recolecciones") cargarRecolecciones();
+  }
+  for (const b of $$("[data-archivos-pestana]")) b.addEventListener("click", () => ponerPestanaArchivos(b.dataset.archivosPestana));
+
+  // La ruta que verá el alumno, mientras el profesor escribe la actividad.
+  function pintarRutaReco() {
+    const act = $("reco-actividad").value.trim();
+    $("reco-ruta").textContent = T("reco.ruta", { ruta: rutaWin(["Documentos", "Aula", "recolecciones", recolecciones.today, act || T("reco.actividadSinNombre")]) });
+    const l = recolecciones.limits;
+    $("reco-tipos-ayuda").textContent = T("reco.tiposAyuda", { archivos: l.maxFiles, tamano: tamano(l.maxFileSize), total: tamano(l.maxTotal) });
+    actualizarAccionesReco();
+  }
+  function actualizarAccionesReco() {
+    const pueden = conectados().filter((s) => s.canCollect).length;
+    const act = $("reco-actividad").value.trim();
+    let motivo = "";
+    if (recolecciones.folderError) motivo = T("reco.motivoSinCarpeta");
+    else if (!pueden) motivo = conectados().length ? T("reco.motivoNadiePuede") : T("codigo.motivoSinAlumnos");
+    else if (!act) motivo = T("reco.motivoSinActividad");
+    $("reco-crear").disabled = !act || !!recolecciones.folderError;
+    $("reco-motivo").textContent = motivo;
+    for (const b of $$(".recoleccion .reco-recoger, .recoleccion .reco-faltantes")) {
+      if (!b.dataset.ocupado) b.disabled = !pueden || b.dataset.nada === "true";
+    }
+    for (const b of $$(".recoleccion .otra-vez")) b.disabled = !conectados().some((s) => s.canCollect && s.id === b.dataset.sesion);
+  }
+  $("reco-actividad").addEventListener("input", pintarRutaReco);
+  $("reco-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const b = $("reco-crear");
+    if (b.disabled) return;
+    ocupado(b, true);
+    api.OpenCollection({ activity: $("reco-actividad").value, patterns: $("reco-tipos").value }).then((s) => {
+      toast("exito", P("reco.creada", s.students.length, { actividad: s.activity }), T("reco.creadaTexto"));
+      $("reco-actividad").value = "";
+      cargarRecolecciones();
+    }, fallo).finally(() => { ocupado(b, false); pintarRutaReco(); });
+  });
+  $("reco-carpeta-todas").addEventListener("click", () => api.OpenCollectionFolder("", "").catch(fallo));
+
+  // «Recoger» de una recolección: todos, los que faltan o uno.
+  function recoger(c, keys, b) {
+    if (b) { ocupado(b, true); b.dataset.ocupado = "1"; }
+    api.Collect(c.id, keys).then((s) => {
+      const n = keys.length || s.students.filter((x) => x.status === "queued" || x.status === "collecting").length;
+      toast("exito", P("reco.recogiendo", n, { actividad: c.activity }), T("reco.recogiendoTexto"));
+    }, fallo).finally(() => { if (b) { ocupado(b, false); delete b.dataset.ocupado; } actualizarAccionesReco(); });
+  }
+
+  function pintarRecolecciones(v) {
+    if (!v) return;
+    recolecciones = v;
+    const lista = v.list || [];
+    $("reco-vacio").hidden = lista.length > 0;
+    const enCurso = lista.filter((c) => c.collecting).length;
+    $("reco-pestana-n").hidden = enCurso === 0;
+    $("reco-pestana-n").textContent = enCurso ? T("reco.enCursoInsignia") : "";
+    const tpl = $("t-recoleccion").content.firstElementChild;
+    const tplFila = $("t-reco-fila").content.firstElementChild;
+    const etiquetas = { quien: "reco.colAlumno", estado: "reco.colEstado", llego: "reco.colLlego", cuando: "reco.colCuando" };
+    $("reco-lista").replaceChildren(...lista.map((c) => {
+      const card = tpl.cloneNode(true);
+      card.dataset.recoleccion = c.id;
+      const titulo = T("reco.titulo", { actividad: c.activity, fecha: c.date });
+      card.querySelector(".reco-titulo").textContent = titulo;
+      const alumnosC = c.students || [];
+      const listos = alumnosC.filter((s) => s.status === "collected").length;
+      const faltan = alumnosC.filter((s) => s.status !== "collected" && s.status !== "empty");
+      card.querySelector(".reco-resumen").textContent = c.round
+        ? T("reco.resumen", { n: listos, total: alumnosC.length, ronda: c.round }) : P("reco.resumenAbierta", alumnosC.length);
+      const pats = (c.patterns || []).join(", ");
+      card.querySelector(".reco-nota").textContent = T("reco.nota", {
+        ruta: rutaWin(["Documentos", "Aula", "recolecciones", c.date, c.activity]), tipos: pats || T("reco.todo") });
+      const rec = card.querySelector(".reco-recoger");
+      rec.querySelector("span").textContent = c.round ? T("reco.recogerOtra") : T("reco.recoger");
+      rec.setAttribute("aria-label", T("reco.recogerDe", { accion: rec.querySelector("span").textContent, titulo }));
+      rec.addEventListener("click", () => recoger(c, [], rec));
+      const falt = card.querySelector(".reco-faltantes");
+      falt.textContent = P("reco.recogerFaltantes", faltan.length);
+      falt.hidden = !c.round || faltan.length === 0;
+      falt.dataset.nada = String(faltan.length === 0);
+      falt.addEventListener("click", () => recoger(c, faltan.map((s) => s.key), falt));
+      if (c.collecting) { rec.disabled = true; falt.disabled = true; rec.dataset.ocupado = "1"; falt.dataset.ocupado = "1"; }
+      const abrir = card.querySelector(".reco-abrir");
+      abrir.querySelector("span").textContent = T("reco.abrirCarpeta");
+      abrir.setAttribute("aria-label", T("reco.abrirCarpetaDe", { titulo }));
+      abrir.addEventListener("click", () => api.OpenCollectionFolder(c.id, "").catch(fallo));
+      card.querySelector(".reco-filas").replaceChildren(...alumnosC.map((s) => {
+        const tr = tplFila.cloneNode(true);
+        const quien = nombreAlumno(s);
+        const td = (cls, contenido) => {
+          const x = tr.querySelector("." + cls);
+          x.dataset.etiqueta = T(etiquetas[cls]);
+          if (typeof contenido === "string") x.textContent = contenido;
+          else x.replaceChildren(contenido);
+        };
+        td("quien", el("span", "", quien));
+        if (s.simulated) tr.querySelector(".quien").append(" ", insignia("simulado", "simulado", T("alumnos.simulado")));
+        let estado = T(ESTADO_RECO + s.status);
+        if (s.status === "failed" && s.reason) estado = T("reco.estadoFallo", { motivo: motivoReco(s.reason) });
+        td("estado", insignia(INSIGNIA_RECO[s.status] || "", "", estado));
+        // Qué llegó: los archivos de la última ronda guardada y lo que no se recogió.
+        const llego = el("div", "pila-mini");
+        const files = s.files || [];
+        if (files.length) {
+          const total = files.reduce((n, f) => n + f.size, 0);
+          llego.append(el("span", "", files.length === 1 ? T("reco.unArchivo", { nombre: files[0].path, tamano: tamano(total) })
+            : T("reco.variosArchivos", { n: files.length, tamano: tamano(total) })));
+          if (files.length > 1) llego.append(el("span", "pequeno suave", files.map((f) => f.path).join(", ")));
+        } else llego.append(el("span", "suave", "—"));
+        if (s.failedFiles) llego.append(el("span", "pequeno suave", P("reco.noGuardados", s.failedFiles)));
+        for (const k of s.skipped || []) llego.append(el("span", "pequeno suave", T("reco.omitido", { ruta: k.path, motivo: motivoReco(k.reason) })));
+        td("llego", llego);
+        td("cuando", s.at && !s.at.startsWith("0001") ? new Date(s.at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "—");
+        const ab = tr.querySelector(".abrir");
+        ab.querySelector("span").textContent = T("reco.abrir");
+        ab.setAttribute("aria-label", T("reco.abrirDe", { alumno: quien }));
+        ab.hidden = !files.length;
+        ab.addEventListener("click", () => api.OpenCollectionFolder(c.id, s.key).catch(fallo));
+        const gu = tr.querySelector(".guardar");
+        gu.querySelector("span").textContent = T("reco.guardarComo");
+        gu.setAttribute("aria-label", T("reco.guardarComoDe", { alumno: quien }));
+        gu.hidden = !files.length;
+        gu.addEventListener("click", () => api.SaveCollectionAs(c.id, s.key, T("reco.dialogo", { alumno: quien })).then((dest) => {
+          if (dest) toast("exito", T("reco.guardado", { alumno: quien }), dest);
+        }, fallo));
+        const ot = tr.querySelector(".otra-vez");
+        ot.textContent = T("reco.otraVez");
+        ot.setAttribute("aria-label", T("reco.otraVezDe", { alumno: quien }));
+        ot.hidden = !c.round;
+        ot.dataset.sesion = s.session;
+        ot.addEventListener("click", () => recoger(c, [s.key], ot));
+        return tr;
+      }));
+      return card;
+    }));
+    pintarRutaReco();
+  }
+  const cargarRecolecciones = () => api.Collections().then(pintarRecolecciones, () => {});
+
   // --- Aula simulada ---------------------------------------------------------------------
   const FALLAS =[["none", "simulada.fallaNinguna"], ["slow", "simulada.fallaLenta"], ["noack", "simulada.fallaNoAcusa"], ["disconnected", "simulada.fallaDesconectado"]];
   const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla", "screen.snapshot": "simulada.capCaptura",
-    "hand": "simulada.capMano", "msg.student": "simulada.capMensajes", "file.push": "simulada.capArchivos" };
+    "hand": "simulada.capMano", "msg.student": "simulada.capMensajes", "file.push": "simulada.capArchivos",
+    "file.collect": "simulada.capRecoger" };
   function pintarSimulacion(v) {
     simulada = v;
     $("f-simulada").hidden = !v.active;
@@ -2711,6 +2875,7 @@
       : T(AT + (hotkey.reason || "Inactivo"), { combo: hotkey.combo });
     api.InstallerInfo().then((i) => { $("aj-datos").textContent = datosInstalador(i); });
     pintarCarpetaCapturas();
+    api.Collections().then((c) => { $("aj-reco-ruta").textContent = c.folder || T("reco.motivoSinCarpeta"); $("aj-reco-abrir").disabled = !c.folder; }, () => {});
     aplicarTema(tema);
     elegirPestana($("tab-" + (pestana || "clase")), false);
     $("ajustes").showModal();
@@ -2810,6 +2975,7 @@
   rt.EventsOn(ev.PARTICIPATION, alParticipar);
   rt.EventsOn(ev.TIMER, alTemporizador);
   rt.EventsOn(ev.FILES, pintarArchivos);
+  rt.EventsOn(ev.COLLECTIONS, pintarRecolecciones);
   rt.EventsOn(ev.CONNECT_CHECK, pintarComprobacion);
   rt.EventsOn(ev.CLASS, (v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
 
@@ -2820,4 +2986,5 @@
   for (const b of $$("[data-modo]")) b.setAttribute("aria-pressed", String(b.dataset.modo === modo));
   api.View().then((v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
   cargarArchivos();
+  cargarRecolecciones();
 })();

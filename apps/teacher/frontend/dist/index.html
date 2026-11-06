@@ -223,8 +223,14 @@
 
           <!-- ============ Archivos (prompt 10.9): módulo propio del menú ============ -->
           <section data-vista-de="archivos" aria-labelledby="h-archivos" class="vista__seccion" hidden>
-            <header class="vista__cabecera"><h1 id="h-archivos" data-t="archivos.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
-            <div class="vista__cuerpo pila">
+            <header class="vista__cabecera"><h1 id="h-archivos" data-t="archivos.titulo"></h1>
+              <!-- Enviar | Recolecciones (prompt 10.10): lo que sale hacia los alumnos y lo que se recoge de ellos. -->
+              <div class="segmentado" role="group" data-t-aria-label="archivos.pestanas">
+                <button type="button" data-archivos-pestana="enviar" aria-pressed="true" aria-controls="archivos-panel-enviar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="archivos.pestanaEnviar"></span></button>
+                <button type="button" data-archivos-pestana="recolecciones" aria-pressed="false" aria-controls="archivos-panel-recolecciones"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="archivos.pestanaRecolecciones"></span><span class="insignia insignia--info" id="reco-pestana-n" hidden></span></button>
+              </div>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
+            <div class="vista__cuerpo pila" id="archivos-panel-enviar">
               <div class="codigo-rejilla">
                 <section class="tarjeta" aria-labelledby="h-archivos-enviar">
                   <div class="tarjeta__cabecera"><h2 id="h-archivos-enviar" data-t="archivos.enviarTitulo"></h2></div>
@@ -305,6 +311,31 @@
                   </table>
                 </div>
               </section>
+            </div>
+
+            <!-- Recolecciones (prompt 10.10; reglas 60-65): crear la carpeta en los equipos y recoger. -->
+            <div class="vista__cuerpo pila" id="archivos-panel-recolecciones" hidden>
+              <section class="tarjeta" aria-labelledby="h-reco-nueva">
+                <div class="tarjeta__cabecera"><h2 id="h-reco-nueva" data-t="reco.nueva"></h2>
+                  <button type="button" class="btn btn--sm" id="reco-carpeta-todas"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="reco.abrirTodas"></span></button></div>
+                <form id="reco-form" class="tarjeta__cuerpo pila" novalidate>
+                  <div class="fila">
+                    <label class="campo crece"><span class="campo__etiqueta" data-t="reco.actividad"></span>
+                      <input id="reco-actividad" maxlength="80" autocomplete="off" data-t-placeholder="reco.actividadEjemplo" aria-describedby="reco-ruta"></label>
+                    <label class="campo crece"><span class="campo__etiqueta" data-t="reco.tipos"></span>
+                      <input id="reco-tipos" maxlength="200" autocomplete="off" data-t-placeholder="reco.tiposEjemplo" aria-describedby="reco-tipos-ayuda"></label>
+                  </div>
+                  <p class="pequeno suave" id="reco-ruta" aria-live="polite"></p>
+                  <p class="campo__ayuda" id="reco-tipos-ayuda"></p>
+                  <div class="grupo-botones">
+                    <button type="submit" class="btn btn--primario" id="reco-crear"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="reco.crear"></span></button>
+                  </div>
+                  <p class="pequeno suave" id="reco-motivo" aria-live="polite"></p>
+                  <p class="pequeno suave" data-t="reco.privacidad"></p>
+                </form>
+              </section>
+              <p class="suave" id="reco-vacio" data-t="reco.vacio"></p>
+              <div class="pila" id="reco-lista"></div>
             </div>
           </section>
 
@@ -861,6 +892,11 @@
           <button type="button" class="btn" id="aj-capturas-abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="captura.abrirCarpeta"></span></button>
         </div>
         <div class="ajuste">
+          <div class="ajuste__texto"><strong data-t="ajustes.recolecciones"></strong><span data-t="ajustes.recoleccionesAyuda"></span>
+            <span class="ruta mono pequeno" id="aj-reco-ruta"></span></div>
+          <button type="button" class="btn" id="aj-reco-abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="reco.abrirCarpeta"></span></button>
+        </div>
+        <div class="ajuste">
           <div class="ajuste__texto"><span class="con-info"><strong data-t="instalador.titulo"></strong><button type="button" class="info-boton" data-info="puertos" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></span><span data-t="instalador.ayuda"></span></div>
           <div class="bloque-codigo ajuste__ancho">
             <div class="bloque-codigo__cabecera"><span data-t="instalador.estaConsola"></span>
@@ -929,6 +965,38 @@
     <tr>
       <td class="celda-principal que"></td><td class="destino"></td><td class="tamano"></td><td class="veces"></td><td class="hora"></td>
       <td><div class="grupo-botones grupo-botones--fin"><button type="button" class="btn btn--sm reenviar"></button></div></td>
+    </tr>
+  </template>
+  <template id="t-recoleccion">
+    <section class="tarjeta recoleccion">
+      <div class="tarjeta__cabecera">
+        <h2 class="reco-titulo"></h2>
+        <span class="resumen reco-resumen" aria-live="polite"></span>
+        <div class="grupo-botones grupo-botones--fin">
+          <button type="button" class="btn btn--primario btn--sm reco-recoger"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#archivo"/></svg><span></span></button>
+          <button type="button" class="btn btn--sm reco-faltantes"></button>
+          <button type="button" class="btn btn--sm btn--fantasma reco-abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span></span></button>
+        </div>
+      </div>
+      <p class="tarjeta__cuerpo pequeno suave reco-nota"></p>
+      <div class="tabla-adaptable">
+        <table class="tabla">
+          <thead><tr>
+            <th data-t="reco.colAlumno"></th><th data-t="reco.colEstado"></th><th data-t="reco.colLlego"></th><th data-t="reco.colCuando"></th>
+            <th><span class="solo-lector" data-t="comun.acciones"></span></th>
+          </tr></thead>
+          <tbody class="reco-filas"></tbody>
+        </table>
+      </div>
+    </section>
+  </template>
+  <template id="t-reco-fila">
+    <tr>
+      <td class="celda-principal quien"></td><td class="estado"></td><td class="llego"></td><td class="cuando"></td>
+      <td><div class="grupo-botones grupo-botones--fin">
+        <button type="button" class="btn btn--sm btn--fantasma abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span></span></button>
+        <button type="button" class="btn btn--sm btn--fantasma guardar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span></span></button>
+        <button type="button" class="btn btn--sm otra-vez"></button></div></td>
     </tr>
   </template>
   <template id="t-lote-captura">

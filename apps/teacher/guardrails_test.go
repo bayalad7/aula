@@ -128,8 +128,10 @@ func TestSimulatedStudentsOnlyDeclareHarmlessCapabilities(t *testing.T) {
 	// timer only shows a countdown in the window (rule 54; prompt 10.8).
 	// file.push is acknowledged with an in-memory folder: nothing is written
 	// (rule 59; prompt 10.9).
+	// file.collect hands in their last code from memory: no disk is read and
+	// nothing changes on a computer (rule 65; prompt 10.10).
 	allowed := []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-		protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush}
+		protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect}
 	for _, c := range simclass.Capabilities {
 		if !slices.Contains(allowed, c) {
 			t.Errorf("simulated students may declare %q; review docs/privacidad.md (rules 32–35) before allowing it", c)

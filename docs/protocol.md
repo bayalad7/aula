@@ -335,7 +335,7 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `code.share` | P → A | `code.view` | `snippet_id`, `exercise`?, `title`, `lang`, `content`, `mode` | `code.ack` o `error` |
 | `code.ack` | A → P | — | `ref_id`, `snippet_id` | — |
 | `code.clear` | P → A | `code.view` | `{}` | `code.ack` o `error` |
-| `msg.show` | P → A | `msg.show` | `text`, `level`, `reply_to`? | `msg.ack` o `error` |
+| `msg.show` | P → A | `msg.show` | `text`, `level`, `reply_to`?, `personal`? | `msg.ack` o `error` |
 | `msg.ack` | A → P | — | `ref_id` | — |
 | `screen.thumb.start` | P → A | `screen.thumb` | `interval_ms`, `quality`, `max_width` | `screen.thumb.frame` periódicos o `error` |
 | `screen.thumb.frame` | A → P | — | `ref_id`, `seq`, `width`, `height`, `jpeg` | — |
@@ -413,6 +413,7 @@ Payload `{}`. El agente vacía el overlay de código y responde `code.ack`.
 | `text` | string | 1–2000 caracteres, texto plano (el agente no interpreta HTML ni Markdown). |
 | `level` | string | `info` o `warning`. |
 | `reply_to` | string | Opcional (v0.8, §5.18). `message_id` del `msg.student` al que responde. La consola solo lo pone en un aviso a **un** alumno, el autor de ese mensaje. El agente muestra el aviso como «Respuesta a tu mensaje» con la cita de lo que escribió; si no conoce ese `message_id`, lo muestra como un aviso normal. Un agente anterior lo ignora. |
+| `personal` | booleano | Opcional (v0.8, prompt 10.7). `true`: el aviso va **solo a este alumno** («Mensaje privado» de la ficha y «Responder» de Participación); el agente lo titula «Mensaje para ti». La consola solo lo pone en un `msg.show` enviado a **una** sesión, nunca en uno difundido (`docs/privacidad.md` regla 53). Ausente o `false`: un aviso como los demás. Un agente anterior lo ignora y lo muestra como un aviso normal (le llega igual solo a él). |
 
 ### 5.5 `msg.ack` (A → P)
 
@@ -1167,6 +1168,8 @@ emisor verifica el tamaño final de la envoltura.
   causó una pausa (el agente solo sabe *que* la hubo).
 - De `screen.snapshot.*` se registran `snapshot_id`, `part`/`parts`, tamaños, dimensiones y el
   resultado. **Nunca** `data`, ni la ruta donde la consola guardó la imagen.
+- De un `msg.show` `personal` se registran el equipo, el `id` y la longitud; **nunca** el texto.
+  En «Últimos envíos» la consola lo etiqueta «Mensaje privado a <equipo>», sin el texto.
 - De `hand.*` y `msg.student*` se registran `hand_id`, `message_id`, `by`, la longitud y el
   equipo. **Nunca** `text` ni `note`, ni el `text` de la respuesta (`msg.show`).
 - `hello` revela al profesor el usuario y el equipo del alumno. Es intencional (monitoreo

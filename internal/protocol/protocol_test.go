@@ -84,7 +84,8 @@ func samplePayloads() []Payload {
 		HandLower{HandID: testRefID, By: HandByTeacher},
 		MsgStudent{MessageID: testRefID, Text: "¿El ejercicio 3 es para hoy?"},
 		MsgStudentAck{RefID: testSnippetID, MessageID: testRefID},
-		MsgShow{Text: "Sí, antes de las 12.", Level: LevelInfo, ReplyTo: testRefID},
+		MsgShow{Text: "Sí, antes de las 12.", Level: LevelInfo, ReplyTo: testRefID, Personal: true},
+		MsgShow{Text: "Revisa la línea 12", Level: LevelWarning, Personal: true},
 	}
 }
 

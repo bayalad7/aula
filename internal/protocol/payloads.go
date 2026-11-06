@@ -281,6 +281,9 @@ type MsgShow struct {
 	// ReplyTo is the message_id of the msg.student this notice answers
 	// (§5.18). Only in a notice to that message's author.
 	ReplyTo string `json:"reply_to,omitempty"`
+	// Personal marks a notice sent to this student only (§5.4, prompt 10.7):
+	// the window titles it «Mensaje para ti». An older agent ignores it.
+	Personal bool `json:"personal,omitempty"`
 }
 
 // MessageType implements Payload.

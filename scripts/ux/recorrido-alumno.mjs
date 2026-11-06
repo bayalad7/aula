@@ -85,6 +85,10 @@ await f("54-mano-oscuro", "mano", { oscuro: true });
 await f("55-mano-angosta", "mano", { w: 480, h: 360 });
 await f("56-compacto-mano", "mano", { w: 380, h: 80, pasos: click("#compactar") });
 
+// Mensaje privado del profesor (prompt 10.7)
+await f("57-aviso-privado", "aviso-privado");
+await f("58-aviso-privado-oscuro", "aviso-privado", { oscuro: true });
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

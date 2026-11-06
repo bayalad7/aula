@@ -350,6 +350,12 @@
         const cita = node.querySelector(".notice-cita");
         cita.hidden = !propio;
         cita.textContent = propio ? T("aviso.tuMensaje", { texto: propio.text }) : "";
+      } else if (n.personal) {
+        // Un mensaje privado del profesor (prompt 10.7): solo le llegó a este alumno.
+        node.dataset.personal = "true";
+        node.querySelector("use").setAttribute("href", "sistema/iconos.svg#sobre");
+        node.querySelector(".toast__titulo").textContent = T("aviso.personal");
+        node.querySelector(".notice-text").textContent = n.text;
       } else {
         node.querySelector(".toast__titulo").textContent = T(AV + (n.level === "warning" ? "warning" : "info"));
         node.querySelector(".notice-text").textContent = n.text;

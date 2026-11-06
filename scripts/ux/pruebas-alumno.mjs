@@ -298,6 +298,23 @@ await caso("mano-compacto", "conectado", async (p) => {
   ok(!m[0] && m[1] === "redactar-texto", "«Mensaje al profesor» no abrió la tarjeta: " + m.join());
 }, { w: 380, h: 80 });
 
+// Mensaje privado (prompt 10.7): se distingue de un aviso a todos, no quita el foco y no es banda.
+await caso("aviso-privado", "un-codigo", async (p) => {
+  await p.focus("#snippets > li .copy");
+  await emitir(p, "aula:notices", { notices: [
+    { id: "m-1", level: "info", text: "Para todos", at: ahora() },
+    { id: "m-p", level: "info", text: "Solo para ti", at: ahora(), personal: true }] });
+  await sleep(150);
+  const a = await p.evaluate(() => [...document.querySelectorAll("#notices .toast")].map((t) => ({
+    titulo: t.querySelector(".toast__titulo").textContent, icono: t.querySelector("use").getAttribute("href"),
+    personal: t.dataset.personal === "true", enBandas: !!t.closest(".bandas") })));
+  const priv = a.find((x) => x.personal);
+  ok(priv && priv.titulo === "Mensaje para ti" && priv.icono.endsWith("#sobre"), "privado: " + JSON.stringify(priv));
+  ok(a.find((x) => !x.personal).titulo === "Aviso", "el aviso a todos cambió de título");
+  ok(!priv.enBandas, "el privado es una banda");
+  ok(await p.evaluate(() => document.activeElement.classList.contains("copy")), "el privado le quitó el foco al alumno");
+});
+
 // A 480×360, un solo aviso a la vista.
 await caso("avisos-angosta", "muchos-avisos", async (p) => {
   ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 1), "a 480 se ve más de un aviso");

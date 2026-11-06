@@ -72,6 +72,7 @@ window.AulaTextos = Object.freeze({
   "aviso.snapshot.titulo": "Captura de pantalla",
   "aviso.snapshot.texto": "{profesor} (canal {canal}) tomó una captura de tu pantalla ({hora}).",
   "aviso.respuesta": "Respuesta a tu mensaje",
+  "aviso.personal": "Mensaje para ti",
   "aviso.tuMensaje": "Tú escribiste: «{texto}»",
   "control.finTitulo": "Control remoto terminado",
   "control.finTexto": "{profesor} dejó de controlar tu equipo. El mouse y el teclado son solo tuyos otra vez.",

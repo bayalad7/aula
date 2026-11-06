@@ -46,7 +46,7 @@
     content: "public class Hola {\n    public static void main(String[] args) {\n        for (int i = 0; i < 3; i++) {\n            System.out.println(\"Hola \" + i);\n        }\n    }\n}\n" };
   const snippets = { "un-codigo": [py], "varios-codigos": [py, js, java], "pantalla-vista": [py], transmision: [],
     control: [py], "control-pausa": [py], captura: [py], "captura-vista": [py],
-    restricciones: [py], "aviso-info": [py], "aviso-warning": [py], "varios-avisos": [py, js, java], "muchos-avisos": [py] }[scene] || [];
+    restricciones: [py], "aviso-info": [py], "aviso-privado": [py], "aviso-warning": [py], "varios-avisos": [py, js, java], "muchos-avisos": [py] }[scene] || [];
 
   const aviso = (id, level, text) => ({ id, level, text, at: ahora });
   const captura = (id) => ({ id, level: "warning", text: "", kind: "snapshot", at: "2026-11-05T10:42:06-06:00" });
@@ -60,6 +60,9 @@
     // El profesor tomó una captura (docs/privacidad.md regla 44): Go manda el tipo, no la frase.
     captura: [captura("c-1")],
     "captura-vista": [captura("c-1")],
+    // Un mensaje privado del profesor (prompt 10.7), junto a un aviso a todos para distinguirlos.
+    "aviso-privado": [aviso("m-1", "info", "En 10 minutos revisamos el ejercicio 1 todos juntos."),
+      Object.assign(aviso("m-p", "info", "Revisa la línea 3: el caso base debe devolver 1."), { personal: true })],
   }[scene] || [];
 
   const restrictions = scene === "restricciones" || scene === "todo" ? {

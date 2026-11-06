@@ -35,6 +35,9 @@ Si su equipo lo permite, la ficha tiene el botón **Tomar control**: ves su pant
 manejas su mouse y su teclado para ayudarlo (ver
 [Tareas frecuentes](tareas-frecuentes#ayudar-a-un-alumno-tomando-el-control)).
 
+Con **Mensaje privado** le escribes solo a él: le llega como «Mensaje para ti» y ningún otro
+alumno lo ve (ver [Tareas frecuentes](tareas-frecuentes#mandar-un-mensaje-privado-a-un-alumno)).
+
 Con **Tomar captura** guardas una foto de su pantalla: primero ves la vista previa y solo se
 guarda en tu equipo si pulsas **Guardar**. Funciona también con los alumnos simulados y mientras lo
 controlas (ver [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno)).

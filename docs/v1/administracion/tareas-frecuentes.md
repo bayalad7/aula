@@ -30,6 +30,28 @@ pulsa **Detener** en la franja. Por ahora, solo equipos con Windows pueden recib
 
 En [Código › Últimos envíos](codigo#últimos-envíos) ves quién ya lo vio.
 
+## Mandar un mensaje privado a un alumno
+
+Para una pista o una corrección que solo le sirve a uno, sin que lo vea el resto:
+
+1. En **Alumnos**, abre su ficha (el botón de información al final de su fila).
+2. Pulsa **Mensaje privado**, escribe y elige **Información** o **Advertencia**.
+3. Pulsa **Enter** (o **Enviar**). **Shift+Enter** pasa a otra línea y **Esc** cancela.
+
+Le aparece en la esquina como **«Mensaje para ti»**, sin quitarle el teclado; ningún otro alumno
+lo recibe. Debajo del botón ves «Enviado… · ya lo vio» cuando su equipo lo mostró, y en
+[Código › Últimos envíos](codigo#últimos-envíos) aparece como «Mensaje privado a <equipo>», sin
+el texto: así no queda a la vista si estás transmitiendo tu pantalla. Funciona también con los
+alumnos simulados.
+
+**Mensaje privado** también está en la pantalla en grande de Miniaturas y en la vista del control
+remoto, junto a **Tomar captura**. Mientras lo escribes, tu teclado vuelve a la consola: lo que
+tecleas no llega a su equipo. Al enviarlo, haz clic en su pantalla para seguir manejándolo; el
+control nunca se detiene.
+
+Si el alumno te escribió desde su equipo, **Responder** en [Participación](participacion) hace lo
+mismo y además cita su mensaje.
+
 ## Bloquear aplicaciones o sitios
 
 1. Pulsa **Restricciones** y elige **Sitios web** o **Aplicaciones**.

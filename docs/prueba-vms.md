@@ -1155,3 +1155,19 @@ sintéticas en el escritorio de quien prueba.
 | **HM-F** Modo servicio | En la VM con servicio, cierra la ventana de Aula con la X y vuelve a abrirla desde el área de notificación; levanta la mano. | Funciona igual: el botón llega al servicio por el canal local. Con la ventana cerrada, la respuesta del profesor solo marca el icono. |
 
 **Para aceptar** bastan HM-A, HM-B y HM-C en ✅.
+
+## 19. Mensaje privado a un alumno (10.7)
+
+Comprueba que un mensaje privado le llega solo al alumno elegido, distinguido de los avisos a
+todos, sin quitarle el foco, y que su texto no queda en los registros ni en «Últimos envíos»
+(`docs/privacidad.md`, regla 53). Con las dos VMs de §18.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **PM-A** Solo al elegido (**aceptación**) | Ficha de la VM 1 › **Mensaje privado**, escribe y Enter. Mira las dos VMs. | La VM 1 muestra en la esquina «Mensaje para ti» con el sobre, sin quitarle el foco al Bloc de notas. La VM 2 **no** recibe nada (ni aviso ni marca en el icono). |
+| **PM-B** Distinto del aviso a todos (**aceptación**) | Manda además un **Aviso** a todos desde la barra. | En la VM 1 se ven los dos: «Aviso» y «Mensaje para ti», cada uno con su icono. |
+| **PM-C** Sin el texto a la vista (**aceptación**) | Revisa Código › Últimos envíos, el log de la consola y `aula-agente.log` de la VM 1. | El envío dice «Mensaje privado a <equipo>» con «1 de 1 confirmado» y sin el texto; los logs dicen «private notice» con equipo y longitud, nunca el texto. |
+| **PM-E** Durante el control | Toma el control de la VM 1 con el Bloc de notas al frente; en la vista, **Mensaje privado**, escribe «hola» y Enter. | En el Bloc de notas no aparece «hola»; la VM 1 muestra «Mensaje para ti»; el control sigue (franja y aviso fijo) y, tras un clic en su pantalla, vuelves a escribir en su Bloc de notas. |
+| **PM-D** Ventana cerrada | Cierra Aula en la VM 1 y manda otro privado. | La ventana no aparece; el icono se marca y al abrirla está el mensaje. |
+
+**Para aceptar** bastan PM-A, PM-B y PM-C en ✅.

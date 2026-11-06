@@ -369,6 +369,19 @@ nada de esto trae su ventana al frente ni le quita el foco (prompt 19). Lo que l
     alumnos nunca los ven. La respuesta va solo a ese alumno (`msg.show` con `reply_to`), y el
     acuse dice «llegó a la consola», no «el profesor lo leyó».
 
+## Mensaje privado a un alumno (v0.8)
+
+El profesor escribe a **un** alumno desde su ficha («Mensaje privado»), o le responde desde
+Participación. Es un `msg.show` con `personal` (`docs/protocol.md` §5.4): no observa ni controla
+el equipo, así que no lleva banda; la ventana lo muestra en la esquina como «Mensaje para ti»,
+con `notify`, sin quitar el foco.
+
+53. **Solo lo recibe su destinatario, y su texto no queda a la vista.** La consola lo manda a una
+    sola sesión y nunca lo difunde; un agente anterior, que no conoce `personal`, lo muestra como
+    un aviso normal, pero igual solo a él. Los registros llevan el equipo, el `id` y la longitud,
+    **nunca** el texto (regla 5). En «Últimos envíos» la consola lo etiqueta «Mensaje privado a
+    <equipo>», sin el texto, para que no quede a la vista si el profesor transmite su pantalla.
+
 ## Pendiente para etapas futuras
 
 - Linux y macOS (incluida la recepción de la transmisión, las restricciones, el control remoto

@@ -91,9 +91,12 @@ que no es parte de la página.
 // captura de tu pantalla (HH:MM)» (docs/privacidad.md regla 44). Cuentan como «sin ver».
 // "replyTo" (msg.show con reply_to): la respuesta del profesor a un mensaje del alumno;
 // la ventana la titula «Respuesta a tu mensaje» y cita el mensaje de DeskView.messages.
+// "personal" (msg.show con personal): solo le llegó a este alumno; sin replyTo, la ventana
+// lo titula «Mensaje para ti» con el icono «sobre» (prompt 10.7).
 { "notices": [ { "id": "5b0e…", "text": "Guarden su trabajo", "level": "warning", "at": "…" },
                { "id": "9a3c…", "text": "", "level": "warning", "at": "…", "kind": "snapshot" },
-               { "id": "1f2e…", "text": "Sí, antes de las 12.", "level": "info", "at": "…", "replyTo": "8a2e…" } ] }
+               { "id": "1f2e…", "text": "Sí, antes de las 12.", "level": "info", "at": "…", "replyTo": "8a2e…", "personal": true },
+               { "id": "7c4d…", "text": "Revisa la línea 12", "level": "info", "at": "…", "personal": true } ] }
 ```
 
 Cada evento lleva la lista **completa**, no un cambio incremental: la interfaz redibuja sin
@@ -322,6 +325,7 @@ cada código tenga su enlace y que la sección exista.
 | `ClearScreens()` | `Delivery` / error | `code.clear` a todos. |
 | `SendNotice(text, level)` | `Delivery` / error | `msg.show` a todos, `info` o `warning`. |
 | `SendNoticeTo(text, level, targets)` | `Delivery` / error | Igual, solo a `targets` (vacío = todos). Lo usa el panel **Aviso**. |
+| `SendPrivateNotice(sessionId, text, level)` | `Delivery` / error | **Mensaje privado** de la ficha y de la pantalla en grande (también en modo control: antes se sueltan las teclas presionadas y lo escrito en el campo no sale por `SendRemoteInput`): `msg.show` con `personal` solo a esa sesión (real o simulada). Su etiqueta es «Mensaje privado a <equipo>», sin el texto (`docs/privacidad.md` regla 53); el acuse llega en `aula:deliveries`. `studentGone` si no está conectado, `noticeUnsupported` si su equipo no declaró `msg.show`, `invalidNotice` si el texto no vale. |
 | `Resend(deliveryId)` | `Delivery` / error | **Reenviar a los que faltan**: manda de nuevo el mismo mensaje a las sesiones de `pending` y de `rejected` que siguen conectadas (las de `rejected` vuelven a `pending`). Los acuses tardíos del primer envío ya no cuentan; los nuevos, una vez. |
 | `InstallerInfo()` | `InstallerInfo` | Datos para quien instala: `{channel, consoleName, hostname, addresses, port, mediaPort, fingerprint, keySource, version}`. |
 | `CaptureClipboard()` | `Draft` / error | Igual que el atajo global; el resultado también llega como `aula:capture`. |
@@ -360,7 +364,7 @@ cada código tenga su enlace y que la sección exista.
 | `Participation()` | `Participation` | La vista «Participación» (también en `View().participation`). |
 | `LowerHand({hostname, username, simulated})` | error | **Bajar la mano**: la quita de la fila y manda `hand.lower {by: teacher}` si el alumno está conectado (si no, se entera al reconectar). `handGone` si ya estaba abajo. |
 | `LowerAllHands()` | int / error | **Bajar todas** (tras confirmar): devuelve cuántas bajó. |
-| `ReplyToStudent({hostname, username, simulated, messageId, text})` | `Delivery` / error | **Responder**: `msg.show` (`info`) solo a ese alumno, con `reply_to` si `messageId` no está vacío (responder a un mensaje; vacío: a una mano). Se cuenta como cualquier aviso en `aula:deliveries` y el mensaje pasa a `replied`. `studentGone` si no está conectado, `messageGone` si el mensaje ya no está, `invalidNotice` si el texto no vale. |
+| `ReplyToStudent({hostname, username, simulated, messageId, text})` | `Delivery` / error | **Responder**: `msg.show` (`info`, `personal`) solo a ese alumno, con `reply_to` si `messageId` no está vacío (responder a un mensaje; vacío: a una mano). Se cuenta como cualquier aviso en `aula:deliveries` y el mensaje pasa a `replied`. `studentGone` si no está conectado, `messageGone` si el mensaje ya no está, `invalidNotice` si el texto no vale. |
 | `MarkMessageDone({hostname, username, simulated}, messageId)` | error | **Marcar como atendido**: el mensaje deja de contar como pendiente, sin responderlo. |
 | `SimulationHand(id, up)` | `SimulationView` / error | Hace que un alumno simulado levante (`true`) o baje la mano, como uno real. `simTooSoon` si lo repite antes de 1 s. |
 | `SimulationMessage(id, text)` | `SimulationView` / error | Hace que un alumno simulado escriba al profesor (`""`: una pregunta de ejemplo). `simTooSoon` antes de 3 s. |

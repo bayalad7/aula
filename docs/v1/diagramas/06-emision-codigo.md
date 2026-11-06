@@ -32,7 +32,7 @@ sequenceDiagram
     UI->>T: Emit {title, lang, content, mode}
     T->>T: normaliza saltos de línea y valida<br/>(≤ 256 KiB, título ≤ 200)
     T->>H: History.Add → Ejercicio N, snippet_id nuevo
-    T->>S: Broadcast(code.share)
+    T->>S: Broadcast(code.share)<br/>(un aviso privado: Send a una sola sesión)
     S->>S: solo sesiones conectadas con code.view,<br/>las demás cuentan como «sin capacidad»
     S->>R: code.share {snippet_id, exercise=N, title, lang, content, mode}
     T->>H: Deliveries.Start(ids de sobre)
@@ -59,9 +59,11 @@ sequenceDiagram
   actualizado, no uno duplicado. Reemitir siempre usa `replace`.
 - **`code.clear`** sigue el mismo camino (acuse con `snippet_id` vacío) y **`msg.show`** también,
   con `msg.ack`. Los tres se cuentan en `Deliveries` (diagrama 07).
-- **«Responder» en Participación es un `msg.show`** a un solo alumno, con el campo opcional
-  `reply_to` (el `message_id` del mensaje que contesta): sigue este mismo camino y su acuse, y la
-  ventana del alumno lo muestra como «Respuesta a tu mensaje» (diagrama 18).
+- **A un solo alumno.** «Mensaje privado» en la ficha y «Responder» en Participación mandan el
+  `msg.show` con `personal` a **una** sesión (`session.Console.Send`, nunca `Broadcast`): sigue
+  este mismo camino y su acuse, y la ventana del alumno lo titula «Mensaje para ti» o, con
+  `reply_to`, «Respuesta a tu mensaje» (diagrama 18). En `Deliveries` su etiqueta nombra al
+  alumno, sin el texto (`docs/privacidad.md` regla 53).
 - **Capacidades**: la consola nunca envía `code.share` a un agente que no declaró `code.view` en
   `hello`; lo cuenta como «sin capacidad» y desactiva el botón si nadie la tiene. Si llegara de
   todos modos, el agente respondería `error unsupported_capability`.
@@ -78,5 +80,5 @@ sequenceDiagram
 - `internal/session/console.go` (`Send`, `Broadcast`), `internal/session/registry.go`
 - `internal/codedist/receiver.go`, `internal/codedist/board.go`
 - `apps/student/app.go` (`onMessage`, `onBoard`, `Copy`), `internal/platform/clipboard.go`
-- `apps/teacher/participation.go` (`ReplyToStudent`)
+- `apps/teacher/participation.go` (`ReplyToStudent`), `apps/teacher/private.go` (`SendPrivateNotice`)
 - `docs/protocol.md` §5.1–5.5 y §5.18, `docs/eventos-ui.md`

@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-05 (10.6 manos y mensajes del alumno implementada, con la vista
+Última actualización: 2026-11-05 (10.7 mensaje privado a un alumno implementado, falta la prueba
+en VM; 10.6 manos y mensajes del alumno implementada, con la vista
 «Participación»; falta la prueba en VM; 10.5 captura de pantalla de un alumno implementada, falta la
 prueba en VM; 10.4 control remoto implementado, falta la prueba en VM; etapa 19 cerrada).
 
@@ -25,7 +26,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.4 | Control remoto del alumno | ✅ Implementado y probado en CI con dobles (falta la prueba en VM, `docs/prueba-vms.md` §16, y los casos C-44 a C-48 y A-09 a A-11) |
 | 10.5 | Captura de pantalla de un alumno | ✅ Implementado y probado en CI con dobles (falta la prueba en VM, `docs/prueba-vms.md` §17, y los casos C-49 a C-53 y A-12 y A-13) |
 | 10.6 | Mensajería del alumno y «levantar la mano» | ✅ Implementado y probado en CI con dobles y alumnos simulados; creó la vista «Participación» (falta la prueba en VM, `docs/prueba-vms.md` §18, y los casos C-54 a C-58 y A-14 a A-16) |
-| 10.7 | Mensaje directo a un alumno | ⏳ Pendiente (casi todo existe: el aviso a una selección; quizá es una mejora) |
+| 10.7 | Mensaje directo a un alumno | ✅ Implementado como mejora del aviso (`msg.show` con `personal`) y probado en CI (falta la prueba en VM, `docs/prueba-vms.md` §19, y los casos C-59 a C-62 y A-17) |
 | 10.8 | Temporizador compartido | ⏳ Pendiente |
 | 10.9 | Enviar archivos y plantillas de ejercicio | ⏳ Pendiente |
 | 10.10 | Recoger código y archivos | ⏳ Pendiente |
@@ -46,14 +47,15 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
 
 **Siguiente:**
-1. Probar en la ventana real los casos C-01 a C-58 y A-01 a A-16, el control remoto en VM
+1. Probar en la ventana real los casos C-01 a C-62 y A-01 a A-17, el control remoto en VM
    (`docs/prueba-vms.md` §16: RC-A, RC-B y RC-C para aceptar), la captura (§17: SN-A, SN-B y
-   SN-C) y las manos y mensajes (§18: HM-A, HM-B y HM-C).
+   SN-C), las manos y mensajes (§18: HM-A, HM-B y HM-C) y el mensaje privado (§19: PM-A, PM-B y
+   PM-C).
 2. La revisión 11.
 3. ~~Publicar `v0.6.0-rc.1`~~: publicado el 05/11/2026 (etapas 10.2, 10.3, 18, 19 y 10.4, instaladores
    de Windows y checksums firmados). Las 0.x son borradores: al integrar todas las funciones se
    borran y empieza la versión 1 oficial. Probar sus instaladores en las VMs (§14 a §16).
-4. Cualquier función de 10.7 a 10.13 con `/funcionalidad-nueva <número>`. Las que recogen
+4. Cualquier función de 10.8 a 10.13 con `/funcionalidad-nueva <número>`. Las que recogen
    respuestas (10.8, 10.10, 10.12, 10.13) agregan su sección a la vista «Participación».
 
 ## Etapa 02: notas
@@ -1123,6 +1125,34 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.7: mensaje privado a un alumno — notas
+
+- **Diseño aprobado** (2026-11-05) como **mejora del aviso**, no como función nueva: ya existían
+  `msg.show`, su acuse, `SendNoticeTo` con destinos y `ReplyToStudent` a un solo alumno. Faltaba
+  que el alumno distinguiera lo que solo le llegó a él. Sin `msg.direct`: duplicaría el acuse, la
+  capacidad y el conteo de envíos.
+- **Protocolo** (`docs/protocol.md` §5.4): `msg.show` gana `personal` (opcional); la consola solo
+  lo pone en un envío a **una** sesión. Un agente anterior lo ignora. Capacidad `msg.show`.
+- **Consola:** «Mensaje privado» en la ficha (campo con Enter/Shift+Enter/Esc, Información o
+  Advertencia) y su acuse debajo («Enviado… · ya lo vio»), de `aula:deliveries`; binding
+  `SendPrivateNotice`, error nuevo `noticeUnsupported`. También en la pantalla en grande y en la
+  vista del control remoto, junto a «Tomar captura» (agregado del usuario): al abrirlo se sueltan
+  las teclas y lo escrito no le llega al alumno; Esc cierra el mensaje y no la vista. En «Últimos envíos» la etiqueta es
+  «Mensaje privado a <equipo>», sin el texto. «Responder» de Participación también va `personal`.
+- **Alumno:** el aviso se titula «Mensaje para ti» con el icono nuevo `sobre`; `notify`, nunca
+  `raise`; sin bindings nuevos (`codedist.Notice.Personal`).
+- **Simulados:** lo reciben y lo cuentan aparte (`private`).
+- **Guarda nueva:** `internal/ui` comprueba que cada icono es un `<symbol>` del sprite y no texto
+  dentro del comentario de uso (pasó dos veces al agregar iconos), y que todo icono usado por las
+  apps existe.
+- **Documentación:** regla 53 de `docs/privacidad.md`; manual (Tareas frecuentes › «Mandar un
+  mensaje privado a un alumno» y la ficha en Alumnos); diagrama 06 con su SVG;
+  `docs/eventos-ui.md`; casos C-59 a C-62 y A-17; `docs/prueba-vms.md` §19 (con PM-E durante el control).
+- **Pruebas:** enrutamiento (solo al elegido, nada difundido, acuse contado, sin texto en el log
+  ni en la etiqueta, errores); `personal` en el protocolo y en `codedist`; simulados; arnés
+  (capturas 81–86 de la consola, con la comprobación de que nada sale por `SendRemoteInput`, 57–58 del alumno y el caso `aviso-privado`).
+- **Falta de tu lado:** la prueba en VM (§19) y los casos manuales.
 
 ## Etapa 10.6: manos y mensajes del alumno — notas
 

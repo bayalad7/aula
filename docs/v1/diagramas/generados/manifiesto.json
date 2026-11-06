@@ -90,7 +90,7 @@
       "pantallas": [
         "codigo"
       ],
-      "hash": "sha256:55ac8fe84d95964564a8bb135ed4976ef15ae4a002b0e461c4d5edb5c6eb5691",
+      "hash": "sha256:ac79793c1e0bf3d4c2d0606b2bdb9a1a4d934a2b5bade9e3a9b8033f906d4f52",
       "alt": "Emisión y recepción de código: Qué pasa desde que el profesor pulsa Emitir hasta que ve cuántos alumnos ya tienen el código en pantalla",
       "claro": "generados/06-emision-codigo.claro.svg",
       "oscuro": "generados/06-emision-codigo.oscuro.svg"

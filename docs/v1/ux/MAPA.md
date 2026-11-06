@@ -85,6 +85,17 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 4 | **Plantillas** | Las plantillas de Documentos\Aula\plantillas con Usar y Abrir carpeta. |
 | 5 | **Archivos enviados** | Los envíos de la clase, para reenviarlos. |
 
+### Consola · Archivos › Recolecciones
+
+![Consola · Archivos › Recolecciones](mapa/consola-recolecciones.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Selector Enviar | Recolecciones** | Cambia entre enviar archivos y las recolecciones. |
+| 2 | **Nueva recolección** | Actividad, tipos de archivo y «Crear carpeta en los equipos». |
+| 3 | **Tarjeta de recolección** | Una actividad: Recoger, Recoger a los que faltan, Abrir carpeta y la tabla por alumno. |
+| 4 | **Fila de la recolección** | Un alumno: estado, qué llegó, cuándo, Abrir, Guardar como… y Recoger otra vez. |
+
 ### Consola · Participación
 
 ![Consola · Participación](mapa/consola-participacion.webp)
@@ -130,6 +141,16 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 2 | **Mensaje al profesor** | La tarjeta para escribirle al profesor. |
 | 3 | **Archivos recibidos** | Una tarjeta por envío de archivos. |
 | 4 | **Tarjeta de archivo** | Qué llegó, dónde quedó y Abrir carpeta. |
+
+### Alumno · Recolección
+
+![Alumno · Recolección](mapa/alumno-recolecciones.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 2 | **Tarjeta de recolección** | Dónde guardar el ejercicio, qué se recogió y cuándo, y Abrir carpeta. |
+| 3 | **Avisos en la esquina** | Avisos del profesor y de Aula, abajo a la derecha. |
 
 ### Alumno · Mano levantada y avisos
 
@@ -188,11 +209,16 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `enviar-a` | Vista Código › Tarjeta del editor › Enviar a | Todos los conectados o la selección. |
 | `envios` | Vista Código › Últimos envíos | Cada envío con quién lo tiene y quién falta. |
 | `historial` | Vista Código › Historial de la clase | Lo emitido en la clase, para reabrir o reemitir. |
-| `archivos` | Vista Archivos | Enviar archivos y plantillas a los alumnos. |
+| `archivos` | Vista Archivos | Enviar archivos y plantillas a los alumnos, y recoger su trabajo. |
+| `archivos-pestanas` | Vista Archivos › Selector Enviar | Recolecciones | Cambia entre enviar archivos y las recolecciones. |
 | `archivos-enviar` | Vista Archivos › Enviar archivos | Plantilla o archivos elegidos, «Guardar en», «Reemplazar», «Enviar a» y Enviar. |
 | `archivos-envios` | Vista Archivos › Envíos de archivos | Cada envío de archivos con quién lo tiene y quién falta. |
 | `plantillas` | Vista Archivos › Plantillas | Las plantillas de Documentos\Aula\plantillas con Usar y Abrir carpeta. |
 | `archivos-historial` | Vista Archivos › Archivos enviados | Los envíos de la clase, para reenviarlos. |
+| `recolecciones` | Vista Archivos › Recolecciones | Crear la carpeta de una actividad en los equipos y recoger lo que guardó cada alumno. |
+| `reco-nueva` | Vista Archivos › Recolecciones › Nueva recolección | Actividad, tipos de archivo y «Crear carpeta en los equipos». |
+| `recoleccion` | Vista Archivos › Recolecciones › Tarjeta de recolección | Una actividad: Recoger, Recoger a los que faltan, Abrir carpeta y la tabla por alumno. |
+| `reco-fila` | Vista Archivos › Recolecciones › Tarjeta de recolección › Fila de la recolección | Un alumno: estado, qué llegó, cuándo, Abrir, Guardar como… y Recoger otra vez. |
 | `participacion` | Vista Participación | Lo que responden los alumnos en vivo. |
 | `manos` | Vista Participación › Manos levantadas | La fila de manos, por orden de llegada. |
 | `mensajes` | Vista Participación › Mensajes de los alumnos | La bandeja de mensajes con Responder. |
@@ -217,6 +243,8 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `redactar` | Mensaje al profesor | La tarjeta para escribirle al profesor. |
 | `enviados` | Tus mensajes | Los mensajes enviados y si llegaron. |
 | `vacio` | Estado vacío | Lo que se ve cuando no hay código ni archivos. |
+| `recolecciones` | Recolecciones | Una tarjeta por recolección del profesor. |
+| `tarjeta-recoleccion` | Recolecciones › Tarjeta de recolección | Dónde guardar el ejercicio, qué se recogió y cuándo, y Abrir carpeta. |
 | `archivos` | Archivos recibidos | Una tarjeta por envío de archivos. |
 | `tarjeta-archivo` | Archivos recibidos › Tarjeta de archivo | Qué llegó, dónde quedó y Abrir carpeta. |
 | `codigos` | Lista de código | El código que mandó el profesor, lo más nuevo arriba. |

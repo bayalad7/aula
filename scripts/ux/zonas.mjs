@@ -47,11 +47,16 @@ export const zonas = {
     { id: "historial", dentro: "codigo", nombre: "Historial de la clase", selector: "[data-vista-de=codigo] .vista__cuerpo > .tarjeta", que: "Lo emitido en la clase, para reabrir o reemitir." },
 
     // Archivos
-    { id: "archivos", nombre: "Vista Archivos", selector: "[data-vista-de=archivos]", que: "Enviar archivos y plantillas a los alumnos." },
+    { id: "archivos", nombre: "Vista Archivos", selector: "[data-vista-de=archivos]", que: "Enviar archivos y plantillas a los alumnos, y recoger su trabajo." },
+    { id: "archivos-pestanas", dentro: "archivos", nombre: "Selector Enviar | Recolecciones", selector: "[data-vista-de=archivos] .segmentado", que: "Cambia entre enviar archivos y las recolecciones." },
     { id: "archivos-enviar", dentro: "archivos", nombre: "Enviar archivos", selector: "[data-vista-de=archivos] .codigo-rejilla > .tarjeta:first-child", que: "Plantilla o archivos elegidos, «Guardar en», «Reemplazar», «Enviar a» y Enviar." },
     { id: "archivos-envios", dentro: "archivos", nombre: "Envíos de archivos", selector: "[data-vista-de=archivos] .tarjeta--estirada", que: "Cada envío de archivos con quién lo tiene y quién falta." },
     { id: "plantillas", dentro: "archivos", nombre: "Plantillas", selector: "section[aria-labelledby=h-plantillas]", que: "Las plantillas de Documentos\\Aula\\plantillas con Usar y Abrir carpeta." },
     { id: "archivos-historial", dentro: "archivos", nombre: "Archivos enviados", selector: "section[aria-labelledby=h-historial-archivos]", que: "Los envíos de la clase, para reenviarlos." },
+    { id: "recolecciones", dentro: "archivos", nombre: "Recolecciones", selector: "#archivos-panel-recolecciones", que: "Crear la carpeta de una actividad en los equipos y recoger lo que guardó cada alumno." },
+    { id: "reco-nueva", dentro: "recolecciones", nombre: "Nueva recolección", selector: "section[aria-labelledby=h-reco-nueva]", que: "Actividad, tipos de archivo y «Crear carpeta en los equipos»." },
+    { id: "recoleccion", dentro: "recolecciones", nombre: "Tarjeta de recolección", selector: "#reco-lista > .recoleccion", que: "Una actividad: Recoger, Recoger a los que faltan, Abrir carpeta y la tabla por alumno." },
+    { id: "reco-fila", dentro: "recoleccion", nombre: "Fila de la recolección", selector: "#reco-lista .reco-filas > tr", que: "Un alumno: estado, qué llegó, cuándo, Abrir, Guardar como… y Recoger otra vez." },
 
     // Participación
     { id: "participacion", nombre: "Vista Participación", selector: "[data-vista-de=participacion]", que: "Lo que responden los alumnos en vivo." },
@@ -78,6 +83,8 @@ export const zonas = {
     { id: "redactar", nombre: "Mensaje al profesor", selector: "#redactar", que: "La tarjeta para escribirle al profesor." },
     { id: "enviados", nombre: "Tus mensajes", selector: "#enviados", que: "Los mensajes enviados y si llegaron." },
     { id: "vacio", nombre: "Estado vacío", selector: "#empty", que: "Lo que se ve cuando no hay código ni archivos." },
+    { id: "recolecciones", nombre: "Recolecciones", selector: "#recolecciones", que: "Una tarjeta por recolección del profesor." },
+    { id: "tarjeta-recoleccion", dentro: "recolecciones", nombre: "Tarjeta de recolección", selector: "#recolecciones > li", que: "Dónde guardar el ejercicio, qué se recogió y cuándo, y Abrir carpeta." },
     { id: "archivos", nombre: "Archivos recibidos", selector: "#archivos", que: "Una tarjeta por envío de archivos." },
     { id: "tarjeta-archivo", dentro: "archivos", nombre: "Tarjeta de archivo", selector: "#archivos > li", que: "Qué llegó, dónde quedó y Abrir carpeta." },
     { id: "codigos", nombre: "Lista de código", selector: "#snippets", que: "El código que mandó el profesor, lo más nuevo arriba." },

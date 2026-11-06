@@ -388,6 +388,26 @@
               <button type="button" class="btn" id="ficha-capturar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span data-t="captura.tomar"></span></button>
               <span class="pequeno suave" data-t="captura.fichaNota"></span>
             </div>
+            <!-- Mensaje privado (prompt 10.7): solo a este alumno; el acuse, debajo y en Últimos envíos. -->
+            <div class="pila-mini" id="ficha-privado" hidden>
+              <button type="button" class="btn" id="privado-abrir" aria-expanded="false" aria-controls="privado"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#sobre"/></svg><span data-t="privado.boton"></span></button>
+              <form id="privado" class="pila-mini" hidden>
+                <label class="campo"><span class="campo__etiqueta" id="privado-etiqueta"></span>
+                  <textarea id="privado-texto" class="privado-texto" rows="3" maxlength="2000" aria-describedby="privado-ayuda privado-error"></textarea>
+                  <span class="campo__ayuda" id="privado-ayuda" data-t="privado.ayuda"></span>
+                  <span class="campo__error" id="privado-error" role="alert" hidden></span></label>
+                <fieldset class="campo"><legend class="campo__etiqueta" data-t="aviso.tipo"></legend>
+                  <div class="fila">
+                    <label class="opcion"><input type="radio" name="privado-nivel" value="info" checked> <span data-t="aviso.info"></span></label>
+                    <label class="opcion"><input type="radio" name="privado-nivel" value="warning"> <span data-t="aviso.advertencia"></span></label>
+                  </div></fieldset>
+                <div class="grupo-botones">
+                  <button type="submit" class="btn btn--primario btn--sm" id="privado-enviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="privado.enviar"></span></button>
+                  <button type="button" class="btn btn--fantasma btn--sm" id="privado-cancelar" data-t="comun.cancelar"></button>
+                </div>
+              </form>
+              <p class="pequeno" id="privado-acuse" role="status" hidden></p>
+            </div>
             <div class="pila-mini">
               <h3 class="con-info"><span data-t="ficha.puede"></span><button type="button" class="info-boton" data-info="capacidades" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></h3>
               <ul class="lista-limpia" id="ficha-puede"></ul>
@@ -578,9 +598,27 @@
     <div class="dialogo__cuerpo">
       <div class="fila"><h2 id="pg-titulo" class="crece"></h2>
         <button type="button" class="btn btn--primario btn--sm" id="pg-tomar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span data-t="control.tomar"></span></button>
+        <button type="button" class="btn btn--sm" id="pg-privado-abrir" aria-expanded="false" aria-controls="pg-privado" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#sobre"/></svg><span data-t="privado.boton"></span></button>
         <button type="button" class="btn btn--sm" id="pg-capturar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span data-t="captura.tomar"></span></button>
         <button type="button" class="btn btn--peligro btn--sm" id="pg-soltar" data-t="control.soltar" hidden></button>
         <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <!-- Mensaje privado (prompt 10.7), también durante el control: al abrirlo, el teclado vuelve a la consola. -->
+      <form id="pg-privado" class="pila-mini" hidden>
+        <label class="campo"><span class="campo__etiqueta" id="pg-privado-etiqueta"></span>
+          <textarea id="pg-privado-texto" class="privado-texto" rows="2" maxlength="2000" aria-describedby="pg-privado-ayuda pg-privado-error"></textarea>
+          <span class="campo__ayuda" id="pg-privado-ayuda" data-t="privado.ayudaControl"></span>
+          <span class="campo__error" id="pg-privado-error" role="alert" hidden></span></label>
+        <fieldset class="campo"><legend class="campo__etiqueta" data-t="aviso.tipo"></legend>
+          <div class="fila">
+            <label class="opcion"><input type="radio" name="pg-privado-nivel" value="info" checked> <span data-t="aviso.info"></span></label>
+            <label class="opcion"><input type="radio" name="pg-privado-nivel" value="warning"> <span data-t="aviso.advertencia"></span></label>
+          </div></fieldset>
+        <div class="grupo-botones">
+          <button type="submit" class="btn btn--primario btn--sm" id="pg-privado-enviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="privado.enviar"></span></button>
+          <button type="button" class="btn btn--fantasma btn--sm" id="pg-privado-cancelar" data-t="comun.cancelar"></button>
+        </div>
+      </form>
+      <p class="pequeno" id="pg-privado-acuse" role="status" hidden></p>
       <p class="aviso-en-linea" id="pg-control-estado" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span id="pg-control-estado-texto"></span></p>
       <img id="pg-imagen" alt="">
       <p class="pequeno suave" id="pg-nota" data-t="alumnos.avisoMiniaturas"></p>

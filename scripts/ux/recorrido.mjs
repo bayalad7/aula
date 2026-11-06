@@ -87,6 +87,31 @@ await f("76-participacion-llega-mano", "lab-participacion", { pasos: async (p) =
 await f("77-participacion-vacia", "lab", { ruta: "participacion" });
 await f("78-participacion-oscuro-900x600", "lab-participacion", { oscuro: true, w: 900, h: 600, ruta: "participacion" });
 await f("79-participacion-ficha", "lab-participacion", { pasos: click(`${fila("LAB3-PC12")} .ficha`) });
+// Mensaje privado a un alumno (prompt 10.7): la ficha, escribiendo, el acuse y oscuro a 900×600.
+const privado = seq(click(`${fila("LAB3-PC07")} .ficha`), click("#privado-abrir"),
+  async (p) => { await p.type("#privado-texto", "Revisa la línea 12: falta un dos puntos"); });
+await f("81-privado-escribiendo", "lab", { pasos: privado });
+await f("82-privado-enviado", "lab", { pasos: seq(privado, async (p) => { await p.keyboard.press("Enter"); await sleep(400); }) });
+await f("83-privado-ultimos-envios", "lab", { pasos: seq(privado, async (p) => {
+  await p.keyboard.press("Enter");
+  await sleep(400);
+  await p.evaluate(() => { location.hash = "codigo"; });
+  await sleep(300);
+}) });
+await f("84-privado-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: privado });
+// Durante el control remoto: el campo arriba de su pantalla; lo escrito no le llega.
+const privadoControl = seq(tomar, click("#pg-privado-abrir"), async (p) => { await p.type("#pg-privado-texto", "Fíjate en la línea 12"); });
+// Lo que se escribe en el mensaje no le llega al alumno: ninguna tecla sale por SendRemoteInput
+// (si saliera, se registra como error de la página y el recorrido falla).
+await f("85-privado-durante-control", "lab", { pasos: seq(privadoControl, async (p) => {
+  await sleep(200);
+  await p.evaluate(() => {
+    const teclas = window.__calls.filter((c) => c[0] === "SendRemoteInput").flatMap((c) => c[1][0] || []).filter((e) => e.t === "key" && e.down);
+    if (teclas.length) console.error("el mensaje privado mandó teclas al alumno: " + teclas.map((e) => e.code).join(","));
+    if (document.activeElement.id !== "pg-privado-texto") console.error("el foco no está en el mensaje: " + document.activeElement.id);
+  });
+}) });
+await f("86-privado-durante-control-enviado", "lab", { pasos: seq(privadoControl, async (p) => { await p.keyboard.press("Enter"); await sleep(400); }) });
 await f("80-simulada-mano-y-mensaje", "simulada", { ruta: "simulada", pasos: seq(click("#sim-filas .mano"), async () => { await sleep(200); }) });
 
 // Código

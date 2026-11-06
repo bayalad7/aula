@@ -230,7 +230,9 @@ func (a *App) ReplyToStudent(req ReplyRequest) (codedist.Delivery, error) {
 		return codedist.Delivery{}, errNoClass
 	}
 	text := strings.TrimSpace(req.Text)
-	p := protocol.MsgShow{Text: text, Level: protocol.LevelInfo}
+	// To this student only: the window titles it «Mensaje para ti» or, with
+	// reply_to, «Respuesta a tu mensaje» (rule 53).
+	p := protocol.MsgShow{Text: text, Level: protocol.LevelInfo, Personal: true}
 	if req.MessageID != "" {
 		if _, ok := a.board.Lookup(req.Student, req.MessageID); !ok {
 			return codedist.Delivery{}, codedf(codeMessageGone, "ese mensaje ya no está en la lista")

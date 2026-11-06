@@ -148,6 +148,8 @@ window.AulaTextos = Object.freeze({
   "error.studentGone.texto": "La respuesta solo llega a un equipo conectado. Espera a que vuelva a aparecer en Alumnos y responde de nuevo.",
   "error.simTooSoon.titulo": "Espera unos segundos",
   "error.simTooSoon.texto": "Un alumno simulado, como uno real, no puede levantar la mano o escribir tan seguido.",
+  "error.noticeUnsupported.titulo": "Su equipo no recibe avisos",
+  "error.noticeUnsupported.texto": "Este equipo no puede mostrar mensajes (por ejemplo, nadie inició sesión). Habla con el alumno en persona.",
 
   // Errores que manda el equipo del alumno (códigos del protocolo, apps/teacher/agenterrors.go)
   "errorAlumno.unsupportedVersion.titulo": "versión distinta",
@@ -337,6 +339,17 @@ window.AulaTextos = Object.freeze({
   "ficha.control": "Control remoto",
   "ficha.captura": "Tomar una captura de su pantalla",
   "ficha.mano": "Levantar la mano",
+  "privado.boton": "Mensaje privado",
+  "privado.etiqueta": "Mensaje solo para {equipo}",
+  "privado.ayuda": "Solo lo ve este alumno, como «Mensaje para ti». Enter envía; Shift+Enter, otra línea; Esc cancela.",
+  "privado.ayudaControl": "Solo lo ve este alumno. Lo que escribes aquí no le llega a su equipo. Enter envía; Esc cancela; para seguir manejando su equipo, haz clic en su pantalla.",
+  "privado.vacio": "Escribe el mensaje antes de enviarlo.",
+  "privado.enviar": "Enviar",
+  "privado.enviando": "Enviado a {equipo} · esperando que lo vea…",
+  "privado.visto": "Enviado a {equipo} · ya lo vio",
+  "privado.fallo": "Su equipo no lo pudo mostrar. Vuelve a intentarlo desde Código › Últimos envíos.",
+  "privado.enviado": "Mensaje privado enviado a {equipo}",
+  "privado.enviadoTexto": "Solo lo ve este alumno. En Código › Últimos envíos ves cuándo lo vio.",
   "ficha.mensajes": "Escribirte mensajes",
   "ficha.ultimoError": "Último problema ({hora}): {r}",
 

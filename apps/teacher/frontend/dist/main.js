@@ -480,6 +480,7 @@
     $("ficha-tomar").onclick = () => (esEste ? abrirControl() : tomarControl(s, $("ficha-tomar")));
     // Tomar una captura: reales y simulados, también mientras se le controla.
     $("ficha-captura").hidden = !(s.state === "connected" && s.canSnapshot);
+    pintarPrivado(s);
     const e = s.lastError;
     $("ficha-error").hidden = !e;
     if (e) {
@@ -491,6 +492,83 @@
       if (m.ayuda) a.href = rutaManual(m.ayuda);
     }
   }
+
+  // --- Mensaje privado a un alumno (prompt 10.7) -----------------------------------------
+  // Solo a ese alumno (msg.show personal), desde la ficha o desde la pantalla en grande, también
+  // durante el control remoto. El acuse sale de aula:deliveries; la etiqueta del envío no lleva el
+  // texto (privacidad, regla 53). Un mismo formulario sirve a los dos lugares (prefijo de sus ids).
+  function formPrivado(pre, alumno, alAbrir) {
+    const $p = (s) => $(pre + s);
+    const form = $(pre), texto = $p("-texto"), error = $p("-error"), abrir = $p("-abrir");
+    let estado = { clave: "", envio: "" }; // a quién y el último envío, para su acuse
+    const acuse = () => {
+      const d = estado.envio && envios.find((x) => x.id === estado.envio);
+      const s = alumnos.students.find((x) => clave(x) === estado.clave);
+      $p("-acuse").hidden = !d;
+      if (!d || !s) return;
+      const fallo = (d.rejected || []).length > 0;
+      $p("-acuse").textContent = fallo ? T("privado.fallo")
+        : d.acked + d.simAcked > 0 ? T("privado.visto", { equipo: s.hostname }) : T("privado.enviando", { equipo: s.hostname });
+    };
+    const cerrar = (foco) => {
+      form.hidden = true;
+      abrir.setAttribute("aria-expanded", "false");
+      limpiarCampo(texto, error);
+      if (foco) abrir.focus();
+    };
+    const pintar = (s) => {
+      if (estado.clave !== clave(s)) {
+        estado = { clave: clave(s), envio: "" };
+        cerrar(false);
+        texto.value = "";
+      }
+      $p("-etiqueta").textContent = T("privado.etiqueta", { equipo: s.hostname });
+      acuse();
+      return s.state === "connected" && s.canNotice;
+    };
+    abrir.addEventListener("click", () => {
+      if (!form.hidden) { cerrar(true); return; }
+      if (alAbrir) alAbrir();
+      form.hidden = false;
+      abrir.setAttribute("aria-expanded", "true");
+      texto.focus();
+    });
+    $p("-cancelar").addEventListener("click", () => cerrar(true));
+    texto.addEventListener("input", () => limpiarCampo(texto, error));
+    texto.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cerrar(true); }
+    });
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const s = alumno();
+      const t = texto.value.trim();
+      if (!s) return;
+      if (!t) { errorEnCampo(texto, error, T("privado.vacio")); texto.focus(); return; }
+      const nivel = document.querySelector('input[name="' + pre + '-nivel"]:checked').value;
+      const b = $p("-enviar");
+      ocupado(b, true);
+      api.SendPrivateNotice(s.id, t, nivel).then((d) => {
+        texto.value = "";
+        estado.envio = d.id;
+        cerrar(true);
+        acuse();
+        toast("exito", T("privado.enviado", { equipo: s.hostname }), T("privado.enviadoTexto"));
+      }, (err) => {
+        const m = amable(err);
+        if (m.codigo === "invalidNotice") errorEnCampo(texto, error, m.texto);
+        else fallo(err);
+      }).finally(() => ocupado(b, false));
+    });
+    return { pintar, acuse, cerrar, abierto: () => !form.hidden };
+  }
+  const privadoFicha = formPrivado("privado", () => alumnos.students.find((x) => clave(x) === fichaClave));
+  // En la pantalla en grande: si se controla al alumno, primero se suelta lo presionado; lo que
+  // se escribe en el campo no le llega (su teclado solo sale con el foco en la imagen).
+  const privadoGrande = formPrivado("pg-privado", () => alumnoPorSesion(enControl ? control.sessionID : enGrande),
+    () => { if (enControl) soltarTeclas(); });
+  function pintarPrivado(s) { $("ficha-privado").hidden = !privadoFicha.pintar(s); }
+  function pintarAcusePrivado() { privadoFicha.acuse(); privadoGrande.acuse(); }
 
   // Miniaturas: las imágenes solo viven aquí, en memoria.
   const tarjetas = new Map(); // clave → <li>
@@ -563,6 +641,7 @@
   }
   $("pantalla-grande").addEventListener("close", () => {
     $("pg-imagen").removeAttribute("src");
+    privadoGrande.cerrar(false);
     if (enControl) {
       // Cerrar la vista no suelta el control: queda la franja con «Ver» y «Soltar».
       soltarTeclas();
@@ -720,6 +799,8 @@
   // Con el foco en la imagen, Esc es del alumno: no cierra el diálogo.
   $("pantalla-grande").addEventListener("cancel", (e) => {
     if (enControl && document.activeElement === imgControl) e.preventDefault();
+    // Con el mensaje privado abierto, Esc lo cierra a él, no la vista.
+    if (privadoGrande.abierto() && document.activeElement === $("pg-privado-texto")) e.preventDefault();
   });
   function alCuadroControl(t) {
     if (enControl && t.sessionId === control.sessionID) $("pg-imagen").src = "data:image/jpeg;base64," + t.jpeg;
@@ -865,6 +946,9 @@
   function pintarBotonCaptura() {
     const s = alumnoPorSesion(enControl ? control.sessionID : enGrande);
     $("pg-capturar").hidden = !(s && s.state === "connected" && s.canSnapshot);
+    // Y el mensaje privado, con o sin control (prompt 10.7).
+    $("pg-privado-abrir").hidden = !(s && privadoGrande.pintar(s));
+    if (!s) privadoGrande.cerrar(false);
   }
 
   // Lote: el panel Captura de la barra de acciones, sobre la selección (o todos).
@@ -1441,6 +1525,7 @@
   const abiertos = new Set(); // envíos con el desglose abierto
   function pintarEnvios(lista) {
     envios = lista;
+    pintarAcusePrivado();
     $("envios-vacio").hidden = lista.length > 0;
     const tpl = $("t-envio").content.firstElementChild;
     $("envios-lista").replaceChildren(...lista.slice(0, 10).map((d) => {

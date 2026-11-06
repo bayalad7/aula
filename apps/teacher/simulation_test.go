@@ -203,6 +203,13 @@ func TestSimulatedStudentRaisesHandAndWrites(t *testing.T) {
 		t.Fatalf("reply = %+v, %v", d, err)
 	}
 	waitUntil(t, "the reply on its screen", func() bool { return app.Simulation().Students[0].Notices == 1 })
+	if got := app.Simulation().Students[0]; got.Private != 1 {
+		t.Errorf("the reply did not arrive as a private message: %+v", got)
+	}
+	if _, err := app.SendPrivateNotice(p.Hands[0].SessionID, "Una pista", "info"); err != nil {
+		t.Fatal(err)
+	}
+	waitUntil(t, "the private message", func() bool { return app.Simulation().Students[0].Private == 2 })
 	if err := app.LowerHand(p.Hands[0].Student); err != nil {
 		t.Fatal(err)
 	}

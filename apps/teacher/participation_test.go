@@ -106,7 +106,7 @@ func TestStudentMessageIsAckedAndAnswered(t *testing.T) {
 	if len(sent) != 1 || sent[0].sessionID != "s1" || d.Sent != 1 {
 		t.Fatalf("reply sent %+v, delivery %+v", sent, d)
 	}
-	if show := sent[0].p.(protocol.MsgShow); show.ReplyTo != m.MessageID || show.Text != "Sí, antes de las 12." {
+	if show := sent[0].p.(protocol.MsgShow); show.ReplyTo != m.MessageID || !show.Personal || show.Text != "Sí, antes de las 12." {
 		t.Errorf("msg.show = %+v", show)
 	}
 	if got := h.app.Participation(); got.Messages[0].Status != participation.MessageReplied || got.Pending != 0 {

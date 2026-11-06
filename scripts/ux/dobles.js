@@ -240,6 +240,18 @@
       return Object.assign({}, deliveries[1], { id: "d-r", label: "Respuesta a " + r.hostname, sent: 1, acked: 0 });
     }),
     SendNoticeTo: call("SendNoticeTo", () => deliveries[1]),
+    // Mensaje privado (prompt 10.7): la etiqueta no lleva el texto; el alumno lo ve poco después.
+    SendPrivateNotice: call("SendPrivateNotice", (id) => {
+      const s = list.find((x) => x.id === id) || {};
+      const d = { id: "d-p" + Date.now(), kind: "notice", label: "Mensaje privado a " + s.hostname, sent: s.simulated ? 0 : 1, acked: 0,
+        failed: 0, noCapability: 0, simSent: s.simulated ? 1 : 0, simAcked: 0, pending: [id], rejected: [], at: new Date().toISOString() };
+      deliveries.unshift(d);
+      despues(() => {
+        Object.assign(d, s.simulated ? { simAcked: 1 } : { acked: 1 }, { pending: [] });
+        window.__emit("aula:deliveries", { deliveries: deliveries.slice() });
+      });
+      return Object.assign({}, d);
+    }),
     Manual: call("Manual", () => window.__MANUAL.manual),
     ManualSearch: call("ManualSearch", () => window.__MANUAL.search),
     Resend: call("Resend", () => deliveries[0]),

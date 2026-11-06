@@ -124,6 +124,6 @@ body[data-panel] .col-sistema { display: none; }
 .participa__quien { display: grid; flex: 1; min-width: 10rem; }
 .participa__estado { display: flex; flex-wrap: wrap; gap: var(--e-1); }
 .participa__texto, .participa__respondido { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.participa .campo textarea { font-family: inherit; }
+.participa .campo textarea, .campo textarea.privado-texto { font-family: inherit; }
 a.insignia { text-decoration: none; }
 a.insignia:hover { text-decoration: underline; }

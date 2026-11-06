@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io/fs"
 	"net"
 	"reflect"
 	"strings"
@@ -487,3 +488,63 @@ func TestWorkFolderProxy(t *testing.T) {
 }
 
 func fmtWrap(err error) error { return errors.Join(errors.New("write"), err) }
+
+func TestWorkFolderReaderProxy(t *testing.T) {
+	cur := &Current{}
+	if _, err := (WorkFolderReader{Helper: cur}).List("r", 4); !errors.Is(err, ErrNoHelper) {
+		t.Fatalf("list without helper = %v", err)
+	}
+	var created string
+	var listed FolderListArgs
+	var read FileReadArgs
+	service, _ := linkPair(t, nil, func(_ context.Context, name string, data json.RawMessage) (any, error) {
+		switch name {
+		case CallFolderCreate:
+			if err := json.Unmarshal(data, &created); err != nil {
+				return nil, err
+			}
+			return FolderCreateResult{}, nil
+		case CallFolderList:
+			if err := json.Unmarshal(data, &listed); err != nil {
+				return nil, err
+			}
+			if listed.Rel == "falta" {
+				return FolderListResult{Error: FileWriteError(fs.ErrNotExist)}, nil
+			}
+			return FolderListResult{Files: []platform.WorkFile{{Path: "a.py", Size: 3}, {Path: "atajo", Link: true}}}, nil
+		case CallFileRead:
+			if err := json.Unmarshal(data, &read); err != nil {
+				return nil, err
+			}
+			switch read.Rel {
+			case "r/nube.py":
+				return FileReadResult{Error: FileWriteError(platform.ErrOffline)}, nil
+			case "r/grande.bin":
+				return FileReadResult{Error: FileWriteError(platform.ErrFileTooLarge)}, nil
+			}
+			return FileReadResult{Data: []byte("abc")}, nil
+		}
+		return nil, errors.New("unexpected " + name)
+	}, nil)
+	cur.Set(service)
+	w := WorkFolderReader{Helper: cur}
+	if err := w.MkdirAll("recolecciones/2026-11-06/Ej"); err != nil || created != "recolecciones/2026-11-06/Ej" {
+		t.Fatalf("mkdir = %v, %q", err, created)
+	}
+	files, err := w.List("r", 4)
+	if err != nil || len(files) != 2 || !files[1].Link || listed.Depth != 4 {
+		t.Fatalf("list = %+v, %v (args %+v)", files, err, listed)
+	}
+	if _, err := w.List("falta", 4); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("missing folder = %v, want ErrNotExist", err)
+	}
+	if data, err := w.Read("r/a.py", 10); err != nil || string(data) != "abc" || read.Max != 10 {
+		t.Fatalf("read = %q, %v", data, err)
+	}
+	if _, err := w.Read("r/nube.py", 10); !errors.Is(err, platform.ErrOffline) {
+		t.Fatalf("offline = %v", err)
+	}
+	if _, err := w.Read("r/grande.bin", 10); !errors.Is(err, platform.ErrFileTooLarge) {
+		t.Fatalf("too large = %v", err)
+	}
+}

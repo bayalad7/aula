@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"sync"
 	"time"
 
@@ -239,6 +240,9 @@ const (
 	fileErrTooLong     = "too_long"
 	fileErrUnsupported = "unsupported"
 	fileErrOther       = "other"
+	fileErrTooLarge    = "too_large" // file.collect reads from here on
+	fileErrOffline     = "offline"
+	fileErrNotFound    = "not_found"
 )
 
 var fileErrs = []struct {
@@ -248,6 +252,8 @@ var fileErrs = []struct {
 	{fileErrExists, platform.ErrFileExists}, {fileErrLink, platform.ErrLinkInPath},
 	{fileErrNoSpace, platform.ErrNoSpace}, {fileErrDenied, platform.ErrDenied},
 	{fileErrTooLong, platform.ErrPathTooLong}, {fileErrUnsupported, platform.ErrNotSupported},
+	{fileErrTooLarge, platform.ErrFileTooLarge}, {fileErrOffline, platform.ErrOffline},
+	{fileErrNotFound, fs.ErrNotExist},
 }
 
 // FileWriteError turns an error of platform.WorkFolder.Create into the code

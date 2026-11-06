@@ -85,6 +85,10 @@ func TestReceiverAcks(t *testing.T) {
 	if len(boards) != 2 || len(boards[0]) != 1 || len(boards[1]) != 0 || len(notices) != 1 || notices[0].Level != protocol.LevelWarning {
 		t.Fatalf("callbacks: boards=%d notices=%+v", len(boards), notices)
 	}
+	r.Handle(protocol.New(protocol.MsgShow{Text: "Revisa la línea 12", Level: protocol.LevelInfo, Personal: true, ReplyTo: protocol.NewID()}))
+	if n := notices[len(notices)-1]; !n.Personal || n.ReplyTo == "" {
+		t.Fatalf("personal notice = %+v", n)
+	}
 	if r.Handle(protocol.New(protocol.Heartbeat{})) != nil {
 		t.Fatal("heartbeat must not be answered")
 	}

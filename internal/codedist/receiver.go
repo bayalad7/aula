@@ -20,6 +20,9 @@ type Notice struct {
 	// answers (msg.show reply_to, docs/protocol.md §5.18); the window quotes
 	// that message under «Respuesta a tu mensaje».
 	ReplyTo string `json:"replyTo,omitempty"`
+	// Personal: the teacher sent it to this student only (msg.show personal,
+	// prompt 10.7); the window titles it «Mensaje para ti».
+	Personal bool `json:"personal,omitempty"`
 }
 
 // Receiver applies the console's messages on the student side.
@@ -56,7 +59,7 @@ func (r *Receiver) Handle(env protocol.Envelope) protocol.Payload {
 		return protocol.CodeAck{RefID: env.ID}
 	case protocol.MsgShow:
 		if r.OnNotice != nil {
-			r.OnNotice(Notice{ID: env.ID, Text: p.Text, Level: p.Level, At: now(), ReplyTo: p.ReplyTo})
+			r.OnNotice(Notice{ID: env.ID, Text: p.Text, Level: p.Level, At: now(), ReplyTo: p.ReplyTo, Personal: p.Personal})
 		}
 		return protocol.MsgAck{RefID: env.ID}
 	case protocol.ErrorPayload, protocol.Heartbeat:

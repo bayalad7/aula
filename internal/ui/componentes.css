@@ -721,3 +721,13 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
 }
 .modo-compacto[data-nuevo="true"] { border-left-color: var(--c-acento); background: var(--c-acento-suave); color: var(--c-acento-sobre-suave); }
 .modo-compacto__texto { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Tooltip: data-tip="texto" muestra el texto al pasar el mouse o con el foco. Solo complementa: el
+   mismo texto debe estar al alcance del lector de pantalla (aria-label o .solo-lector). */
+[data-tip] { position: relative; }
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%);
+  z-index: 30; width: max-content; max-width: 16rem; padding: var(--e-1) var(--e-2); border-radius: var(--r-sm);
+  background: var(--c-texto); color: var(--c-superficie); font-size: var(--t-sm); font-weight: var(--peso-normal, 400);
+  line-height: 1.3; text-align: center; box-shadow: var(--sombra-1); pointer-events: none;
+}

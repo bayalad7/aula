@@ -86,6 +86,12 @@ func samplePayloads() []Payload {
 		MsgStudentAck{RefID: testSnippetID, MessageID: testRefID},
 		MsgShow{Text: "Sí, antes de las 12.", Level: LevelInfo, ReplyTo: testRefID, Personal: true},
 		MsgShow{Text: "Revisa la línea 12", Level: LevelWarning, Personal: true},
+		TimerStart{TimerID: testRefID, Label: "Ejercicio 1", DurationS: 600, RemainingMS: 600000},
+		TimerStart{TimerID: testRefID, DurationS: 60, RemainingMS: 32000},
+		TimerExtend{TimerID: testRefID, AddS: 300, RemainingMS: 572000},
+		TimerStop{TimerID: testRefID},
+		TimerAck{RefID: testSnippetID, TimerID: testRefID, Status: TimerRunning, RemainingMS: 599980},
+		TimerAck{RefID: testSnippetID, TimerID: testRefID, Status: TimerEnded},
 	}
 }
 
@@ -384,12 +390,13 @@ func TestRequiredCapability(t *testing.T) {
 		TypeRemoteStart: CapRemote, TypeRemoteInput: CapRemote, TypeRemoteStop: CapRemote,
 		TypeScreenSnapshotRequest: CapScreenSnapshot,
 		TypeHandLower:             CapHand, TypeMsgStudentAck: CapMsgStudent,
+		TypeTimerStart: CapTimer, TypeTimerExtend: CapTimer, TypeTimerStop: CapTimer,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}
@@ -571,5 +578,31 @@ func TestHandAndStudentMessageLimits(t *testing.T) {
 	low := HandLower{HandID: testRefID, By: HandByTeacher}
 	if low.ValidFrom(HandByTeacher) != nil || !errors.Is(low.ValidFrom(HandByStudent), ErrInvalidMessage) {
 		t.Error("ValidFrom does not check the direction")
+	}
+}
+
+func TestTimerLimits(t *testing.T) {
+	for _, p := range []Payload{
+		TimerStart{TimerID: "x", DurationS: 60, RemainingMS: 60000},
+		TimerStart{TimerID: testRefID, Label: strings.Repeat("ñ", MaxTimerLabel+1), DurationS: 60, RemainingMS: 60000},
+		TimerStart{TimerID: testRefID, DurationS: MinTimerDurationS - 1, RemainingMS: 9000},
+		TimerStart{TimerID: testRefID, DurationS: MaxTimerDurationS + 1, RemainingMS: 60000},
+		TimerStart{TimerID: testRefID, DurationS: 60, RemainingMS: 0},
+		TimerStart{TimerID: testRefID, DurationS: 60, RemainingMS: MaxTimerRemaining + 1},
+		TimerExtend{TimerID: testRefID, AddS: MinTimerExtendS - 1, RemainingMS: 60000},
+		TimerExtend{TimerID: testRefID, AddS: MaxTimerExtendS + 1, RemainingMS: 60000},
+		TimerExtend{TimerID: testRefID, AddS: 60, RemainingMS: 0},
+		TimerStop{TimerID: ""},
+		TimerAck{RefID: testRefID, TimerID: testRefID, Status: "paused"},
+		TimerAck{RefID: testRefID, TimerID: testRefID, Status: TimerRunning, RemainingMS: -1},
+		TimerAck{RefID: "x", TimerID: testRefID, Status: TimerEnded},
+	} {
+		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
+		}
+	}
+	ok := TimerStart{TimerID: testRefID, Label: strings.Repeat("ñ", MaxTimerLabel), DurationS: MaxTimerDurationS, RemainingMS: MaxTimerRemaining}
+	if err := ok.Validate(); err != nil {
+		t.Errorf("the limits must be valid: %v", err)
 	}
 }

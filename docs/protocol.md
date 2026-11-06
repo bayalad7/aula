@@ -311,6 +311,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `remote` | `remote.start`, `remote.input`, `remote.stop` | v0.6 (§5.16). Windows, en modo ventana y como servicio con su ayudante (la entrada se inyecta en la sesión del alumno). Linux y macOS no la declaran. |
 | `hand` | `hand.raise`, `hand.lower` | v0.8 (§5.18). Todos los SO: no toca el sistema, solo la ventana del alumno. Se declara cuando hay ventana (en modo servicio, con el ayudante en la sesión del alumno); también los alumnos simulados. |
 | `msg.student` | `msg.student`, `msg.student.ack` | v0.8 (§5.18). Igual que `hand`. |
+| `timer` | `timer.start`, `timer.extend`, `timer.stop` | v0.9 (§5.19). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana; también los alumnos simulados. |
 | `poll` | `poll.*` | Reservada |
 
 Las dos últimas habilitan mensajes que **inicia el agente**: la consola acepta `hand.*` y
@@ -364,6 +365,10 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `hand.lower` | A ↔ P | `hand` | `hand_id`, `by` | — |
 | `msg.student` | A → P | `msg.student` | `message_id`, `text` | `msg.student.ack` o `error` |
 | `msg.student.ack` | P → A | `msg.student` | `ref_id`, `message_id` | — |
+| `timer.start` | P → A | `timer` | `timer_id`, `label`, `duration_s`, `remaining_ms` | `timer.ack` o `error` |
+| `timer.extend` | P → A | `timer` | `timer_id`, `add_s`, `remaining_ms` | `timer.ack`; con otro `timer_id` se ignora |
+| `timer.stop` | P → A | `timer` | `timer_id` | `timer.ack` (`stopped`); sin temporizador vigente se ignora |
+| `timer.ack` | A → P | — | `ref_id`, `timer_id`, `status`, `remaining_ms` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -1091,6 +1096,102 @@ Reglas de la consola:
 - Todo vive **en memoria**: se descarta al cerrar la clase o cambiar de canal
   (`docs/privacidad.md` reglas 50–52).
 
+### 5.19 Temporizador de ejercicio (`timer.*`)
+
+> Aprobado el 2026-11-05 (prompt 10.8), para v0.9. Implementación en `internal/classtimer`;
+> regla en `docs/privacidad.md` 54. En la consola, el panel «Temporizador», su franja y su
+> sección de la vista «Participación».
+
+El profesor da un tiempo con nombre a la clase («Ejercicio 1 · 10 min») y cada alumno ve cuánto
+falta en una insignia discreta de su ventana. Al llegar a cero, la ventana avisa sin quitar el
+foco. Solo informa: nada cambia en el equipo.
+
+**Sincronía por lo que falta, nunca por la hora.** Cada mensaje de la consola lleva
+`remaining_ms`: lo que falta **en el momento de enviarlo**, medido con su reloj monotónico. El
+agente fija su propio fin con su reloj monotónico (`ahora + remaining_ms`). La hora absoluta no
+interviene (`ts` sigue siendo informativa), así que relojes desiguales no cambian la cuenta; en
+la LAN el retraso es de milisegundos y la diferencia entre alumnos queda bajo 1 s.
+
+```
+Consola (P)                                                 Agente (A)
+   |-- timer.start (timer_id, label, duration_s, remaining_ms) -->|  insignia «Ejercicio 1 · 10:00»
+   |<----------------------------------- timer.ack (running) -----|
+   |-- timer.extend (timer_id, add_s, remaining_ms) ------------->|  toma el nuevo restante
+   |<----------------------------------- timer.ack (running) -----|
+   |                                         (llega a 0 en el agente)  aviso en la esquina
+   |<----------------------------------- timer.ack (ended) -------|
+   |-- timer.stop (timer_id) ------------------------------------>|  quita la insignia
+   |<----------------------------------- timer.ack (stopped) -----|
+```
+
+**`timer.start` (P → A)**
+
+```json
+{ "timer_id": "e4b1…", "label": "Ejercicio 1", "duration_s": 600, "remaining_ms": 600000 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `timer_id` | string | UUID v4 de la consola; identifica el temporizador en `extend`, `stop` y `ack`. |
+| `label` | string | 0–40 caracteres, texto plano. Vacío: la ventana dice «Tiempo». |
+| `duration_s` | entero | El total con el que se lanzó, 10–14 400 s (4 h). Solo informa. |
+| `remaining_ms` | entero | Lo que falta al enviar, 1–14 400 000 (4 h). **Manda sobre todo lo demás.** Puede pasar de `duration_s` si se extendió y se reenvía al reconectar. |
+
+**`timer.extend` (P → A)**
+
+```json
+{ "timer_id": "e4b1…", "add_s": 300, "remaining_ms": 572000 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `timer_id` | string | El del temporizador vigente. Otro → se ignora sin error. |
+| `add_s` | entero | Lo que agregó el profesor, 60–3600 s. Solo informa: el agente **no suma**, toma `remaining_ms`; así un reenvío nunca extiende dos veces. |
+| `remaining_ms` | entero | Lo que falta ahora, ya extendido, 1–14 400 000. |
+
+**`timer.stop` (P → A)**
+
+```json
+{ "timer_id": "e4b1…" }
+```
+
+Quita la insignia y el aviso de fin. Si el vigente es otro, o no hay ninguno, se ignora.
+
+**`timer.ack` (A → P)**
+
+```json
+{ "ref_id": "<id del timer.start>", "timer_id": "e4b1…", "status": "running", "remaining_ms": 599980 }
+```
+
+| `status` | Cuándo | `remaining_ms` |
+|---|---|---|
+| `running` | Respuesta a `start` o `extend`: la insignia ya cuenta. | Lo que falta según el agente. |
+| `ended` | La cuenta del agente llegó a cero (`ref_id` = el último `start` o `extend`). | `0` |
+| `stopped` | Respuesta a `stop`, o el temporizador fue reemplazado por otro `start` (`ref_id` = el `start` viejo). | `0` |
+
+Reglas:
+
+- **Un temporizador por clase.** Un `start` con otro `timer_id` reemplaza al vigente: el agente
+  acusa `stopped` del viejo y empieza el nuevo. Un `start` con el **mismo** `timer_id` (el
+  reenvío al reconectar) solo corrige lo que falta.
+- **El fin lo calcula cada lado.** La consola no envía «terminó»: cuando su cuenta llega a cero,
+  la marca como terminada. El agente acusa `ended`. En cero no pasa nada más: no bloquea, no
+  recoge ni cambia nada en el equipo.
+- `extend` sobre un temporizador terminado lo revive. Lo que falta nunca pasa de 4 h: la
+  consola no ofrece extender más allá.
+- **La cuenta sigue si se cae la conexión**, porque no tiene efecto en el equipo. Al reconectar
+  (§3.5), la consola, si el temporizador sigue corriendo y ese alumno es destinatario, le reenvía
+  `timer.start` con el mismo `timer_id` y lo que falta ahora; el agente corrige su cuenta sin
+  quitar la insignia. Si en **3 s** después de `hello` no llega ese `timer.start` (se detuvo o
+  terminó mientras estaba desconectado), el agente la quita.
+- **Destinatarios:** «todos» (el canal, también quien se conecta a media cuenta) o una
+  selección, identificada como en el resto de la consola (equipo y usuario). La consola envía el
+  mismo mensaje a cada sesión, solo a las que declararon `timer`.
+- La ventana del alumno quita sola la insignia de «terminó» a los 5 minutos si no llega
+  `timer.stop`.
+- Los registros llevan `timer_id`, `duration_s` y `remaining_ms`, nunca `label`
+  (`docs/privacidad.md` regla 54).
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -1119,6 +1220,9 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `hand.raise.note` | 140 caracteres | `error` `invalid_message` |
 | `msg.student` / `hand.*` por agente | ráfaga 5 y 1 cada 3 s / ráfaga 3 y 1 por s | `error` `invalid_message`; se descarta |
 | Mensajes guardados por alumno en la consola | 20 | Se descarta el respondido más viejo |
+| `timer.start.label` | 40 caracteres | `error` `invalid_message` |
+| `timer.start.duration_s` / `timer.*.remaining_ms` | 10–14 400 s / 1–14 400 000 ms (4 h; `0` solo en `timer.ack`) | `error` `invalid_message` |
+| `timer.extend.add_s` | 60–3600 s | `error` `invalid_message` |
 | `screen.thumb.start.interval_ms` | 500–10 000 ms (≤ 2 cuadros/s) | `error` `invalid_message` |
 | `screen.thumb.frame.jpeg` | 640 KiB antes de Base64 | `error` `message_too_large`; la sesión sigue. |
 | `screen.snapshot.request.quality` / `max_width` | 50–95 / 0 o 640–7680 | `error` `invalid_message` |

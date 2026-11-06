@@ -26,6 +26,9 @@ const (
 	// teacher (§5.18). Every OS, whenever the agent has a window.
 	CapHand       Capability = "hand"
 	CapMsgStudent Capability = "msg.student"
+	// CapTimer shows the class countdown in the window (§5.19). Every OS,
+	// whenever the agent has a window.
+	CapTimer Capability = "timer"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -67,6 +70,10 @@ var requiredCapability = map[Type]Capability{
 
 	TypeHandLower:     CapHand, // only when sent P → A
 	TypeMsgStudentAck: CapMsgStudent,
+
+	TypeTimerStart:  CapTimer,
+	TypeTimerExtend: CapTimer,
+	TypeTimerStop:   CapTimer,
 }
 
 // agentCapability lists the capability an agent must have declared before the

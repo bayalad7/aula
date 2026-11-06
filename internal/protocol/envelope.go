@@ -65,6 +65,11 @@ const (
 	TypeHandLower     Type = "hand.lower"
 	TypeMsgStudent    Type = "msg.student"
 	TypeMsgStudentAck Type = "msg.student.ack"
+
+	TypeTimerStart  Type = "timer.start"
+	TypeTimerExtend Type = "timer.extend"
+	TypeTimerStop   Type = "timer.stop"
+	TypeTimerAck    Type = "timer.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -268,6 +273,11 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeHandLower:     decodeAs[HandLower],
 	TypeMsgStudent:    decodeAs[MsgStudent],
 	TypeMsgStudentAck: decodeAs[MsgStudentAck],
+
+	TypeTimerStart:  decodeAs[TimerStart],
+	TypeTimerExtend: decodeAs[TimerExtend],
+	TypeTimerStop:   decodeAs[TimerStop],
+	TypeTimerAck:    decodeAs[TimerAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

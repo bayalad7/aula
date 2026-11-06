@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-05 (10.9 enviar archivos y plantillas implementado, falta la prueba en
+Última actualización: 2026-11-06 (10.10 recolecciones implementadas, falta la prueba en VM;
+10.9 enviar archivos y plantillas implementado, falta la prueba en
 VM; 10.8 temporizador de ejercicio implementado, falta la prueba en
 VM; 10.7 mensaje privado a un alumno implementado, falta la prueba
 en VM; 10.6 manos y mensajes del alumno implementada, con la vista
@@ -31,7 +32,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.7 | Mensaje directo a un alumno | ✅ Implementado como mejora del aviso (`msg.show` con `personal`) y probado en CI (falta la prueba en VM, `docs/prueba-vms.md` §19, y los casos C-59 a C-62 y A-17) |
 | 10.8 | Temporizador compartido | ✅ Implementado y probado en CI con dobles y alumnos simulados; su sección en «Participación» (falta la prueba en VM, `docs/prueba-vms.md` §20, y los casos C-63 a C-67 y A-18 y A-19) |
 | 10.9 | Enviar archivos y plantillas de ejercicio | ✅ Implementado y probado en CI con dobles y alumnos simulados (falta la prueba en VM, `docs/prueba-vms.md` §21, y los casos C-68 a C-73 y A-20 a A-22) |
-| 10.10 | Recoger código y archivos | ⏳ Pendiente |
+| 10.10 | Recoger los archivos de cada alumno (recolecciones) | ✅ Implementado y probado en CI con dobles y alumnos simulados; pestaña «Recolecciones» de Archivos (falta la prueba en VM, `docs/prueba-vms.md` §22, y los casos C-74 a C-78 y A-23 a A-25). `code.collect` (entregar desde el overlay) sigue reservado |
 | 10.11 | Enviar una URL o abrir una app | ⏳ Pendiente |
 | 10.12 | Encuestas en vivo | ⏳ Pendiente |
 | 10.13 | Asistencia y bitácora | ⏳ Pendiente |
@@ -1136,6 +1137,56 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.10: recoger el trabajo de los alumnos — notas
+
+- **Diseño aprobado** (2026-11-06) con las recomendaciones: pestaña «Recolecciones» dentro del
+  módulo Archivos (selector «Enviar | Recolecciones»), flujo en dos pasos (crear la carpeta en los
+  equipos y después recoger, las veces que haga falta), guardado al llegar en la carpeta del
+  profesor y el nombre del archivo del alumno sin tocar.
+- **Protocolo** (`docs/protocol.md` §5.21, permisos en §5.21.1): `file.collect.open`,
+  `file.collect.request` (ronda, patrones y límites), `file.collect.ack` (`ready`, `sending`,
+  `empty` o `failed`, con lo omitido y por qué), `file.collect.response` (partes de 512 KiB con
+  el troceo común) y `file.collect.response.ack`; capacidad `file.collect` (deja de estar
+  reservada). La consola nunca manda rutas: fecha y actividad, y el agente arma
+  `recolecciones/<fecha>/<actividad>`.
+- **`internal/collect`** (nuevo, sin APIs del SO): `Folder`, `CheckPath`, `CheckWorkPath`,
+  `ParsePatterns`/`Match`; agente: `Responder` (aviso antes de leer, solo la carpeta, hasta 4
+  niveles, sin enlaces, lee todo en memoria antes de responder, un archivo a la vez esperando su
+  acuse, una ronda a la vez, lo recogido para la ventana); consola: `Collector` (de 4 en 4,
+  ensambla y comprueba `sha256`, carpeta temporal y un solo cambio por ronda, manifiesto
+  `aula-recoleccion.json`, `Reopen` para quien llega tarde) y `CopyTo` («Guardar como…»).
+- **`internal/platform`:** `WorkFolderReader` (`MkdirAll`, `List`, `Read`) con `ErrFileTooLarge`
+  y `ErrOffline`. En Windows distingue enlaces y *junctions* por su *reparse tag* (los archivos de
+  OneDrive no cuentan como enlace), no lee los que solo están en la nube y comparte la lectura con
+  el editor del alumno. Fallback «no soportado». Pruebas con carpeta temporal y una *junction* real.
+- **`internal/agentsvc`:** llamadas `folder.create`, `folder.list` y `file.read` y el *proxy*
+  `WorkFolderReader`; el ayudante vuelve a comprobar la ruta (`CheckWorkPath`).
+- **Alumno:** declara `file.collect` con la carpeta de trabajo; tarjeta por recolección
+  (`#recolecciones`) con dónde guardar, los tipos, cada ronda con su hora, lo recogido y lo que no
+  y por qué, y «Abrir carpeta» (`OpenCollectionFolder(id)`). Avisos `collect-requested` y
+  `collect-done` (con `Notice.Ref`, campo nuevo de `codedist`). `notify`, nunca `raise`.
+- **Consola:** pestañas en Archivos; «Nueva recolección» (actividad, tipos, la ruta que verá el
+  alumno), y una tarjeta por recolección con «Recoger», «Recoger a los que faltan», «Abrir
+  carpeta» y la tabla por alumno (estado, qué llegó, cuándo, «Abrir», «Guardar como…», «Recoger
+  otra vez»). «Entregar su ejercicio» en la ficha; la carpeta en Ajustes › Acerca de. Errores
+  `collectActivity`, `collectFolder`, `collectGone`, `collectNoStudents`, `collectNothing`.
+- **Simulados:** declaran `file.collect` y pasan por el mismo `Responder` con una carpeta en
+  memoria que devuelve su último código (`Simulado 1.py`); `noack` no acusa.
+- **Documentación:** `docs/privacidad.md` reglas 60–65 (y la 58); manual (Archivos ›
+  «Recolecciones», «Dónde queda lo recogido», «Si falta alguien», con `recolecciones.webp`, y
+  Tareas frecuentes › «Recoger el ejercicio»); diagrama 07 a lo implementado, con sus SVG;
+  `docs/eventos-ui.md`; casos C-74 a C-78, A-23 a A-25 y `docs/prueba-vms.md` §22; `CLAUDE.md`
+  lista `internal/collect`; zonas nuevas y mapa regenerado.
+- **Arnés:** escenas `lab-recolecciones` y `lab-recolecciones-nueva` y capturas 110–116 en
+  `recorrido.mjs`; escenas `recoleccion`, `recoleccion-aviso` y `recoleccion-recogiendo` y
+  capturas 71–75 en `recorrido-alumno.mjs`; caso `recoleccion-abierta-y-recogida` en
+  `pruebas-alumno.mjs`.
+- **Para 14 (sandbox):** cada alumno queda en su carpeta con `aula-recoleccion.json`
+  (`collect.ReadManifest`) y `Collector.Get` da la carpeta y los archivos de cada uno.
+- **Fuera:** `code.collect` desde el overlay, Linux y macOS, exportar en zip, borrar archivos del
+  alumno y reanudar una ronda cortada (se recoge otra vez).
+- **Falta de tu lado:** la prueba en VM (§22) y los casos manuales.
 
 ## Etapa 10.9: enviar archivos y plantillas — notas
 

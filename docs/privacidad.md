@@ -236,7 +236,9 @@ Alumnos de prueba que la consola crea dentro de sí misma para probar Aula sin l
     «alumno simulado», y se guarda aparte (regla 46). Tampoco cambia un equipo levantar la mano
     o escribir al profesor (reglas 50–52): un simulado lo hace solo cuando el profesor lo pulsa
     en su fila, y llega a Participación marcado «Simulado».
-    Recibir archivos tampoco: el simulado los acusa sin guardarlos (regla 59).
+    Recibir archivos tampoco: el simulado los acusa sin guardarlos (regla 59). Ni que se recoja
+    su trabajo: entrega de memoria el último código que recibió, y la consola lo guarda aparte, en
+    `… (simulado)` (regla 64).
 35. **No guarda nada.** Los simulados viven en memoria y desaparecen al cerrar el aula simulada,
     al cambiar de canal o de nombre y al cerrar la clase. Su «pantalla» se dibuja en memoria y,
     como la de un equipo real, muestra «Tu pantalla está siendo vista por el profesor» mientras
@@ -426,12 +428,63 @@ solo se marca el icono del área de notificación.
     que tenías con ese nombre».
 58. **Lo recibido no se abre ni se ejecuta, y no da acceso al equipo.** Aula guarda el archivo y
     nada más: el alumno decide si lo abre. Enviar archivos no le permite a la consola leer, listar
-    ni borrar nada del alumno; eso sería la recolección (10.10), con sus propias reglas.
+    ni borrar nada del alumno. Leer es la recolección (reglas 60–65), y solo en su carpeta.
 59. **Registros y simulados.** Los registros llevan `push_id`, `file_id`, partes, tamaños y el
     resultado, **nunca** el contenido, los nombres de los archivos, la carpeta ni el nombre de la
     plantilla. Los alumnos simulados acusan los archivos sin escribir nada: su carpeta es una
     lista de nombres en memoria (regla 35). Las plantillas son carpetas en el equipo del
     profesor (`Documentos\Aula\plantillas`) y solo él las cambia.
+
+## Recoger el trabajo de los alumnos (v0.11, Windows)
+
+Reglas para `file.collect.*` (`docs/protocol.md` §5.21), aprobadas el 2026-11-06. El profesor
+abre una recolección (fecha y actividad), cada equipo crea su carpeta y, cuando el profesor pulsa
+«Recoger», la consola recibe lo que el alumno guardó ahí. Es la única función de Aula que **lee**
+archivos del alumno, y por eso se limita a una carpeta acordada y el alumno sabe, antes y
+después, qué se recoge. No controla el equipo: no lleva banda, no trae la ventana al frente ni
+quita el foco (`notify`). Con la ventana cerrada, solo se marca el icono del área de
+notificación.
+
+60. **Una sola carpeta, acordada.** Solo se lee la carpeta de la actividad dentro de la carpeta
+    de trabajo, `Documentos\Aula\recolecciones\<fecha>\<actividad>\`, y lo que hay dentro hasta 4
+    niveles. **Nunca** otra carpeta ni el resto del disco.
+    - **La consola no manda rutas.** Manda la fecha y el nombre de la actividad; el agente arma
+      la carpeta bajo `recolecciones\` y rechaza un nombre que no cumpla las reglas de ruta
+      (regla 55). No sigue enlaces ni *junctions*: los omite y lo dice.
+    - **Como el alumno.** En modo servicio lee el ayudante, con el token del alumno: Aula no puede
+      leer nada que el alumno no pueda leer. Sin sesión iniciada no se declara `file.collect`.
+61. **El alumno lo sabe antes.** Al abrir la recolección, la ventana agrega una tarjeta con
+    «Nuevo»:
+
+    > **Recolección: Ejercicio 4** · Guarda tu ejercicio en
+    > `Documentos\Aula\recolecciones\2026-11-06\Ejercicio 4\` · Se recogerán: `*.py`
+
+    con «Abrir carpeta». Al pedir los archivos, y **antes** de leer nada, un aviso en la esquina:
+
+    > El profesor solicitó recoger tu ejercicio en
+    > `Documentos\Aula\recolecciones\2026-11-06\Ejercicio 4\`.
+62. **El alumno ve qué se recogió y cuándo.** Al terminar, un aviso en la esquina:
+
+    > Tu profesor recogió tu ejercicio: `20231234-Ana.py` (3 KB).
+
+    (con varios archivos, «recogió 3 archivos (12 KB)»), y la tarjeta de la recolección anota,
+    por ronda, la hora y cada archivo con su tamaño, y lo que **no** se recogió y por qué
+    (demasiado grande, abierto en otro programa, solo en la nube). La lista queda a la vista
+    durante toda la sesión. Si la carpeta estaba vacía, también se le dice: «No había archivos que
+    recoger».
+63. **Solo lee.** Recoger no borra, no mueve, no cambia ni ejecuta nada del alumno: su carpeta
+    queda igual. Tampoco da acceso a nada más: la consola no puede listar otras carpetas ni pedir
+    un archivo por ruta.
+64. **Dónde lo guarda el profesor.** Al llegar, en su carpeta Documentos:
+    `Documentos\Aula\recolecciones\<fecha>\<actividad>\<equipo> (<usuario>)\`, con un
+    `aula-recoleccion.json` que dice de qué ronda y hora es cada archivo y su huella. Los de un
+    simulado van en `… (simulado)`. La carpeta está en Ajustes › Acerca de. Recoger otra vez
+    reemplaza la copia del profesor de ese alumno, nunca el original. Aula no los sube ni los
+    comparte; el manual recomienda borrarlos cuando ya no se necesiten.
+65. **Registros y simulados.** Los registros llevan `collect_id`, la ronda, `file_id`, partes,
+    tamaños, cuántos archivos y el resultado; **nunca** el contenido, los nombres de los archivos,
+    la actividad ni las carpetas. Los alumnos simulados no leen ningún disco: devuelven el último
+    código que recibieron.
 
 ## Pendiente para etapas futuras
 

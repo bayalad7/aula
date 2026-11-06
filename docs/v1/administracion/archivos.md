@@ -1,6 +1,6 @@
 ---
 titulo: "La pantalla Archivos"
-resumen: "Envía archivos o una plantilla de ejercicio a todos o a tu selección, guarda plantillas reutilizables y mira quién ya los tiene."
+resumen: "Envía archivos o una plantilla de ejercicio a todos o a tu selección, guarda plantillas reutilizables, mira quién ya los tiene y recoge el ejercicio de cada alumno."
 grupo: "Guía por pantalla"
 orden: 42
 pantallas: [archivos]
@@ -8,8 +8,8 @@ pantallas: [archivos]
 
 # La pantalla Archivos
 
-Aquí repartes archivos a tus alumnos (un dataset, el esqueleto de un ejercicio, un documento) y
-guardas las plantillas que usas en cada clase.
+Aquí repartes archivos a tus alumnos (un dataset, el esqueleto de un ejercicio, un documento),
+guardas las plantillas que usas en cada clase y, en la pestaña **Recolecciones**, recoges su trabajo.
 
 ![La pantalla Archivos](img/archivos.webp)
 
@@ -74,3 +74,60 @@ Abre **Quién falta** en el envío. Al lado de cada alumno dice por qué:
 
 Un equipo sin la función (otra versión, Linux o macOS) cuenta como «no puede recibirlo»; lo ves en
 su ficha, en **Qué puede hacer su equipo**.
+
+## Recolecciones
+
+La pestaña **Recolecciones** recoge el trabajo de tus alumnos: cada uno guarda su ejercicio en una
+carpeta acordada y tú lo recibes ordenado por alumno. Es en dos pasos:
+
+![La pestaña Recolecciones](img/recolecciones.webp)
+
+1. **Crea la carpeta.** Escribe la **Actividad** (por ejemplo, `Ejercicio 4`) y, si quieres, los
+   **Tipos de archivo** (`*.py, *.txt`; vacío: todo lo que guarden ahí). Pulsa **Crear carpeta en
+   los equipos**. Cada alumno recibe una tarjeta «Recolección: Ejercicio 4 · Guarda tu ejercicio
+   en `Documentos\Aula\recolecciones\2026-11-06\Ejercicio 4`» con **Abrir carpeta**. Quien se
+   conecte más tarde la recibe al llegar.
+2. **Recoge.** Cuando terminen, pulsa **Recoger**. Cada alumno ve antes un aviso «El profesor
+   solicitó recoger tu ejercicio en …» y, al terminar, «Tu profesor recogió tu ejercicio:
+   20231234-Ana.py (3 KB)». Puedes recoger las veces que quieras: **Recoger otra vez** trae una
+   ronda nueva, **Recoger a los que faltan** solo a quien no entregó, y en la fila de un alumno,
+   **Recoger otra vez** solo a él.
+
+Aula solo lee esa carpeta (hasta 4 subcarpetas adentro), nunca el resto del equipo, y no borra ni
+cambia nada del alumno. Los accesos directos a otras carpetas no se siguen.
+
+- **Límites:** hasta 20 archivos por alumno, de 4 MB cada uno y 16 MB en total. Lo que pasa del
+  límite no se recoge, y tanto tú como el alumno ven qué quedó fuera y por qué.
+- Los alumnos simulados entregan el último código que les enviaste, como `Simulado 1.py`.
+
+{{diagrama:07-acuses-recoleccion}}
+
+### Dónde queda lo recogido
+
+Al llegar, cada archivo se guarda en tu equipo, en
+`Documentos\Aula\recolecciones\<fecha>\<actividad>\<equipo> (<usuario>)\`, con la misma
+estructura de carpetas que tenía el alumno (los simulados, en `… (simulado)`). La carpeta está
+también en **Ajustes › Acerca de**.
+
+- En la fila de cada alumno: **Abrir** muestra su carpeta y **Guardar como…** copia lo recogido a
+  donde elijas (nunca reemplaza: si ya hay una copia, crea `… (2)`).
+- **Recoger otra vez** reemplaza tu copia de ese alumno por la ronda nueva; su original no cambia.
+- Junto a los archivos queda `aula-recoleccion.json`: de qué ronda y hora es cada archivo y su
+  huella, para revisar o calificar después.
+- Aula no sube ni comparte lo recogido. Bórralo cuando ya no lo necesites.
+
+### Si falta alguien
+
+La columna **Estado** dice cómo le fue a cada alumno:
+
+| Dice | Qué hacer |
+|---|---|
+| Carpeta lista | Ya tiene la carpeta; todavía no recoges. |
+| Carpeta vacía | No guardó nada que coincida con los tipos. Que guarde ahí su ejercicio y **Recoger otra vez**. |
+| No se pudo: se desconectó · no respondió a tiempo | **Recoger a los que faltan** cuando vuelva. |
+| No se pudo: nadie tiene la sesión iniciada | Recoge cuando el alumno entre a su sesión. |
+| No se recogió …: demasiado grande · está solo en la nube | Que lo haga más chico, o que en OneDrive elija «Mantener siempre en este dispositivo». |
+| No se recogió …: otro programa lo tiene abierto | Que lo cierre (o guarde) y recoge otra vez. |
+
+Un equipo sin la función (otra versión, Linux o macOS) no recibe la carpeta; lo ves en su ficha,
+en **Qué puede hacer su equipo**.

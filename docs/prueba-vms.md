@@ -1207,3 +1207,20 @@ Comprueba que una plantilla llega a la carpeta correcta de dos alumnos, que nada
 | **FP-F** Corte a mitad | Envía el archivo grande y desconecta la red de la VM 2 durante el envío. | En la consola queda «se desconectó» o «no respondió» en Quién falta; en la VM 2 no queda ningún archivo a medias ni `.aula-*.tmp`. «Reenviar a los que faltan» lo completa. |
 
 **Para aceptar** bastan FP-A, FP-B y FP-C en ✅. Borra la *junction* de FP-C al terminar.
+
+## 22. Recoger el trabajo de los alumnos (10.10)
+
+Comprueba que lo de dos alumnos llega íntegro y ordenado, que solo se lee la carpeta acordada y que
+el alumno lo ve antes y después (`docs/protocol.md` §5.21, `docs/privacidad.md` reglas 60–65). Con
+las dos VMs de §18, el agente **como servicio** en la VM 1 y en modo ventana en la VM 2.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **RC-A** Dos alumnos íntegros y organizados (**aceptación**) | Archivos › Recolecciones: actividad `Ejercicio 4`, tipos vacío, **Crear carpeta en los equipos**. En cada VM, guarda en esa carpeta un `.py` pequeño y, en una subcarpeta `datos\`, un archivo de unos 5 MB. **Recoger**. | En la consola, los dos «Recogido» con sus archivos y la hora. En el profesor, `Documentos\Aula\recolecciones\<hoy>\Ejercicio 4\<VM1> (<usuario>)\` y `…\<VM2> (<usuario>)\` con la misma estructura (`datos\…`) y `aula-recoleccion.json`. `Get-FileHash` de cada archivo coincide con el de su VM y con el `sha256` del manifiesto. |
+| **RC-B** Solo la carpeta acordada (**aceptación**) | En la VM 2 deja un `secreto.py` en `Documentos\Aula` y otro en el Escritorio; crea una *junction* `mklink /J "%USERPROFILE%\Documents\Aula\recolecciones\<hoy>\Ejercicio 4\atajo" C:\Windows\Temp`. **Recoger otra vez**. | Ningún `secreto.py` llega. La fila de la VM 2 dice «No se recogió atajo: es un acceso directo a otra carpeta», y su tarjeta igual. Nada de `C:\Windows\Temp` aparece en el profesor. |
+| **RC-C** Aviso antes y después (**aceptación**) | Con el Bloc de notas al frente en las dos VMs, **Recoger otra vez**. | En las dos, primero «El profesor solicitó recoger tu ejercicio en …» y luego «Tu profesor recogió …» en la esquina, sin quitar el foco. La tarjeta anota la ronda con la hora. |
+| **RC-D** Como el alumno (servicio) | En la VM 1, quita el permiso de lectura de tu usuario a un archivo de la carpeta (Propiedades › Seguridad) y recoge. | Ese archivo queda «No se recogió …: Windows no dejó leerlo o guardarlo»: el servicio no lo lee como SYSTEM. `C:\ProgramData\Aula\alumno\logs\aula-agente.log` dice «collection read» con cantidades, **sin** nombres. |
+| **RC-E** Corte a mitad | Pon un archivo de 15 MB, recoge y desconecta la red de la VM 2 durante el envío. | La VM 2 queda «No se pudo: se desconectó» y la copia del profesor de esa VM no cambia (ni `.aula-*.tmp`). Al volver, **Recoger al que falta** la completa. |
+| **RC-F** Sin sesión | Cierra la sesión del alumno en la VM 1 y crea otra recolección. | La VM 1 no aparece en la tabla (no declara `file.collect`); al iniciar sesión recibe la carpeta sola. |
+
+**Para aceptar** bastan RC-A, RC-B y RC-C en ✅. Borra la *junction* de RC-B al terminar.

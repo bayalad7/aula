@@ -40,6 +40,17 @@ Los alumnos ven cuánto falta en su barra de arriba, sin que les tape el trabajo
 tu consola puedes **Extender** o **Detener**. Más detalles en
 [Participación › Temporizador](participacion#temporizador).
 
+## Recoger el ejercicio
+
+1. En **Archivos**, abre la pestaña **Recolecciones**.
+2. Escribe la actividad («Ejercicio 4») y pulsa **Crear carpeta en los equipos**: cada alumno ve
+   dónde guardar su ejercicio.
+3. Cuando terminen, pulsa **Recoger**.
+
+Lo de cada alumno llega a tu `Documentos\Aula\recolecciones\<fecha>\<actividad>\`, en una carpeta
+por alumno. Solo se lee esa carpeta y el alumno ve antes y después qué se recogió. Más detalles en
+[Archivos › Recolecciones](archivos#recolecciones).
+
 ## Mandar un mensaje privado a un alumno
 
 Para una pista o una corrección que solo le sirve a uno, sin que lo vea el resto:

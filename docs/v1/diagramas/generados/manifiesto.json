@@ -98,15 +98,18 @@
     {
       "id": "07-acuses-recoleccion",
       "titulo": "Acuses y recolección de código/archivos",
-      "descripcion": "Cómo cuenta la consola quién recibió cada envío (código, avisos y archivos), y qué falta para recoger trabajos de los alumnos",
+      "descripcion": "Cómo cuenta la consola quién recibió cada envío (código, avisos y archivos) y cómo recoge el trabajo de cada alumno de una sola carpeta acordada",
       "audiencia": [
-        "desarrollador"
+        "profesor",
+        "desarrollador",
+        "auditor"
       ],
       "pantallas": [
-        "codigo"
+        "codigo",
+        "archivos"
       ],
-      "hash": "sha256:14e2b4c0a26f7af19a5ca3c61e89602c12f9f706c7559ff0b9e858a9658732b4",
-      "alt": "Acuses y recolección de código/archivos: Cómo cuenta la consola quién recibió cada envío (código, avisos y archivos), y qué falta para recoger trabajos de los alumnos",
+      "hash": "sha256:60843c6a78f81999928948a8c816307855ebbc1dad101107bb80f05c09b51d80",
+      "alt": "Acuses y recolección de código/archivos: Cómo cuenta la consola quién recibió cada envío (código, avisos y archivos) y cómo recoge el trabajo de cada alumno de una sola carpeta acordada",
       "claro": "generados/07-acuses-recoleccion.claro.svg",
       "oscuro": "generados/07-acuses-recoleccion.oscuro.svg"
     },

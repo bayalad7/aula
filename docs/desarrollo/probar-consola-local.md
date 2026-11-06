@@ -165,6 +165,18 @@ Con el aula simulada abierta (C-03) y dos simulados; pon a Simulado 2 la falla �
 | C-72 | Archivos › «Archivos enviados» › «Reenviar» en la plantilla; luego en la tabla Plantillas, «Usar» y «Abrir carpeta» | Pide confirmación «¿Reenviar Plantilla Ejercicio 4 (3)?»; al aceptar, un envío nuevo en Últimos envíos y la columna «Veces» dice 2. El log de la consola dice «file push» con `push_id`, archivos y bytes, **nunca** nombres ni carpetas |
 | C-73 | A 900×600 y en oscuro, la pestaña Archivos con una plantilla elegida; la ficha de un simulado | Todo se lee sin barras horizontales; la ficha dice «Recibir archivos: Sí» |
 
+### Recolecciones (10.10)
+
+Con el aula simulada abierta (C-03) y dos simulados; emite antes un código Python (C-04) para que tengan qué entregar.
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-74 | Archivos › pestaña «Recolecciones»; en «Actividad» escribe `Ejercicio 4`, en «Tipos» `*.py`; «Crear carpeta en los equipos» | Mientras escribes, la nota dice «Cada alumno tendrá la carpeta Documentos\Aula\recolecciones\<hoy>\Ejercicio 4…». Toast «Carpeta «Ejercicio 4» creada en 2 equipos». La tarjeta «Ejercicio 4 · <hoy>» lista a los dos con «Carpeta lista» e insignia «Simulado» |
+| C-75 | «Recoger» | Los dos pasan por «Recogiendo…» a «Recogido» con «Simulado 1.py (… B)» y la hora; el resumen dice «2 de 2 entregaron · ronda 1». En `Documentos\Aula\recolecciones\<hoy>\Ejercicio 4\` de este equipo hay `Simulado 1 (Alumno de prueba) (simulado)\Simulado 1.py` con el código emitido y `aula-recoleccion.json` |
+| C-76 | En la fila de Simulado 1: «Abrir» y «Guardar como…» (elige el Escritorio); arriba, «Carpeta de recolecciones» | El Explorador abre su carpeta; el diálogo es el del sistema y en el Escritorio queda una copia (otra vez: `… (2)`). «Carpeta de recolecciones» abre `Documentos\Aula\recolecciones`. Ajustes › Acerca de muestra esa misma ruta con «Abrir carpeta» |
+| C-77 | Pon a Simulado 2 la falla «No confirma lo que recibe»; «Recoger otra vez» y espera 30 s; luego quítale la falla y «Recoger al que falta» | Simulado 2 queda «No se pudo: no respondió a tiempo» y el botón «Recoger al que falta» aparece; al pulsarlo, solo Simulado 2 pasa a «Recogido» (ronda 3) |
+| C-78 | Actividad `Ejercicio: 4` y crea; luego cierra la clase y vuelve a abrirla; a 900×600 y en oscuro | «Ese nombre no sirve para la carpeta» con «Ver en el manual», y nada sale. Tras reabrir, la pestaña está vacía, pero la carpeta del paso C-75 sigue en Documentos. Todo se lee sin barras horizontales. El log de la consola dice «collection opened/round saved» con `collect_id` y cantidades, **nunca** la actividad ni nombres |
+
 ### Diagramas
 
 | # | Pasos | Esperado |
@@ -222,6 +234,9 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-20 | Con tu editor al frente, envía desde la consola un archivo `datos.csv` a la carpeta `Ejercicio 4` | En la lista de Aula aparece arriba la tarjeta «Archivo recibido: datos.csv · Guardado en Documentos\Aula\Ejercicio 4» con «Nuevo» y «Abrir carpeta»; tu editor conserva el foco; el título dice «(1) Aula — …». El archivo está en `Documentos\Aula\Ejercicio 4\datos.csv` y su propietario es tu usuario (Propiedades › Seguridad › Opciones avanzadas), no SYSTEM |
 | A-21 | Envía otra vez el mismo archivo, sin «Reemplazar»; luego con «Reemplazar si ya lo tienen» | La segunda tarjeta dice «Ya tenías datos.csv: el nuevo quedó como datos (2).csv. El tuyo no cambió.»; la tercera, «datos.csv reemplazó al que tenías con ese nombre.» |
 | A-22 | «Abrir carpeta»; luego cierra Aula al área de notificación y envía otro archivo | El Explorador abre `Documentos\Aula\Ejercicio 4` (nada más). Con Aula cerrada, la ventana no aparece: solo se marca el icono, y al abrirla está la tarjeta con «Nuevo». `aula-agente.log` dice «file push saved» con tamaños, nunca nombres |
+| A-23 | Con tu editor al frente, crea desde la consola la recolección `Ejercicio 4` con `*.py` | En la lista de Aula aparece arriba «Recolección: Ejercicio 4 · Guarda tu ejercicio en Documentos\Aula\recolecciones\<hoy>\Ejercicio 4 · Se recogerán: *.py» con «Nuevo» y «Abrir carpeta»; el editor conserva el foco. «Abrir carpeta» abre esa carpeta (existe y está vacía) |
+| A-24 | Guarda ahí `20231234-Ana.py` y un `notas.txt`, y otro `.py` en `Documentos\Aula` (fuera); desde la consola, «Recoger» | Primero el aviso «El profesor solicitó recoger tu ejercicio en Documentos\Aula\recolecciones\…»; luego «Tu profesor recogió tu ejercicio: 20231234-Ana.py (… KB).». La tarjeta dice «Recogido a las …: 1 archivo». Ni `notas.txt` ni el de afuera llegan a la consola; nada cambia en tu carpeta. Ninguno de los avisos quita el foco ni trae la ventana |
+| A-25 | Cierra Aula al área de notificación y recoge otra vez | La ventana no aparece: solo se marca el icono; al abrirla están los avisos y la ronda nueva en la tarjeta. `aula-agente.log` dice «collection read/collected file acked» con tamaños, nunca nombres |
 
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)
 

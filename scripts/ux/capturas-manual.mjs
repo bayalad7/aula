@@ -21,6 +21,7 @@ const capturas = {
     await p.select("#archivos-plantilla", "Ejercicio 4");
     await p.evaluate(() => { document.getElementById("archivos-destino").value = "Ejercicio 4"; });
   }, click("[data-vista-de=archivos] .envio__desplegar")) }],
+  "recolecciones.webp": ["lab-recolecciones", { ruta: "archivos/recolecciones", h: 800 }],
   "simulada.webp": ["simulada", { ruta: "simulada" }],
   "participacion.webp": ["lab-participacion", { ruta: "participacion" }],
 };

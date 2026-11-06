@@ -15,6 +15,7 @@ import (
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
+	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/screen"
@@ -50,8 +51,10 @@ const (
 // writing to the teacher start on the student's side: the teacher makes a
 // simulated student do it (Raise, Write) to try «Participación» without a lab.
 // The exercise timer only informs: they count it and acknowledge it.
+// Files the teacher sends: they acknowledge them but write nothing on the disk
+// (filepush with an in-memory folder that keeps only the names).
 var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer}
+	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities
@@ -100,6 +103,7 @@ type Student struct {
 	Private      int                   `json:"private"` // of Notices, those sent to this student only (msg.show personal)
 	LastNotice   string                `json:"lastNotice"`
 	Snapshots    int                   `json:"snapshots"` // screenshots the teacher took of it
+	Files        int                   `json:"files"`     // files it acknowledged as saved (file.push, never on disk)
 	// Hand is its hand (participation.HandState) and Sent how many messages
 	// it wrote to the teacher.
 	Hand participation.HandState `json:"hand"`
@@ -288,6 +292,8 @@ type student struct {
 	done       chan struct{}
 	streamer   *screen.Streamer
 	taker      *snapshot.Taker
+	files      *filepush.Receiver // file.push: acknowledges, never writes to disk
+	received   int
 	timerT     *time.Timer // the next tick of its countdown
 }
 
@@ -319,6 +325,10 @@ func (s *student) start() {
 		OnTaken:  func(time.Time) { s.tookSnapshot() }}
 	if slices.Contains(s.caps, protocol.CapScreenSnapshot) {
 		s.taker.Capture = drawnScreen{s}
+	}
+	s.files = &filepush.Receiver{Logger: log, OnFile: s.receivedFile}
+	if slices.Contains(s.caps, protocol.CapFilePush) {
+		s.files.Writer = &memoryFolder{}
 	}
 	recv := &codedist.Receiver{
 		Board:    s.board,
@@ -416,6 +426,9 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 		if s.handleTimer(ctx, cl, env, fault) {
 			return
 		}
+		if s.handleFile(ctx, send, env) {
+			return
+		}
 		reply, handled := s.taker.Handle(ctx, snapshot.Sender(send), env)
 		if !handled {
 			reply, handled = s.streamer.Handle(ctx, send, env)
@@ -481,7 +494,7 @@ func (s *student) snapshot() Student {
 	defer s.mu.Unlock()
 	out := Student{
 		ID: s.id, Name: s.name, OS: s.os, Capabilities: slices.Clone(s.caps), Connected: s.connected,
-		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, Private: s.private, LastNotice: s.lastNotice, Snapshots: s.snapshots, Snippets: []Snippet{},
+		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, Private: s.private, LastNotice: s.lastNotice, Snapshots: s.snapshots, Files: s.received, Snippets: []Snippet{},
 		Hand: s.desk.View().Hand, Sent: s.sent, Timer: s.countdown.View(),
 	}
 	if s.fault == FaultSlow {

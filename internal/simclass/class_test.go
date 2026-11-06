@@ -2,6 +2,8 @@ package simclass
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io"
 	"log/slog"
@@ -36,6 +38,7 @@ type console struct {
 	snaps  *snapshot.Store // screenshots asked to the students
 	hands  []protocol.HandRaise
 	timers []protocol.TimerAck
+	files  []protocol.FilePushAck
 	msgs   []protocol.Envelope // msg.student
 }
 
@@ -73,6 +76,8 @@ func startConsole(t *testing.T) *console {
 				c.hands = append(c.hands, p)
 			case protocol.TimerAck:
 				c.timers = append(c.timers, p)
+			case protocol.FilePushAck:
+				c.files = append(c.files, p)
 			case protocol.MsgStudent:
 				c.msgs = append(c.msgs, env)
 			}
@@ -413,4 +418,59 @@ func TestSimulatedStudentsCountTheTimer(t *testing.T) {
 	eventually(t, "stopped", func() bool {
 		return c.timerAck(stop, protocol.TimerStopped) && cl.Students()[0].Timer.State == classtimer.StateNone
 	})
+}
+
+func (c *console) fileAcks() []protocol.FilePushAck {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]protocol.FilePushAck(nil), c.files...)
+}
+
+// Simulated students acknowledge the files the teacher sends, as the real
+// agent would (a taken name is renamed), and write nothing: their folder is
+// in memory. The noack fault never acknowledges.
+func TestSimulatedStudentsAcknowledgeFilesWithoutDisk(t *testing.T) {
+	c := startConsole(t)
+	cl := newClass(t, c)
+	a, _ := cl.Add(protocol.OSWindows, nil)
+	b, _ := cl.Add(protocol.OSWindows, nil)
+	eventually(t, "connected", func() bool { return len(c.connected()) == 2 })
+	if !protocol.Has(sessionOf(t, c, a.Name).Capabilities, protocol.CapFilePush) {
+		t.Fatal("a simulated student must declare file.push")
+	}
+	if err := cl.SetFault(b.ID, FaultNoAck, 0); err != nil {
+		t.Fatal(err)
+	}
+	data := []byte("id,nombre\n1,Ana\n")
+	sum := sha256.Sum256(data)
+	part := func() protocol.FilePush {
+		return protocol.FilePush{PushID: protocol.NewID(), FileID: protocol.NewID(), Part: 1, Parts: 1, Data: data,
+			Name: "datos.csv", Dest: "Ejercicio 4", Size: len(data), SHA256: hex.EncodeToString(sum[:]), Index: 1, Files: 1}
+	}
+	ctx := context.Background()
+	for range 2 {
+		if _, err := c.Send(ctx, sessionOf(t, c, a.Name).ID, part()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := c.Send(ctx, sessionOf(t, c, b.Name).ID, part()); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "two acks", func() bool { return len(c.fileAcks()) == 2 })
+	acks := c.fileAcks()
+	// The two are written concurrently: either one may get the free name.
+	if acks[0].Path == "Ejercicio 4/datos (2).csv" {
+		acks[0], acks[1] = acks[1], acks[0]
+	}
+	if acks[0].Path != "Ejercicio 4/datos.csv" || acks[1].Path != "Ejercicio 4/datos (2).csv" || !acks[1].Renamed || acks[0].Renamed {
+		t.Fatalf("acks = %+v", acks)
+	}
+	eventually(t, "counted", func() bool { return cl.Students()[0].Files == 2 })
+	time.Sleep(300 * time.Millisecond)
+	if n := len(c.fileAcks()); n != 2 {
+		t.Fatalf("%d acks: the noack student acknowledged", n)
+	}
+	if cl.Students()[1].Files != 1 {
+		t.Fatal("the noack student still receives the file")
+	}
 }

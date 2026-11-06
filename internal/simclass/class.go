@@ -95,6 +95,7 @@ type Student struct {
 	Viewed       bool                  `json:"viewed"` // the teacher is receiving its screen
 	Snippets     []Snippet             `json:"snippets"`
 	Notices      int                   `json:"notices"`
+	Private      int                   `json:"private"` // of Notices, those sent to this student only (msg.show personal)
 	LastNotice   string                `json:"lastNotice"`
 	Snapshots    int                   `json:"snapshots"` // screenshots the teacher took of it
 	// Hand is its hand (participation.HandState) and Sent how many messages
@@ -275,6 +276,7 @@ type student struct {
 	connected  bool
 	viewed     bool
 	notices    int
+	private    int
 	lastNotice string
 	snapshots  int
 	cancel     context.CancelFunc // stops the running agent; nil while disconnected
@@ -437,6 +439,9 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 func (s *student) noticed(n codedist.Notice) {
 	s.mu.Lock()
 	s.notices++
+	if n.Personal {
+		s.private++
+	}
 	s.lastNotice = n.Text
 	s.mu.Unlock()
 	s.class.changed()
@@ -464,7 +469,7 @@ func (s *student) snapshot() Student {
 	defer s.mu.Unlock()
 	out := Student{
 		ID: s.id, Name: s.name, OS: s.os, Capabilities: slices.Clone(s.caps), Connected: s.connected,
-		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, LastNotice: s.lastNotice, Snapshots: s.snapshots, Snippets: []Snippet{},
+		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, Private: s.private, LastNotice: s.lastNotice, Snapshots: s.snapshots, Snippets: []Snippet{},
 		Hand: s.desk.View().Hand, Sent: s.sent,
 	}
 	if s.fault == FaultSlow {

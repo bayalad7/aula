@@ -135,6 +135,8 @@
       <h2 id="vacio-titulo"></h2>
       <p id="vacio-texto"></p>
     </div>
+    <!-- Recolecciones (prompt 10.10): dónde guardar el ejercicio y qué se recogió, y cuándo. -->
+    <ol id="recolecciones" class="codigos" data-t-aria-label="recolecciones.lista"></ol>
     <!-- Archivos que envió el profesor (prompt 10.9): una tarjeta por envío, con dónde quedaron. -->
     <ol id="archivos" class="codigos" data-t-aria-label="archivos.lista"></ol>
     <p id="codigos-atajo" class="codigos__atajo" data-t="codigos.atajo" hidden></p>
@@ -196,6 +198,27 @@
       <div class="archivo-recibido__cuerpo">
         <p class="archivo-recibido__donde"></p>
         <ul class="archivo-recibido__lista"></ul>
+        <p class="campo__error archivo-recibido__error" role="alert" hidden></p>
+      </div>
+    </li>
+  </template>
+
+  <template id="recoleccion-template">
+    <li class="codigo-recibido archivo-recibido recoleccion">
+      <div class="codigo-recibido__cabecera">
+        <div class="codigo-recibido__info">
+          <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg>
+          <h2 class="codigo-recibido__titulo recoleccion-titulo"></h2>
+          <span class="insignia insignia--conectado nuevo" hidden></span>
+          <span class="codigo-recibido__meta recoleccion-hora"></span>
+        </div>
+        <button type="button" class="btn btn--sm abrir"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="archivo.abrir"></span></button>
+      </div>
+      <div class="archivo-recibido__cuerpo">
+        <p class="archivo-recibido__donde recoleccion-donde"></p>
+        <p class="suave recoleccion-patrones"></p>
+        <p class="recoleccion-estado" role="status"></p>
+        <ul class="archivo-recibido__lista recoleccion-lista"></ul>
         <p class="campo__error archivo-recibido__error" role="alert" hidden></p>
       </div>
     </li>

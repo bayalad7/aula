@@ -110,6 +110,23 @@ func TestTextsAreComplete(t *testing.T) {
 		}
 		need("archivo.motivo."+strings.Join(parts, ""), "filepush.Item.Reason")
 	}
+	// A collection (docs/privacidad.md rules 61–62): why a file was skipped or a
+	// round failed, and the agent's two notices.
+	camel := func(s string) string {
+		parts := strings.Split(s, "_")
+		for i := 1; i < len(parts); i++ {
+			parts[i] = strings.ToUpper(parts[i][:1]) + parts[i][1:]
+		}
+		return strings.Join(parts, "")
+	}
+	for _, list := range [][]protocol.FileCollectReason{protocol.FileCollectAckReasons, protocol.FileCollectSkipReasons, protocol.FileCollectSaveReasons} {
+		for _, r := range list {
+			need("recoleccion.motivo."+camel(string(r)), "collect (reason)")
+		}
+	}
+	for kind, key := range map[string]string{NoticeCollectRequested: "aviso.recogiendo", NoticeCollectDone: "aviso.recogido"} {
+		need(key+".titulo", "codedist.Notice.Kind "+kind)
+	}
 	for _, c := range []string{ControlActive, ControlPaused} {
 		need("banda.control."+c, "events.go (Status.Control)")
 	}

@@ -77,3 +77,8 @@ body.watching #contenido { display: none; }
 .archivo-recibido__lista li { overflow-wrap: anywhere; }
 .archivo-recibido__lista li[data-estado="failed"] { color: var(--c-error); }
 .archivo-recibido__lista li[data-estado="renamed"], .archivo-recibido__lista li[data-estado="replaced"] { color: var(--c-texto-suave); }
+/* Recolecciones (prompt 10.10): misma tarjeta; lo que no se recogió, en suave; lo que falló, en error. */
+.recoleccion p { margin: 0; overflow-wrap: anywhere; }
+.recoleccion-estado[hidden] { display: none; }
+.recoleccion-lista li[data-estado="round"], .recoleccion-lista li[data-estado="empty"] { list-style: none; margin-inline-start: calc(-1 * var(--e-5)); font-weight: var(--peso-medio); }
+.recoleccion-lista li[data-estado="skipped"] { color: var(--c-texto-suave); }

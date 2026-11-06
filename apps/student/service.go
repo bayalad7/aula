@@ -284,6 +284,8 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	// The helper writes: the files belong to the student, never to SYSTEM.
 	app.files.Writer = agentsvc.WorkFolder{Helper: sa.helper}
 	app.work = agentsvc.WorkFolder{Helper: sa.helper}
+	// And reads the activity folders of a collection, as the student (§5.21).
+	app.collect.Reader = agentsvc.WorkFolderReader{Helper: sa.helper}
 	app.emit = func(event string, data any) {
 		sa.helper.Notify(agentsvc.EventEmit, emitted{Event: event, Data: data})
 	}
@@ -334,6 +336,8 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	if sa.ready.Files {
 		// The helper saves in the work folder of the session's user (§5.20).
 		h.Capabilities = append(h.Capabilities, protocol.CapFilePush)
+		// And reads there the activity folder of a collection (§5.21).
+		h.Capabilities = append(h.Capabilities, protocol.CapFileCollect)
 	}
 	if sa.ready.Capture && sa.ready.Input {
 		// The input goes into the session, with the screen and its notice.

@@ -111,6 +111,14 @@ await f("70-compacto-archivo-nuevo", "conectado", { w: 380, h: 80, pasos: seq(cl
     index: 1, files: 1, name: "datos.csv", dest: "", path: "datos.csv", size: 10, renamed: false, replaced: false, reason: "",
     at: new Date().toISOString() }] }] })) });
 
+// Recolecciones (prompt 10.10): la tarjeta con la carpeta y lo recogido, los avisos de antes y
+// después, recogiendo, oscuro y angosta.
+await f("71-recoleccion", "recoleccion");
+await f("72-recoleccion-avisos", "recoleccion-aviso");
+await f("73-recoleccion-recogiendo", "recoleccion-recogiendo");
+await f("74-recoleccion-oscuro", "recoleccion", { oscuro: true });
+await f("75-recoleccion-angosta", "recoleccion-aviso", { w: 480, h: 360 });
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

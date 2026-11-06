@@ -16,8 +16,9 @@ import (
 // Frontend → backend: the bound methods of App (View, Copy, DismissNotice,
 // ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed,
 // PowerPostpone, DismissPower, SetCompact, ReportWindow, RaiseHand, LowerHand,
-// SendTeacherMessage, OpenReceivedFolder). EventParticipation is in
-// participation.go, EventTimer in timer.go and EventFiles in files.go.
+// SendTeacherMessage, OpenReceivedFolder, OpenCollectionFolder).
+// EventParticipation is in participation.go, EventTimer in timer.go,
+// EventFiles in files.go and EventCollections in collect.go.
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -135,4 +136,6 @@ type View struct {
 	Timer classtimer.View `json:"timer"`
 	// Files is what the teacher sent in this session (§5.20).
 	Files Files `json:"files"`
+	// Collections are the teacher's collections of this session (§5.21).
+	Collections Collections `json:"collections"`
 }

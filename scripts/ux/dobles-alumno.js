@@ -121,6 +121,24 @@
         item("fp-4", 2, 2, "imagenes.zip", { label: "Proyecto final", dest: "Proyecto", path: "", reason: "no_space" })] }],
   }[scene] || [];
   const files = { received, folder: "Aula" };
+  // Las recolecciones del profesor (Collections de apps/student/collect.go, prompt 10.10).
+  // Escenas: recoleccion (una abierta y otra recogida, con lo que no se recogió) y
+  // recoleccion-aviso (los avisos de antes y después de recoger).
+  const cero = "0001-01-01T00:00:00Z";
+  const abierta = { id: "rc-2", date: "2026-11-06", activity: "Ejercicio 5", folder: "recolecciones/2026-11-06/Ejercicio 5",
+    patterns: [], openedAt: ahora, state: "open", rounds: [] };
+  const recogida = { id: "rc-1", date: "2026-11-06", activity: "Ejercicio 4", folder: "recolecciones/2026-11-06/Ejercicio 4",
+    patterns: ["*.py"], openedAt: "2026-11-06T10:05:00-06:00", state: "collected", rounds: [
+      { round: 1, at: "2026-11-06T10:42:00-06:00", doneAt: "2026-11-06T10:42:03-06:00",
+        files: [{ path: "20231234-Ana.py", size: 3120, saved: true }],
+        skipped: [{ path: "video.py", size: 52428800, reason: "too_large" }] }] };
+  const recogiendo = Object.assign({}, recogida, { state: "requested", rounds: [{ round: 1, at: ahora, doneAt: cero, files: [], skipped: [] }] });
+  const collections = { list: { recoleccion: [recogida, abierta], "recoleccion-aviso": [recogida], "recoleccion-recogiendo": [recogiendo] }[scene] || [], folder: "Aula" };
+  if (scene === "recoleccion-aviso") {
+    notices.push({ id: "rc-n1", level: "info", text: "", kind: "collect-requested", ref: "rc-1", at: "2026-11-06T10:42:00-06:00" },
+      { id: "rc-n2", level: "info", text: "", kind: "collect-done", ref: "rc-1", at: "2026-11-06T10:42:03-06:00" });
+  }
+
 
   // Lo que Go contestaría: el acuse llega poco después («Enviando…» → «Recibido»).
   let nMsg = 0;
@@ -143,7 +161,7 @@
     return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
   };
   window.go = { main: { App: {
-    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files })),
+    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
     ReportMedia: call("ReportMedia"),
@@ -158,5 +176,6 @@
     LowerHand: call("LowerHand", () => { part.hand = "down"; part.note = ""; return copia(); }),
     SendTeacherMessage: call("SendTeacherMessage", escribir),
     OpenReceivedFolder: call("OpenReceivedFolder", (id) => (scene === "archivo-sin-carpeta" ? new Error("esa carpeta ya no está disponible") : null)),
+    OpenCollectionFolder: call("OpenCollectionFolder"),
   } } };
 })();

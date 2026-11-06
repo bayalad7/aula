@@ -79,6 +79,11 @@ func main() {
 	} else {
 		log.Info("receiving files not available", "err", err)
 	}
+	if wr, err := platform.NewWorkFolderReader(); err == nil {
+		app.enableCollect(wr)
+	} else {
+		log.Info("collecting files not available", "err", err)
+	}
 	if p, err := platform.NewPower(); err == nil {
 		app.enablePower(p)
 	} else {

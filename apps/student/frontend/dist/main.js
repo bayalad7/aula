@@ -3,7 +3,8 @@
 // transmisión del profesor: ReportMedia, BroadcastAnswer, BroadcastCandidate,
 // BroadcastFailed; los del aviso de energía: PowerPostpone, DismissPower; y los
 // de la mano y los mensajes al profesor: RaiseHand, LowerHand, SendTeacherMessage; y
-// «Abrir carpeta» de los archivos recibidos: OpenReceivedFolder).
+// «Abrir carpeta» de los archivos recibidos y de las recolecciones: OpenReceivedFolder,
+// OpenCollectionFolder).
 // Go manda estados; los textos salen de textos.es-MX.js (T) y el título de la
 // ventana lo pone esta página (docs/privacidad.md, regla 1).
 // Seguridad: todo texto recibido se inserta con textContent; el único HTML es
@@ -103,7 +104,7 @@
   // pantalla vista. No queda encima de las demás ni toma el foco.
   let compacto = false;
   // Lo que el alumno aún no ve: código y archivos «Nuevo» y avisos abiertos.
-  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + archivosNuevos() + avisos.length;
+  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + archivosNuevos() + recoNuevas() + avisos.length;
   function pintarCompacto() {
     const v = { canal: status.channel, profesor: status.teacher };
     $("compacto").dataset.estado = status.state;
@@ -138,7 +139,8 @@
   const snippetTpl = $("snippet-template");
   // El estado vacío se va con el primer código o el primer archivo.
   let nCodigos = 0;
-  function pintarListaVacia() { empty.hidden = nCodigos + nArchivos > 0; }
+  let nRecolecciones = 0;
+  function pintarListaVacia() { empty.hidden = nCodigos + nArchivos + nRecolecciones > 0; }
 
   // Identificadores de Monaco/protocolo → gramática de Prism.
   const aliases = {
@@ -341,7 +343,13 @@
       const propio = TIPO[n.kind]; // un aviso del propio Aula (sin texto del profesor)
       node.querySelector("use").setAttribute("href", "sistema/iconos.svg#" + (propio ? propio.icono : icono));
       const AV = "aviso."; // + nivel del aviso (info, warning)
-      if (propio) {
+      if (n.kind === "collect-requested" || n.kind === "collect-done") {
+        node.dataset.kind = n.kind;
+        node.querySelector("use").setAttribute("href", "sistema/iconos.svg#carpeta");
+        const a = avisoReco(n);
+        node.querySelector(".toast__titulo").textContent = a.titulo;
+        node.querySelector(".notice-text").textContent = a.texto;
+      } else if (propio) {
         node.dataset.kind = n.kind;
         node.querySelector(".toast__titulo").textContent = T(propio.titulo);
         node.querySelector(".notice-text").textContent = T(propio.texto, {
@@ -491,6 +499,135 @@
     pintarListaVacia();
     title();
     pintarCompacto();
+  }
+
+  // --- Recolecciones del profesor (docs/protocol.md §5.21) -------------------------------------------
+  // Una tarjeta por recolección: dónde guardar el ejercicio y, por ronda, qué se recogió y cuándo
+  // (reglas 61-62). Go manda el estado (collect.Collection) y aquí se arma el texto. «Abrir carpeta»
+  // pasa solo el id: la carpeta de la actividad la decide Go. Nada aquí lee ni cambia archivos.
+  const recoLista = $("recolecciones");
+  const recoTpl = $("recoleccion-template");
+  const nodosReco = new Map(); // id → li
+  let recolecciones = [];
+  let recoPrimeraVez = true;
+  let recoRaiz = "Aula";
+  const MOTIVO_R = "recoleccion.motivo."; // + protocol.FileCollectReason en camelCase
+  const carpetaReco = (c) => T("recoleccion.carpeta", { ruta: [recoRaiz].concat(c.folder.split("/")).join("\\") });
+  function recoNuevas() { return recoLista.querySelectorAll(".nuevo:not([hidden])").length; }
+  function tamano(n) {
+    if (n < 1024) return T("tamano.b", { n });
+    if (n < 1024 * 1024) return T("tamano.kb", { n: Math.max(1, Math.round(n / 1024)) });
+    return T("tamano.mb", { n: (n / 1048576).toFixed(1).replace(/\.0$/, "") });
+  }
+  const motivoReco = (r) => T(MOTIVO_R + camel(r));
+  const rutaReco = (p) => p.split("/").join("\\");
+
+  function nodoReco(c, nuevo) {
+    const li = recoTpl.content.firstElementChild.cloneNode(true);
+    aplicarTextos(li);
+    li.dataset.recoleccion = c.id;
+    li.tabIndex = -1;
+    li.querySelector(".nuevo").textContent = T("codigo.nuevo");
+    li.querySelector(".nuevo").hidden = !nuevo;
+    const visto = () => { li.querySelector(".nuevo").hidden = true; title(); };
+    li.addEventListener("focusin", visto);
+    li.addEventListener("pointerdown", visto);
+    li.querySelector(".abrir").addEventListener("click", () => {
+      visto();
+      const error = li.querySelector(".archivo-recibido__error");
+      error.hidden = true;
+      api.OpenCollectionFolder(c.id).catch((err) => {
+        error.textContent = T("archivo.noSeAbrio", { motivo: String(err && err.message ? err.message : err) });
+        error.hidden = false;
+      });
+    });
+    return li;
+  }
+
+  function pintarReco(li, c) {
+    const titulo = T("recoleccion.titulo", { actividad: c.activity });
+    li.querySelector(".recoleccion-titulo").textContent = titulo;
+    li.querySelector(".recoleccion-hora").textContent = hora(c.openedAt);
+    li.querySelector(".recoleccion-donde").textContent = T("recoleccion.guarda", { carpeta: carpetaReco(c) });
+    const pats = c.patterns || [];
+    li.querySelector(".recoleccion-patrones").textContent = pats.length ? T("recoleccion.patrones", { patrones: pats.join(", ") }) : T("recoleccion.todo");
+    const rondas = c.rounds || [];
+    const ultima = rondas[rondas.length - 1];
+    const estado = li.querySelector(".recoleccion-estado");
+    li.dataset.estado = c.state;
+    if (c.state === "requested" && ultima) estado.textContent = T("recoleccion.recogiendo", { hora: hora(ultima.at) });
+    else if (!ultima) estado.textContent = T("recoleccion.abierta");
+    else estado.textContent = "";
+    estado.hidden = !estado.textContent;
+    // Cada ronda terminada, lo más nuevo primero: qué se recogió y qué no (regla 62).
+    const lista = li.querySelector(".recoleccion-lista");
+    lista.replaceChildren();
+    const agregar = (texto, est) => {
+      const item = document.createElement("li");
+      item.dataset.estado = est;
+      item.textContent = texto;
+      lista.appendChild(item);
+    };
+    for (const r of rondas.slice().reverse()) {
+      if (!r.doneAt || r.doneAt.startsWith("0001")) continue; // en curso
+      const files = r.files || [];
+      const h = hora(r.doneAt);
+      if (r.failed) agregar(T("recoleccion.rondaFallo", { hora: h, motivo: motivoReco(r.failed) }), "failed");
+      else if (!files.length) agregar(T("recoleccion.rondaVacia", { hora: h }), "empty");
+      else agregar(P("recoleccion.ronda", files.length, { hora: h }), "round");
+      for (const f of files) {
+        if (f.saved) agregar(T("recoleccion.archivo", { ruta: rutaReco(f.path), tamano: tamano(f.size) }), "saved");
+        else agregar(T("recoleccion.archivoFallo", { ruta: rutaReco(f.path), motivo: motivoReco(f.reason) }), "failed");
+      }
+      for (const s of r.skipped || []) agregar(T("recoleccion.omitido", { ruta: rutaReco(s.path), motivo: motivoReco(s.reason) }), "skipped");
+    }
+    li.querySelector(".abrir").setAttribute("aria-label", T("recoleccion.abrirDe", { titulo }));
+  }
+
+  function renderRecolecciones(v) {
+    if (!v) return;
+    recoRaiz = v.folder || "Aula";
+    recolecciones = v.list || [];
+    const vivos = new Set(recolecciones.map((c) => c.id));
+    for (const [id, li] of nodosReco) {
+      if (!vivos.has(id)) { li.remove(); nodosReco.delete(id); }
+    }
+    let anterior = null;
+    for (const c of recolecciones.slice().reverse()) { // lo más nuevo primero
+      let li = nodosReco.get(c.id);
+      if (!li) {
+        li = nodoReco(c, !recoPrimeraVez);
+        nodosReco.set(c.id, li);
+      }
+      pintarReco(li, c);
+      const lugar = anterior ? anterior.nextSibling : recoLista.firstChild;
+      if (li !== lugar) recoLista.insertBefore(li, lugar);
+      anterior = li;
+    }
+    recoPrimeraVez = false;
+    nRecolecciones = recolecciones.length;
+    pintarListaVacia();
+    renderNotices(avisos); // los avisos de una recolección toman de aquí la carpeta y lo recogido
+    title();
+    pintarCompacto();
+  }
+
+  // El texto de los avisos de una recolección (reglas 61-62), con los datos de su tarjeta.
+  function avisoReco(n) {
+    const c = recolecciones.find((x) => x.id === n.ref);
+    if (n.kind === "collect-requested") {
+      return { titulo: T("aviso.recogiendo.titulo"), texto: c ? T("aviso.recogiendo.texto", { carpeta: carpetaReco(c) }) : "" };
+    }
+    const titulo = T("aviso.recogido.titulo");
+    const rondas = c ? c.rounds || [] : [];
+    const r = rondas[rondas.length - 1];
+    if (!r) return { titulo, texto: "" };
+    const files = (r.files || []).filter((f) => f.saved);
+    if (r.failed || (r.files || []).length && !files.length) return { titulo, texto: T("aviso.recogido.fallo") };
+    if (!files.length) return { titulo, texto: T("aviso.recogido.vacio", { carpeta: carpetaReco(c) }) };
+    const total = tamano(files.reduce((s, f) => s + f.size, 0));
+    const nombre = files[0].path.split("/").pop();
+    return { titulo, texto: P("aviso.recogido.texto", files.length, { nombre, tamano: total }) };
   }
 
   // --- Temporizador del profesor (docs/protocol.md §5.19) -------------------------------------------
@@ -916,6 +1053,7 @@
   rt.EventsOn(ev.PARTICIPATION, renderParticipacion);
   rt.EventsOn(ev.TIMER, renderTemporizador);
   rt.EventsOn(ev.FILES, renderArchivos);
+  rt.EventsOn(ev.COLLECTIONS, renderRecolecciones);
   api.View().then((v) => {
     renderStatus(v.status);
     renderBoard(v.snippets);
@@ -926,6 +1064,7 @@
     if (v.participation) renderParticipacion(v.participation);
     if (v.timer) renderTemporizador(v.timer);
     renderArchivos(v.files);
+    renderRecolecciones(v.collections);
   });
   probeMedia();
 })();

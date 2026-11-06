@@ -249,6 +249,53 @@ await caso("archivo-sin-carpeta", "archivo-sin-carpeta", async (p) => {
   ok(e && e.startsWith("No se pudo abrir la carpeta: "), "error: " + e);
 });
 
+// Recolecciones (prompt 10.10; reglas 61-62): una tarjeta en la lista, no una banda; dice dónde
+// guardar; los avisos de antes y después salen en la esquina sin quitar el foco; «Abrir carpeta»
+// pasa solo el id; la lista dice qué se recogió, cuándo y qué no.
+const coleccion = (state, rounds) => ({ id: "rc-9", date: "2026-11-06", activity: "Ejercicio 4",
+  folder: "recolecciones/2026-11-06/Ejercicio 4", patterns: ["*.py"], openedAt: ahora(), state, rounds });
+await caso("recoleccion-abierta-y-recogida", "un-codigo", async (p) => {
+  await p.focus("#snippets > li .copy");
+  await emitir(p, "aula:collections", { folder: "Aula", list: [coleccion("open", [])] });
+  await sleep(150);
+  let r = await p.evaluate(() => {
+    const li = document.querySelector("#recolecciones > li");
+    return li && { titulo: li.querySelector(".recoleccion-titulo").textContent, donde: li.querySelector(".recoleccion-donde").textContent,
+      nuevo: !li.querySelector(".nuevo").hidden, enBandas: !!li.closest(".bandas"), foco: document.activeElement.className };
+  });
+  ok(r, "no apareció la tarjeta de la recolección");
+  ok(r.titulo === "Recolección: Ejercicio 4", "título: " + r.titulo);
+  ok(r.donde === "Guarda tu ejercicio en Documentos\\Aula\\recolecciones\\2026-11-06\\Ejercicio 4", "dónde: " + r.donde);
+  ok(r.nuevo, "la recolección nueva no dice «Nuevo»");
+  ok(!r.enBandas, "una recolección no es una banda");
+  ok(r.foco.includes("copy"), "la tarjeta le quitó el foco al alumno: " + r.foco);
+  // Antes de leer: el aviso con la carpeta (regla 61).
+  const enCurso = coleccion("requested", [{ round: 1, at: ahora(), doneAt: "0001-01-01T00:00:00Z", files: [], skipped: [] }]);
+  await emitir(p, "aula:collections", { folder: "Aula", list: [enCurso] });
+  await emitir(p, "aula:notices", { notices: [{ id: "n-1", level: "info", text: "", kind: "collect-requested", ref: "rc-9", at: ahora() }] });
+  await sleep(150);
+  let aviso = await p.evaluate(() => document.querySelector('#notices .toast[data-kind="collect-requested"] .notice-text').textContent);
+  ok(aviso === "El profesor solicitó recoger tu ejercicio en Documentos\\Aula\\recolecciones\\2026-11-06\\Ejercicio 4.", "aviso antes: " + aviso);
+  // Después: qué se recogió y su tamaño (regla 62), y la lista con la hora.
+  const hecha = coleccion("collected", [{ round: 1, at: ahora(), doneAt: ahora(),
+    files: [{ path: "20231234-Ana.py", size: 3120, saved: true }], skipped: [{ path: "video.py", size: 5e7, reason: "too_large" }] }]);
+  await emitir(p, "aula:collections", { folder: "Aula", list: [hecha] });
+  await emitir(p, "aula:notices", { notices: [{ id: "n-2", level: "info", text: "", kind: "collect-done", ref: "rc-9", at: ahora() }] });
+  await sleep(150);
+  aviso = await p.evaluate(() => document.querySelector('#notices .toast[data-kind="collect-done"] .notice-text').textContent);
+  ok(aviso === "Tu profesor recogió tu ejercicio: 20231234-Ana.py (3 KB).", "aviso después: " + aviso);
+  const lista = await p.evaluate(() => document.querySelector("#recolecciones > li .recoleccion-lista").textContent);
+  ok(lista.includes("Recogido a las") && lista.includes("20231234-Ana.py (3 KB)") && lista.includes("No se recogió video.py: es demasiado grande."),
+    "lista: " + lista);
+  ok((await p.evaluate(() => document.activeElement.className)).includes("copy"), "un aviso de recolección quitó el foco");
+  await p.click("#recolecciones > li .abrir");
+  await sleep(100);
+  ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "OpenCollectionFolder" && c[1].length === 1 && c[1][0] === "rc-9")),
+    "«Abrir carpeta» no pasó solo el id de la recolección");
+  ok(await p.evaluate(() => [...document.querySelectorAll("#bandas > *")].filter((b) => !b.hidden).length) === 0,
+    "una recolección no debe mostrar bandas");
+});
+
 // Levantar la mano y escribir al profesor (prompt 10.6): lo hace el alumno, con el teclado;
 // nada de esto es una banda ni le quita el foco, y lo que llega del profesor tampoco.
 const bandasVisibles = (p) => p.evaluate(() => [...document.querySelectorAll("#bandas > *")].filter((b) => !b.hidden).length);

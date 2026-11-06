@@ -11,8 +11,10 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/bayalad7/aula/internal/agentsvc"
+	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/platform"
+	"github.com/bayalad7/aula/internal/protocol"
 )
 
 // helperReadyWait bounds how long the helper waits for its window to report
@@ -27,8 +29,9 @@ type helper struct {
 	clip      platform.Clipboard
 	capture   platform.ScreenCapture
 	indicator platform.ScreenIndicator
-	input     *heldInput          // nil when the OS cannot inject
-	work      platform.WorkFolder // nil when the OS has no work folder (file.push)
+	input     *heldInput                // nil when the OS cannot inject
+	work      platform.WorkFolder       // nil when the OS has no work folder (file.push)
+	read      platform.WorkFolderReader // nil without a work folder (file.collect)
 	log       *slog.Logger
 }
 
@@ -57,6 +60,9 @@ func runHelper(channel string, log *slog.Logger) int {
 	if wf, err := platform.NewWorkFolder(); err == nil {
 		h.work = wf
 	}
+	if wr, err := platform.NewWorkFolderReader(); err == nil {
+		h.read = wr
+	}
 
 	// The App only serves the window's bindings, forwarding them to the
 	// agent in the service; it does not connect to any console.
@@ -74,7 +80,7 @@ func runHelper(channel string, log *slog.Logger) int {
 	ready := func(webrtc, h264 bool) {
 		once.Do(func() {
 			r := agentsvc.Ready{Capture: h.capture != nil, Clipboard: clipErr == nil, Broadcast: webrtc && h264,
-				Input: h.input != nil, Files: h.work != nil}
+				Input: h.input != nil, Files: h.work != nil && h.read != nil}
 			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input, "files", r.Files)
 			_ = link.Notify(agentsvc.EventReady, r)
 		})
@@ -189,6 +195,8 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 			return nil, platform.ErrLinkInPath
 		}
 		return nil, h.work.Open(rel)
+	case agentsvc.CallFolderCreate, agentsvc.CallFolderList, agentsvc.CallFileRead:
+		return h.collectCall(name, data)
 	case agentsvc.CallPower:
 		var a agentsvc.PowerArgs
 		if err := json.Unmarshal(data, &a); err != nil {
@@ -307,5 +315,57 @@ func (h *heldInput) releaseAll() {
 	clear(h.buttons)
 	if len(up) > 0 {
 		_ = h.in.Inject(up)
+	}
+}
+
+// collectCall serves file.collect in the student's session (§5.21): the
+// service checked the path; the helper checks again that it is an activity
+// folder or a file inside one (docs/privacidad.md rule 60), and the work
+// folder refuses links. It only reads, and creates the activity folder.
+func (h *helper) collectCall(name string, data json.RawMessage) (any, error) {
+	unsupported := agentsvc.FileWriteError(platform.ErrNotSupported)
+	refused := agentsvc.FileWriteError(platform.ErrLinkInPath)
+	switch name {
+	case agentsvc.CallFolderCreate:
+		var rel string
+		if err := json.Unmarshal(data, &rel); err != nil {
+			return nil, err
+		}
+		if h.read == nil {
+			return agentsvc.FolderCreateResult{Error: unsupported}, nil
+		}
+		if collect.CheckWorkPath(rel, false) != nil {
+			return agentsvc.FolderCreateResult{Error: refused}, nil
+		}
+		return agentsvc.FolderCreateResult{Error: agentsvc.FileWriteError(h.read.MkdirAll(rel))}, nil
+	case agentsvc.CallFolderList:
+		var a agentsvc.FolderListArgs
+		if err := json.Unmarshal(data, &a); err != nil {
+			return nil, err
+		}
+		if h.read == nil {
+			return agentsvc.FolderListResult{Error: unsupported}, nil
+		}
+		if collect.CheckWorkPath(a.Rel, false) != nil || a.Depth < 1 || a.Depth > protocol.MaxFileCollectDepth {
+			return agentsvc.FolderListResult{Error: refused}, nil
+		}
+		files, err := h.read.List(a.Rel, a.Depth)
+		return agentsvc.FolderListResult{Files: files, Error: agentsvc.FileWriteError(err)}, nil
+	default: // CallFileRead
+		var a agentsvc.FileReadArgs
+		if err := json.Unmarshal(data, &a); err != nil {
+			return nil, err
+		}
+		if h.read == nil {
+			return agentsvc.FileReadResult{Error: unsupported}, nil
+		}
+		if collect.CheckWorkPath(a.Rel, true) != nil || a.Max < 0 || a.Max > protocol.MaxFileCollectBytes {
+			return agentsvc.FileReadResult{Error: refused}, nil
+		}
+		b, err := h.read.Read(a.Rel, a.Max)
+		if err != nil {
+			h.log.Info("collected file not read", "err", err)
+		}
+		return agentsvc.FileReadResult{Data: b, Error: agentsvc.FileWriteError(err)}, nil
 	}
 }

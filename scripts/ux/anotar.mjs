@@ -25,7 +25,7 @@ const apps = {
 };
 const overlay = fs.readFileSync(path.join(aqui, "anotador.js"), "utf8");
 
-let estado = { app: args[0] === "alumno" ? "alumno" : "profesor", escena: "", ruta: "", tema: "claro" };
+let estado = { app: args[0] === "alumno" ? "alumno" : "profesor", escena: "", ruta: "", tema: "ambos" };
 estado.escena = args[1] || Object.keys(escenas[estado.app])[0];
 
 // --- Notas -----------------------------------------------------------------------------------
@@ -36,15 +36,16 @@ const tres = (n) => String(n).padStart(3, "0");
 
 function escribirIndice() {
   const notas = leerNotas();
-  const fila = (n) => `| ${n.n} | ${n.estado}${n.respuesta ? " — " + n.respuesta.replace(/\|/g, "/") : ""} | ${n.zona.cadena}${n.elemento && n.elemento.texto ? " · «" + n.elemento.texto.replace(/\|/g, "/") + "»" : ""} | ${n.tipo} | ${n.texto.replace(/\r?\n/g, " ").replace(/\|/g, "/")} | ${n.escena} | [elemento](${tres(n.n)}-elemento.webp) · [pantalla](${tres(n.n)}-pantalla.webp) |`;
+  const fila = (n) => `| ${n.n} | ${n.estado}${n.respuesta ? " — " + n.respuesta.replace(/\|/g, "/") : ""} | ${n.zona.cadena}${n.elemento && n.elemento.texto ? " · «" + n.elemento.texto.replace(/\|/g, "/") + "»" : ""} | ${n.tipo} | ${n.texto.replace(/\r?\n/g, " ").replace(/\|/g, "/")} | ${n.escena} · ${n.tema || "claro"} | [elemento](${tres(n.n)}-elemento.webp) · [pantalla](${tres(n.n)}-pantalla.webp)` +
+    (n.tema === "ambos" ? ` · oscuro: [elemento](${tres(n.n)}-elemento-oscuro.webp) · [pantalla](${tres(n.n)}-pantalla-oscuro.webp)` : "") + " |";
   fs.writeFileSync(path.join(dirNotas, "LEEME.md"), `# Notas de interfaz
 
 Las escribe el anotador (\`node scripts/ux/anotar.mjs\`): cada una dice dónde (con los nombres de
 \`docs/v1/ux/MAPA.md\`), qué tipo de cambio y qué quieres, con una captura del elemento y de la
-pantalla. Este índice se regenera solo; el detalle está en \`NNN.json\`. Estado: \`pendiente\`,
+pantalla (con el tema «ambos», también en oscuro). Este índice se regenera solo; el detalle está en \`NNN.json\`. Estado: \`pendiente\`,
 \`en curso\`, \`hecha\` o \`descartada\` (lo actualiza Claude al trabajarlas).
 
-| # | Estado | Dónde | Tipo | Qué quieres | Escena | Capturas |
+| # | Estado | Dónde | Tipo | Qué quieres | Escena · tema | Capturas |
 |---|---|---|---|---|---|---|
 ${notas.map(fila).join("\n")}
 `);
@@ -122,14 +123,17 @@ await p.evaluateOnNewDocument((d, man, ov, conf) => {
   const q = new URLSearchParams(location.search);
   window.__SCENE = q.get("escena") || Object.keys(conf.escenas[app])[0];
   window.__MANUAL = JSON.parse(man);
-  window.__ANOTADOR = Object.assign({}, conf, { app, escena: window.__SCENE, ruta: location.hash.slice(1), tema: q.get("tema") || "claro" });
+  window.__ANOTADOR = Object.assign({}, conf, { app, escena: window.__SCENE, ruta: location.hash.slice(1), tema: q.get("tema") || "ambos" });
   (0, eval)(d[app]);
   (0, eval)(ov);
 }, { profesor: apps.profesor.dobles, alumno: apps.alumno.dobles }, manual, overlay, { zonas, escenas, rutas });
 
+// «ambos»: la ventana se ve en claro y cada nota se captura en claro y en oscuro.
+const tema = (v) => p.emulateMediaFeatures([{ name: "prefers-color-scheme", value: v }]);
+
 async function ir(nuevo) {
   estado = Object.assign(estado, nuevo);
-  await p.emulateMediaFeatures([{ name: "prefers-color-scheme", value: estado.tema === "oscuro" ? "dark" : "light" }]);
+  await tema(estado.tema === "oscuro" ? "dark" : "light");
   const url = `${origen}/${estado.app}/?escena=${encodeURIComponent(estado.escena)}&tema=${estado.tema}` + (estado.ruta ? "#" + estado.ruta : "");
   await p.goto(url, { waitUntil: "networkidle0" });
 }
@@ -137,27 +141,37 @@ async function ir(nuevo) {
 await p.exposeFunction("__anotadorIr", (nuevo) => { ir(nuevo).catch((e) => console.error(e.message)); return true; });
 await p.exposeFunction("__anotadorListar", () => leerNotas().reverse());
 await p.exposeFunction("__anotadorBorrar", (n) => {
-  for (const f of [tres(n) + ".json", tres(n) + "-elemento.webp", tres(n) + "-pantalla.webp"]) fs.rmSync(path.join(dirNotas, f), { force: true });
+  for (const f of fs.readdirSync(dirNotas).filter((x) => x === tres(n) + ".json" || x.startsWith(tres(n) + "-"))) fs.rmSync(path.join(dirNotas, f), { force: true });
   escribirIndice();
   return true;
 });
 await p.exposeFunction("__anotadorGuardar", async (nota) => {
   const n = leerNotas().reduce((m, x) => Math.max(m, x.n), 0) + 1;
   const base = path.join(dirNotas, tres(n));
-  await p.screenshot({ path: base + "-pantalla.webp", type: "webp", quality: 85 });
+  let clip = null;
   if (nota.rect && nota.rect.w > 0 && nota.rect.h > 0) {
     const vp = await p.evaluate(() => ({ w: innerWidth, h: innerHeight }));
     const m = 24; // un poco de aire alrededor
     const x = Math.max(0, nota.rect.x - m), y = Math.max(0, nota.rect.y - m);
     // clip va en coordenadas del documento: se suma lo desplazado.
-    const clip = { x: x + (nota.rect.sx || 0), y: y + (nota.rect.sy || 0),
+    clip = { x: x + (nota.rect.sx || 0), y: y + (nota.rect.sy || 0),
       width: Math.min(vp.w - x, nota.rect.w + 2 * m), height: Math.min(vp.h - y, nota.rect.h + 2 * m) };
-    await p.screenshot({ path: base + "-elemento.webp", type: "webp", quality: 90, clip });
-  } else {
-    fs.copyFileSync(base + "-pantalla.webp", base + "-elemento.webp");
+  }
+  const capturar = async (sufijo) => {
+    await p.screenshot({ path: base + "-pantalla" + sufijo + ".webp", type: "webp", quality: 85 });
+    if (clip) await p.screenshot({ path: base + "-elemento" + sufijo + ".webp", type: "webp", quality: 90, clip });
+    else fs.copyFileSync(base + "-pantalla" + sufijo + ".webp", base + "-elemento" + sufijo + ".webp");
+  };
+  await capturar("");
+  if (estado.tema === "ambos") {
+    await tema("dark");
+    await p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await capturar("-oscuro");
+    await tema("light");
   }
   const registro = { n, fecha: new Date().toISOString(), estado: "pendiente", app: estado.app, escena: estado.escena,
-    ruta: nota.ruta, tema: estado.tema, vista: nota.vista, zona: nota.zona, elemento: nota.elemento, tipo: nota.tipo, texto: nota.texto };
+    ruta: nota.ruta, tema: estado.tema, // «ambos»: hay capturas -oscuro también
+    vista: nota.vista, zona: nota.zona, elemento: nota.elemento, tipo: nota.tipo, texto: nota.texto };
   fs.writeFileSync(base + ".json", JSON.stringify(registro, null, 2) + "\n");
   escribirIndice();
   console.log(`Nota ${n}: ${nota.zona.cadena} — ${nota.texto.split("\n")[0].slice(0, 70)}`);
@@ -226,11 +240,45 @@ async function autoprueba() {
   const tercera = leerNotas()[2];
   ok(tercera && tercera.zona.id === "tira" && tercera.zona.cadena === "Alumno › Tira de identidad", "nota por nivel: " + JSON.stringify(tercera && tercera.zona));
 
+  // Con un diálogo modal abierto (Pantalla grande), la barra sigue visible y se puede pulsar.
+  await ir({ app: "profesor", escena: "lab", ruta: "" });
+  await p.click('[data-modo="miniaturas"]');
+  await p.evaluate(() => window.__emit("aula:frame", { sessionId: "s-LAB3-PC07", seq: 1, width: 320, height: 180,
+    jpeg: window.__thumb("LAB3-PC07 - Visual Studio Code", 210) }));
+  await new Promise((r) => setTimeout(r, 200));
+  await p.click(".alumno__pantalla:not([disabled])");
+  await new Promise((r) => setTimeout(r, 300));
+  ok(await p.evaluate(() => document.getElementById("anotador-host").parentElement.id === "pantalla-grande"),
+    "con la Pantalla grande abierta, el anotador no se metió en el diálogo");
+  await p.click("#pg-titulo");
+  const boton = await (await shadow("#anotar-sel")).boundingBox();
+  await p.mouse.click(boton.x + boton.width / 2, boton.y + boton.height / 2); // un clic real: si fuera inerte, no abriría
+  await new Promise((r) => setTimeout(r, 150));
+  await p.keyboard.type("Prueba: el título debería decir también la hora de conexión");
+  await p.keyboard.down("Control"); await p.keyboard.press("Enter"); await p.keyboard.up("Control");
+  for (let i = 0; i < 50 && leerNotas().length < 4; i++) await new Promise((r) => setTimeout(r, 100));
+  const cuarta = leerNotas()[3];
+  ok(cuarta && cuarta.zona.id === "pantalla-grande", "nota con la Pantalla grande abierta: " + JSON.stringify(cuarta && cuarta.zona));
+  ok(await p.$eval("#pantalla-grande", (d) => d.open), "anotar cerró la Pantalla grande");
+  await p.keyboard.press("Escape"); // ahora sí cierra el diálogo: no hay formulario abierto
+  await new Promise((r) => setTimeout(r, 200));
+  ok(await p.evaluate(() => document.getElementById("anotador-host").parentElement === document.documentElement),
+    "al cerrar el diálogo, el anotador no volvió a su lugar");
+
   const notas = leerNotas();
-  ok(notas.length === 3, "notas guardadas: " + notas.length);
+  ok(notas.length === 4, "notas guardadas: " + notas.length);
   for (const n of notas) {
     for (const f of [tres(n.n) + "-elemento.webp", tres(n.n) + "-pantalla.webp"]) ok(fs.statSync(path.join(dirNotas, f)).size > 500, "captura vacía: " + f);
   }
+  // Tema «ambos» (por omisión): cada nota también en oscuro, y de verdad en otro tema.
+  for (const n of notas) {
+    ok(n.tema === "ambos", "tema de la nota " + n.n + ": " + n.tema);
+    for (const parte of ["elemento", "pantalla"]) {
+      const claro = path.join(dirNotas, tres(n.n) + "-" + parte + ".webp"), oscuro = path.join(dirNotas, tres(n.n) + "-" + parte + "-oscuro.webp");
+      ok(fs.existsSync(oscuro) && !fs.readFileSync(oscuro).equals(fs.readFileSync(claro)), "falta o es igual la captura en oscuro: " + path.basename(oscuro));
+    }
+  }
+  ok(fs.readFileSync(path.join(dirNotas, "LEEME.md"), "utf8").includes("· oscuro: [elemento]"), "el índice no enlaza las capturas en oscuro");
   ok(notas[0] && notas[0].zona.id === "fila-alumno" && notas[0].tipo === "mover" && notas[0].texto.startsWith("Prueba"), "nota 1: " + JSON.stringify(notas[0]));
   ok(notas[1] && notas[1].zona.id === "tarjeta-archivo" && notas[1].app === "alumno" && notas[1].escena === "archivos", "nota 2: " + JSON.stringify(notas[1]));
   ok(fs.readFileSync(path.join(dirNotas, "LEEME.md"), "utf8").includes("| 2 | pendiente | Alumno › Archivos recibidos"), "índice LEEME.md");
@@ -239,7 +287,7 @@ async function autoprueba() {
   await ajena.goto(origen + "/profesor/", { waitUntil: "networkidle0" });
   await new Promise((r) => setTimeout(r, 300));
   ok((await ajena.$eval("body", (b) => b.textContent)).includes("solo funciona en la ventana del anotador"), "la página abierta fuera de la ventana queda en blanco");
-  console.log(fallas.length ? "✗ anotador:\n  " + fallas.join("\n  ") : "✓ anotador: 3 notas (señalando y navegando, con nivel elegido), capturas e índice");
+  console.log(fallas.length ? "✗ anotador:\n  " + fallas.join("\n  ") : "✓ anotador: 4 notas (señalando, navegando con nivel elegido y con un diálogo abierto), capturas e índice");
   await nav.close();
   if (process.env.ANOTADOR_CONSERVAR) console.log("Notas de prueba en " + dirNotas);
   else fs.rmSync(dirNotas, { recursive: true, force: true });

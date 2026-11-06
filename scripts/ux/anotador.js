@@ -75,7 +75,7 @@
     <select id="app" title="App"></select>
     <select id="escena" title="Escena (datos de demostración)"></select>
     <select id="ruta" title="Vista de la consola"></select>
-    <select id="tema" title="Tema"><option value="claro">Claro</option><option value="oscuro">Oscuro</option></select>
+    <select id="tema" title="Tema: con «Ambos» se ve en claro y cada nota se captura en claro y en oscuro"><option value="ambos">Ambos</option><option value="claro">Claro</option><option value="oscuro">Oscuro</option></select>
     <button id="anotar-sel" class="primario" title="Escribe la nota de lo seleccionado (tecla N)" disabled>Anotar selección (N)</button>
     <button id="anotar" title="Señala sin que el clic llegue a la app (tecla A)">Señalar (A)</button>
     <button id="explorar" title="Muestra el nombre de la zona al pasar el mouse (tecla Z)">Zonas (Z)</button>
@@ -97,6 +97,17 @@
   <div class="acciones"><button type="button" id="cerrar-lista">Cerrar</button></div></div>`;
     const $ = (s) => raiz.querySelector(s);
     const caja = $(".caja"), selCaja = $(".sel"), etiqueta = $(".etiqueta"), barra = $(".barra"), form = $("#form"), lista = $("#lista");
+
+    // Un <dialog> modal (Pantalla grande, Ajustes, confirmaciones) se pone en una capa por encima de
+    // todo y deja inerte el resto de la página: el anotador se mete en el diálogo abierto mientras
+    // dure, para verse y recibir clics, y vuelve a su lugar al cerrarse.
+    function reubicar() {
+      const modales = [...document.querySelectorAll("dialog[open]")].filter((d) => d.matches(":modal"));
+      const destino = modales.length ? modales[modales.length - 1] : document.documentElement;
+      if (host.parentNode !== destino) destino.appendChild(host);
+    }
+    new MutationObserver(reubicar).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ["open"] });
+    document.addEventListener("close", () => setTimeout(reubicar), true);
 
     // --- Selectores de la barra -------------------------------------------------------------
     const opciones = (sel, pares, actual) => {
@@ -267,7 +278,8 @@
     document.addEventListener("keydown", (e) => {
       if (propio(e) && e.key !== "Escape") return;
       const escribiendo = /input|textarea|select/i.test((e.composedPath()[0] || {}).tagName || "") || document.activeElement?.isContentEditable;
-      if (e.key === "Escape" && (anotando || form.style.display === "block")) { modo(false); cerrarForm(); e.stopPropagation(); return; }
+      // Esc cierra el formulario o el modo señalar, no el diálogo de la app que esté abierto.
+      if (e.key === "Escape" && (anotando || form.style.display === "block")) { modo(false); cerrarForm(); e.preventDefault(); e.stopPropagation(); return; }
       if (escribiendo || e.ctrlKey || e.altKey || e.metaKey) return;
       const k = e.key.toLowerCase();
       if (k === "a") { modo(!anotando); e.preventDefault(); }

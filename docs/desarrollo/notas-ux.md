@@ -36,7 +36,7 @@ Abajo a la izquierda:
 | **Consola / Alumno** | Cambia de app |
 | **Escena** | Los datos de demostración: «Laboratorio: 5 equipos reales», «Controlando un alumno», «Envío de archivos con un fallo», «Mano levantada»… Elige la que muestre lo que quieres comentar |
 | **Vista** | (Consola) Alumnos, Código, Archivos, Participación, Aula simulada, Ayuda… |
-| **Claro / Oscuro** | El tema |
+| **Ambos / Claro / Oscuro** | El tema. Con **Ambos** (el que viene puesto) la ventana se ve en claro y cada nota se guarda con capturas en claro y en oscuro, para cambios que valen en los dos temas. Con Claro u Oscuro, solo en ese tema |
 | **Anotar selección (N)** | Abre la nota de lo último que tocaste |
 | **Señalar (A)** | Señalar sin que el clic llegue a la app (para un botón que no quieres pulsar) |
 | **Zonas (Z)** | Muestra el nombre de la zona al pasar el mouse, sin bloquear los clics |

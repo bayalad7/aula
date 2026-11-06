@@ -13,7 +13,9 @@ Lo que pidió: **$ARGUMENTS** (sin argumentos: todas las `pendiente`).
 
 ## 1. Lee y entiende
 
-- Lee `LEEME.md`, los JSON de las notas pedidas y **mira sus dos capturas** (Read sobre los .webp).
+- Lee `LEEME.md`, los JSON de las notas pedidas y **mira sus capturas** (Read sobre los .webp):
+  `NNN-elemento` y `NNN-pantalla`, y si `tema` es `ambos`, también `NNN-elemento-oscuro` y
+  `NNN-pantalla-oscuro`. Un cambio de una nota `ambos` se revisa en los dos temas.
 - Cada nota trae: `app`, `escena` y `ruta` (cómo reproducirla en el arnés), `zona` (nombres de
   `docs/v1/ux/MAPA.md` / `scripts/ux/zonas.mjs`), `elemento` (texto visible, clave de
   `textos.es-MX.js` en `claveTexto` y un selector), `tipo` (mover, texto, estilo, agregar, quitar,

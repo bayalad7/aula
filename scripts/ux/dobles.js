@@ -23,9 +23,10 @@
     canSnapshot: s.capabilities.includes("screen.snapshot"),
     canHand: s.capabilities.includes("hand"), canMessage: s.capabilities.includes("msg.student"),
     canTimer: s.capabilities.includes("timer"),
+    canFiles: s.capabilities.includes("file.push"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer"];
+    "hand", "msg.student", "timer", "file.push"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -50,7 +51,7 @@
     student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL }),
   ];
   const simStudents = [1, 2].map((i) => student({ hostname: "Simulado " + i, username: "Alumno de prueba", osVersion: "simulado",
-    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot"], simulated: true,
+    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "file.push"], simulated: true,
     lastCodeAck: i === 1 ? "sn-3" : "", ackedAt: i === 1 ? "10:42:09" : "" }));
   let list = scene === "simulada-sola" ? simStudents.slice() : scene === "simulada" ? [...sims.slice(0, 1), ...simStudents] : scene === "vacia" || scene.startsWith("setup") ? [] : scene.startsWith("lab") ? lab : [...sims,
     student({ hostname: "SIM-03", username: "simulado", osVersion: "simulado", agentVersion: "0.1.0-sim",
@@ -124,6 +125,9 @@
     { id: "d2", kind: "code", label: "Ejercicio 2 · Suma de una lista", sent: 2, acked: 1, failed: 0, noCapability: 0, at: "" },
     { id: "d1", kind: "code", label: "Ejercicio 1 · Hola mundo", sent: 2, acked: 2, failed: 0, noCapability: 0, at: "" },
   ];
+  // Un envío de archivos (prompt 10.9): uno lo tiene, a otro le falta por disco lleno.
+  if (scene === "lab-archivos") deliveriesBase.unshift({ id: "d6", kind: "file", label: "Archivos: Ejercicio 4 (3)", sent: 2, acked: 1,
+    failed: 0, noCapability: 1, at: "", rejected: [{ session: "s-LAB3-PC12", code: "no_space" }] });
   const deliveries = deliveriesBase.map((d) => Object.assign({ pending: [], rejected: [], simSent: 0, simAcked: 0 }, d));
   const restrictions = scene === "lab-restr-activa"
     ? { apps: { policyId: "r1", mode: "deny", items: ["steam", "discord", "whatsapp"], hosts: [] },
@@ -196,6 +200,19 @@
         hand: simHand, sent: simSent },
       { id: "x2", name: "Simulado 2", os: "linux", capabilities: ["code.view", "msg.show"], connected: true, fault: "noack", delayMs: 0, viewed: false,
         snippets: [], notices: 0, lastNotice: "", hand: "down", sent: 0 }] : [] });
+  // Archivos y plantillas (FilesView de apps/teacher/files.go). Las plantillas viven en
+  // Documentos\Aula\plantillas; en «plantilla-grande», una no se puede enviar.
+  const tplArchivo = (rel, size) => ({ rel, size });
+  const filesView = { templatesError: "", templates: scene === "vacia" ? [] : [
+    { name: "Ejercicio 4", size: 873000, problem: "", files: [tplArchivo("main.py", 1200), tplArchivo("datos/ventas.csv", 870000), tplArchivo("LEEME.txt", 1800)] },
+    { name: "Proyecto final", size: 40000000, problem: "too_large", files: [tplArchivo("base.sql", 40000000)] }],
+    sends: scene.startsWith("lab-archivos") ? [{ id: "f1", label: "Ejercicio 4", template: "Ejercicio 4", names: ["main.py", "ventas.csv", "LEEME.txt"],
+      size: 873000, dest: "Ejercicio 4", overwrite: false, times: 1, lastAt: "10:44" }] : [] };
+  const elegidos = [{ path: "C:\\Users\\ayala\\Documents\\clase\\datos.csv", rel: "datos.csv", size: 245000 },
+    { path: "C:\\Users\\ayala\\Documents\\clase\\main.py", rel: "main.py", size: 2100 }];
+  const envioArchivos = (r) => Object.assign({}, { id: "d7", kind: "file", label: r.template ? "Archivos: " + r.template + " (3)" : "Archivos: datos.csv y 1 más",
+    sent: 2, acked: 0, failed: 0, noCapability: 1, simSent: 0, simAcked: 0, at: "", pending: ["s-LAB3-PC07", "s-LAB3-PC12"], rejected: [] });
+
   const ok = (v) => new Promise((r) => setTimeout(() => r(v), 5));
   // Un doble que devuelve un Error rechaza la promesa con su texto, como Wails.
   const call = (name, v) => (...args) => {
@@ -326,6 +343,14 @@
     DiscardSnapshots: call("DiscardSnapshots", (ids) => { snaps = snaps.filter((c) => !ids.includes(c.id)); emitSnaps(); return null; }),
     SnapshotFolder: call("SnapshotFolder", { path: DOCS, exists: true, error: "" }),
     OpenSnapshotFolder: call("OpenSnapshotFolder", null),
+    Files: call("Files", () => filesView),
+    ChooseFiles: call("ChooseFiles", () => elegidos.map((e) => Object.assign({}, e))),
+    SendFiles: call("SendFiles", (r) => (r.files.length === 0 && !r.template ? new Error("aula:pushNoFiles: no hay archivos para enviar") : envioArchivos(r))),
+    ResendFiles: call("ResendFiles", () => envioArchivos({ template: "Ejercicio 4" })),
+    SaveTemplate: call("SaveTemplate", (name, files) => (filesView.templates.some((t) => t.name === name)
+      ? new Error("aula:templateExists: ya hay una plantilla con ese nombre")
+      : (filesView.templates.push({ name, size: 0, problem: "", files: files.map((x) => tplArchivo(x.rel, 1000)) }), filesView))),
+    OpenTemplates: call("OpenTemplates", null),
     SetRestriction: call("SetRestriction", restrictions),
     ClearRestriction: call("ClearRestriction", restrictions),
     ClearAllRestrictions: call("ClearAllRestrictions", restrictions),

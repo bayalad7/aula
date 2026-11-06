@@ -170,6 +170,12 @@
                     <span class="insignia insignia--info"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="codigo.borrador"></span></span>
                   </div>
                   <div class="tarjeta__cuerpo pila">
+                    <!-- Código o archivos (prompt 10.9): el mismo «Enviar a» para los dos. -->
+                    <div class="segmentado" role="group" data-t-aria-label="codigo.que" id="codigo-que">
+                      <button type="button" data-que="codigo" aria-pressed="true"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#codigo"/></svg><span data-t="codigo.queCodigo"></span></button>
+                      <button type="button" data-que="archivos" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#archivo"/></svg><span data-t="codigo.queArchivos"></span></button>
+                    </div>
+                    <div id="codigo-parte-codigo" class="pila">
                     <div class="fila">
                       <label class="campo crece"><span class="campo__etiqueta"><span data-t="codigo.tituloCampo"></span> <span class="suave" data-t="comun.opcional"></span></span>
                         <input id="codigo-titulo" maxlength="200" data-t-placeholder="codigo.tituloEjemplo"></label>
@@ -177,6 +183,26 @@
                     </div>
                     <div id="editor" class="editor" data-t-aria-label="codigo.editor"></div>
                     <p class="pequeno suave" id="codigo-ayuda-teclado"></p>
+                    </div>
+                    <div id="codigo-parte-archivos" class="pila" hidden>
+                      <div class="fila">
+                        <label class="campo crece"><span class="campo__etiqueta" data-t="archivos.plantilla"></span>
+                          <select id="archivos-plantilla"></select></label>
+                        <button type="button" class="btn btn--fantasma" id="archivos-abrir-plantillas"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span id="archivos-abrir-plantillas-texto"></span></button>
+                      </div>
+                      <p class="pequeno suave" id="archivos-plantilla-nota" aria-live="polite"></p>
+                      <div class="campo">
+                        <span class="campo__etiqueta" id="archivos-lista-titulo" data-t="archivos.archivos"></span>
+                        <p class="suave pequeno" id="archivos-vacio" data-t="archivos.vacio"></p>
+                        <ul class="lista-limpia archivos-elegidos" id="archivos-lista" aria-labelledby="archivos-lista-titulo"></ul>
+                        <div><button type="button" class="btn" id="archivos-elegir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="archivos.elegir"></span></button></div>
+                      </div>
+                      <label class="campo"><span class="campo__etiqueta" data-t="archivos.destino"></span>
+                        <span class="fila archivos-destino"><span class="suave" data-t="archivos.destinoRaiz"></span><input id="archivos-destino" maxlength="200" autocomplete="off" data-t-placeholder="archivos.destinoEjemplo" aria-describedby="archivos-destino-ayuda"></span>
+                        <span class="campo__ayuda" id="archivos-destino-ayuda" data-t="archivos.destinoAyuda"></span></label>
+                      <label class="opcion"><input type="checkbox" id="archivos-reemplazar"> <span data-t="archivos.reemplazar"></span></label>
+                      <p class="pequeno suave" id="archivos-reemplazar-ayuda" data-t="archivos.reemplazarAyuda"></p>
+                    </div>
                     <fieldset class="campo">
                       <legend class="campo__etiqueta" data-t="codigo.enviarA"></legend>
                       <div class="fila">
@@ -184,12 +210,22 @@
                         <label class="opcion"><input type="radio" name="codigo-destino" value="seleccion" id="codigo-destino-seleccion-radio"> <span id="codigo-destino-seleccion"></span></label>
                       </div>
                     </fieldset>
-                    <div class="grupo-botones">
+                    <div class="grupo-botones" id="codigo-botones">
                       <button type="button" class="btn btn--primario" id="codigo-emitir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="codigo.emitir"></span></button>
                       <button type="button" class="btn" id="codigo-agregar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="codigo.agregar"></span></button>
                       <button type="button" class="btn" id="codigo-pegar" data-t-title="codigo.pegarAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#portapapeles"/></svg><span data-t="codigo.pegar"></span></button>
                       <button type="button" class="btn btn--fantasma" id="codigo-limpiar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg><span data-t="codigo.limpiar"></span></button>
                     </div>
+                    <div class="grupo-botones" id="archivos-botones" hidden>
+                      <button type="button" class="btn btn--primario" id="archivos-enviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span id="archivos-enviar-texto"></span></button>
+                      <button type="button" class="btn" id="archivos-guardar-plantilla" aria-expanded="false" aria-controls="archivos-nueva-plantilla"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span data-t="archivos.guardarPlantilla"></span></button>
+                    </div>
+                    <form id="archivos-nueva-plantilla" class="fila archivos-nueva-plantilla" hidden>
+                      <label class="campo crece"><span class="campo__etiqueta" data-t="archivos.nombrePlantilla"></span>
+                        <input id="archivos-nombre-plantilla" maxlength="100" autocomplete="off" data-t-placeholder="archivos.nombrePlantillaEjemplo"></label>
+                      <button type="submit" class="btn btn--primario" data-t="archivos.guardar"></button>
+                      <button type="button" class="btn btn--fantasma" id="archivos-cancelar-plantilla" data-t="comun.cancelar"></button>
+                    </form>
                     <p class="pequeno suave" id="codigo-motivo" aria-live="polite"></p>
                   </div>
                 </section>
@@ -214,6 +250,17 @@
                       <th><span class="solo-lector" data-t="comun.acciones"></span></th>
                     </tr></thead>
                     <tbody id="historial-filas"></tbody>
+                  </table>
+                </div>
+                <h3 class="tarjeta__subtitulo" id="h-historial-archivos" data-t="archivos.historial" hidden></h3>
+                <div class="tabla-adaptable" id="historial-archivos-tabla" hidden>
+                  <table class="tabla" aria-labelledby="h-historial-archivos">
+                    <thead><tr>
+                      <th data-t="archivos.colQue"></th><th data-t="archivos.colDestino"></th><th data-t="archivos.colTamano"></th>
+                      <th data-t="codigo.colVeces"></th><th data-t="codigo.colHora"></th>
+                      <th><span class="solo-lector" data-t="comun.acciones"></span></th>
+                    </tr></thead>
+                    <tbody id="historial-archivos-filas"></tbody>
                   </table>
                 </div>
               </section>
@@ -828,6 +875,19 @@
       <td><div class="grupo-botones grupo-botones--fin">
         <button type="button" class="btn btn--sm abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#editar"/></svg><span></span></button>
         <button type="button" class="btn btn--sm reemitir"></button></div></td>
+    </tr>
+  </template>
+  <template id="t-archivo-elegido">
+    <li class="fila archivo-elegido">
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#archivo"/></svg>
+      <span class="crece nombre"></span><span class="suave pequeno tamano"></span>
+      <button type="button" class="btn btn--fantasma btn--icono btn--sm quitar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+    </li>
+  </template>
+  <template id="t-historial-archivos">
+    <tr>
+      <td class="celda-principal que"></td><td class="destino"></td><td class="tamano"></td><td class="veces"></td><td class="hora"></td>
+      <td><div class="grupo-botones grupo-botones--fin"><button type="button" class="btn btn--sm reenviar"></button></div></td>
     </tr>
   </template>
   <template id="t-lote-captura">

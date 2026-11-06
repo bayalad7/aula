@@ -197,6 +197,27 @@ await f("48-comprobar-bien", "vacia", { ruta: "falta", pasos: comprobar });
 await f("49-comprobar-red-publica", "red-publica", { ruta: "falta", pasos: comprobar });
 await f("50-comprobar-red-publica-oscuro", "red-publica", { oscuro: true, w: 900, h: 600, ruta: "falta", pasos: comprobar });
 
+// Archivos y plantillas (prompt 10.9): la pestaña Archivos del módulo Código.
+const archivos = click('#codigo-que button[data-que="archivos"]');
+const plantilla = (nombre) => async (p) => { await p.select("#archivos-plantilla", nombre); await sleep(150); };
+await f("94-archivos-vacia", "lab", { ruta: "codigo", pasos: archivos });
+await f("95-archivos-elegidos", "lab", { ruta: "codigo", pasos: seq(archivos, click("#archivos-elegir"),
+  async (p) => { await p.type("#archivos-destino", "Ejercicio 4"); }) });
+await f("96-archivos-plantilla", "lab-archivos", { ruta: "codigo", pasos: seq(archivos, plantilla("Ejercicio 4")) });
+await f("97-archivos-plantilla-problema", "lab", { ruta: "codigo", pasos: seq(archivos, plantilla("Proyecto final")) });
+await f("98-archivos-guardar-plantilla", "lab", { ruta: "codigo", pasos: seq(archivos, click("#archivos-elegir"),
+  click("#archivos-guardar-plantilla"), async (p) => { await p.type("#archivos-nombre-plantilla", "Ejercicio 5"); }) });
+await f("99-archivos-enviado", "lab", { ruta: "codigo", pasos: seq(archivos, click("#archivos-elegir"), click("#archivos-enviar")) });
+await f("100-archivos-quien-falta", "lab-archivos", { ruta: "codigo", pasos: seq(archivos, click(".envio__desplegar")) });
+await f("101-archivos-historial", "lab-archivos", { h: 1100, ruta: "codigo", pasos: async (p) => {
+  await p.evaluate(() => document.getElementById("h-historial-archivos").scrollIntoView());
+} });
+await f("102-archivos-error-nombre", "lab", { ruta: "codigo", pasos: seq(archivos, async (p) => p.evaluate(() =>
+  window.__emit("aula:capture", { draft: null, error: "aula:pushPathInvalid: con:a.txt: nombre o carpeta no válidos" }))) });
+await f("103-archivos-900x600", "lab-archivos", { w: 900, h: 600, ruta: "codigo", pasos: seq(archivos, plantilla("Ejercicio 4")) });
+await f("104-archivos-oscuro", "lab-archivos", { oscuro: true, ruta: "codigo", pasos: seq(archivos, plantilla("Ejercicio 4")) });
+await f("105-ficha-recibir-archivos", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+
 // Ventana angosta y tema oscuro
 await f("37-alumnos-900x600", "lab", { w: 900, h: 600, pasos: click(fila("LAB3-PC07")) });
 await f("38-codigo-900x600", "datos", { w: 900, h: 600, ruta: "codigo" });

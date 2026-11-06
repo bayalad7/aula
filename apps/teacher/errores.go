@@ -66,6 +66,14 @@ const (
 	codeNoTimerTargets       = "noTimerTargets"
 	codeTimerGone            = "timerGone"
 	codeTimerTooLong         = "timerTooLong"
+	codePushNoFiles          = "pushNoFiles"
+	codePushTooLarge         = "pushTooLarge"
+	codePushPathInvalid      = "pushPathInvalid"
+	codePushFileGone         = "pushFileGone"
+	codePushUnsupported      = "pushUnsupported"
+	codeTemplateExists       = "templateExists"
+	codeTemplateInvalid      = "templateInvalid"
+	codeTemplateGone         = "templateGone"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -80,6 +88,8 @@ var errorCodes = []string{
 	codeSnapshotUnsupported, codeSnapshotTooMany, codeSnapshotGone, codeSnapshotSaveFailed, codeSnapshotFolder,
 	codeHandGone, codeMessageGone, codeStudentGone, codeSimTooSoon, codeNoticeUnsupported,
 	codeInvalidTimer, codeNoTimerTargets, codeTimerGone, codeTimerTooLong,
+	codePushNoFiles, codePushTooLarge, codePushPathInvalid, codePushFileGone, codePushUnsupported,
+	codeTemplateExists, codeTemplateInvalid, codeTemplateGone,
 }
 
 // errorHelp is the section of the manual (docs/v1/administracion) that each
@@ -139,6 +149,14 @@ var errorHelp = map[string]string{
 	codeNoTimerTargets:       "participacion#temporizador",
 	codeTimerGone:            "participacion#temporizador",
 	codeTimerTooLong:         "participacion#temporizador",
+	codePushNoFiles:          "codigo#enviar-archivos-y-plantillas",
+	codePushTooLarge:         "codigo#enviar-archivos-y-plantillas",
+	codePushPathInvalid:      "codigo#enviar-archivos-y-plantillas",
+	codePushFileGone:         "codigo#enviar-archivos-y-plantillas",
+	codePushUnsupported:      "codigo#enviar-archivos-y-plantillas",
+	codeTemplateExists:       "codigo#plantillas-de-ejercicio",
+	codeTemplateInvalid:      "codigo#plantillas-de-ejercicio",
+	codeTemplateGone:         "codigo#plantillas-de-ejercicio",
 }
 
 // codedError is an error the UI can explain by its code.

@@ -53,6 +53,9 @@ type classHooks struct {
 	onClassroom func(sessionID string, env protocol.Envelope)
 	// onTimer receives timer.ack, from real and simulated students (§5.19).
 	onTimer func(sessionID string, p protocol.TimerAck)
+	// onFile receives file.push.ack and the errors (which may answer a
+	// file.push), from real and simulated students (§5.20).
+	onFile func(sessionID string, env protocol.Envelope)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
 }
@@ -267,9 +270,16 @@ func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, prot
 			if h.onTimer != nil {
 				h.onTimer(conn.ID(), p)
 			}
+		case protocol.FilePushAck:
+			if h.onFile != nil {
+				h.onFile(conn.ID(), env)
+			}
 		case protocol.ErrorPayload:
 			if h.onSnapshot != nil {
 				h.onSnapshot(conn.ID(), env)
+			}
+			if h.onFile != nil {
+				h.onFile(conn.ID(), env)
 			}
 			if h.onError != nil {
 				h.onError(conn.ID(), p)
@@ -337,6 +347,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onTimer != nil {
 					hooks.onTimer(conn.ID(), p)
 				}
+			case protocol.FilePushAck:
+				if hooks.onFile != nil {
+					hooks.onFile(conn.ID(), env)
+				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {
 					hooks.onBroadcast(conn.ID(), env)
@@ -350,6 +364,9 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 					}
 					if hooks.onSnapshot != nil {
 						hooks.onSnapshot(conn.ID(), env)
+					}
+					if hooks.onFile != nil {
+						hooks.onFile(conn.ID(), env)
 					}
 					if hooks.onError != nil {
 						hooks.onError(conn.ID(), p)

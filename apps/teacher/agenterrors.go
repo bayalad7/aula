@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/protocol"
 )
 
@@ -95,4 +96,32 @@ func (a *App) onAgentError(sessionID string, p protocol.ErrorPayload) {
 	if class := a.currentClass(); class != nil {
 		a.emit(EventStudents, a.studentsIn(class))
 	}
+}
+
+// fileReasonHelp links why a student did not get a file (filepush.Outcome):
+// the reasons of file.push.ack and the console's own (no ack in time, the
+// student left). «Quién falta» shows them like the protocol errors, with
+// errorAlumno.<reason> texts; "internal" is already a protocol code.
+var fileReasonHelp = func() map[protocol.ErrorCode]string {
+	m := map[protocol.ErrorCode]string{}
+	for _, r := range protocol.FilePushReasons {
+		m[protocol.ErrorCode(r)] = "codigo#si-un-alumno-no-recibió-los-archivos"
+	}
+	m[filepush.ReasonTimeout] = "codigo#si-un-alumno-no-recibió-los-archivos"
+	m[filepush.ReasonGone] = "codigo#si-un-alumno-no-recibió-los-archivos"
+	m[protocol.CodeInternal] = agentErrorHelp[protocol.CodeInternal]
+	return m
+}()
+
+// agentAndFileHelp is what the manual hands the frontend: every code a
+// student's answer can carry.
+func agentAndFileHelp() map[protocol.ErrorCode]string {
+	m := make(map[protocol.ErrorCode]string, len(agentErrorHelp)+len(fileReasonHelp))
+	for k, v := range fileReasonHelp {
+		m[k] = v
+	}
+	for k, v := range agentErrorHelp {
+		m[k] = v
+	}
+	return m
 }

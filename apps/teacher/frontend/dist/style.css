@@ -127,3 +127,16 @@ body[data-panel] .col-sistema { display: none; }
 .participa .campo textarea, .campo textarea.privado-texto { font-family: inherit; }
 a.insignia { text-decoration: none; }
 a.insignia:hover { text-decoration: underline; }
+
+/* Archivos del módulo Código (prompt 10.9). */
+.archivos-elegidos { display: grid; gap: var(--e-1); }
+.archivos-elegidos:empty { display: none; }
+.archivo-elegido { align-items: center; gap: var(--e-2); padding: var(--e-1) var(--e-2); border: 1px solid var(--c-borde); border-radius: var(--r-md); }
+.archivo-elegido .nombre { min-width: 0; overflow-wrap: anywhere; }
+.archivos-destino { align-items: center; gap: var(--e-1); flex-wrap: nowrap; }
+.archivos-destino input { flex: 1; min-width: 0; }
+.archivos-nueva-plantilla { align-items: flex-end; }
+.archivos-nueva-plantilla[hidden], #codigo-parte-archivos[hidden], #codigo-parte-codigo[hidden], #codigo-botones[hidden], #archivos-botones[hidden] { display: none; }
+.tarjeta__subtitulo { margin: var(--e-4) var(--e-4) var(--e-2); font-size: var(--t-md); font-weight: var(--peso-fuerte); }
+.tarjeta__subtitulo[hidden] { display: none; }
+.tarjeta__cabecera > .insignia[hidden] { display: none; }

@@ -471,7 +471,7 @@
     }));
     const puede = [["canCode", "ficha.codigo"], ["canNotice", "ficha.avisos"], ["canThumb", "ficha.miniaturas"],
       ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"], ["canRemote", "ficha.control"],
-      ["canSnapshot", "ficha.captura"], ["canHand", "ficha.mano"], ["canMessage", "ficha.mensajes"], ["canTimer", "ficha.temporizador"]];
+      ["canSnapshot", "ficha.captura"], ["canHand", "ficha.mano"], ["canMessage", "ficha.mensajes"], ["canTimer", "ficha.temporizador"], ["canFiles", "ficha.archivos"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k]) => {
       const li = el("li", "fila");
       li.append(s[c] ? insignia("conectado", "hecho", T("ficha.si")) : insignia("", "cerrar", T("ficha.no")), el("span", "", T(k)));
@@ -1605,6 +1605,7 @@
     const radio = $("codigo-destino-seleccion-radio");
     radio.disabled = n === 0;
     if (n === 0 && radio.checked) document.querySelector('input[name="codigo-destino"][value="todos"]').checked = true;
+    actualizarAccionesArchivos();
   }
   const destinoCodigo = () => (document.querySelector('input[name="codigo-destino"]:checked').value === "seleccion" ? destinos() : []);
 
@@ -1615,6 +1616,7 @@
     else if (!hay) motivo = T("codigo.motivoVacio");
     $("codigo-emitir").disabled = $("codigo-agregar").disabled = alumnos.canCode === 0 || !hay;
     $("codigo-limpiar").disabled = alumnos.canCode === 0;
+    if (enArchivos()) { actualizarAccionesArchivos(); return; }
     $("codigo-motivo").textContent = motivo;
     $("codigo-ejercicio").textContent = T("codigo.ejercicio", { n: historial.length + 1 });
   }
@@ -1747,10 +1749,168 @@
     actualizarAccionesCodigo();
   }
 
+  // --- Archivos y plantillas (prompt 10.9) -------------------------------------------------
+  // La pestaña «Archivos» del módulo Código: elegir archivos o una plantilla y enviarlos con
+  // el mismo «Enviar a» del código. Los acuses van a «Últimos envíos» (quién lo tiene, quién
+  // falta) y los envíos al Historial, para reenviarlos. Los alumnos los guardan solo en su
+  // Documentos\Aula (reglas 55-58).
+  let elegidos = [];         // FileChoice: { path, rel, size }
+  let archivosVista = { templates: [], templatesError: "", sends: [] };
+  const MB = 1024 * 1024;
+  const tamano = (b) => (b >= MB ? T("archivos.mb", { n: (b / MB).toFixed(1) }) : T("archivos.kb", { n: Math.max(1, Math.round(b / 1024)) }));
+  const plantillaElegida = () => $("archivos-plantilla").value;
+  const PROBLEMA = "archivos.problema."; // + filepush.Template.Problem en camelCase
+  const camel = (s) => String(s).replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+
+  function ponerQue(que) {
+    for (const b of document.querySelectorAll("#codigo-que button")) b.setAttribute("aria-pressed", String(b.dataset.que === que));
+    const archivos = que === "archivos";
+    $("codigo-parte-codigo").hidden = $("codigo-botones").hidden = archivos;
+    $("codigo-parte-archivos").hidden = $("archivos-botones").hidden = !archivos;
+    $("codigo-ejercicio").nextElementSibling.hidden = archivos; // «Borrador» es del código
+    if (!archivos) $("archivos-nueva-plantilla").hidden = true;
+    actualizarAccionesCodigo();
+    actualizarAccionesArchivos();
+  }
+  for (const b of document.querySelectorAll("#codigo-que button")) b.addEventListener("click", () => ponerQue(b.dataset.que));
+  function enArchivos() { return !$("codigo-parte-archivos").hidden; }
+
+  function pintarArchivos(v) {
+    archivosVista = v;
+    const sel = $("archivos-plantilla");
+    const antes = sel.value;
+    sel.replaceChildren(Object.assign(el("option", "", T("archivos.sinPlantilla")), { value: "" }),
+      ...v.templates.map((t) => Object.assign(el("option", "", t.problem ? T("archivos.plantillaConProblema", { nombre: t.name }) : t.name), { value: t.name })));
+    sel.value = v.templates.some((t) => t.name === antes) ? antes : "";
+    $("archivos-abrir-plantillas-texto").textContent = sel.value ? T("archivos.abrirPlantilla") : T("archivos.abrirPlantillas");
+    pintarElegidos();
+    pintarHistorialArchivos(v.sends);
+  }
+
+  // Lo que se va a enviar: los archivos de la plantilla elegida, o los que eligió el profesor.
+  function pintarElegidos() {
+    const t = archivosVista.templates.find((x) => x.name === plantillaElegida());
+    const filas = t ? t.files.map((f) => ({ rel: f.rel, size: f.size })) : elegidos;
+    const tpl = $("t-archivo-elegido").content.firstElementChild;
+    $("archivos-lista").replaceChildren(...filas.map((f, i) => {
+      const li = tpl.cloneNode(true);
+      li.querySelector(".nombre").textContent = f.rel;
+      li.querySelector(".tamano").textContent = tamano(f.size);
+      const q = li.querySelector(".quitar");
+      q.hidden = !!t; // los archivos de una plantilla se cambian en su carpeta
+      q.setAttribute("aria-label", T("archivos.quitar", { nombre: f.rel }));
+      q.title = T("archivos.quitar", { nombre: f.rel });
+      q.addEventListener("click", () => { elegidos.splice(i, 1); pintarElegidos(); });
+      return li;
+    }));
+    $("archivos-vacio").hidden = filas.length > 0;
+    $("archivos-elegir").hidden = !!t;
+    $("archivos-guardar-plantilla").hidden = !!t;
+    const nota = !t ? "" : t.problem ? T(PROBLEMA + camel(t.problem)) : T("archivos.notaPlantilla", { n: t.files.length, tamano: tamano(t.size) });
+    $("archivos-plantilla-nota").textContent = nota;
+    actualizarAccionesArchivos();
+  }
+
+  function actualizarAccionesArchivos() {
+    const t = archivosVista.templates.find((x) => x.name === plantillaElegida());
+    const n = t ? t.files.length : elegidos.length;
+    const pueden = conectados().filter((s) => s.canFiles).length;
+    let motivo = "";
+    if (pueden === 0) motivo = conectados().length === 0 ? T("codigo.motivoSinAlumnos") : T("archivos.motivoNadieRecibe");
+    else if (n === 0) motivo = T("archivos.motivoVacio");
+    else if (t && t.problem) motivo = T(PROBLEMA + camel(t.problem));
+    $("archivos-enviar").disabled = pueden === 0 || n === 0 || !!(t && t.problem);
+    $("archivos-enviar-texto").textContent = n ? P("archivos.enviar", n) : T("archivos.enviarNada");
+    $("archivos-guardar-plantilla").disabled = elegidos.length === 0;
+    if (enArchivos()) {
+      $("codigo-motivo").textContent = motivo;
+      $("codigo-ejercicio").textContent = T("archivos.titulo");
+    }
+  }
+
+  $("archivos-plantilla").addEventListener("change", () => {
+    const t = plantillaElegida();
+    if (t && !$("archivos-destino").value.trim()) $("archivos-destino").value = t;
+    $("archivos-abrir-plantillas-texto").textContent = t ? T("archivos.abrirPlantilla") : T("archivos.abrirPlantillas");
+    pintarElegidos();
+  });
+  $("archivos-abrir-plantillas").addEventListener("click", () => api.OpenTemplates(plantillaElegida()).catch(fallo));
+  $("archivos-elegir").addEventListener("click", () => {
+    api.ChooseFiles(T("archivos.dialogo")).then((lista) => {
+      for (const f of lista || []) if (!elegidos.some((e) => e.path === f.path)) elegidos.push(f);
+      pintarElegidos();
+    }, fallo);
+  });
+  $("archivos-enviar").addEventListener("click", () => {
+    const b = $("archivos-enviar");
+    ocupado(b, true);
+    const req = { files: elegidos.map((f) => ({ path: f.path, rel: f.rel })), template: plantillaElegida(),
+      dest: $("archivos-destino").value, overwrite: $("archivos-reemplazar").checked, targets: destinoCodigo() };
+    if (req.template) req.files = [];
+    api.SendFiles(req)
+      .then((d) => toast("exito", P("archivos.enviado", d.sent + d.simSent, { etiqueta: d.label }), T("archivos.enviadoTexto")), fallo)
+      .finally(() => { ocupado(b, false); actualizarAccionesArchivos(); });
+  });
+  $("archivos-guardar-plantilla").addEventListener("click", () => {
+    const f = $("archivos-nueva-plantilla");
+    f.hidden = !f.hidden;
+    $("archivos-guardar-plantilla").setAttribute("aria-expanded", String(!f.hidden));
+    if (!f.hidden) $("archivos-nombre-plantilla").focus();
+  });
+  $("archivos-cancelar-plantilla").addEventListener("click", () => {
+    $("archivos-nueva-plantilla").hidden = true;
+    $("archivos-guardar-plantilla").setAttribute("aria-expanded", "false");
+    $("archivos-guardar-plantilla").focus();
+  });
+  $("archivos-nueva-plantilla").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const nombre = $("archivos-nombre-plantilla").value.trim();
+    api.SaveTemplate(nombre, elegidos.map((f) => ({ path: f.path, rel: f.rel }))).then((v) => {
+      pintarArchivos(v);
+      $("archivos-plantilla").value = nombre;
+      elegidos = [];
+      $("archivos-nueva-plantilla").hidden = true;
+      $("archivos-guardar-plantilla").setAttribute("aria-expanded", "false");
+      $("archivos-plantilla").dispatchEvent(new Event("change"));
+      toast("exito", T("archivos.plantillaGuardada", { nombre }), T("archivos.plantillaGuardadaTexto"));
+    }, fallo);
+  });
+
+  function pintarHistorialArchivos(sends) {
+    const hay = sends.length > 0;
+    $("h-historial-archivos").hidden = $("historial-archivos-tabla").hidden = !hay;
+    if (hay) $("historial-vacio").hidden = true;
+    else $("historial-vacio").hidden = historial.length > 0;
+    const tpl = $("t-historial-archivos").content.firstElementChild;
+    const etiquetas = { que: "archivos.colQue", destino: "archivos.colDestino", tamano: "archivos.colTamano", veces: "codigo.colVeces", hora: "codigo.colHora" };
+    $("historial-archivos-filas").replaceChildren(...sends.map((s) => {
+      const tr = tpl.cloneNode(true);
+      const que = s.template ? T("archivos.dePlantilla", { nombre: s.template, n: s.names.length })
+        : s.names.length === 1 ? s.names[0] : T("archivos.varios", { primero: s.names[0], n: s.names.length - 1 });
+      const celdas = { que, destino: T("archivos.destinoCelda", { ruta: ["Documentos", "Aula"].concat(s.dest ? s.dest.split("/") : []).join("\\") }),
+        tamano: tamano(s.size), veces: P("codigo.veces", s.times), hora: s.lastAt };
+      for (const [c, v] of Object.entries(celdas)) {
+        const td = tr.querySelector("." + c);
+        td.textContent = v;
+        td.dataset.etiqueta = T(etiquetas[c]);
+      }
+      const re = tr.querySelector(".reenviar");
+      re.textContent = T("archivos.reenviar");
+      re.setAttribute("aria-label", T("archivos.reenviarDe", { que }));
+      re.addEventListener("click", () => {
+        const n = conectados().filter((x) => x.canFiles).length;
+        confirmar({ titulo: T("archivos.reenviarTitulo", { que }), texto: P("archivos.reenviarTexto", n), si: T("archivos.reenviar") })
+          .then((si) => { if (si) api.ResendFiles(s.id).then((d) => toast("exito", P("archivos.enviado", d.sent + d.simSent, { etiqueta: d.label })), fallo); });
+      });
+      return tr;
+    }));
+  }
+  const cargarArchivos = () => api.Files().then(pintarArchivos, () => {});
+
   // --- Aula simulada ---------------------------------------------------------------------
-  const FALLAS = [["none", "simulada.fallaNinguna"], ["slow", "simulada.fallaLenta"], ["noack", "simulada.fallaNoAcusa"], ["disconnected", "simulada.fallaDesconectado"]];
+  const FALLAS =[["none", "simulada.fallaNinguna"], ["slow", "simulada.fallaLenta"], ["noack", "simulada.fallaNoAcusa"], ["disconnected", "simulada.fallaDesconectado"]];
   const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla", "screen.snapshot": "simulada.capCaptura",
-    "hand": "simulada.capMano", "msg.student": "simulada.capMensajes" };
+    "hand": "simulada.capMano", "msg.student": "simulada.capMensajes", "file.push": "simulada.capArchivos" };
   function pintarSimulacion(v) {
     simulada = v;
     $("f-simulada").hidden = !v.active;
@@ -2587,6 +2747,7 @@
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);
   rt.EventsOn(ev.PARTICIPATION, alParticipar);
   rt.EventsOn(ev.TIMER, alTemporizador);
+  rt.EventsOn(ev.FILES, pintarArchivos);
   rt.EventsOn(ev.CONNECT_CHECK, pintarComprobacion);
   rt.EventsOn(ev.CLASS, (v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
 
@@ -2596,4 +2757,5 @@
   aplicarTema(tema);
   for (const b of $$("[data-modo]")) b.setAttribute("aria-pressed", String(b.dataset.modo === modo));
   api.View().then((v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
+  cargarArchivos();
 })();

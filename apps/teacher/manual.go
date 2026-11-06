@@ -42,7 +42,7 @@ func (a *App) loadManual() (*manual.Manual, ManualView, error) {
 			return
 		}
 		v := ManualView{Pages: m.Pages, Diagrams: m.Diagrams, Images: map[string]string{}, Errors: errorHelp,
-			AgentErrors: agentErrorHelp}
+			AgentErrors: agentAndFileHelp()}
 		for name, b := range m.Images {
 			v.Images[name] = "data:image/png;base64," + base64.StdEncoding.EncodeToString(b)
 		}

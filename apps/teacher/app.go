@@ -14,6 +14,7 @@ import (
 	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
+	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
@@ -80,6 +81,11 @@ type App struct {
 	snaps *snapshot.Store      // screenshots of students, in memory until saved (§5.17)
 	board *participation.Board // raised hands and students' messages, in memory (§5.18)
 	timer *classtimer.Class    // the exercise timer of the class (§5.19)
+	// files and pusher send the teacher's files (§5.20); chooseFiles opens
+	// the system dialog (replaced in tests: never a window on the desktop).
+	files       fileState
+	pusher      *filepush.Pusher
+	chooseFiles func(title string) ([]string, error)
 	// timerEnd tells the window when the timer reaches zero; guarded by mu.
 	timerEnd *time.Timer
 	// documents is the teacher's Documents folder and openFolder shows a
@@ -118,6 +124,8 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 		OnChange: func(l []snapshot.Snapshot) { a.emit(EventSnapshots, Snapshots{Snapshots: l}) }}
 	a.board = participation.NewBoard()
 	a.timer = classtimer.NewClass(nil)
+	a.pusher = &filepush.Pusher{Send: a.sendToSession, OnOutcome: a.onFileOutcome, Logger: log}
+	a.chooseFiles = a.openFilesDialog
 	a.documents, a.openFolder = platform.DocumentsDir, platform.OpenFolder
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	a.checks = newConnectChecks(log)
@@ -215,7 +223,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
 		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage,
 		onRemote: a.onRemoteMessage, onSnapshot: a.onSnapshotMessage, onClassroom: a.onClassroomMessage,
-		onTimer: a.onTimerAck, onError: a.onAgentError}, a.log)
+		onTimer: a.onTimerAck, onFile: a.onFileMessage, onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -250,6 +258,7 @@ func (a *App) EndClass() {
 		a.snaps.Reset() // unsaved screenshots never outlive the class (rule 45)
 		a.board.Reset() // nor hands and messages (rule 51)
 		a.emit(EventParticipation, a.participation(nil, nil))
+		a.stopFiles() // what was being sent stops with the class
 		a.resetTimer()
 		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
@@ -375,6 +384,9 @@ func (a *App) Resend(deliveryID string) (codedist.Delivery, error) {
 	d, ok := a.deliveries.Get(deliveryID)
 	p := a.payloads[deliveryID]
 	a.mu.Unlock()
+	if ok && d.Kind == "file" {
+		return a.resendFiles(class, d)
+	}
 	if !ok || p == nil {
 		return codedist.Delivery{}, codedf(codeDeliveryGone, "ese envío ya no está entre los recientes")
 	}
@@ -622,6 +634,7 @@ func studentsOf(list []session.Session) Students {
 			CanPower: s.Can(protocol.CapPower), CanRemote: s.Can(protocol.CapRemote),
 			CanSnapshot: s.Can(protocol.CapScreenSnapshot), LastCodeAck: s.LastCodeAck,
 			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer),
+			CanFiles: s.Can(protocol.CapFilePush),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))
@@ -661,6 +674,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanTimer {
 				out.CanTimer++
+			}
+			if st.CanFiles {
+				out.CanFiles++
 			}
 		}
 		out.Students = append(out.Students, st)

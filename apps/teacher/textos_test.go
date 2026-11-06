@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/bayalad7/aula/internal/connectcheck"
+	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/remote"
 	"github.com/bayalad7/aula/internal/snapshot"
@@ -116,6 +117,10 @@ func TestTextsAreComplete(t *testing.T) {
 		need("captura.lote.estado."+string(s), "main.js (snapshot.Snapshot.Status)")
 	}
 
+	// Why a template cannot be sent (filepush.Template.Problem).
+	for _, p := range []string{filepush.ProblemEmpty, filepush.ProblemTooMany, filepush.ProblemTooLarge, filepush.ProblemBadName} {
+		need("archivos.problema."+agentErrorKey(protocol.ErrorCode(p)), "main.js (filepush.Template.Problem)")
+	}
 	// Error texts are chosen by the code Go returns (errores.go).
 	for _, code := range errorCodes {
 		need("error."+code+".titulo", "errores.go")
@@ -140,7 +145,7 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 
 	// So are the texts of the students' protocol errors (agenterrors.go).
-	for code := range agentErrorHelp {
+	for code := range agentAndFileHelp() {
 		need("errorAlumno."+agentErrorKey(code)+".titulo", "agenterrors.go")
 		need("errorAlumno."+agentErrorKey(code)+".texto", "agenterrors.go")
 	}

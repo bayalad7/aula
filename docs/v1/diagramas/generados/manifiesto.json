@@ -304,9 +304,9 @@
         "auditor"
       ],
       "pantallas": [
-        "codigo"
+        "archivos"
       ],
-      "hash": "sha256:03fd1a3a313c85a31f7bce2b93911f97372ed7eae47366536198501109d18754",
+      "hash": "sha256:45e70e22de38c2758fa6cc4a91783db95b22f31358dfea0d82d80de737004a43",
       "alt": "Enviar archivos y plantillas: Cómo llegan los archivos del profesor a la carpeta de trabajo de cada alumno, sin salir de ella, y cómo sabe la consola quién los tiene",
       "claro": "generados/19-enviar-archivos.claro.svg",
       "oscuro": "generados/19-enviar-archivos.oscuro.svg"

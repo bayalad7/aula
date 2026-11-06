@@ -158,11 +158,11 @@ Con el aula simulada abierta (C-03) y dos simulados; pon a Simulado 2 la falla �
 
 | # | Pasos | Esperado |
 |---|---|---|
-| C-68 | Código › «Archivos»; «Elegir archivos…» y marca los dos; en «Guardar en» escribe `Ejercicio 4`; «Enviar 2 archivos» | El diálogo es el del sistema; la lista muestra los dos con su tamaño. Toast «Enviando Archivos: … a 2 alumnos». En Últimos envíos: «1 de 2» con «Quién falta (1)»: Simulado 2 «sin confirmar». En `Documentos` de este equipo no aparece nada nuevo (los simulados no escriben) |
+| C-68 | En el menú, «Archivos»; «Elegir archivos…» y marca los dos; en «Guardar en» escribe `Ejercicio 4`; «Enviar 2 archivos» | El diálogo es el del sistema; la lista muestra los dos con su tamaño. Toast «Enviando Archivos: … a 2 alumnos». En Envíos de archivos: «1 de 2» con «Quién falta (1)»: Simulado 2 «sin confirmar»; Código › Últimos envíos no lo muestra. En `Documentos` de este equipo no aparece nada nuevo (los simulados no escriben) |
 | C-69 | «Guardar como plantilla…», nombre `Ejercicio 4`, «Guardar»; luego «Abrir su carpeta» | «Plantilla «Ejercicio 4» guardada»; la plantilla queda elegida y la lista muestra sus archivos sin la «x». El Explorador abre `Documentos\Aula\plantillas\Ejercicio 4` con los dos archivos |
 | C-70 | En el Explorador, agrega un tercer archivo a la plantilla; vuelve a la consola y abre otra vez Código | Al elegir la plantilla dice «3 archivos, …». «Enviar 3 archivos» la manda a los dos simulados |
 | C-71 | En «Guardar en» escribe `..\Windows` y envía; luego un nombre `con.txt` (renombra un archivo así) | «Un nombre no se puede usar» con «Ver en el manual», y nada sale: Últimos envíos no cambia |
-| C-72 | Historial de la clase › «Archivos enviados» › «Reenviar» en la plantilla | Pide confirmación «¿Reenviar Plantilla Ejercicio 4 (3)?»; al aceptar, un envío nuevo en Últimos envíos y la columna «Veces» dice 2. El log de la consola dice «file push» con `push_id`, archivos y bytes, **nunca** nombres ni carpetas |
+| C-72 | Archivos › «Archivos enviados» › «Reenviar» en la plantilla; luego en la tabla Plantillas, «Usar» y «Abrir carpeta» | Pide confirmación «¿Reenviar Plantilla Ejercicio 4 (3)?»; al aceptar, un envío nuevo en Últimos envíos y la columna «Veces» dice 2. El log de la consola dice «file push» con `push_id`, archivos y bytes, **nunca** nombres ni carpetas |
 | C-73 | A 900×600 y en oscuro, la pestaña Archivos con una plantilla elegida; la ficha de un simulado | Todo se lee sin barras horizontales; la ficha dice «Recibir archivos: Sí» |
 
 ### Diagramas

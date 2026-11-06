@@ -8,6 +8,7 @@ respeta lo que ya existe sin repetir la lista de reglas en cada prompt.
 |---|---|
 | `/funcionalidad-nueva` | Algo que Aula todavía no hace |
 | `/funcionalidad-mejora` | Corregir, mejorar o cambiar algo que ya existe |
+| `/notas-ux` | Trabajar las notas de interfaz que dejaste con el anotador ([`notas-ux.md`](notas-ux.md)) |
 
 ¿No sabes cuál? Si hoy hay un botón, una pantalla o un mensaje del protocolo para eso, es
 `/funcionalidad-mejora`.

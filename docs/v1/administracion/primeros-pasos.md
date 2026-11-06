@@ -48,4 +48,4 @@ A la derecha de Código, en **Últimos envíos**, cada envío dice cuántos alum
 pantalla, por ejemplo «7 de 8». Si falta alguien, abre **Quién falta** y, si hace falta, pulsa
 **Reenviar a los que faltan**. Más en [Código](codigo#últimos-envíos).
 
-![La pantalla Código, con el editor y los últimos envíos](img/codigo.png)
+![La pantalla Código, con el editor y los últimos envíos](img/codigo.webp)

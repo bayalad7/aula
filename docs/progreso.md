@@ -57,7 +57,15 @@ el que se trabajó antes; las notas de abajo lo conservan.
 3. ~~Publicar `v0.6.0-rc.1`~~: publicado el 05/11/2026 (etapas 10.2, 10.3, 18, 19 y 10.4, instaladores
    de Windows y checksums firmados). Las 0.x son borradores: al integrar todas las funciones se
    borran y empieza la versión 1 oficial. Probar sus instaladores en las VMs (§14 a §16).
-4. Cualquier función de 10.10 a 10.13 con `/funcionalidad-nueva <número>` (10.10 reutiliza
+4. **Interfaz (2026-11-06):** hay mapa de zonas (`docs/v1/ux/MAPA.md`, `scripts/ux/zonas.mjs`),
+   anotador (`node scripts/ux/anotar.mjs`, notas en `docs/v1/ux/notas/`, se trabajan con
+   `/notas-ux`) y reglas de ubicación en `CLAUDE.md`. Primer lote hecho (falta revisarlo en la
+   ventana real): «Archivos» es un módulo propio del menú (Código volvió a ser solo código; página
+   del manual `archivos.md`); las acciones sobre un alumno salen de un solo registro
+   (`ACCIONES_ALUMNO` en `main.js`) en la Ficha y la Pantalla grande; «Qué puede hacer su equipo»
+   es una grilla de iconos con ✓/✗ y tooltip (componente `data-tip` en `internal/ui`); las
+   capturas del arnés, del mapa, de las notas y del manual son WebP (manual: de 463 KB a 288 KB).
+5. Cualquier función de 10.10 a 10.13 con `/funcionalidad-nueva <número>` (10.10 reutiliza
    el troceo común y la carpeta de trabajo `Documentos\Aula` de 10.9). Las que recogen
    respuestas (10.10, 10.12, 10.13) agregan su sección a la vista «Participación».
 

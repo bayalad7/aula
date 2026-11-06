@@ -2,8 +2,8 @@
 titulo: "Enviar archivos y plantillas"
 descripcion: "Cómo llegan los archivos del profesor a la carpeta de trabajo de cada alumno, sin salir de ella, y cómo sabe la consola quién los tiene"
 audiencia: [profesor, alumno, desarrollador, auditor]
-pantallas: [codigo]
-secciones_manual: [v1/administracion/codigo, protocol, privacidad]
+pantallas: [archivos]
+secciones_manual: [v1/administracion/archivos, protocol, privacidad]
 ---
 
 # Enviar archivos y plantillas
@@ -17,7 +17,7 @@ sequenceDiagram
     autonumber
     actor P as Profesor
     box rgb(220,252,231) Consola
-        participant C as Código › Archivos
+        participant C as Vista Archivos
         participant U as filepush.Pusher
     end
     box rgb(219,234,254) Agente como servicio

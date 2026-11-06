@@ -112,6 +112,18 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
 - **Protocolo:** mensajes nuevos primero en `docs/protocol.md`. Una capacidad implementada
   aparece en la ficha del alumno, «Qué puede hacer su equipo» (prueba). Un código de error nuevo
   lleva texto `errorAlumno.*` y sección del manual en `agentErrorHelp` (prueba).
+- **Ubicación y vocabulario de la interfaz** (se aprueba aparte del diseño técnico):
+  - Las zonas se nombran como en `docs/v1/ux/MAPA.md` (fuente: `scripts/ux/zonas.mjs`). Una zona
+    nueva se agrega a `zonas.mjs` y se regenera el mapa con `node scripts/ux/mapa.mjs`.
+  - Una función con **su propio material de trabajo** (archivos, encuestas, recolecciones,
+    plantillas…) es un **módulo propio del menú**; no se mete dentro de otro módulo.
+  - Una **acción sobre un alumno** aparece en **todos** los lugares donde se ve a un alumno: la
+    Ficha del alumno y la Pantalla grande (y la Tarjeta del alumno si tiene menú). No se agrega
+    solo en uno.
+  - Antes de implementar, el diseño muestra **2–3 bocetos de ubicación** con los nombres del mapa
+    y una recomendación; el usuario elige. Ninguna ubicación se da por hecha.
+  - Las notas del usuario sobre la interfaz llegan por el anotador (`node scripts/ux/anotar.mjs`,
+    en `docs/v1/ux/notas/`) y se trabajan con `/notas-ux`.
 - **Consola, dentro de la navegación actual:**
   - Lo que se aplica a alumnos va sobre la selección de Alumnos, con un panel de la barra de
     acciones o en la ficha del alumno. Nada de pantallas a pantalla completa nuevas.
@@ -159,6 +171,7 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
     `scripts/ux/recorrido-alumno.mjs` (alumno), sin errores ni violaciones serias (CI). Lo que
     cambie el comportamiento del alumno, también en `scripts/ux/pruebas-alumno.mjs` (CI).
   - Si cambia una pantalla del manual, `node scripts/ux/capturas-manual.mjs`.
+  - Las capturas (arnés, mapa, notas, manual y entregas) se guardan en **WebP**, no PNG.
 - **Cierre:** casos manuales en `docs/desarrollo/probar-consola-local.md` (C-xx de la consola,
   A-xx del alumno) y `docs/progreso.md`; lo nativo que el arnés no ve (ventana, icono, SO) queda
   como caso manual, sin clics sintéticos en el escritorio del usuario.

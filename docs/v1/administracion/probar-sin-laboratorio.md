@@ -17,7 +17,7 @@ Pulsa **Probar con alumnos simulados** (en Alumnos, cuando no hay nadie, o en **
 del menú). Aparecen «Simulado 1» y «Simulado 2» al final de la lista de Alumnos, en su propio
 grupo, y una franja morada arriba te recuerda que el aula simulada está abierta.
 
-![La pantalla Aula simulada con dos alumnos de prueba](img/simulada.png)
+![La pantalla Aula simulada con dos alumnos de prueba](img/simulada.webp)
 
 ## Qué hacen los alumnos simulados
 

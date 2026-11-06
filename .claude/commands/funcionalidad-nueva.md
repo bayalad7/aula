@@ -50,11 +50,18 @@ Muestra la ficha completa al usuario antes de diseñar.
   y en qué SO se declara. Van en `docs/protocol.md` antes que el código.
 - **Privacidad:** si observa o controla, el aviso visible en el equipo del alumno, la regla en
   `docs/privacidad.md` y si pide consentimiento.
-- **Consola, dentro de la navegación actual:**
-  - si va a alumnos: un panel de la barra de acciones sobre la selección, o la ficha del alumno
-    si es para uno;
-  - nada de pantallas a pantalla completa nuevas;
-  - un boceto en texto (ASCII) del panel o de la ficha.
+- **Ubicación (decisión del usuario, no tuya):** con los nombres de `docs/v1/ux/MAPA.md`,
+  propone **2–3 ubicaciones** posibles, cada una con su boceto en texto (ASCII), y di cuál
+  recomiendas y por qué. Pregúntalo con AskUserQuestion usando `preview` para los bocetos. Aplica
+  las reglas de «Ubicación y vocabulario» de `CLAUDE.md`:
+  - función con su propio material de trabajo → módulo propio del menú (una de las opciones
+    siempre lo considera);
+  - acción sobre un alumno → en la Ficha del alumno **y** en la Pantalla grande;
+  - lo que responden los alumnos → sección de «Participación»; lo que sigue activo → Franja global;
+  - nada de pantallas a pantalla completa nuevas.
+  El «Encaje con lo implementado» del prompt es una sugerencia, no una decisión: si choca con
+  estas reglas, dilo y ofrécelo como una de las opciones.
+- **Consola:** el boceto de la opción elegida, con el panel, la ficha o el módulo completo.
 - **App del alumno:** qué ve y qué aviso recibe, con un boceto en texto. Con `notify` o `raise`
   (y por qué); si observa o controla, su banda y su lugar en el orden fijo; qué botones agrega a
   la tira; qué pasa en el modo compacto y con la ventana cerrada al área de notificación.
@@ -97,10 +104,15 @@ Como mínimo:
 - Alumno: `scripts/ux/dobles-alumno.js`, una escena en `recorrido-alumno.mjs` y el comportamiento
   en `pruebas-alumno.mjs` (no quita el foco; si tiene banda, que no se cierra). Un binding nuevo
   de la ventana, revisado en `TestNoBindingTurnsOffTransparency`.
-- `node scripts/ux/recorrido.mjs`, `node scripts/ux/recorrido-alumno.mjs` y
-  `node scripts/ux/pruebas-alumno.mjs` sin errores de JS ni violaciones serias.
+- `node scripts/ux/recorrido.mjs --solo=<capturas de la función>`,
+  `node scripts/ux/recorrido-alumno.mjs --solo=…` y `node scripts/ux/pruebas-alumno.mjs` sin
+  errores de JS ni violaciones serias. El recorrido completo lo corre el CI; en local, solo si el
+  cambio toca algo común a muchas pantallas (sistema de diseño, menú, avisos).
 - Si cambió un diagrama, `scripts/docs/generar-diagramas` y `go test ./docs`.
 - Si cambió una pantalla del manual, `node scripts/ux/capturas-manual.mjs`.
+- **Revisión de ubicación:** la función quedó donde se aprobó; las acciones sobre un alumno
+  están en la Ficha **y** en la Pantalla grande; las zonas nuevas están en `scripts/ux/zonas.mjs`
+  y el mapa regenerado (`node scripts/ux/mapa.mjs`).
 - La sección del manual en `docs/v1/administracion/` y el diagrama en `docs/v1/diagramas/`, si
   aplica.
 - Los casos manuales en `docs/desarrollo/probar-consola-local.md` (C-xx consola, A-xx alumno),

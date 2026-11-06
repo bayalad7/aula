@@ -11,7 +11,7 @@ pantallas: [alumnos]
 Es la pantalla de inicio: muestra a los alumnos de tu canal y desde aquí aplicas acciones a todos
 o solo a algunos.
 
-![La lista de alumnos con dos seleccionados](img/alumnos.png)
+![La lista de alumnos con dos seleccionados](img/alumnos.webp)
 
 ## Lista o miniaturas
 
@@ -42,7 +42,7 @@ Con **Tomar captura** guardas una foto de su pantalla: primero ves la vista prev
 guarda en tu equipo si pulsas **Guardar**. Funciona también con los alumnos simulados y mientras lo
 controlas (ver [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno)).
 
-![La ficha de un alumno con un problema reciente](img/ficha-alumno.png)
+![La ficha de un alumno con un problema reciente](img/ficha-alumno.webp)
 
 ## Seleccionar alumnos
 

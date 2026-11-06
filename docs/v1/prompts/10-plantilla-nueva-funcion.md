@@ -21,8 +21,11 @@ plataforma, luego Windows, después la UI de la app que corresponda, y Linux/mac
 - Di qué `capability` declara el agente y en qué SO estará disponible.
 - Si <FUNCIÓN> observa o controla al alumno, describe el indicador/aviso visible y agrégalo a
   docs/privacidad.md.
+- Ubicación: 2–3 opciones con su boceto en texto y los nombres de docs/v1/ux/MAPA.md, con tu
+  recomendación; yo elijo. Sigue «Ubicación y vocabulario» de CLAUDE.md (material propio →
+  módulo del menú; acción sobre un alumno → Ficha y Pantalla grande).
 - Dónde vive en cada app, con un boceto en texto (sigue la «Definición de terminado» de CLAUDE.md
-  y el «Encaje con lo implementado» del prompt):
+  y el «Encaje con lo implementado» del prompt, que es una sugerencia):
   - consola: panel de la barra de acciones, ficha del alumno, sección de la vista «Participación» o
     franja global;
   - alumno: tarjeta en la lista, aviso en la esquina, botón o insignia en la tira, o banda; con

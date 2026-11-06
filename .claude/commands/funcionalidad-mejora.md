@@ -61,7 +61,9 @@ Detente y espera la aprobación si el cambio:
 - mueve algo de lugar en la consola;
 - es de tipo `cambio`.
 
-Muestra el antes y el después: un boceto en texto o una captura del arnés. Si exige cambiar el
+Muestra el antes y el después: un boceto en texto o una captura del arnés, nombrando las zonas
+como en `docs/v1/ux/MAPA.md`. Si mueve algo de lugar, aplica «Ubicación y vocabulario» de
+`CLAUDE.md` y ofrece 2–3 opciones con tu recomendación. Si exige cambiar el
 modelo de seguridad, no lo hagas: anótalo en `docs/v1/ux/PROPUESTAS.md`.
 
 Una `corrección` o una `mejora` pequeña y local no necesita esta pausa: dilo y sigue.

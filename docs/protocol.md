@@ -1198,7 +1198,7 @@ Reglas:
 ### 5.20 Enviar archivos a los alumnos (`file.push`)
 
 > Aprobado el 2026-11-05 (prompt 10.9), para v0.10. Implementación en `internal/filepush`;
-> reglas en `docs/privacidad.md` 55–59. En la consola, la pestaña «Archivos» del módulo Código.
+> reglas en `docs/privacidad.md` 55–59. En la consola, la vista «Archivos» del menú.
 
 El profesor envía uno o varios archivos (un dataset, el esqueleto de un ejercicio, una
 plantilla) a todos los alumnos o a una selección. Cada agente los guarda **solo** dentro de su

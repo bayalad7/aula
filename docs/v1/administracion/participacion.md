@@ -14,7 +14,7 @@ ejercicio. El número junto a **Participación** en
 el menú cuenta lo que espera tu atención: las manos levantadas y los mensajes que aún no
 respondes.
 
-![Participación con dos manos levantadas y un mensaje nuevo](img/participacion.png)
+![Participación con dos manos levantadas y un mensaje nuevo](img/participacion.webp)
 
 Cuando llega una mano o un mensaje, aparece un aviso abajo a la derecha con el nombre del equipo.
 El aviso no dice qué escribió el alumno: eso solo lo lees aquí. En **Alumnos**, la columna

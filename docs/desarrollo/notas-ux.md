@@ -37,29 +37,40 @@ Abajo a la izquierda:
 | **Escena** | Los datos de demostración: «Laboratorio: 5 equipos reales», «Controlando un alumno», «Envío de archivos con un fallo», «Mano levantada»… Elige la que muestre lo que quieres comentar |
 | **Vista** | (Consola) Alumnos, Código, Archivos, Participación, Aula simulada, Ayuda… |
 | **Claro / Oscuro** | El tema |
-| **Anotar (A)** | Entra en el modo de señalar |
-| **Nota de la pantalla** | Una nota sobre toda la pantalla, sin señalar nada |
+| **Anotar selección (N)** | Abre la nota de lo último que tocaste |
+| **Señalar (A)** | Señalar sin que el clic llegue a la app (para un botón que no quieres pulsar) |
+| **Zonas (Z)** | Muestra el nombre de la zona al pasar el mouse, sin bloquear los clics |
+| **Nota de la pantalla** | Una nota sobre toda la pantalla, sin seleccionar nada |
 | **Notas** | Las notas guardadas, con «Borrar» |
 | **Ocultar (H)** | Esconde la barra si tapa algo |
+| **Selección** (segunda línea) | Lo que tocaste, como cadena de zonas: «Consola › Vista Alumnos › Ficha del alumno › Qué puede hacer su equipo › «Control remoto: no»». Cada nivel es un botón |
 
-Fuera del modo de señalar, la app funciona normal: puedes abrir la ficha de un alumno, un panel o la
-Pantalla grande para llegar a lo que quieres comentar. El tamaño de la ventana también cuenta: si
-algo se ve mal a 900×600, achica la ventana antes de anotar.
+La app funciona normal mientras anotas: puedes abrir la ficha de un alumno, un panel o la Pantalla
+grande. El tamaño de la ventana también cuenta: si algo se ve mal a 900×600, achica la ventana
+antes de anotar.
 
 ## 3. Hacer una nota
 
-1. Pulsa **A** (o «Anotar»). El cursor cambia a una cruz.
-2. Pasa el mouse: un recuadro naranja marca el elemento y una etiqueta dice dónde está, con los
-   nombres del mapa, por ejemplo «Consola › Vista Alumnos › Ficha del alumno › Qué puede hacer su
-   equipo». Mientras anotas, los clics no llegan a la app.
-3. Haz clic. Se abre el formulario:
-   - **Tipo:** Mover de lugar · Cambiar texto · Estilo / diseño · Agregar algo · Quitar · Algo
-     falla · Idea / duda.
-   - **Texto:** qué quieres y, si ayuda, por qué.
-4. **Ctrl+Enter** guarda (o «Guardar nota»); **Esc** cancela.
+La forma rápida, navegando:
 
-Se guarda con una captura del elemento (con la zona que lo contiene) y otra de la pantalla
-completa, con el elemento resaltado.
+1. **Usa la app normal y haz clic en lo que quieres comentar** (un botón, una tarjeta, una
+   sección). El clic funciona como siempre y, además, queda seleccionado: un recuadro punteado azul
+   lo marca y la barra muestra su cadena de zonas.
+2. **Elige el nivel**, si la nota no es del elemento sino de toda la sección: pulsa el nivel en la
+   barra («Ficha del alumno» en vez de «Tomar control»). Por omisión es lo que tocaste.
+3. **Pulsa N** (o «Anotar selección»). Se abre el formulario con la misma cadena en «Sobre:», por
+   si quieres cambiar el nivel ahí mismo.
+4. Elige el **tipo** (Mover de lugar · Cambiar texto · Estilo / diseño · Agregar algo · Quitar ·
+   Algo falla · Idea / duda), escribe **qué quieres** y guarda con **Ctrl+Enter**. **Esc** cancela.
+
+Así anotas varias cosas seguidas sin cambiar de modo: clic, N, escribir, Ctrl+Enter; clic, N…
+
+Si el elemento hace algo al pulsarlo que no quieres (cerrar un panel, enviar, apagar), usa
+**Señalar (A)**: el cursor cambia a una cruz, el clic no llega a la app y abre la nota directo.
+Con **Zonas (Z)** ves el nombre de cada zona al pasar el mouse antes de tocar nada.
+
+Se guarda con una captura de lo elegido (si es un elemento suelto, con la zona que lo contiene) y
+otra de la pantalla completa, con lo elegido resaltado.
 
 ### Cómo escribir una buena nota
 
@@ -144,5 +155,7 @@ menú, los avisos).
 |---|---|
 | «Cannot find package 'puppeteer'» | `npm ci` en `scripts/ux` |
 | Tarda mucho en abrir | La primera vez exporta el manual con Go (unos 30 s) |
+| Abrí `http://127.0.0.1:…/profesor/` en mi navegador y sale en blanco o con un aviso | Esa dirección es interna: la app solo funciona en la ventana de Chromium que abre `anotar.mjs`, que le agrega los datos de demostración y la barra. Búscala en la barra de tareas |
+| No se abre ninguna ventana | Mira los mensajes de la terminal: si dice «Anotador abierto», la ventana existe (puede estar detrás de otras); si hay un error, `npm ci` en `scripts/ux` y vuelve a intentar |
 | La etiqueta dice «(zona sin nombre)» | Esa parte no está en el mapa todavía; anota igual y dilo en el texto |
 | Lo que quieres comentar no sale en ninguna escena | Usa «Nota de la pantalla» y descríbelo; Claude puede agregar la escena |

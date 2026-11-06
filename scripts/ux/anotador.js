@@ -1,7 +1,12 @@
 // Overlay del anotador de interfaz (lo inyecta anotar.mjs; no es parte de las apps). Vive en un
-// shadow DOM para no tocar los estilos de la app. Con «Anotar» (tecla A), al pasar el mouse
-// resalta el elemento y dice en qué zona está (zonas.mjs); un clic abre el formulario de la nota.
-// Guardar, listar, borrar y cambiar de escena los hace Node por funciones expuestas (__anotador*).
+// shadow DOM para no tocar los estilos de la app.
+//
+// Mientras navegas, cada clic (que sí llega a la app) deja seleccionado lo que tocaste y la barra
+// muestra su cadena de zonas (zonas.mjs): «Consola › Vista Alumnos › Ficha del alumno › …». Cada
+// nivel es un botón para elegir de qué es la nota (el botón o toda la sección). N abre la nota de
+// la selección. A es el modo de señalar sin que el clic llegue a la app; Z muestra el nombre de la
+// zona al pasar el mouse. Guardar, listar, borrar y cambiar de escena los hace Node por funciones
+// expuestas (__anotador*).
 (function () {
   if (window.top !== window || window.__anotadorListo) return;
   window.__anotadorListo = true;
@@ -16,32 +21,40 @@
     const host = document.createElement("div");
     host.id = "anotador-host";
     host.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;z-index:2147483647";
-    // Fuera de las pruebas de accesibilidad y del flujo de la app.
-    host.setAttribute("aria-hidden", "false");
     document.documentElement.appendChild(host);
     const raiz = host.attachShadow({ mode: "open" });
     raiz.innerHTML = `
 <style>
   :host { all: initial; }
   * { box-sizing: border-box; font: 13px/1.35 "Segoe UI", system-ui, sans-serif; }
-  .barra { position: fixed; left: 12px; bottom: 12px; z-index: 2147483646; display: flex; flex-wrap: wrap; gap: 6px;
-    align-items: center; max-width: calc(100vw - 24px); padding: 8px 10px; border-radius: 10px; background: #1f2433;
+  .barra { position: fixed; left: 12px; bottom: 12px; z-index: 2147483646; display: grid; gap: 6px;
+    max-width: calc(100vw - 24px); padding: 8px 10px; border-radius: 10px; background: #1f2433;
     color: #f2f4f8; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+  .fila { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .barra strong { margin-right: 4px; }
   select, button, textarea { border-radius: 6px; border: 1px solid #4a5268; background: #2b3245; color: #f2f4f8; padding: 4px 8px; }
   button { cursor: pointer; }
+  button:disabled { opacity: .45; cursor: default; }
   button.activo { background: #f59e0b; color: #1f2433; border-color: #f59e0b; font-weight: 600; }
   button.primario { background: #3b82f6; border-color: #3b82f6; }
+  .niveles { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
+  .niveles .sep { color: #9aa3b8; padding: 0 2px; }
+  .niveles button { padding: 2px 8px; border-color: transparent; background: transparent; }
+  .niveles button:hover { border-color: #4a5268; }
+  .niveles button[aria-pressed="true"] { background: #3b82f6; border-color: #3b82f6; font-weight: 600; }
+  .vacio { color: #9aa3b8; }
   .caja { position: fixed; z-index: 2147483645; pointer-events: none; border: 2px solid #f59e0b; border-radius: 4px;
     background: rgba(245,158,11,.12); display: none; }
+  .sel { position: fixed; z-index: 2147483644; pointer-events: none; border: 2px dashed #3b82f6; border-radius: 4px; display: none; }
   .etiqueta { position: fixed; z-index: 2147483646; pointer-events: none; display: none; max-width: 60vw; padding: 4px 8px;
     border-radius: 6px; background: #f59e0b; color: #1f2433; font-weight: 600; }
   .etiqueta small { display: block; font-weight: 400; }
-  .ventana { position: fixed; z-index: 2147483647; right: 16px; top: 16px; width: min(440px, calc(100vw - 32px));
+  .ventana { position: fixed; z-index: 2147483647; right: 16px; top: 16px; width: min(460px, calc(100vw - 32px));
     max-height: calc(100vh - 32px); overflow: auto; padding: 14px; border-radius: 10px; background: #1f2433;
     color: #f2f4f8; box-shadow: 0 10px 40px rgba(0,0,0,.45); display: none; }
   .ventana h2 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
-  .donde { margin: 0 0 10px; color: #c7cede; }
+  .sobre { margin: 0 0 10px; color: #c7cede; }
+  .sobre .niveles { margin-top: 4px; }
   .tipos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .tipos label { display: inline-flex; gap: 4px; align-items: center; padding: 3px 8px; border: 1px solid #4a5268; border-radius: 999px; }
   .tipos input:checked + span { color: #f59e0b; font-weight: 600; }
@@ -52,32 +65,38 @@
   .ok { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); z-index: 2147483647; padding: 8px 14px;
     border-radius: 8px; background: #16a34a; color: #fff; display: none; }
 </style>
+<div class="sel"></div>
 <div class="caja"></div>
 <div class="etiqueta"></div>
 <div class="ok"></div>
 <div class="barra" role="toolbar" aria-label="Anotador de interfaz">
-  <strong>Anotador</strong>
-  <select id="app" title="App"></select>
-  <select id="escena" title="Escena (datos de demostración)"></select>
-  <select id="ruta" title="Vista de la consola"></select>
-  <select id="tema" title="Tema"><option value="claro">Claro</option><option value="oscuro">Oscuro</option></select>
-  <button id="anotar" title="Señala un elemento y escribe tu nota (tecla A)">Anotar (A)</button>
-  <button id="general" title="Una nota sobre toda la pantalla">Nota de la pantalla</button>
-  <button id="ver">Notas</button>
-  <button id="ocultar" title="Esconde la barra (tecla H)">Ocultar (H)</button>
+  <div class="fila">
+    <strong>Anotador</strong>
+    <select id="app" title="App"></select>
+    <select id="escena" title="Escena (datos de demostración)"></select>
+    <select id="ruta" title="Vista de la consola"></select>
+    <select id="tema" title="Tema"><option value="claro">Claro</option><option value="oscuro">Oscuro</option></select>
+    <button id="anotar-sel" class="primario" title="Escribe la nota de lo seleccionado (tecla N)" disabled>Anotar selección (N)</button>
+    <button id="anotar" title="Señala sin que el clic llegue a la app (tecla A)">Señalar (A)</button>
+    <button id="explorar" title="Muestra el nombre de la zona al pasar el mouse (tecla Z)">Zonas (Z)</button>
+    <button id="general" title="Una nota sobre toda la pantalla">Nota de la pantalla</button>
+    <button id="ver">Notas</button>
+    <button id="ocultar" title="Esconde la barra (tecla H)">Ocultar (H)</button>
+  </div>
+  <div class="fila"><span>Selección:</span><span class="niveles" id="niveles-barra"><span class="vacio">haz clic en la interfaz para seleccionar</span></span></div>
 </div>
 <form class="ventana" id="form">
   <h2>Nueva nota</h2>
-  <p class="donde" id="donde"></p>
+  <div class="sobre">Sobre: <span class="niveles" id="niveles-form"></span></div>
   <div class="tipos" id="tipos"></div>
   <textarea id="texto" placeholder="¿Qué quieres? Por ejemplo: «Esto debería ser un módulo propio en el menú» o «una grilla de iconos con tooltip»."></textarea>
-  <p class="ayuda">Ctrl+Enter guarda · Esc cancela. Se guarda con una captura del elemento y de la pantalla.</p>
+  <p class="ayuda">Elige arriba si la nota es del elemento o de toda una sección. Ctrl+Enter guarda · Esc cancela. Se guarda con una captura de la sección y de la pantalla.</p>
   <div class="acciones"><button type="button" id="cancelar">Cancelar</button><button type="submit" class="primario">Guardar nota</button></div>
 </form>
 <div class="ventana" id="lista"><h2>Notas guardadas</h2><ol id="notas"></ol>
   <div class="acciones"><button type="button" id="cerrar-lista">Cerrar</button></div></div>`;
     const $ = (s) => raiz.querySelector(s);
-    const caja = $(".caja"), etiqueta = $(".etiqueta"), barra = $(".barra"), form = $("#form"), lista = $("#lista");
+    const caja = $(".caja"), selCaja = $(".sel"), etiqueta = $(".etiqueta"), barra = $(".barra"), form = $("#form"), lista = $("#lista");
 
     // --- Selectores de la barra -------------------------------------------------------------
     const opciones = (sel, pares, actual) => {
@@ -95,31 +114,16 @@
     $("#ruta").onchange = (e) => ir({ ruta: e.target.value });
     $("#tema").onchange = (e) => ir({ tema: e.target.value });
 
-    // --- Zonas ----------------------------------------------------------------------------------
+    // --- Zonas y niveles ------------------------------------------------------------------------
     const zonas = C.zonas[C.app];
-    const porId = Object.fromEntries(zonas.map((z) => [z.id, z]));
     const profundidad = (el) => { let n = 0; for (let e = el; e; e = e.parentElement) n++; return n; };
-    function zonaDe(el) {
-      let mejor = null, prof = -1;
-      for (const z of zonas) {
-        let m = null;
-        try { m = el.closest(z.selector); } catch { continue; }
-        if (m) { const d = profundidad(m); if (d > prof) { mejor = z; prof = d; } }
-      }
-      return mejor;
-    }
-    function cadena(z) {
-      const nombres = [];
-      for (let x = z; x; x = x.dentro ? porId[x.dentro] : null) nombres.unshift(x.nombre);
-      return [NOMBRE_APP[C.app]].concat(nombres).join(" › ");
-    }
+    const recortar = (s) => (s || "").replace(/\s+/g, " ").trim().slice(0, 80);
     // Cómo se llama el elemento: su texto visible, su etiqueta o su clave de textos.
     function describir(el) {
-      const t = (s) => (s || "").replace(/\s+/g, " ").trim().slice(0, 80);
       const clave = el.closest("[data-t],[data-t-aria-label]");
       return {
         etiqueta: el.tagName.toLowerCase() + (el.id ? "#" + el.id : ""),
-        texto: t(el.getAttribute("aria-label") || el.title || el.textContent),
+        texto: recortar(el.getAttribute("aria-label") || el.title || el.dataset.tip || el.textContent),
         claveTexto: clave ? clave.dataset.t || clave.dataset.tAriaLabel || "" : "",
         selector: selectorDe(el),
       };
@@ -130,23 +134,102 @@
         if (e.id) { partes.unshift("#" + CSS.escape(e.id)); break; }
         const hermanos = e.parentElement ? [...e.parentElement.children].filter((x) => x.tagName === e.tagName) : [];
         const n = hermanos.length > 1 ? `:nth-of-type(${hermanos.indexOf(e) + 1})` : "";
-        const clase = [...e.classList].filter((c) => !c.startsWith("anot")).slice(0, 2).map((c) => "." + CSS.escape(c)).join("");
+        const clase = [...e.classList].slice(0, 2).map((c) => "." + CSS.escape(c)).join("");
         partes.unshift(e.tagName.toLowerCase() + clase + n);
       }
       return partes.join(" > ");
     }
+    // Los niveles de un elemento, de afuera hacia adentro: cada zona que lo contiene (con su
+    // elemento) y, al final, el elemento mismo si no es ya una zona.
+    function nivelesDe(el) {
+      const halladas = [];
+      for (const z of zonas) {
+        let m = null;
+        try { m = el.closest(z.selector); } catch { continue; }
+        if (m && !halladas.some((h) => h.el === m)) halladas.push({ zona: z, el: m, nombre: z.nombre, prof: profundidad(m) });
+      }
+      halladas.sort((a, b) => a.prof - b.prof);
+      if (!halladas.length || halladas[halladas.length - 1].el !== el) {
+        const d = describir(el);
+        halladas.push({ zona: null, el, nombre: d.texto ? "«" + d.texto.slice(0, 40) + (d.texto.length > 40 ? "…" : "") + "»" : d.etiqueta });
+      }
+      return halladas;
+    }
+    // La zona y la cadena de un nivel: la zona más interna hasta ese nivel.
+    function zonaDeNivel(niveles, i) {
+      const zs = niveles.slice(0, i + 1).filter((n) => n.zona);
+      const z = zs.length ? zs[zs.length - 1].zona : null;
+      return { id: z ? z.id : "", nombre: z ? z.nombre : "(zona sin nombre)",
+        cadena: [NOMBRE_APP[C.app]].concat(zs.map((n) => n.zona.nombre)).join(" › ") + (zs.length ? "" : " › (zona sin nombre)") };
+    }
 
-    // --- Modo anotar ------------------------------------------------------------------------
-    let anotando = false, objetivo = null;
+    // --- Selección: cada clic normal la actualiza ---------------------------------------------
+    let seleccion = null; // { niveles, i }
     const propio = (e) => e.composedPath().includes(host);
-    // Se señala el control completo (un botón, no el texto de adentro).
-    const elegir = (el) => el.closest("button, a, input, select, textarea, summary, label, [role=button], [role=tab], [role=menuitem]") || el;
+    // Se toma el control completo (un botón, no el texto de adentro).
+    const elegir = (el) => el.closest("button, a, input, select, textarea, summary, label, li[data-tip], [role=button], [role=tab], [role=menuitem]") || el;
+    function seleccionar(el) {
+      const niveles = nivelesDe(el);
+      seleccion = { niveles, i: niveles.length - 1 };
+      pintarSeleccion();
+    }
+    function nivelActual() { return seleccion ? seleccion.niveles[seleccion.i] : null; }
+    function pintarNiveles(contenedor) {
+      contenedor.replaceChildren();
+      if (!seleccion) {
+        const v = document.createElement("span");
+        v.className = "vacio";
+        v.textContent = "haz clic en la interfaz para seleccionar";
+        contenedor.append(v);
+        return;
+      }
+      const app = document.createElement("span");
+      app.textContent = NOMBRE_APP[C.app];
+      contenedor.append(app);
+      seleccion.niveles.forEach((n, i) => {
+        const sep = document.createElement("span");
+        sep.className = "sep";
+        sep.textContent = "›";
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = n.nombre;
+        b.title = n.zona ? n.zona.que : "Solo este elemento";
+        b.setAttribute("aria-pressed", String(i === seleccion.i));
+        b.onclick = () => { seleccion.i = i; pintarSeleccion(); };
+        contenedor.append(sep, b);
+      });
+    }
+    function pintarSeleccion() {
+      pintarNiveles($("#niveles-barra"));
+      if (form.style.display === "block") pintarNiveles($("#niveles-form"));
+      $("#anotar-sel").disabled = !seleccion;
+      dibujarSeleccion();
+    }
+    // El recuadro punteado sigue a lo seleccionado (si sigue en la página) al desplazar o redimensionar.
+    function dibujarSeleccion() {
+      const n = nivelActual();
+      if (!n || !n.el.isConnected || barra.hidden) { selCaja.style.display = "none"; return; }
+      const r = n.el.getBoundingClientRect();
+      Object.assign(selCaja.style, { display: "block", left: r.left - 3 + "px", top: r.top - 3 + "px", width: r.width + 6 + "px", height: r.height + 6 + "px" });
+    }
+    addEventListener("scroll", () => requestAnimationFrame(dibujarSeleccion), true);
+    addEventListener("resize", () => requestAnimationFrame(dibujarSeleccion));
+    // Los clics de la app pueden abrir paneles y mover cosas: se vuelve a dibujar después.
+    document.addEventListener("click", (e) => {
+      if (anotando || propio(e)) return;
+      seleccionar(elegir(e.target));
+      setTimeout(dibujarSeleccion, 250);
+    }, true);
+
+    // --- Modo señalar (A) y zonas al pasar (Z) --------------------------------------------------
+    let anotando = false, explorando = false;
     function marcar(el) {
       const r = el.getBoundingClientRect();
       Object.assign(caja.style, { display: "block", left: r.left - 2 + "px", top: r.top - 2 + "px", width: r.width + 4 + "px", height: r.height + 4 + "px" });
-      const z = zonaDe(el), d = describir(el);
-      etiqueta.innerHTML = "";
-      etiqueta.append(z ? cadena(z) : NOMBRE_APP[C.app] + " › (zona sin nombre)");
+      const niveles = nivelesDe(el);
+      const z = zonaDeNivel(niveles, niveles.length - 1);
+      const d = describir(el);
+      etiqueta.replaceChildren(z.cadena);
       const small = document.createElement("small");
       small.textContent = d.texto ? "«" + d.texto + "»" : d.etiqueta;
       etiqueta.append(small);
@@ -160,52 +243,68 @@
       anotando = on;
       $("#anotar").classList.toggle("activo", on);
       document.documentElement.style.cursor = on ? "crosshair" : "";
-      if (!on) soltarMarca();
+      if (!on && !explorando) soltarMarca();
     }
-    document.addEventListener("mousemove", (e) => { if (anotando && !propio(e)) marcar(elegir(e.target)); }, true);
-    // Mientras se anota, ningún clic llega a la app.
+    function explorar(on) {
+      explorando = on;
+      $("#explorar").classList.toggle("activo", on);
+      if (!on && !anotando) soltarMarca();
+    }
+    document.addEventListener("mousemove", (e) => { if ((anotando || explorando) && !propio(e)) marcar(elegir(e.target)); }, true);
+    // Al señalar (A), ningún clic llega a la app: selecciona y abre la nota.
     for (const tipo of ["click", "mousedown", "mouseup", "pointerdown", "pointerup", "dblclick", "contextmenu"]) {
       document.addEventListener(tipo, (e) => {
         if (!anotando || propio(e)) return;
         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-        if (tipo === "click") { objetivo = elegir(e.target); modo(false); marcar(objetivo); abrirForm(objetivo); }
+        if (tipo === "click") { const el = elegir(e.target); modo(false); seleccionar(el); abrirForm(); }
       }, true);
     }
     $("#anotar").onclick = () => modo(!anotando);
-    $("#general").onclick = () => { modo(false); objetivo = null; soltarMarca(); abrirForm(null); };
-    $("#ocultar").onclick = () => { barra.hidden = !barra.hidden; };
+    $("#explorar").onclick = () => explorar(!explorando);
+    $("#anotar-sel").onclick = () => { if (seleccion) abrirForm(); };
+    $("#general").onclick = () => { modo(false); abrirForm(true); };
+    $("#ocultar").onclick = () => { barra.hidden = !barra.hidden; dibujarSeleccion(); };
     document.addEventListener("keydown", (e) => {
       if (propio(e) && e.key !== "Escape") return;
       const escribiendo = /input|textarea|select/i.test((e.composedPath()[0] || {}).tagName || "") || document.activeElement?.isContentEditable;
       if (e.key === "Escape" && (anotando || form.style.display === "block")) { modo(false); cerrarForm(); e.stopPropagation(); return; }
       if (escribiendo || e.ctrlKey || e.altKey || e.metaKey) return;
-      if (e.key === "a" || e.key === "A") { modo(!anotando); e.preventDefault(); }
-      if (e.key === "h" || e.key === "H") { barra.hidden = !barra.hidden; e.preventDefault(); }
+      const k = e.key.toLowerCase();
+      if (k === "a") { modo(!anotando); e.preventDefault(); }
+      if (k === "z") { explorar(!explorando); e.preventDefault(); }
+      if (k === "n" && seleccion) { abrirForm(); e.preventDefault(); }
+      if (k === "h") { barra.hidden = !barra.hidden; dibujarSeleccion(); e.preventDefault(); }
     }, true);
 
     // --- Formulario -------------------------------------------------------------------------
     $("#tipos").append(...TIPOS.map(([v, t], i) => {
       const l = document.createElement("label");
-      l.innerHTML = `<input type="radio" name="tipo" value="${v}"${i === 0 ? " checked" : ""}><span></span>`;
-      l.querySelector("span").textContent = t;
+      const r = Object.assign(document.createElement("input"), { type: "radio", name: "tipo", value: v, checked: i === 0 });
+      const s = document.createElement("span");
+      s.textContent = t;
+      l.append(r, s);
       return l;
     }));
-    let contexto = null;
-    function abrirForm(el) {
-      const z = el ? zonaDe(el) : null;
-      const d = el ? describir(el) : null;
-      contexto = { zona: z ? { id: z.id, nombre: z.nombre, cadena: cadena(z) } : { id: "", nombre: "Pantalla completa", cadena: NOMBRE_APP[C.app] + " › Pantalla completa" },
-        elemento: d };
-      $("#donde").textContent = contexto.zona.cadena + (d && d.texto ? " · «" + d.texto + "»" : "");
-      // Del lado contrario al elemento, para no taparlo.
-      const derecha = !el || el.getBoundingClientRect().left + el.getBoundingClientRect().width / 2 < innerWidth / 2;
+    let pantallaCompleta = false;
+    // general: una nota de toda la pantalla, sin selección.
+    function abrirForm(general) {
+      pantallaCompleta = !!general;
+      if (pantallaCompleta) {
+        $("#niveles-form").replaceChildren(NOMBRE_APP[C.app] + " › Pantalla completa");
+      } else {
+        pintarNiveles($("#niveles-form"));
+      }
+      // Del lado contrario a lo seleccionado, para no taparlo.
+      const n = pantallaCompleta ? null : nivelActual();
+      const r = n && n.el.isConnected ? n.el.getBoundingClientRect() : null;
+      const derecha = !r || r.left + r.width / 2 < innerWidth / 2;
       form.style.left = derecha ? "auto" : "16px";
       form.style.right = derecha ? "16px" : "auto";
       form.style.display = "block";
       lista.style.display = "none";
       $("#texto").focus({ preventScroll: true });
     }
-    function cerrarForm() { form.style.display = "none"; $("#texto").value = ""; soltarMarca(); objetivo = null; }
+    function cerrarForm() { form.style.display = "none"; $("#texto").value = ""; soltarMarca(); dibujarSeleccion(); }
     $("#cancelar").onclick = cerrarForm;
     $("#texto").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); form.requestSubmit(); } });
     form.addEventListener("submit", async (e) => {
@@ -213,26 +312,33 @@
       const texto = $("#texto").value.trim();
       if (!texto) { $("#texto").focus(); return; }
       const tipo = raiz.querySelector("input[name=tipo]:checked").value;
-      // La captura no lleva la barra ni el formulario; sí el recuadro del elemento señalado.
-      form.style.display = "none"; barra.style.visibility = "hidden"; etiqueta.style.display = "none";
-      let rect = null;
-      if (objetivo) {
-        marcar(objetivo); etiqueta.style.display = "none";
-        // El recorte muestra la zona que contiene al elemento (si cabe en la ventana), con el
-        // elemento resaltado adentro: así se entiende dónde está.
-        let r = objetivo.getBoundingClientRect();
-        const z = zonaDe(objetivo);
-        const cont = z ? objetivo.closest(z.selector) : null;
-        if (cont) {
-          const rz = cont.getBoundingClientRect();
-          if (rz.width * rz.height < innerWidth * innerHeight * 0.6) r = rz;
+      let zona = { id: "", nombre: "Pantalla completa", cadena: NOMBRE_APP[C.app] + " › Pantalla completa" };
+      let elemento = null, rect = null;
+      const n = pantallaCompleta ? null : nivelActual();
+      if (n) {
+        zona = zonaDeNivel(seleccion.niveles, seleccion.i);
+        elemento = describir(n.el);
+        if (n.el.isConnected) {
+          // El recorte: lo elegido y, si es un elemento suelto, la zona que lo contiene (si cabe en la
+          // ventana), con el elemento resaltado adentro: así se entiende dónde está.
+          let r = n.el.getBoundingClientRect();
+          if (!n.zona) {
+            const cont = seleccion.niveles.slice(0, seleccion.i).reverse().find((x) => x.zona && x.el.isConnected);
+            if (cont) {
+              const rz = cont.el.getBoundingClientRect();
+              if (rz.width * rz.height < innerWidth * innerHeight * 0.6) r = rz;
+            }
+          }
+          rect = { x: r.left, y: r.top, w: r.width, h: r.height, sx: scrollX, sy: scrollY };
         }
-        rect = { x: r.left, y: r.top, w: r.width, h: r.height, sx: scrollX, sy: scrollY };
       }
+      // La captura no lleva la barra ni el formulario; sí el recuadro de lo elegido.
+      form.style.display = "none"; barra.style.visibility = "hidden"; etiqueta.style.display = "none"; selCaja.style.display = "none";
+      if (n && n.el.isConnected) { marcar(n.el); etiqueta.style.display = "none"; }
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       let res;
       try {
-        res = await window.__anotadorGuardar({ tipo, texto, zona: contexto.zona, elemento: contexto.elemento, rect,
+        res = await window.__anotadorGuardar({ tipo, texto, zona, elemento, rect,
           ruta: location.hash.slice(1), vista: { ancho: innerWidth, alto: innerHeight } });
       } finally { barra.style.visibility = ""; }
       cerrarForm();

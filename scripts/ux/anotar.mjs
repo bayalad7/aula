@@ -1,7 +1,8 @@
 // Anotador de interfaz: abre la consola o la app del alumno, con datos de demostración, en una
-// ventana de Chromium que manejas tú. Con «Anotar» (tecla A) señalas cualquier cosa y escribes qué
-// quieres; la nota se guarda en docs/v1/ux/notas/ con el nombre de la zona (zonas.mjs), la escena,
-// el elemento y dos capturas (el elemento y la pantalla). Después: «revisa las notas de UX».
+// ventana de Chromium que manejas tú. Cada clic deja seleccionado lo que tocaste, con su cadena de
+// zonas (zonas.mjs); N abre la nota y A señala sin que el clic llegue a la app. La nota se guarda en
+// docs/v1/ux/notas/ con la zona, la escena, el elemento y dos capturas. Después: /notas-ux.
+// Guía: docs/desarrollo/notas-ux.md.
 //   node anotar.mjs [profesor|alumno] [escena]
 import fs from "node:fs";
 import http from "node:http";
@@ -58,11 +59,43 @@ const manual = exportarManual();
 // Las dos apps en el mismo servidor: /profesor/… y /alumno/…, cada una con su sistema/.
 const tipos = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".ttf": "font/ttf", ".svg": "image/svg+xml",
   ".png": "image/png", ".webp": "image/webp", ".json": "application/json" };
+// Fuera de la ventana del anotador (otro navegador, otra pestaña) faltan los dobles y el manual:
+// la app no tiene backend y quedaría en blanco. Este script lo dice.
+const avisoFuera = `(function () {
+  if (window.__ANOTADOR) return;
+  document.addEventListener("DOMContentLoaded", function () {
+    var c = document.createElement("div");
+    c.style.cssText = "max-width:40rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 Segoe UI,system-ui,sans-serif;" +
+      "border:1px solid #d5dae2;border-radius:8px;background:#fff;color:#1a1f2b";
+    var h = document.createElement("h1");
+    h.style.cssText = "font-size:1.25rem;margin:0 0 .75rem";
+    h.textContent = "Esta página solo funciona en la ventana del anotador";
+    var p = document.createElement("p");
+    p.textContent = "La abre «node anotar.mjs» (en scripts/ux) en una ventana de Chromium aparte, con los datos de " +
+      "demostración y la barra del anotador. En otro navegador no tiene nada de eso y queda en blanco. " +
+      "Busca esa ventana en la barra de tareas; si no se abrió, revisa los mensajes de la terminal.";
+    c.append(h, p);
+    document.body.replaceChildren(c);
+    document.body.removeAttribute("class");
+  });
+})();
+`;
+
 const srv = http.createServer((q, r) => {
   const url = decodeURIComponent(q.url.split("?")[0].split("#")[0]);
   const m = /^\/(profesor|alumno)\/(.*)$/.exec(url);
   if (!m) { r.writeHead(302, { Location: "/profesor/" }); r.end(); return; }
   const rel = m[2] || "index.html";
+  if (rel === "__aviso-anotador.js") { r.writeHead(200, { "Content-Type": "text/javascript" }); r.end(avisoFuera); return; }
+  if (rel === "index.html") {
+    // El aviso va primero en <head>: si la página se abre en otro navegador (sin lo que inyecta
+    // la ventana del anotador), explica qué pasa en vez de quedar en blanco.
+    const html = fs.readFileSync(path.join(apps[m[1]].dist, "index.html"), "utf8")
+      .replace("<head>", '<head>\n  <script src="__aviso-anotador.js"></script>');
+    r.writeHead(200, { "Content-Type": "text/html" });
+    r.end(html);
+    return;
+  }
   const [base, archivo] = rel.startsWith("sistema/") ? [ui, rel.slice("sistema/".length)] : [apps[m[1]].dist, rel];
   const p = path.join(base, archivo);
   if (!p.startsWith(base + path.sep) || p.endsWith(".go")) { r.writeHead(403); r.end(); return; }
@@ -173,15 +206,40 @@ async function autoprueba() {
   vista = await anotar("#archivos > li .abrir", "Prueba: el botón debería ser primario");
   ok(vista.startsWith("Alumno › Archivos recibidos › Tarjeta de archivo"), "etiqueta del alumno: " + vista);
 
+  // Navegando normal: el clic llega a la app y deja la selección; N anota; se elige el nivel.
+  const shadow = (sel) => p.evaluateHandle((x) => document.getElementById("anotador-host").shadowRoot.querySelector(x), sel);
+  await p.click("#mano");
+  await new Promise((r) => setTimeout(r, 200));
+  ok(await p.$eval("#mano", (b) => b.getAttribute("aria-pressed") === "true"), "el clic normal no llegó a la app (la mano no se levantó)");
+  const barraTexto = await p.evaluate(() => document.getElementById("anotador-host").shadowRoot.querySelector("#niveles-barra").textContent);
+  ok(barraTexto.includes("Tira de identidad") && barraTexto.includes("Botones de la tira"), "la barra no muestra la selección: " + barraTexto);
+  await p.keyboard.press("n");
+  await new Promise((r) => setTimeout(r, 100));
+  const tira = await p.evaluateHandle(() => [...document.getElementById("anotador-host").shadowRoot.querySelectorAll("#niveles-form button")]
+    .find((b) => b.textContent === "Tira de identidad"));
+  await tira.click();
+  if (process.env.ANOTADOR_CONSERVAR) await p.screenshot({ path: path.join(dirNotas, "ui-niveles.webp") });
+  await (await shadow("#texto")).focus();
+  await p.keyboard.type("Prueba: la tira debería ser más baja");
+  await p.keyboard.down("Control"); await p.keyboard.press("Enter"); await p.keyboard.up("Control");
+  for (let i = 0; i < 50 && leerNotas().length < 3; i++) await new Promise((r) => setTimeout(r, 100));
+  const tercera = leerNotas()[2];
+  ok(tercera && tercera.zona.id === "tira" && tercera.zona.cadena === "Alumno › Tira de identidad", "nota por nivel: " + JSON.stringify(tercera && tercera.zona));
+
   const notas = leerNotas();
-  ok(notas.length === 2, "notas guardadas: " + notas.length);
+  ok(notas.length === 3, "notas guardadas: " + notas.length);
   for (const n of notas) {
     for (const f of [tres(n.n) + "-elemento.webp", tres(n.n) + "-pantalla.webp"]) ok(fs.statSync(path.join(dirNotas, f)).size > 500, "captura vacía: " + f);
   }
   ok(notas[0] && notas[0].zona.id === "fila-alumno" && notas[0].tipo === "mover" && notas[0].texto.startsWith("Prueba"), "nota 1: " + JSON.stringify(notas[0]));
   ok(notas[1] && notas[1].zona.id === "tarjeta-archivo" && notas[1].app === "alumno" && notas[1].escena === "archivos", "nota 2: " + JSON.stringify(notas[1]));
   ok(fs.readFileSync(path.join(dirNotas, "LEEME.md"), "utf8").includes("| 2 | pendiente | Alumno › Archivos recibidos"), "índice LEEME.md");
-  console.log(fallas.length ? "✗ anotador:\n  " + fallas.join("\n  ") : "✓ anotador: 2 notas con zona, capturas e índice; el clic no llegó a la app");
+  // Abierta como en otro navegador (sin lo que inyecta la ventana): dice qué pasa, no queda en blanco.
+  const ajena = await (await nav.createBrowserContext()).newPage();
+  await ajena.goto(origen + "/profesor/", { waitUntil: "networkidle0" });
+  await new Promise((r) => setTimeout(r, 300));
+  ok((await ajena.$eval("body", (b) => b.textContent)).includes("solo funciona en la ventana del anotador"), "la página abierta fuera de la ventana queda en blanco");
+  console.log(fallas.length ? "✗ anotador:\n  " + fallas.join("\n  ") : "✓ anotador: 3 notas (señalando y navegando, con nivel elegido), capturas e índice");
   await nav.close();
   if (process.env.ANOTADOR_CONSERVAR) console.log("Notas de prueba en " + dirNotas);
   else fs.rmSync(dirNotas, { recursive: true, force: true });

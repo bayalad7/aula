@@ -89,6 +89,15 @@ await f("56-compacto-mano", "mano", { w: 380, h: 80, pasos: click("#compactar") 
 await f("57-aviso-privado", "aviso-privado");
 await f("58-aviso-privado-oscuro", "aviso-privado", { oscuro: true });
 
+// Temporizador del profesor (prompt 10.8): insignia en la tira, último minuto, fin y compacto.
+const finTemporizador = emitir("aula:timer", { state: "ended", timerId: "t-1", label: "Ejercicio 1", remainingMs: 0, justEnded: true });
+await f("59-temporizador", "temporizador");
+await f("60-temporizador-ultimo-minuto", "temporizador-final");
+await f("61-temporizador-termino", "temporizador-final", { pasos: finTemporizador });
+await f("62-temporizador-oscuro", "temporizador", { oscuro: true });
+await f("63-temporizador-angosta", "temporizador", { w: 480, h: 360 });
+await f("64-compacto-temporizador", "temporizador", { w: 380, h: 80, pasos: click("#compactar") });
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

@@ -320,6 +320,8 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	h.Capabilities = append(h.Capabilities, protocol.CapCodeView, protocol.CapMsgShow)
 	// The helper's window has the buttons to raise the hand and write (§5.18).
 	h.Capabilities = append(h.Capabilities, protocol.CapHand, protocol.CapMsgStudent)
+	// And the timer badge of its strip (§5.19).
+	h.Capabilities = append(h.Capabilities, protocol.CapTimer)
 	if sa.ready.Capture {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb, protocol.CapScreenSnapshot)
 	}

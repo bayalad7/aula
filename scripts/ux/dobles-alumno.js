@@ -96,6 +96,12 @@
   if (scene === "mensajes") notices.push({ id: "m-r", level: "info", text: "Sí, antes de las 12. Si te atoras, levanta la mano.",
     at: ahora, replyTo: "pm-2" });
   const copia = () => Object.assign({}, part, { messages: part.messages.slice() });
+  // El temporizador del profesor (classtimer.View, prompt 10.8). Escenas: temporizador
+  // (4:32), temporizador-final (0:42, último minuto) y temporizador-fin (terminó).
+  const timer = { temporizador: { state: "running", timerId: "t-1", label: "Ejercicio 1", remainingMs: 272000, justEnded: false },
+    "temporizador-final": { state: "running", timerId: "t-1", label: "Ejercicio 1", remainingMs: 42000, justEnded: false },
+    "temporizador-fin": { state: "ended", timerId: "t-1", label: "Ejercicio 1", remainingMs: 0, justEnded: false },
+  }[scene] || { state: "none", timerId: "", label: "", remainingMs: 0, justEnded: false };
   // Lo que Go contestaría: el acuse llega poco después («Enviando…» → «Recibido»).
   let nMsg = 0;
   let ultimo = 0;
@@ -117,7 +123,7 @@
     return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
   };
   window.go = { main: { App: {
-    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia() })),
+    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
     ReportMedia: call("ReportMedia"),

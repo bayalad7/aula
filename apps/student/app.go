@@ -14,6 +14,7 @@ import (
 
 	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/broadcast"
+	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/participation"
@@ -34,21 +35,22 @@ const maxNotices = 10
 // App is the student agent behind the Wails window. Its exported methods are
 // the bindings the frontend calls.
 type App struct {
-	cfg     Config
-	cfgErr  error
-	pub     ed25519.PublicKey
-	hello   protocol.HelloInfo
-	board   *codedist.Board
-	recv    *codedist.Receiver
-	screen  *screen.Streamer    // screen thumbnails; inert until enableScreen
-	power   *power.Countdown    // power.*; inert until enablePower
-	viewer  *broadcast.Viewer   // the teacher's screen; declared after ReportMedia
-	control *remote.Agent       // remote control; inert until enableRemote
-	snap    *snapshot.Taker     // still screenshots; inert until enableScreen
-	desk    *participation.Desk // the student's hand and messages to the teacher (§5.18)
-	clip    platform.Clipboard  // nil when the system has none
-	clipEr  error
-	log     *slog.Logger
+	cfg       Config
+	cfgErr    error
+	pub       ed25519.PublicKey
+	hello     protocol.HelloInfo
+	board     *codedist.Board
+	recv      *codedist.Receiver
+	screen    *screen.Streamer      // screen thumbnails; inert until enableScreen
+	power     *power.Countdown      // power.*; inert until enablePower
+	viewer    *broadcast.Viewer     // the teacher's screen; declared after ReportMedia
+	control   *remote.Agent         // remote control; inert until enableRemote
+	snap      *snapshot.Taker       // still screenshots; inert until enableScreen
+	desk      *participation.Desk   // the student's hand and messages to the teacher (§5.18)
+	countdown *classtimer.Countdown // the exercise timer (§5.19)
+	clip      platform.Clipboard    // nil when the system has none
+	clipEr    error
+	log       *slog.Logger
 
 	// UI hooks, set at startup (replaced in tests).
 	emit   func(event string, data any)
@@ -102,8 +104,12 @@ type App struct {
 	powerV   PowerView         // power notice in force (rules 26-28)
 	ctrl     remote.State      // remote control in force (rules 36-41)
 	cl       *transport.Client // the connection with the console; nil while not connected
-	cancel   context.CancelFunc
-	done     chan struct{}
+
+	timerMu sync.Mutex
+	timerT  *time.Timer // the next tick of the countdown
+
+	cancel context.CancelFunc
+	done   chan struct{}
 }
 
 // NewApp builds the agent. cfgErr is shown in the banner instead of
@@ -112,7 +118,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	clip platform.Clipboard, clipErr error, log *slog.Logger) *App {
 	a := &App{
 		cfg: cfg, pub: pub, cfgErr: cfgErr, hello: hello,
-		board: codedist.NewBoard(0), desk: participation.NewDesk(), clip: clip, clipEr: clipErr, log: log,
+		board: codedist.NewBoard(0), desk: participation.NewDesk(), countdown: classtimer.NewCountdown(nil), clip: clip, clipEr: clipErr, log: log,
 		emit: func(string, any) {}, raise: func() {}, notify: func() {}, maximize: func(bool) {}, onTop: func(bool) {},
 		mediaReady: make(chan struct{}), restart: make(chan struct{}, 1),
 	}
@@ -274,6 +280,7 @@ func (a *App) stop() {
 	a.screen.Stop()
 	a.viewer.Stop()
 	a.snap.Wait() // its connection is closed: it drops the image
+	a.stopTimer()
 }
 
 // enableScreen lets the console see this screen in thumbnails and take a
@@ -390,7 +397,7 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		_, err := cl.Send(ctx, p)
 		return err
 	}
-	if a.handleParticipation(env) {
+	if a.handleParticipation(env) || a.handleTimer(ctx, cl, env) {
 		return
 	}
 	var reply protocol.Payload
@@ -489,7 +496,7 @@ func (a *App) View() View {
 	}
 	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...),
 		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
-		Participation: a.desk.View()}
+		Participation: a.desk.View(), Timer: a.countdown.View()}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

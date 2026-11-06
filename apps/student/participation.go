@@ -61,6 +61,7 @@ func (a *App) onConnect(ctx context.Context, cl *transport.Client) {
 	a.mu.Lock()
 	a.cl = cl
 	a.mu.Unlock()
+	a.timerReconnected() // before the console can send it again (§5.19)
 	for _, p := range a.desk.Reconnected() {
 		a.sendParticipation(ctx, cl, p)
 	}

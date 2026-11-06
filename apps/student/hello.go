@@ -33,7 +33,8 @@ func localHello() protocol.HelloInfo {
 		OS:           protocol.OS(runtime.GOOS),
 		OSVersion:    runtime.GOOS + "/" + runtime.GOARCH,
 		AgentVersion: version,
-		// hand and msg.student: the window has the buttons (§5.18).
-		Capabilities: []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapHand, protocol.CapMsgStudent},
+		// hand and msg.student: the window has the buttons (§5.18); timer:
+		// the badge of the strip (§5.19).
+		Capabilities: []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer},
 	}
 }

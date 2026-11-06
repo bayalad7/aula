@@ -315,6 +315,52 @@ await caso("aviso-privado", "un-codigo", async (p) => {
   ok(await p.evaluate(() => document.activeElement.classList.contains("copy")), "el privado le quitó el foco al alumno");
 });
 
+// Temporizador (prompt 10.8): una insignia en la tira y en compacto, no es banda, el número
+// cambia una vez por segundo sin animación, y el fin avisa en la esquina sin quitar el foco.
+await caso("temporizador", "un-codigo", async (p) => {
+  await p.focus("#snippets > li .copy");
+  await emitir(p, "aula:timer", { state: "running", timerId: "t-1", label: "Ejercicio 1", remainingMs: 65400, justEnded: false });
+  await sleep(100);
+  const t0 = await p.evaluate(() => document.getElementById("temporizador-texto").textContent);
+  ok(t0 === "Ejercicio 1 · 1:06", "insignia: " + t0);
+  const lugar = await p.evaluate(() => {
+    const b = document.getElementById("temporizador");
+    return { tira: !!b.closest("#estado"), bandas: !!b.closest(".bandas"), rol: b.getAttribute("role"),
+      compacto: !!document.getElementById("compacto-temporizador") };
+  });
+  ok(lugar.tira && !lugar.bandas && lugar.rol === "timer" && lugar.compacto, "lugar: " + JSON.stringify(lugar));
+  // Cuenta por sí sola, una vez por segundo, y cambia de color en el último minuto.
+  await sleep(1100);
+  const t1 = await p.evaluate(() => [document.getElementById("temporizador-texto").textContent,
+    document.getElementById("temporizador").classList.contains("insignia--advertencia")]);
+  ok(t1[0] === "Ejercicio 1 · 1:05" && !t1[1], "un segundo después: " + t1.join());
+  await sleep(5200);
+  const t2 = await p.evaluate(() => document.getElementById("temporizador").classList.contains("insignia--advertencia"));
+  ok(t2, "en el último minuto no cambió de color");
+  const anim = await p.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length);
+  ok(anim === 0, anim + " animaciones con el temporizador corriendo");
+  // El fin: aviso en la esquina, la insignia dice que terminó y el foco no se movió.
+  await emitir(p, "aula:timer", { state: "ended", timerId: "t-1", label: "Ejercicio 1", remainingMs: 0, justEnded: true });
+  await sleep(150);
+  const fin = await p.evaluate(() => ({ aviso: !document.getElementById("temporizador-fin").hidden,
+    enEsquina: !!document.getElementById("temporizador-fin").closest("#avisos"),
+    texto: document.getElementById("temporizador-texto").textContent, foco: document.activeElement.classList.contains("copy") }));
+  ok(fin.aviso && fin.enEsquina && fin.texto === "Ejercicio 1 · terminó" && fin.foco, "fin: " + JSON.stringify(fin));
+  // Se quita con timer.stop: sin insignia y sin aviso.
+  await emitir(p, "aula:timer", { state: "none", timerId: "", label: "", remainingMs: 0, justEnded: false });
+  await sleep(100);
+  ok(await p.evaluate(() => document.getElementById("temporizador").hidden && document.getElementById("temporizador-fin").hidden),
+    "al detenerlo quedó la insignia o el aviso");
+});
+await caso("temporizador-compacto", "temporizador", async (p) => {
+  await p.click("#compactar");
+  await emitir(p, "aula:timer", { state: "ended", timerId: "t-1", label: "Ejercicio 1", remainingMs: 0, justEnded: true });
+  await sleep(150);
+  const v = await p.evaluate(() => [document.body.classList.contains("compacto"),
+    !document.getElementById("compacto-temporizador").hidden, document.getElementById("compacto-temporizador-texto").textContent]);
+  ok(v[0] && v[1] && v[2] === "Ejercicio 1 · terminó", "compacto: " + v.join());
+}, { w: 380, h: 80 });
+
 // A 480×360, un solo aviso a la vista.
 await caso("avisos-angosta", "muchos-avisos", async (p) => {
   ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 1), "a 480 se ve más de un aviso");

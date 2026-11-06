@@ -20,6 +20,9 @@
     <span class="estado-conexion__punto" aria-hidden="true"></span>
     <span id="estado-texto" class="estado-conexion__texto" role="status"></span>
     <span class="estado-conexion__acciones">
+      <!-- El temporizador del profesor (prompt 10.8): solo informa, sin animación; role="timer"
+           no se anuncia a cada segundo. No es una banda: no observa ni controla el equipo. -->
+      <span id="temporizador" class="insignia insignia--info temporizador" role="timer" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span id="temporizador-texto" class="cuenta"></span></span>
       <!-- Lo que hace el alumno (prompt 10.6): no quita el foco a nadie. -->
       <button type="button" id="mano" class="btn btn--sm mano-boton" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span id="mano-texto"></span></button>
       <button type="button" id="escribir" class="btn btn--sm" aria-expanded="false" aria-controls="redactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg><span data-t="mensaje.boton"></span></button>
@@ -77,6 +80,7 @@
     <span id="compacto-punto" class="estado-conexion__punto" aria-hidden="true"></span>
     <span id="compacto-texto" class="modo-compacto__texto"></span>
     <span id="compacto-nuevos" class="insignia insignia--info" hidden></span>
+    <span id="compacto-temporizador" class="insignia insignia--info temporizador" role="timer" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span id="compacto-temporizador-texto" class="cuenta"></span></span>
     <span id="compacto-control" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span data-t="compacto.control"></span></span>
     <span id="compacto-vista" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg><span data-t="compacto.vista"></span></span>
     <button type="button" id="compacto-mano" class="btn btn--sm btn--icono mano-boton" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg></button>
@@ -147,6 +151,15 @@
         <span id="control-fin-texto"></span>
       </div>
       <button type="button" id="control-fin-ok" class="btn btn--sm" data-t="aviso.entendido"></button>
+    </div>
+    <!-- El fin del temporizador (prompt 10.8): aviso suave, sin quitar el foco. -->
+    <div id="temporizador-fin" class="toast" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg>
+      <div class="toast__texto">
+        <span class="toast__titulo" data-t="temporizador.finTitulo"></span>
+        <span id="temporizador-fin-texto"></span>
+      </div>
+      <button type="button" id="temporizador-fin-ok" class="btn btn--sm" data-t="aviso.entendido"></button>
     </div>
     <button type="button" id="avisos-mas" class="btn btn--sm" hidden></button>
   </section>

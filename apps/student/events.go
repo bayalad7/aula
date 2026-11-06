@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/policy"
@@ -15,7 +16,8 @@ import (
 // Frontend → backend: the bound methods of App (View, Copy, DismissNotice,
 // ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed,
 // PowerPostpone, DismissPower, SetCompact, ReportWindow, RaiseHand, LowerHand,
-// SendTeacherMessage). EventParticipation is in participation.go.
+// SendTeacherMessage). EventParticipation is in participation.go and
+// EventTimer in timer.go.
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -129,4 +131,6 @@ type View struct {
 	Power PowerView `json:"power"`
 	// Participation is the student's hand and their messages to the teacher.
 	Participation participation.DeskView `json:"participation"`
+	// Timer is the exercise timer, if any (§5.19).
+	Timer classtimer.View `json:"timer"`
 }

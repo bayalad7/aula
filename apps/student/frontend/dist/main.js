@@ -387,6 +387,57 @@
   $("control-fin-ok").addEventListener("click", ocultarFinControl);
   $("control-fin").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); ocultarFinControl(); } });
 
+  // --- Temporizador del profesor (docs/protocol.md §5.19) -------------------------------------------
+  // Una insignia en la tira (y en el modo compacto) con lo que falta. Go manda el estado
+  // (classtimer.View) y lo que faltaba al enviarlo; aquí se cuenta con performance.now, sin
+  // depender de la hora del equipo. Sin animación: el número cambia una vez por segundo. Al
+  // terminar, un aviso suave en la esquina: Go solo llama a notify, nunca a raise.
+  let temporizador = { state: "none", label: "", remainingMs: 0 };
+  let temporizadorEn = 0;
+  let tic = 0;
+  let finTemporizador = 0;
+  const hmmss = (ms) => {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = String(s % 60).padStart(2, "0");
+    return h ? h + ":" + String(m).padStart(2, "0") + ":" + r : m + ":" + r;
+  };
+  function renderTemporizador(v) {
+    temporizador = v;
+    temporizadorEn = performance.now();
+    clearInterval(tic);
+    if (v.state === "running") tic = setInterval(pintarTemporizador, 1000);
+    pintarTemporizador();
+    if (v.justEnded) mostrarFinTemporizador();
+    if (v.state === "none") ocultarFinTemporizador();
+  }
+  function pintarTemporizador() {
+    const v = temporizador;
+    const nombre = v.label || T("temporizador.sinNombre");
+    const falta = Math.max(0, v.remainingMs - (performance.now() - temporizadorEn));
+    const termino = v.state === "ended" || (v.state === "running" && falta <= 0);
+    const texto = termino ? T("temporizador.termino", { nombre }) : T("temporizador.cuenta", { nombre, tiempo: hmmss(falta) });
+    for (const [caja, linea] of [["temporizador", "temporizador-texto"], ["compacto-temporizador", "compacto-temporizador-texto"]]) {
+      $(caja).hidden = v.state === "none";
+      $(linea).textContent = texto;
+      // El último minuto y el fin, en el color de advertencia: sin parpadeo ni movimiento.
+      $(caja).classList.toggle("insignia--info", !termino && falta > 60000);
+      $(caja).classList.toggle("insignia--advertencia", termino || falta <= 60000);
+    }
+    if (termino) clearInterval(tic);
+  }
+  function mostrarFinTemporizador() {
+    $("temporizador-fin-texto").textContent = T("temporizador.finTexto", { nombre: temporizador.label || T("temporizador.sinNombre") });
+    $("temporizador-fin").hidden = false;
+    clearTimeout(finTemporizador);
+    finTemporizador = setTimeout(ocultarFinTemporizador, 30000);
+  }
+  function ocultarFinTemporizador() {
+    clearTimeout(finTemporizador);
+    $("temporizador-fin").hidden = true;
+  }
+  $("temporizador-fin-ok").addEventListener("click", ocultarFinTemporizador);
+  $("temporizador-fin").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); ocultarFinTemporizador(); } });
+
   // --- Levantar la mano y escribir al profesor (docs/protocol.md §5.18) -----------------------------
   // Lo hace el alumno: nada de esto quita el foco ni trae la ventana, y no hay
   // banda. Go manda el estado (participation.DeskView) y aquí se arma el texto.
@@ -757,6 +808,7 @@
   // Go sale del modo compacto cuando el profesor hace algo que el alumno debe ver.
   rt.EventsOn(ev.COMPACT, (c) => { if (!c.on && compacto) ponerCompacto(false, false); });
   rt.EventsOn(ev.PARTICIPATION, renderParticipacion);
+  rt.EventsOn(ev.TIMER, renderTemporizador);
   api.View().then((v) => {
     renderStatus(v.status);
     renderBoard(v.snippets);
@@ -765,6 +817,7 @@
     renderRestrictions(v.restrictions);
     renderPower(v.power);
     if (v.participation) renderParticipacion(v.participation);
+    if (v.timer) renderTemporizador(v.timer);
   });
   probeMedia();
 })();

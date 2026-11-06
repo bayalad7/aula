@@ -15,7 +15,7 @@ const fragmento = (id, n, titulo) => ({ id, exercise: String(n), title: titulo, 
 
 async function caso(nombre, escena, prueba, o = {}) {
   let error = "";
-  const r = await foto(path.join("salida-alumno", "prueba-" + nombre + ".png"), escena, Object.assign({ w: 900, h: 700, revisar: false,
+  const r = await foto(path.join("salida-alumno", "prueba-" + nombre + ".webp"), escena, Object.assign({ w: 900, h: 700, revisar: false,
     pasos: async (p) => { try { await prueba(p); } catch (e) { error = e.message; } } }, o));
   if (r.errores.length) error = (error ? error + "; " : "") + "JS: " + r.errores.join(" | ");
   (error ? fallas : pasaron).push(nombre + (error ? ": " + error : ""));

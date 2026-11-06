@@ -1,14 +1,15 @@
 // Recorre la consola del profesor en el arnés web: captura cada pantalla y
 // estado, junta los errores de JS y pasa axe-core (WCAG 2.1 AA). Sale con
 // error si hay errores de JS o violaciones serias o críticas.
-//   node recorrido.mjs [carpeta de salida]   (por omisión, ./salida)
+//   node recorrido.mjs [carpeta de salida] [--solo=archivos,94-105]   (por omisión, ./salida)
 import path from "node:path";
-import { abrir, click, cuadros, seq, sleep } from "./arnes.mjs";
+import { abrir, carpetaSalida, soloCapturas, click, cuadros, seq, sleep } from "./arnes.mjs";
 
-const salida = path.resolve(process.argv[2] || "salida");
+const salida = path.resolve(carpetaSalida("salida"));
+const incluir = soloCapturas();
 const { foto, cerrar } = await abrir();
 const informe = {};
-const f = async (nombre, escena, o) => { informe[nombre] = await foto(path.join(salida, nombre + ".png"), escena, o); };
+const f = async (nombre, escena, o) => { if (!incluir(nombre)) return; informe[nombre] = await foto(path.join(salida, nombre + ".webp"), escena, o); };
 const fila = (host) => `#alumnos-filas tr[data-clave="r:${host}"]`;
 const ajustes = (pestana) => seq(click("#nav-ajustes"), click("#tab-" + pestana));
 
@@ -197,26 +198,30 @@ await f("48-comprobar-bien", "vacia", { ruta: "falta", pasos: comprobar });
 await f("49-comprobar-red-publica", "red-publica", { ruta: "falta", pasos: comprobar });
 await f("50-comprobar-red-publica-oscuro", "red-publica", { oscuro: true, w: 900, h: 600, ruta: "falta", pasos: comprobar });
 
-// Archivos y plantillas (prompt 10.9): la pestaña Archivos del módulo Código.
-const archivos = click('#codigo-que button[data-que="archivos"]');
+// Archivos y plantillas (prompt 10.9): la vista Archivos del menú.
+const archivos = async () => {};
 const plantilla = (nombre) => async (p) => { await p.select("#archivos-plantilla", nombre); await sleep(150); };
-await f("94-archivos-vacia", "lab", { ruta: "codigo", pasos: archivos });
-await f("95-archivos-elegidos", "lab", { ruta: "codigo", pasos: seq(archivos, click("#archivos-elegir"),
+await f("94-archivos-vacia", "lab", { ruta: "archivos", pasos: archivos });
+await f("95-archivos-elegidos", "lab", { ruta: "archivos", pasos: seq(archivos, click("#archivos-elegir"),
   async (p) => { await p.type("#archivos-destino", "Ejercicio 4"); }) });
-await f("96-archivos-plantilla", "lab-archivos", { ruta: "codigo", pasos: seq(archivos, plantilla("Ejercicio 4")) });
-await f("97-archivos-plantilla-problema", "lab", { ruta: "codigo", pasos: seq(archivos, plantilla("Proyecto final")) });
-await f("98-archivos-guardar-plantilla", "lab", { ruta: "codigo", pasos: seq(archivos, click("#archivos-elegir"),
+await f("96-archivos-plantilla", "lab-archivos", { ruta: "archivos", pasos: seq(archivos, plantilla("Ejercicio 4")) });
+await f("97-archivos-plantilla-problema", "lab", { ruta: "archivos", pasos: seq(archivos, plantilla("Proyecto final")) });
+await f("98-archivos-guardar-plantilla", "lab", { ruta: "archivos", pasos: seq(archivos, click("#archivos-elegir"),
   click("#archivos-guardar-plantilla"), async (p) => { await p.type("#archivos-nombre-plantilla", "Ejercicio 5"); }) });
-await f("99-archivos-enviado", "lab", { ruta: "codigo", pasos: seq(archivos, click("#archivos-elegir"), click("#archivos-enviar")) });
-await f("100-archivos-quien-falta", "lab-archivos", { ruta: "codigo", pasos: seq(archivos, click(".envio__desplegar")) });
-await f("101-archivos-historial", "lab-archivos", { h: 1100, ruta: "codigo", pasos: async (p) => {
+await f("99-archivos-enviado", "lab", { ruta: "archivos", pasos: seq(archivos, click("#archivos-elegir"), click("#archivos-enviar")) });
+await f("100-archivos-quien-falta", "lab-archivos", { ruta: "archivos", pasos: seq(archivos, click("[data-vista-de=archivos] .envio__desplegar")) });
+await f("101-archivos-historial", "lab-archivos", { h: 1100, ruta: "archivos", pasos: async (p) => {
   await p.evaluate(() => document.getElementById("h-historial-archivos").scrollIntoView());
 } });
-await f("102-archivos-error-nombre", "lab", { ruta: "codigo", pasos: seq(archivos, async (p) => p.evaluate(() =>
+await f("102-archivos-error-nombre", "lab", { ruta: "archivos", pasos: seq(archivos, async (p) => p.evaluate(() =>
   window.__emit("aula:capture", { draft: null, error: "aula:pushPathInvalid: con:a.txt: nombre o carpeta no válidos" }))) });
-await f("103-archivos-900x600", "lab-archivos", { w: 900, h: 600, ruta: "codigo", pasos: seq(archivos, plantilla("Ejercicio 4")) });
-await f("104-archivos-oscuro", "lab-archivos", { oscuro: true, ruta: "codigo", pasos: seq(archivos, plantilla("Ejercicio 4")) });
+await f("103-archivos-900x600", "lab-archivos", { w: 900, h: 600, ruta: "archivos", pasos: seq(archivos, plantilla("Ejercicio 4")) });
+await f("104-archivos-oscuro", "lab-archivos", { oscuro: true, ruta: "archivos", pasos: seq(archivos, plantilla("Ejercicio 4")) });
 await f("105-ficha-recibir-archivos", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+await f("106-plantillas-y-enviados", "lab-archivos", { h: 1250, ruta: "archivos" });
+await f("107-codigo-sin-archivos", "lab-archivos", { ruta: "codigo" });
+await f("108-ficha-capacidades-y-acciones", "lab", { h: 860, pasos: click(`${fila("lab-ubuntu-02")} .ficha`) });
+await f("109-pantalla-grande-acciones", "lab", { pasos: grande });
 
 // Ventana angosta y tema oscuro
 await f("37-alumnos-900x600", "lab", { w: 900, h: 600, pasos: click(fila("LAB3-PC07")) });

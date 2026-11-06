@@ -43,7 +43,7 @@ const ver = (etiqueta, delManual = true) => async (p) => {
 };
 const paso = async (titulo, escena, ruta, acciones) => {
   const antes = clics + teclas;
-  await foto(path.join("salida-usuario", String(pasos.length + 1).padStart(2, "0") + ".png"), escena, { ruta, revisar: false,
+  await foto(path.join("salida-usuario", String(pasos.length + 1).padStart(2, "0") + ".webp"), escena, { ruta, revisar: false,
     pasos: async (p) => { for (const a of acciones) await a(p); } });
   pasos.push({ titulo, acciones: clics + teclas - antes });
 };

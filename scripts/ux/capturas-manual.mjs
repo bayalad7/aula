@@ -10,19 +10,19 @@ const { foto, cerrar } = await abrir();
 
 // archivo → escena y pasos. Cada una la usa una página del manual.
 const capturas = {
-  "alumnos.png": ["lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12"))) }],
-  "ficha-alumno.png": ["lab-errores", { pasos: click(`${fila("lab-ubuntu-02")} .ficha`) }],
-  "codigo.png": ["datos", { ruta: "codigo", pasos: async (p) => {
+  "alumnos.webp": ["lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12"))) }],
+  "ficha-alumno.webp": ["lab-errores", { pasos: click(`${fila("lab-ubuntu-02")} .ficha`) }],
+  "codigo.webp": ["datos", { ruta: "codigo", pasos: async (p) => {
     await p.evaluate(() => window.monaco && window.monaco.editor.getEditors()[0].setValue(
       "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(5))\n"));
     await click(".envio__desplegar")(p);
   } }],
-  "codigo-archivos.png": ["lab-archivos", { ruta: "codigo", pasos: seq(click('#codigo-que button[data-que="archivos"]'), async (p) => {
+  "archivos.webp": ["lab-archivos", { ruta: "archivos", h: 1000, pasos: seq(async (p) => {
     await p.select("#archivos-plantilla", "Ejercicio 4");
-    await p.evaluate(() => { const d = document.getElementById("archivos-destino"); d.value = "Ejercicio 4"; });
-  }, click(".envio__desplegar")) }],
-  "simulada.png": ["simulada", { ruta: "simulada" }],
-  "participacion.png": ["lab-participacion", { ruta: "participacion" }],
+    await p.evaluate(() => { document.getElementById("archivos-destino").value = "Ejercicio 4"; });
+  }, click("[data-vista-de=archivos] .envio__desplegar")) }],
+  "simulada.webp": ["simulada", { ruta: "simulada" }],
+  "participacion.webp": ["lab-participacion", { ruta: "participacion" }],
 };
 
 let mal = 0;

@@ -34,7 +34,7 @@ export const cuadros = (hosts) => async (p) => p.evaluate((hs) => hs.forEach((h,
   { sessionId: "s-" + h, seq: 1, width: 320, height: 180, jpeg: window.__thumb(h + " - Visual Studio Code", 210 + i * 60) })), hosts);
 
 // El manual tal como lo devuelve Manual(), sacado del código Go.
-function exportarManual() {
+export function exportarManual() {
   const archivo = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "aula-ux-")), "manual.json");
   execFileSync("go", ["test", "-count=1", "-run", "^TestExportManualForUX$", "./apps/teacher"],
     { cwd: raiz, env: { ...process.env, AULA_UX_MANUAL: archivo }, stdio: ["ignore", "ignore", "inherit"] });
@@ -96,3 +96,24 @@ export async function abrir({ app = "profesor" } = {}) {
 
   return { foto, cerrar: async () => { await nav.close(); srv.close(); } };
 }
+
+// --solo=archivos,94-105: corre solo las capturas cuyo nombre contiene alguna palabra, o cuyo
+// número está en algún rango («94-105») o es alguno («61»). Sin --solo, todas. Sirve para revisar
+// un cambio en minutos; el recorrido completo lo corre el CI.
+export function soloCapturas(argv = process.argv) {
+  const a = argv.find((x) => x.startsWith("--solo="));
+  if (!a) return () => true;
+  const partes = a.slice("--solo=".length).split(",").map((s) => s.trim()).filter(Boolean);
+  return (nombre) => {
+    const n = parseInt(nombre, 10);
+    return partes.some((p) => {
+      const r = /^(\d+)-(\d+)$/.exec(p);
+      if (r) return n >= Number(r[1]) && n <= Number(r[2]);
+      if (/^\d+$/.test(p)) return n === Number(p);
+      return nombre.includes(p);
+    });
+  };
+}
+
+// La carpeta de salida: el primer argumento que no es una opción.
+export const carpetaSalida = (porOmision, argv = process.argv) => argv.slice(2).find((x) => !x.startsWith("--")) || porOmision;

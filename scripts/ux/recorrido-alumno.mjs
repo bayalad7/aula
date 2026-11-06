@@ -2,17 +2,19 @@
 // junta los errores de JS y pasa axe-core (WCAG 2.1 AA). Escribe además
 // axe.json con el detalle de cada violación. Sale con error si hay errores de
 // JS o violaciones serias o críticas.
-//   node recorrido-alumno.mjs [carpeta de salida]   (por omisión, ./salida-alumno)
+//   node recorrido-alumno.mjs [carpeta de salida] [--solo=archivos,94-105]   (por omisión, ./salida-alumno)
 import fs from "node:fs";
 import path from "node:path";
-import { abrir, click, seq, sleep } from "./arnes.mjs";
+import { abrir, carpetaSalida, soloCapturas, click, seq, sleep } from "./arnes.mjs";
 
-const salida = path.resolve(process.argv[2] || "salida-alumno");
+const salida = path.resolve(carpetaSalida("salida-alumno"));
+const incluir = soloCapturas();
 const { foto, cerrar } = await abrir({ app: "alumno" });
 const informe = {};
 // La ventana del alumno abre a 900×700 (apps/student/main.go); su mínimo es 480×360.
 const f = async (nombre, escena, o = {}) => {
-  informe[nombre] = await foto(path.join(salida, nombre + ".png"), escena, Object.assign({ w: 900, h: 700 }, o));
+  if (!incluir(nombre)) return;
+  informe[nombre] = await foto(path.join(salida, nombre + ".webp"), escena, Object.assign({ w: 900, h: 700 }, o));
 };
 const emitir = (evento, datos) => async (p) => { await p.evaluate((e, d) => window.__emit(e, d), evento, datos); await sleep(300); };
 

@@ -35,7 +35,7 @@ const enfocado = (p) => p.evaluate(() => {
 // Tab por la vista: cuenta los controles, revisa cada foco y comprueba que se
 // vuelve al menú.
 async function recorrerVista(nombre, escena, ruta) {
-  await foto(`salida-teclado/${nombre}.png`, escena, { ruta, revisar: false, pasos: async (p) => {
+  await foto(`salida-teclado/${nombre}.webp`, escena, { ruta, revisar: false, pasos: async (p) => {
     // Un ciclo completo: de vuelta al primer control. Si no vuelve, hay trampa.
     let pasos = 0, enEditor = 0, primero = "", vuelta = false, menu = false, fuera = false;
     const vistos = new Set();
@@ -72,7 +72,7 @@ async function recorrerVista(nombre, escena, ruta) {
 // Abre algo con su botón (Enter), comprueba que Esc lo cierra y que el foco
 // vuelve al botón.
 async function escCierra(nombre, escena, ruta, boton, abierto) {
-  await foto(`salida-teclado/${nombre}.png`, escena, { ruta, revisar: false, pasos: async (p) => {
+  await foto(`salida-teclado/${nombre}.webp`, escena, { ruta, revisar: false, pasos: async (p) => {
     await p.focus(boton);
     await p.keyboard.press("Enter");
     await sleep(300);

@@ -121,6 +121,12 @@ jobs:
         working-directory: scripts/ux
         run: node pruebas-alumno.mjs
 
+      # The UI annotator (anotar.mjs): annotate one element of each app as a
+      # person would and check the saved note (zone, screenshots, index).
+      - name: Anotador de interfaz (autoprueba)
+        working-directory: scripts/ux
+        run: node anotar.mjs --prueba
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:

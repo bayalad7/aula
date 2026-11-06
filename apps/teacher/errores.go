@@ -149,14 +149,14 @@ var errorHelp = map[string]string{
 	codeNoTimerTargets:       "participacion#temporizador",
 	codeTimerGone:            "participacion#temporizador",
 	codeTimerTooLong:         "participacion#temporizador",
-	codePushNoFiles:          "codigo#enviar-archivos-y-plantillas",
-	codePushTooLarge:         "codigo#enviar-archivos-y-plantillas",
-	codePushPathInvalid:      "codigo#enviar-archivos-y-plantillas",
-	codePushFileGone:         "codigo#enviar-archivos-y-plantillas",
-	codePushUnsupported:      "codigo#enviar-archivos-y-plantillas",
-	codeTemplateExists:       "codigo#plantillas-de-ejercicio",
-	codeTemplateInvalid:      "codigo#plantillas-de-ejercicio",
-	codeTemplateGone:         "codigo#plantillas-de-ejercicio",
+	codePushNoFiles:          "archivos#enviar-archivos-y-plantillas",
+	codePushTooLarge:         "archivos#enviar-archivos-y-plantillas",
+	codePushPathInvalid:      "archivos#enviar-archivos-y-plantillas",
+	codePushFileGone:         "archivos#enviar-archivos-y-plantillas",
+	codePushUnsupported:      "archivos#enviar-archivos-y-plantillas",
+	codeTemplateExists:       "archivos#plantillas-de-ejercicio",
+	codeTemplateInvalid:      "archivos#plantillas-de-ejercicio",
+	codeTemplateGone:         "archivos#plantillas-de-ejercicio",
 }
 
 // codedError is an error the UI can explain by its code.

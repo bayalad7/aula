@@ -105,10 +105,10 @@ func (a *App) onAgentError(sessionID string, p protocol.ErrorPayload) {
 var fileReasonHelp = func() map[protocol.ErrorCode]string {
 	m := map[protocol.ErrorCode]string{}
 	for _, r := range protocol.FilePushReasons {
-		m[protocol.ErrorCode(r)] = "codigo#si-un-alumno-no-recibió-los-archivos"
+		m[protocol.ErrorCode(r)] = "archivos#si-un-alumno-no-recibió-los-archivos"
 	}
-	m[filepush.ReasonTimeout] = "codigo#si-un-alumno-no-recibió-los-archivos"
-	m[filepush.ReasonGone] = "codigo#si-un-alumno-no-recibió-los-archivos"
+	m[filepush.ReasonTimeout] = "archivos#si-un-alumno-no-recibió-los-archivos"
+	m[filepush.ReasonGone] = "archivos#si-un-alumno-no-recibió-los-archivos"
 	m[protocol.CodeInternal] = agentErrorHelp[protocol.CodeInternal]
 	return m
 }()

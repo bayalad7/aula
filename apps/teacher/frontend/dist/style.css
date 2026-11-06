@@ -74,8 +74,16 @@ body[data-panel] .col-sistema { display: none; }
 .ficha { display: grid; grid-template-columns: max-content 1fr; gap: var(--e-2) var(--e-3); margin: 0; }
 .ficha dt { color: var(--c-texto-suave); }
 .ficha dd { margin: 0; overflow-wrap: anywhere; }
-#ficha-puede .fila { align-items: center; flex-wrap: nowrap; }
-#ficha-puede .insignia { min-width: 3.25rem; justify-content: center; }
+/* Qué puede hacer su equipo: grilla de 5 iconos; verde con ✓ si puede, gris con ✗ si no. */
+#ficha-puede { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--e-2); }
+.capacidad { position: relative; display: grid; place-items: center; height: 2.75rem; border: 1px solid var(--c-borde);
+  border-radius: var(--r-md); background: var(--c-superficie-2); color: var(--c-texto-suave); }
+.capacidad > .icono:first-child { width: 1.4rem; height: 1.4rem; }
+.capacidad--si { border-color: var(--c-conectado-solido); background: var(--c-conectado-fondo); color: var(--c-conectado); }
+.capacidad__marca { position: absolute; right: 3px; bottom: 3px; width: 0.8rem; height: 0.8rem; }
+/* En las orillas, el tooltip se alinea al borde para no salirse de la ficha. */
+#ficha-puede > :nth-child(5n + 1)[data-tip]:hover::after { left: 0; transform: none; }
+#ficha-puede > :nth-child(5n)[data-tip]:hover::after { left: auto; right: 0; transform: none; }
 .desglose dd.pila-mini { display: grid; }
 .celda-principal .equipo { white-space: nowrap; }
 
@@ -128,7 +136,7 @@ body[data-panel] .col-sistema { display: none; }
 a.insignia { text-decoration: none; }
 a.insignia:hover { text-decoration: underline; }
 
-/* Archivos del módulo Código (prompt 10.9). */
+/* Vista Archivos (prompt 10.9). */
 .archivos-elegidos { display: grid; gap: var(--e-1); }
 .archivos-elegidos:empty { display: none; }
 .archivo-elegido { align-items: center; gap: var(--e-2); padding: var(--e-1) var(--e-2); border: 1px solid var(--c-borde); border-radius: var(--r-md); }
@@ -136,7 +144,4 @@ a.insignia:hover { text-decoration: underline; }
 .archivos-destino { align-items: center; gap: var(--e-1); flex-wrap: nowrap; }
 .archivos-destino input { flex: 1; min-width: 0; }
 .archivos-nueva-plantilla { align-items: flex-end; }
-.archivos-nueva-plantilla[hidden], #codigo-parte-archivos[hidden], #codigo-parte-codigo[hidden], #codigo-botones[hidden], #archivos-botones[hidden] { display: none; }
-.tarjeta__subtitulo { margin: var(--e-4) var(--e-4) var(--e-2); font-size: var(--t-md); font-weight: var(--peso-fuerte); }
-.tarjeta__subtitulo[hidden] { display: none; }
-.tarjeta__cabecera > .insignia[hidden] { display: none; }
+.archivos-nueva-plantilla[hidden] { display: none; }

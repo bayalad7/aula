@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/base64"
+	"path"
+	"strings"
 	"sync"
 
 	"github.com/bayalad7/aula/docs"
@@ -44,7 +46,7 @@ func (a *App) loadManual() (*manual.Manual, ManualView, error) {
 		v := ManualView{Pages: m.Pages, Diagrams: m.Diagrams, Images: map[string]string{}, Errors: errorHelp,
 			AgentErrors: agentAndFileHelp()}
 		for name, b := range m.Images {
-			v.Images[name] = "data:image/png;base64," + base64.StdEncoding.EncodeToString(b)
+			v.Images[name] = "data:" + imageType(name) + ";base64," + base64.StdEncoding.EncodeToString(b)
 		}
 		if d, ok := m.Diagrams[diagnosticDiagram]; ok {
 			if t, err := manual.ParseTree(d.Mermaid); err == nil {
@@ -75,4 +77,16 @@ func (a *App) ManualSearch(q string) []manual.Result {
 		return []manual.Result{}
 	}
 	return m.Search(q)
+}
+
+// imageType is the media type of a manual image by its extension: the
+// captures are WebP; older ones may still be PNG.
+func imageType(name string) string {
+	switch strings.ToLower(path.Ext(name)) {
+	case ".webp":
+		return "image/webp"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	}
+	return "image/png"
 }

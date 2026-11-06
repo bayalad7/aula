@@ -243,7 +243,7 @@
   const equiposReales = () => seleccionados().filter((s) => !s.simulated).map((s) => s.hostname);
 
   // --- Navegación ------------------------------------------------------------------------
-  const VISTAS = ["alumnos", "codigo", "participacion", "simulada", "ayuda", "falta"];
+  const VISTAS = ["alumnos", "codigo", "archivos", "participacion", "simulada", "ayuda", "falta"];
   function irA(ruta) {
     // «ayuda/pagina/seccion» abre una página del manual en una sección.
     const [base, pagina, seccion] = ruta.split("/");
@@ -265,6 +265,7 @@
     if (nueva === "falta") pintarFalta();
     if (nueva === "simulada") pintarSimulada();
     if (nueva === "participacion") pintarParticipacion(participacion);
+    if (nueva === "archivos") cargarArchivos(); // las plantillas pudieron cambiar en el Explorador
     $("contenido").scrollTop = 0;
     if (nueva === "ayuda") mostrarAyuda(pagina ? decodeURIComponent(pagina) : "", seccion ? decodeURIComponent(seccion) : "");
   }
@@ -469,23 +470,22 @@
       dd.append(typeof v === "string" ? document.createTextNode(v) : v);
       return [el("dt", "", T(k)), dd];
     }));
-    const puede = [["canCode", "ficha.codigo"], ["canNotice", "ficha.avisos"], ["canThumb", "ficha.miniaturas"],
-      ["canBroadcast", "ficha.transmision"], ["canAppBlock", "ficha.apps"], ["canWebFilter", "ficha.web"], ["canPower", "ficha.energia"], ["canRemote", "ficha.control"],
-      ["canSnapshot", "ficha.captura"], ["canHand", "ficha.mano"], ["canMessage", "ficha.mensajes"], ["canTimer", "ficha.temporizador"], ["canFiles", "ficha.archivos"]];
-    $("ficha-puede").replaceChildren(...puede.map(([c, k]) => {
-      const li = el("li", "fila");
-      li.append(s[c] ? insignia("conectado", "hecho", T("ficha.si")) : insignia("", "cerrar", T("ficha.no")), el("span", "", T(k)));
+    // Qué puede hacer su equipo: una grilla de iconos, verde con ✓ si puede y gris con ✗ si no
+    // (color y marca: no depende solo del color). El nombre sale en el tooltip y lo lee el lector.
+    const puede = [["canCode", "ficha.codigo", "codigo"], ["canNotice", "ficha.avisos", "aviso"], ["canThumb", "ficha.miniaturas", "miniaturas"],
+      ["canBroadcast", "ficha.transmision", "transmitir"], ["canAppBlock", "ficha.apps", "candado"], ["canWebFilter", "ficha.web", "filtro"],
+      ["canPower", "ficha.energia", "energia"], ["canRemote", "ficha.control", "control"], ["canSnapshot", "ficha.captura", "captura"],
+      ["canHand", "ficha.mano", "mano"], ["canMessage", "ficha.mensajes", "mensaje"], ["canTimer", "ficha.temporizador", "reloj"],
+      ["canFiles", "ficha.archivos", "archivo"]];
+    $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
+      const si = !!s[c];
+      const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
+      const li = el("li", "capacidad" + (si ? " capacidad--si" : ""));
+      li.dataset.tip = texto;
+      li.append(icono(ic), icono(si ? "hecho" : "cerrar", "capacidad__marca"), el("span", "solo-lector", texto));
       return li;
     }));
-    // Tomar el control: solo de un alumno real, conectado, cuyo equipo lo permite.
-    const controlable = !s.simulated && s.state === "connected" && s.canRemote;
-    $("ficha-control").hidden = !controlable;
-    const esEste = control.live && control.sessionID === s.id;
-    $("ficha-tomar-texto").textContent = T(esEste ? "control.verPantalla" : "control.tomar");
-    $("ficha-tomar").onclick = () => (esEste ? abrirControl() : tomarControl(s, $("ficha-tomar")));
-    // Tomar una captura: reales y simulados, también mientras se le controla.
-    $("ficha-captura").hidden = !(s.state === "connected" && s.canSnapshot);
-    pintarPrivado(s);
+    accionesFicha(s); // Tomar control, Mensaje privado, Tomar captura (ACCIONES_ALUMNO)
     const e = s.lastError;
     $("ficha-error").hidden = !e;
     if (e) {
@@ -502,6 +502,57 @@
   // Solo a ese alumno (msg.show personal), desde la ficha o desde la pantalla en grande, también
   // durante el control remoto. El acuse sale de aula:deliveries; la etiqueta del envío no lleva el
   // texto (privacidad, regla 53). Un mismo formulario sirve a los dos lugares (prefijo de sus ids).
+  // --- Acciones sobre un alumno ------------------------------------------------------------
+  // Se definen una vez y salen en todos los lugares donde se ve a un alumno: la Ficha del alumno
+  // y la Pantalla grande (CLAUDE.md, «Ubicación y vocabulario»). Una acción nueva se agrega aquí,
+  // con su botón en cada lugar (ids estables para el arnés), su condición y lo que hace.
+  // `hacer` nulo: el botón lo maneja otro (el formulario del mensaje privado).
+  const controlandoA = (s) => control.live && control.sessionID === s.id;
+  const ACCIONES_ALUMNO = [
+    { id: "control", icono: "control", primario: true, ids: { ficha: "ficha-tomar", grande: "pg-tomar" }, nota: "control.fichaNota",
+      texto: (s, donde) => T(donde === "ficha" && controlandoA(s) ? "control.verPantalla" : "control.tomar"),
+      // Solo reales y conectados cuyo equipo lo permite; en la Pantalla grande, no mientras ya se controla.
+      visible: (s, donde) => !s.simulated && s.state === "connected" && s.canRemote && !(donde === "grande" && enControl),
+      hacer: (s, b) => (controlandoA(s) ? abrirControl() : tomarControl(s, b)) },
+    { id: "privado", icono: "sobre", ids: { ficha: "privado-abrir", grande: "pg-privado-abrir" }, controla: { ficha: "privado", grande: "pg-privado" },
+      texto: () => T("privado.boton"),
+      visible: (s, donde) => (donde === "ficha" ? privadoFicha : privadoGrande).pintar(s), hacer: null },
+    { id: "captura", icono: "captura", ids: { ficha: "ficha-capturar", grande: "pg-capturar" }, nota: "captura.fichaNota",
+      texto: () => T("captura.tomar"),
+      // Reales y simulados, también mientras se le controla.
+      visible: (s) => s.state === "connected" && s.canSnapshot,
+      hacer: (s, b) => tomarCaptura(s, b) },
+  ];
+  // Arma los botones de un lugar una sola vez y devuelve cómo pintarlos para un alumno.
+  function montarAcciones(donde, contenedor, alumnoActual) {
+    const piezas = ACCIONES_ALUMNO.map((a) => {
+      const b = el("button", "btn" + (a.primario ? " btn--primario" : "") + (donde === "grande" ? " btn--sm" : ""));
+      b.type = "button";
+      b.id = a.ids[donde];
+      if (a.controla) { b.setAttribute("aria-expanded", "false"); b.setAttribute("aria-controls", a.controla[donde]); }
+      const texto = el("span");
+      b.append(icono(a.icono), texto);
+      if (a.hacer) b.addEventListener("click", () => { const s = alumnoActual(); if (s) a.hacer(s, b); });
+      // En la ficha, cada acción lleva su nota debajo; en la Pantalla grande, solo el botón.
+      let caja = b;
+      if (donde === "ficha") {
+        caja = el("div", "pila-mini");
+        caja.append(b);
+        if (a.nota) caja.append(el("span", "pequeno suave", T(a.nota)));
+      }
+      contenedor.append(caja);
+      return { a, caja, texto };
+    });
+    return (s) => {
+      for (const { a, caja, texto } of piezas) {
+        caja.hidden = !(s && a.visible(s, donde));
+        if (s) texto.textContent = a.texto(s, donde);
+      }
+    };
+  }
+  const accionesFicha = montarAcciones("ficha", $("ficha-acciones"), () => alumnos.students.find((x) => clave(x) === fichaClave));
+  const accionesGrande = montarAcciones("grande", $("pg-acciones"), () => alumnoPorSesion(enControl ? control.sessionID : enGrande));
+
   function formPrivado(pre, alumno, alAbrir) {
     const $p = (s) => $(pre + s);
     const form = $(pre), texto = $p("-texto"), error = $p("-error"), abrir = $p("-abrir");
@@ -572,7 +623,6 @@
   // se escribe en el campo no le llega (su teclado solo sale con el foco en la imagen).
   const privadoGrande = formPrivado("pg-privado", () => alumnoPorSesion(enControl ? control.sessionID : enGrande),
     () => { if (enControl) soltarTeclas(); });
-  function pintarPrivado(s) { $("ficha-privado").hidden = !privadoFicha.pintar(s); }
   function pintarAcusePrivado() { privadoFicha.acuse(); privadoGrande.acuse(); }
 
   // Miniaturas: las imágenes solo viven aquí, en memoria.
@@ -634,8 +684,7 @@
     modoControl(false);
     // Aquí es donde el profesor ve si el alumno está en la actividad: puede tomar el control
     // sin ir a la ficha (solo reales cuyo equipo lo permite).
-    $("pg-tomar").hidden = !s.canRemote || s.simulated;
-    pintarBotonCaptura();
+    pintarAccionesGrande();
     $("pg-titulo").textContent = s.hostname + (s.username ? " · " + s.username : "");
     const li = tarjetas.get(k);
     const src = li && li.querySelector("img").getAttribute("src");
@@ -672,13 +721,12 @@
     enControl = on;
     const img = $("pg-imagen");
     $("pg-soltar").hidden = !on;
-    if (on) $("pg-tomar").hidden = true;
     $("pg-control-estado").hidden = !on;
     $("pg-control-nota").hidden = !on;
     $("pg-nota").hidden = on;
     img.classList.toggle("pg-control", on);
     if (on) img.tabIndex = 0; else img.removeAttribute("tabindex");
-    pintarBotonCaptura();
+    pintarAccionesGrande();
   }
   function abrirControl() {
     const s = alumnoPorSesion(control.sessionID);
@@ -819,10 +867,6 @@
     api.ReleaseControl().catch(fallo);
   }
   $("pg-soltar").addEventListener("click", soltarControl);
-  $("pg-tomar").addEventListener("click", () => {
-    const s = alumnoPorSesion(enGrande);
-    if (s) tomarControl(s, $("pg-tomar"));
-  });
   $("f-control-soltar").addEventListener("click", soltarControl);
   $("f-control-ver").addEventListener("click", abrirControl);
   // --- Captura de la pantalla de un alumno (docs/protocol.md §5.17) ------------------------
@@ -939,20 +983,10 @@
     capturaActual = "";
     $("cap-imagen").removeAttribute("src");
   });
-  $("ficha-capturar").addEventListener("click", () => {
-    const s = alumnos.students.find((x) => clave(x) === fichaClave);
-    if (s) tomarCaptura(s, $("ficha-capturar"));
-  });
-  $("pg-capturar").addEventListener("click", () => {
+  // Las acciones de la Pantalla grande, con o sin control (ACCIONES_ALUMNO).
+  function pintarAccionesGrande() {
     const s = alumnoPorSesion(enControl ? control.sessionID : enGrande);
-    if (s) tomarCaptura(s, $("pg-capturar"));
-  });
-  // El botón de la vista en grande: con o sin control, si su equipo lo permite.
-  function pintarBotonCaptura() {
-    const s = alumnoPorSesion(enControl ? control.sessionID : enGrande);
-    $("pg-capturar").hidden = !(s && s.state === "connected" && s.canSnapshot);
-    // Y el mensaje privado, con o sin control (prompt 10.7).
-    $("pg-privado-abrir").hidden = !(s && privadoGrande.pintar(s));
+    accionesGrande(s);
     if (!s) privadoGrande.cerrar(false);
   }
 
@@ -1605,9 +1639,16 @@
     const radio = $("codigo-destino-seleccion-radio");
     radio.disabled = n === 0;
     if (n === 0 && radio.checked) document.querySelector('input[name="codigo-destino"][value="todos"]').checked = true;
+    // El mismo «Enviar a» en Archivos.
+    $("archivos-destino-todos").textContent = $("codigo-destino-todos").textContent;
+    $("archivos-destino-seleccion").textContent = $("codigo-destino-seleccion").textContent;
+    const radioA = $("archivos-destino-seleccion-radio");
+    radioA.disabled = n === 0;
+    if (n === 0 && radioA.checked) document.querySelector('input[name="archivos-destino"][value="todos"]').checked = true;
     actualizarAccionesArchivos();
   }
   const destinoCodigo = () => (document.querySelector('input[name="codigo-destino"]:checked').value === "seleccion" ? destinos() : []);
+  const destinoArchivos = () => (document.querySelector('input[name="archivos-destino"]:checked').value === "seleccion" ? destinos() : []);
 
   function actualizarAccionesCodigo() {
     const hay = editor && editor.getValue().trim() !== "";
@@ -1616,7 +1657,6 @@
     else if (!hay) motivo = T("codigo.motivoVacio");
     $("codigo-emitir").disabled = $("codigo-agregar").disabled = alumnos.canCode === 0 || !hay;
     $("codigo-limpiar").disabled = alumnos.canCode === 0;
-    if (enArchivos()) { actualizarAccionesArchivos(); return; }
     $("codigo-motivo").textContent = motivo;
     $("codigo-ejercicio").textContent = T("codigo.ejercicio", { n: historial.length + 1 });
   }
@@ -1658,12 +1698,17 @@
     return s ? s.hostname + (s.username ? " · " + s.username : "") : T("codigo.yaNoEsta");
   };
   const abiertos = new Set(); // envíos con el desglose abierto
+  // Código muestra el código y los avisos; Archivos, sus envíos de archivos (kind «file»).
   function pintarEnvios(lista) {
     envios = lista;
     pintarAcusePrivado();
-    $("envios-vacio").hidden = lista.length > 0;
+    dibujarEnvios("envios", lista.filter((d) => d.kind !== "file"));
+    dibujarEnvios("archivos-envios", lista.filter((d) => d.kind === "file"));
+  }
+  function dibujarEnvios(pre, lista) {
+    $(pre + "-vacio").hidden = lista.length > 0;
     const tpl = $("t-envio").content.firstElementChild;
-    $("envios-lista").replaceChildren(...lista.slice(0, 10).map((d) => {
+    $(pre + "-lista").replaceChildren(...lista.slice(0, 10).map((d) => {
       const li = tpl.cloneNode(true);
       li.querySelector(".envio__titulo").textContent = d.label;
       const total = d.sent + d.simSent;
@@ -1750,10 +1795,10 @@
   }
 
   // --- Archivos y plantillas (prompt 10.9) -------------------------------------------------
-  // La pestaña «Archivos» del módulo Código: elegir archivos o una plantilla y enviarlos con
-  // el mismo «Enviar a» del código. Los acuses van a «Últimos envíos» (quién lo tiene, quién
-  // falta) y los envíos al Historial, para reenviarlos. Los alumnos los guardan solo en su
-  // Documentos\Aula (reglas 55-58).
+  // La vista «Archivos» del menú: elegir archivos o una plantilla y enviarlos a todos o a la
+  // selección. Sus acuses van a «Envíos de archivos» (quién lo tiene, quién falta), las
+  // plantillas a su tabla y los envíos a «Archivos enviados», para reenviarlos. Los alumnos los
+  // guardan solo en su Documentos\Aula (reglas 55-58).
   let elegidos = [];         // FileChoice: { path, rel, size }
   let archivosVista = { templates: [], templatesError: "", sends: [] };
   const MB = 1024 * 1024;
@@ -1761,19 +1806,6 @@
   const plantillaElegida = () => $("archivos-plantilla").value;
   const PROBLEMA = "archivos.problema."; // + filepush.Template.Problem en camelCase
   const camel = (s) => String(s).replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-
-  function ponerQue(que) {
-    for (const b of document.querySelectorAll("#codigo-que button")) b.setAttribute("aria-pressed", String(b.dataset.que === que));
-    const archivos = que === "archivos";
-    $("codigo-parte-codigo").hidden = $("codigo-botones").hidden = archivos;
-    $("codigo-parte-archivos").hidden = $("archivos-botones").hidden = !archivos;
-    $("codigo-ejercicio").nextElementSibling.hidden = archivos; // «Borrador» es del código
-    if (!archivos) $("archivos-nueva-plantilla").hidden = true;
-    actualizarAccionesCodigo();
-    actualizarAccionesArchivos();
-  }
-  for (const b of document.querySelectorAll("#codigo-que button")) b.addEventListener("click", () => ponerQue(b.dataset.que));
-  function enArchivos() { return !$("codigo-parte-archivos").hidden; }
 
   function pintarArchivos(v) {
     archivosVista = v;
@@ -1784,8 +1816,42 @@
     sel.value = v.templates.some((t) => t.name === antes) ? antes : "";
     $("archivos-abrir-plantillas-texto").textContent = sel.value ? T("archivos.abrirPlantilla") : T("archivos.abrirPlantillas");
     pintarElegidos();
+    pintarPlantillas(v.templates);
     pintarHistorialArchivos(v.sends);
   }
+
+  // La tabla de plantillas: «Usar» la carga en el formulario de arriba; «Abrir carpeta», en el Explorador.
+  function pintarPlantillas(plantillas) {
+    $("plantillas-vacio").hidden = plantillas.length > 0;
+    $("plantillas-tabla").hidden = plantillas.length === 0;
+    const tpl = $("t-plantilla").content.firstElementChild;
+    const etiquetas = { nombre: "archivos.colNombre", archivos: "archivos.colArchivos", tamano: "archivos.colTamano", estado: "archivos.colEstado" };
+    $("plantillas-filas").replaceChildren(...plantillas.map((t) => {
+      const tr = tpl.cloneNode(true);
+      const celdas = { nombre: t.name, archivos: String(t.files.length), tamano: tamano(t.size),
+        estado: t.problem ? T(PROBLEMA + camel(t.problem)) : T("archivos.lista") };
+      for (const [c, v] of Object.entries(celdas)) {
+        const td = tr.querySelector("." + c);
+        td.textContent = v;
+        td.dataset.etiqueta = T(etiquetas[c]);
+      }
+      const usar = tr.querySelector(".usar");
+      usar.textContent = T("archivos.usar");
+      usar.setAttribute("aria-label", T("archivos.usarDe", { nombre: t.name }));
+      usar.disabled = !!t.problem;
+      usar.addEventListener("click", () => {
+        $("archivos-plantilla").value = t.name;
+        $("archivos-plantilla").dispatchEvent(new Event("change"));
+        $("archivos-plantilla").focus();
+      });
+      const abrir = tr.querySelector(".abrir");
+      abrir.querySelector("span").textContent = T("archivos.abrirCarpeta");
+      abrir.setAttribute("aria-label", T("archivos.abrirCarpetaDe", { nombre: t.name }));
+      abrir.addEventListener("click", () => api.OpenTemplates(t.name).catch(fallo));
+      return tr;
+    }));
+  }
+  $("plantillas-carpeta").addEventListener("click", () => api.OpenTemplates("").catch(fallo));
 
   // Lo que se va a enviar: los archivos de la plantilla elegida, o los que eligió el profesor.
   function pintarElegidos() {
@@ -1822,10 +1888,7 @@
     $("archivos-enviar").disabled = pueden === 0 || n === 0 || !!(t && t.problem);
     $("archivos-enviar-texto").textContent = n ? P("archivos.enviar", n) : T("archivos.enviarNada");
     $("archivos-guardar-plantilla").disabled = elegidos.length === 0;
-    if (enArchivos()) {
-      $("codigo-motivo").textContent = motivo;
-      $("codigo-ejercicio").textContent = T("archivos.titulo");
-    }
+    $("archivos-motivo").textContent = motivo;
   }
 
   $("archivos-plantilla").addEventListener("change", () => {
@@ -1845,7 +1908,7 @@
     const b = $("archivos-enviar");
     ocupado(b, true);
     const req = { files: elegidos.map((f) => ({ path: f.path, rel: f.rel })), template: plantillaElegida(),
-      dest: $("archivos-destino").value, overwrite: $("archivos-reemplazar").checked, targets: destinoCodigo() };
+      dest: $("archivos-destino").value, overwrite: $("archivos-reemplazar").checked, targets: destinoArchivos() };
     if (req.template) req.files = [];
     api.SendFiles(req)
       .then((d) => toast("exito", P("archivos.enviado", d.sent + d.simSent, { etiqueta: d.label }), T("archivos.enviadoTexto")), fallo)
@@ -1878,9 +1941,8 @@
 
   function pintarHistorialArchivos(sends) {
     const hay = sends.length > 0;
-    $("h-historial-archivos").hidden = $("historial-archivos-tabla").hidden = !hay;
-    if (hay) $("historial-vacio").hidden = true;
-    else $("historial-vacio").hidden = historial.length > 0;
+    $("historial-archivos-vacio").hidden = hay;
+    $("historial-archivos-tabla").hidden = !hay;
     const tpl = $("t-historial-archivos").content.firstElementChild;
     const etiquetas = { que: "archivos.colQue", destino: "archivos.colDestino", tamano: "archivos.colTamano", veces: "codigo.colVeces", hora: "codigo.colHora" };
     $("historial-archivos-filas").replaceChildren(...sends.map((s) => {

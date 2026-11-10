@@ -138,4 +138,6 @@ type View struct {
 	Files Files `json:"files"`
 	// Collections are the teacher's collections of this session (§5.21).
 	Collections Collections `json:"collections"`
+	// Opened is what the teacher opened in this session (§5.22).
+	Opened Opened `json:"opened"`
 }

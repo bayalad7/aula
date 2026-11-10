@@ -84,6 +84,11 @@ func main() {
 	} else {
 		log.Info("collecting files not available", "err", err)
 	}
+	if l, err := platform.NewLauncher(); err == nil {
+		app.enableOpen(l)
+	} else {
+		log.Info("opening pages and apps not available", "err", err)
+	}
 	if p, err := platform.NewPower(); err == nil {
 		app.enablePower(p)
 	} else {

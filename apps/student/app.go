@@ -19,6 +19,7 @@ import (
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/filepush"
+	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
@@ -53,6 +54,7 @@ type App struct {
 	files     *filepush.Receiver    // file.push; inert until enableFiles (§5.20)
 	inbox     *filepush.Inbox       // what arrived, for the window
 	collect   *collect.Responder    // file.collect; inert until enableCollect (§5.21)
+	opener    *openapp.Opener       // open.*; inert until enableOpen (§5.22)
 	work      platform.WorkFolder   // «Abrir carpeta»; nil without a work folder
 	clip      platform.Clipboard    // nil when the system has none
 	clipEr    error
@@ -110,6 +112,7 @@ type App struct {
 	powerV   PowerView         // power notice in force (rules 26-28)
 	ctrl     remote.State      // remote control in force (rules 36-41)
 	cl       *transport.Client // the connection with the console; nil while not connected
+	opened   []openapp.Opened  // what the teacher opened, for the corner notices (rule 66)
 
 	timerMu sync.Mutex
 	timerT  *time.Timer // the next tick of the countdown
@@ -137,6 +140,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a.files = &filepush.Receiver{OnFile: a.onFile, Logger: log}
 	a.inbox = &filepush.Inbox{}
 	a.collect = &collect.Responder{OnChange: a.onCollect, Logger: log}
+	a.opener = &openapp.Opener{Who: a.who, OnOpened: a.onOpened, Logger: log}
 	if cfgErr != nil {
 		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Detail: cfgErr.Error()}
 	} else {
@@ -291,6 +295,7 @@ func (a *App) stop() {
 	a.snap.Wait() // its connection is closed: it drops the image
 	a.files.Wait()
 	a.collect.Wait() // its connection is closed: the round is abandoned
+	a.opener.Wait()
 	a.stopTimer()
 }
 
@@ -429,6 +434,9 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		reply, ok = a.collect.Handle(ctx, collect.Sender(send), env)
 	}
 	if !ok {
+		reply, ok = a.opener.Handle(ctx, openapp.Sender(send), env)
+	}
+	if !ok {
 		// Before the control: a screenshot does not end or pause it (§5.16).
 		reply, ok = a.snap.Handle(ctx, snapshot.Sender(send), env)
 	}
@@ -516,7 +524,7 @@ func (a *App) View() View {
 	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...),
 		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
 		Participation: a.desk.View(), Timer: a.countdown.View(), Files: a.filesView(a.inbox.List()),
-		Collections: a.collectionsView()}
+		Collections: a.collectionsView(), Opened: Opened{List: append([]openapp.Opened{}, a.opened...)}}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

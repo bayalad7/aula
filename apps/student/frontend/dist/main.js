@@ -343,7 +343,18 @@
       const propio = TIPO[n.kind]; // un aviso del propio Aula (sin texto del profesor)
       node.querySelector("use").setAttribute("href", "sistema/iconos.svg#" + (propio ? propio.icono : icono));
       const AV = "aviso."; // + nivel del aviso (info, warning)
-      if (n.kind === "collect-requested" || n.kind === "collect-done") {
+      if (n.kind === "opened") {
+        // El profesor abrió una página o una app (privacidad, regla 66): qué y quién.
+        node.dataset.kind = n.kind;
+        const o = abiertos.find((x) => x.id === n.ref);
+        const app = o && o.kind === "app";
+        node.querySelector("use").setAttribute("href", "sistema/iconos.svg#" + (app ? "app" : "externo"));
+        node.querySelector(".toast__titulo").textContent = T(app ? "aviso.abierto.app.titulo" : "aviso.abierto.pagina.titulo");
+        node.querySelector(".notice-text").textContent = o
+          ? T(app ? "aviso.abierto.app.texto" : "aviso.abierto.pagina.texto", { profesor: o.teacher, canal: o.channel, que: o.shown, hora: hora(o.at) })
+          : "";
+        if (o) node.title = o.full;
+      } else if (n.kind === "collect-requested" || n.kind === "collect-done") {
         node.dataset.kind = n.kind;
         node.querySelector("use").setAttribute("href", "sistema/iconos.svg#carpeta");
         const a = avisoReco(n);
@@ -610,6 +621,14 @@
     renderNotices(avisos); // los avisos de una recolección toman de aquí la carpeta y lo recogido
     title();
     pintarCompacto();
+  }
+
+  // Lo que abrió el profesor (docs/protocol.md §5.22): los avisos «opened» toman de aquí qué
+  // se abrió y quién lo pidió. La ventana no se trae al frente: el foco ya lo tiene lo abierto.
+  let abiertos = [];
+  function renderAbiertos(v) {
+    abiertos = (v && v.list) || [];
+    renderNotices(avisos);
   }
 
   // El texto de los avisos de una recolección (reglas 61-62), con los datos de su tarjeta.
@@ -1054,7 +1073,9 @@
   rt.EventsOn(ev.TIMER, renderTemporizador);
   rt.EventsOn(ev.FILES, renderArchivos);
   rt.EventsOn(ev.COLLECTIONS, renderRecolecciones);
+  rt.EventsOn(ev.OPENED, renderAbiertos);
   api.View().then((v) => {
+    abiertos = (v.opened && v.opened.list) || [];
     renderStatus(v.status);
     renderBoard(v.snippets);
     renderNotices(v.notices);

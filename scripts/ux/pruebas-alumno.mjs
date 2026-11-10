@@ -296,6 +296,37 @@ await caso("recoleccion-abierta-y-recogida", "un-codigo", async (p) => {
     "una recolección no debe mostrar bandas");
 });
 
+// Abrir página o app (prompt 10.11; reglas 66-67): el aviso en la esquina dice qué se abrió y quién
+// lo pidió, sin la consulta de la URL (va completa en el tooltip); no es una banda y no le quita el
+// foco al alumno (el navegador ya lo tomó); se cierra con «Entendido».
+await caso("pagina-abierta", "un-codigo", async (p) => {
+  await p.focus("#snippets > li .copy");
+  await emitir(p, "aula:opened", { list: [{ id: "op-9", kind: "url", shown: "docs.python.org/3/tutorial",
+    full: "https://docs.python.org/3/tutorial/?q=1", teacher: "Prof. Ayala", channel: "1", at: ahora() }] });
+  await emitir(p, "aula:notices", { notices: [{ id: "n-op", level: "info", text: "", kind: "opened", ref: "op-9", at: ahora() }] });
+  await sleep(150);
+  const a = await p.evaluate(() => {
+    const t = document.querySelector('#notices .toast[data-kind="opened"]');
+    return t && { titulo: t.querySelector(".toast__titulo").textContent, texto: t.querySelector(".notice-text").textContent,
+      tip: t.title, icono: t.querySelector("use").getAttribute("href"), enBandas: !!t.closest(".bandas"), foco: document.activeElement.className };
+  });
+  ok(a, "no apareció el aviso de la página abierta");
+  ok(a.titulo === "Tu profesor abrió una página", "título: " + a.titulo);
+  ok(a.texto.startsWith("Prof. Ayala (canal 1) abrió docs.python.org/3/tutorial en tu navegador"), "texto: " + a.texto);
+  ok(!a.texto.includes("?q=1") && a.tip === "https://docs.python.org/3/tutorial/?q=1", "la consulta va solo en el tooltip: " + a.tip);
+  ok(a.icono.endsWith("#externo"), "icono: " + a.icono);
+  ok(!a.enBandas, "abrir una página no es una banda");
+  ok(a.foco.includes("copy"), "el aviso le quitó el foco al alumno: " + a.foco);
+  await emitir(p, "aula:opened", { list: [{ id: "op-10", kind: "app", shown: "Thonny", full: "Thonny", teacher: "Prof. Ayala", channel: "1", at: ahora() }] });
+  await emitir(p, "aula:notices", { notices: [{ id: "n-op2", level: "info", text: "", kind: "opened", ref: "op-10", at: ahora() }] });
+  await sleep(150);
+  const app = await p.evaluate(() => document.querySelector('#notices .toast[data-kind="opened"] .notice-text').textContent);
+  ok(app.startsWith("Prof. Ayala (canal 1) abrió Thonny en tu equipo"), "app: " + app);
+  await p.click('#notices .toast[data-kind="opened"] .dismiss');
+  await sleep(100);
+  ok(await p.evaluate(() => window.__calls.some((c) => c[0] === "DismissNotice" && c[1][0] === "n-op2")), "«Entendido» no cerró el aviso");
+});
+
 // Levantar la mano y escribir al profesor (prompt 10.6): lo hace el alumno, con el teclado;
 // nada de esto es una banda ni le quita el foco, y lo que llega del profesor tampoco.
 const bandasVisibles = (p) => p.evaluate(() => [...document.querySelectorAll("#bandas > *")].filter((b) => !b.hidden).length);

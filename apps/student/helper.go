@@ -13,6 +13,7 @@ import (
 	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/filepush"
+	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
 )
@@ -32,6 +33,7 @@ type helper struct {
 	input     *heldInput                // nil when the OS cannot inject
 	work      platform.WorkFolder       // nil when the OS has no work folder (file.push)
 	read      platform.WorkFolderReader // nil without a work folder (file.collect)
+	launch    platform.Launcher         // nil when the OS cannot open pages or apps (open.*)
 	log       *slog.Logger
 }
 
@@ -63,6 +65,9 @@ func runHelper(channel string, log *slog.Logger) int {
 	if wr, err := platform.NewWorkFolderReader(); err == nil {
 		h.read = wr
 	}
+	if l, err := platform.NewLauncher(); err == nil {
+		h.launch = l
+	}
 
 	// The App only serves the window's bindings, forwarding them to the
 	// agent in the service; it does not connect to any console.
@@ -80,8 +85,8 @@ func runHelper(channel string, log *slog.Logger) int {
 	ready := func(webrtc, h264 bool) {
 		once.Do(func() {
 			r := agentsvc.Ready{Capture: h.capture != nil, Clipboard: clipErr == nil, Broadcast: webrtc && h264,
-				Input: h.input != nil, Files: h.work != nil && h.read != nil}
-			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input, "files", r.Files)
+				Input: h.input != nil, Files: h.work != nil && h.read != nil, Open: h.launch != nil}
+			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input, "files", r.Files, "open", r.Open)
 			_ = link.Notify(agentsvc.EventReady, r)
 		})
 	}
@@ -197,6 +202,8 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 		return nil, h.work.Open(rel)
 	case agentsvc.CallFolderCreate, agentsvc.CallFolderList, agentsvc.CallFileRead:
 		return h.collectCall(name, data)
+	case agentsvc.CallOpenURL, agentsvc.CallOpenApp:
+		return h.openCall(name, data)
 	case agentsvc.CallPower:
 		var a agentsvc.PowerArgs
 		if err := json.Unmarshal(data, &a); err != nil {
@@ -368,4 +375,29 @@ func (h *helper) collectCall(name string, data json.RawMessage) (any, error) {
 		}
 		return agentsvc.FileReadResult{Data: b, Error: agentsvc.FileWriteError(err)}, nil
 	}
+}
+
+// openCall opens a page or an app in the student's session (§5.22), as the
+// student. The service checked it; the helper checks the URL and the path
+// again with the fixed rules and this session's folders (docs/privacidad.md
+// rules 68–69). It logs only the result.
+func (h *helper) openCall(name string, data json.RawMessage) (any, error) {
+	var arg string
+	if err := json.Unmarshal(data, &arg); err != nil {
+		return nil, err
+	}
+	if h.launch == nil {
+		return agentsvc.OpenResult{Reason: protocol.OpenLaunchFailed}, nil
+	}
+	s := openapp.Local{Launcher: h.launch}
+	var err error
+	if name == agentsvc.CallOpenURL {
+		err = s.OpenURL(arg)
+	} else {
+		err = s.StartApp(arg)
+	}
+	if err != nil {
+		h.log.Info("helper did not open", "kind", name, "reason", openapp.Reason(err))
+	}
+	return agentsvc.OpenResult{Reason: openapp.Reason(err)}, nil
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/session"
@@ -126,6 +127,12 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 	for kind, key := range map[string]string{NoticeCollectRequested: "aviso.recogiendo", NoticeCollectDone: "aviso.recogido"} {
 		need(key+".titulo", "codedist.Notice.Kind "+kind)
+	}
+	// What the teacher opened (docs/privacidad.md rule 66): a page or an app.
+	for _, k := range []string{openapp.KindURL, openapp.KindApp} {
+		key := map[string]string{openapp.KindURL: "aviso.abierto.pagina", openapp.KindApp: "aviso.abierto.app"}[k]
+		need(key+".titulo", "codedist.Notice.Kind "+NoticeOpened)
+		need(key+".texto", "codedist.Notice.Kind "+NoticeOpened)
 	}
 	for _, c := range []string{ControlActive, ControlPaused} {
 		need("banda.control."+c, "events.go (Status.Control)")

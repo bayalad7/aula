@@ -119,6 +119,10 @@ await f("73-recoleccion-recogiendo", "recoleccion-recogiendo");
 await f("74-recoleccion-oscuro", "recoleccion", { oscuro: true });
 await f("75-recoleccion-angosta", "recoleccion-aviso", { w: 480, h: 360 });
 
+// Abrir página o app (prompt 10.11; regla 66): el aviso en la esquina dice qué se abrió y quién.
+await f("76-abierto", "abierto");
+await f("77-abierto-oscuro", "abierto", { oscuro: true });
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

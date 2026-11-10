@@ -46,7 +46,7 @@
     content: "public class Hola {\n    public static void main(String[] args) {\n        for (int i = 0; i < 3; i++) {\n            System.out.println(\"Hola \" + i);\n        }\n    }\n}\n" };
   const snippets = { "un-codigo": [py], "varios-codigos": [py, js, java], "pantalla-vista": [py], transmision: [],
     control: [py], "control-pausa": [py], captura: [py], "captura-vista": [py],
-    restricciones: [py], "aviso-info": [py], "aviso-privado": [py], "aviso-warning": [py], "varios-avisos": [py, js, java], "muchos-avisos": [py] }[scene] || [];
+    restricciones: [py], "aviso-info": [py], "aviso-privado": [py], "aviso-warning": [py], "varios-avisos": [py, js, java], "muchos-avisos": [py], abierto: [py] }[scene] || [];
 
   const aviso = (id, level, text) => ({ id, level, text, at: ahora });
   const captura = (id) => ({ id, level: "warning", text: "", kind: "snapshot", at: "2026-11-05T10:42:06-06:00" });
@@ -138,6 +138,17 @@
     notices.push({ id: "rc-n1", level: "info", text: "", kind: "collect-requested", ref: "rc-1", at: "2026-11-06T10:42:00-06:00" },
       { id: "rc-n2", level: "info", text: "", kind: "collect-done", ref: "rc-1", at: "2026-11-06T10:42:03-06:00" });
   }
+  // Lo que abrió el profesor (Opened de apps/student/open.go, prompt 10.11): en «abierto», una
+  // página y una app, cada una con su aviso en la esquina (privacidad, regla 66).
+  const opened = { list: scene === "abierto" ? [
+    { id: "op-1", kind: "url", shown: "docs.python.org/3/tutorial", full: "https://docs.python.org/3/tutorial/?highlight=for",
+      teacher: status.teacher, channel: status.channel, at: "2026-11-09T10:40:00-06:00" },
+    { id: "op-2", kind: "app", shown: "Thonny", full: "Thonny", teacher: status.teacher, channel: status.channel, at: "2026-11-09T10:41:00-06:00" },
+  ] : [] };
+  if (scene === "abierto") {
+    notices.push({ id: "op-n1", level: "info", text: "", kind: "opened", ref: "op-1", at: "2026-11-09T10:40:00-06:00" },
+      { id: "op-n2", level: "info", text: "", kind: "opened", ref: "op-2", at: "2026-11-09T10:41:00-06:00" });
+  }
 
 
   // Lo que Go contestaría: el acuse llega poco después («Enviando…» → «Recibido»).
@@ -161,7 +172,7 @@
     return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
   };
   window.go = { main: { App: {
-    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections })),
+    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
     ReportMedia: call("ReportMedia"),

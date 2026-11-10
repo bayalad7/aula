@@ -286,6 +286,8 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	app.work = agentsvc.WorkFolder{Helper: sa.helper}
 	// And reads the activity folders of a collection, as the student (§5.21).
 	app.collect.Reader = agentsvc.WorkFolderReader{Helper: sa.helper}
+	// And opens pages and allowed apps in the student's session (§5.22).
+	app.opener.Session = agentsvc.Opener{Helper: sa.helper}
 	app.emit = func(event string, data any) {
 		sa.helper.Notify(agentsvc.EventEmit, emitted{Event: event, Data: data})
 	}
@@ -338,6 +340,10 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 		h.Capabilities = append(h.Capabilities, protocol.CapFilePush)
 		// And reads there the activity folder of a collection (§5.21).
 		h.Capabilities = append(h.Capabilities, protocol.CapFileCollect)
+	}
+	if sa.ready.Open {
+		// The helper opens as the student, never as SYSTEM (rule 69).
+		h.Capabilities = append(h.Capabilities, sa.app.opener.Capabilities()...)
 	}
 	if sa.ready.Capture && sa.ready.Input {
 		// The input goes into the session, with the screen and its notice.

@@ -42,6 +42,10 @@ Con **Tomar captura** guardas una foto de su pantalla: primero ves la vista prev
 guarda en tu equipo si pulsas **Guardar**. Funciona también con los alumnos simulados y mientras lo
 controlas (ver [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno)).
 
+Con **Abrir página o app** le abres una página en su navegador o una app permitida, solo a él (ver
+[Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos)). No sale para los
+alumnos simulados.
+
 ![La ficha de un alumno con un problema reciente](img/ficha-alumno.webp)
 
 ## Seleccionar alumnos
@@ -61,6 +65,7 @@ La barra de abajo abre un panel a la derecha, sin tapar la lista:
 | Restricciones | Bloquea aplicaciones o sitios web durante la clase. | [Tareas frecuentes](tareas-frecuentes#bloquear-aplicaciones-o-sitios) |
 | Energía | Apaga, reinicia o cierra la sesión de los equipos. | [Tareas frecuentes](tareas-frecuentes#apagar-o-reiniciar-los-equipos) |
 | Captura | Toma una foto de la pantalla de cada uno; guardas las que elijas. | [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno) |
+| Abrir | Abre una página en su navegador o una app permitida en su equipo. | [Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos) |
 
 ## Estados de un alumno
 

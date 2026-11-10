@@ -91,6 +91,29 @@ si se pierde la conexión. Solo funcionan en equipos con Windows y Aula instalad
 
 {{diagrama:15-restricciones}}
 
+## Abrir una página o una app en los equipos
+
+Para que todos abran la misma página («entren a docs.python.org») o el mismo programa:
+
+1. Selecciona a los alumnos, o a nadie para que les llegue a todos los conectados.
+2. Pulsa **Abrir** en la barra de abajo.
+3. Elige **Página web** y escribe la dirección (con o sin `https://`), o elige **App permitida** y
+   escoge una de la lista.
+4. Pulsa **Abrir**.
+
+Se abre en el navegador predeterminado de cada alumno, o en su equipo si es una app. Cada alumno
+ve un aviso con lo que se abrió y quién lo pidió. En el panel, **Últimas que abriste** dice en
+cuántos equipos se abrió y en cuáles no, y por qué. Para un solo alumno, usa **Abrir página o app**
+en su [ficha](alumnos#la-ficha-de-un-alumno) o en la pantalla en grande.
+
+- Solo se abren direcciones `http://` o `https://`, y solo las apps de
+  [Ajustes › Apps permitidas](ajustes#apps-permitidas). Aula nunca ejecuta comandos.
+- Si el filtro web de la clase bloquea esa página, el panel te avisa antes de abrirla: en esos
+  equipos el navegador no la encontrará.
+- Necesita Aula 0.12 o posterior como servicio, con la sesión del alumno iniciada. A los alumnos
+  simulados no les llega.
+- Aula no cierra lo que abrió ni sabe si el alumno se quedó en la página.
+
 ## Apagar o reiniciar los equipos
 
 1. Pulsa **Energía**.

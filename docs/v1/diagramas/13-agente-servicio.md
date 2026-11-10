@@ -18,7 +18,7 @@ flowchart LR
     subgraph svc["Servicio «Aula — agente del aula» (SYSTEM, sesión 0)"]
         agente["session.Agent<br/>conexión con la consola"]
         sup["agentsvc.Supervisor<br/>lanza, vigila y mueve al ayudante"]
-        proxies["Proxies Clipboard, Capture, Indicator,<br/>Input, WorkFolder y power.run"]
+        proxies["Proxies Clipboard, Capture, Indicator,<br/>Input, WorkFolder, Opener y power.run"]
         pol["policy.Manager y power.Countdown"]
     end
 
@@ -26,7 +26,7 @@ flowchart LR
 
     subgraph user["Sesión del alumno (sus permisos)"]
         ayud["aula-cliente.exe --ayudante<br/>ventana, distintivo y avisos"]
-        so["Portapapeles, captura, entrada<br/>del control remoto, apagado sin force,<br/>Documentos\Aula del alumno"]
+        so["Portapapeles, captura, entrada<br/>del control remoto, apagado sin force,<br/>Documentos\Aula del alumno,<br/>abrir una página o una app permitida"]
     end
 
     sesiones["platform.SessionManager<br/>sesión activa, Launch con el token del usuario"]
@@ -39,7 +39,7 @@ flowchart LR
     sup -- "comprueba PeerPID" --> pipe
     proxies <-- "Link: JSON por líneas<br/>calls, replies y events" --> pipe
     pipe <--> ayud
-    ayud -- "ready: capture, clipboard, broadcast, input, files" --> pipe
+    ayud -- "ready: capture, clipboard, broadcast, input, files, open" --> pipe
     ayud --> so
 
     classDef externo fill:#dbeafe,stroke:#1d4ed8,color:#111827
@@ -77,6 +77,12 @@ flowchart LR
   del alumno con su token, así que el archivo es del alumno y nunca de SYSTEM. El ayudante vuelve
   a comprobar la ruta y la carpeta de trabajo no sigue enlaces (diagrama 19, `docs/privacidad.md`
   regla 55). Un archivo de 16 MiB viaja en una sola línea del canal (≈ 21 MiB en Base64).
+- **Las páginas y las apps las abre el ayudante** (`open.url`, `open.app`): desde SYSTEM se
+  abrirían en la sesión 0, donde nadie las ve, y con permisos de más. El servicio valida la orden
+  y el ayudante vuelve a aplicar las reglas fijas de `openapp` con las carpetas del alumno
+  (Documentos, `%LOCALAPPDATA%`) antes de llamar a `ShellExecuteW` o `CreateProcessW`, sin
+  argumentos (`docs/privacidad.md` reglas 68–69). Sin ayudante con `open` en su `ready`, no se
+  declara `open.*`.
 - **Apagar sin `force` con alguien en sesión lo hace el ayudante** (`power.run`): desde SYSTEM,
   Windows lo rechaza con `ERROR_SHUTDOWN_USERS_LOGGED_ON` (diagrama 16).
 - Solo Windows; en los demás SO `NewSessionManager` y `ListenLocal` devuelven «no soportado».
@@ -88,4 +94,5 @@ flowchart LR
   `internal/platform/session_windows.go`, `internal/platform/service_other.go`
 - `apps/student/service.go`, `apps/student/helper.go`
 - `internal/platform/workfolder_windows.go`, `internal/filepush/receiver.go`
+- `internal/agentsvc/proxy_open.go`, `internal/openapp/session.go`, `internal/platform/launcher_windows.go`
 - `docs/privacidad.md` reglas 17–19, `docs/decisiones.md` D-016, 55

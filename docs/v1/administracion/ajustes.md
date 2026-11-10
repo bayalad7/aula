@@ -26,6 +26,35 @@ se conserva.**
 
 Elige **Sistema** (sigue a Windows), **Claro** u **Oscuro**. La consola recuerda tu elección.
 
+## Apps permitidas
+
+Las apps que puedes abrir en los equipos con **Abrir página o app** (ver
+[Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos)). Cada una tiene un
+**nombre**, que es lo que ve el alumno, y la **ruta del .exe**. La ruta puede empezar con
+`%ProgramFiles%`, `%ProgramFiles(x86)%`, `%LOCALAPPDATA%` o `%SystemRoot%`, y cada equipo la
+completa con sus propias carpetas.
+
+Al principio la lista trae ejemplos: Bloc de notas, Calculadora, Paint, Visual Studio Code, Thonny y
+Scratch 3. Cámbialos, agrega los programas de tu laboratorio con **Agregar app** y pulsa
+**Guardar**. Con **Restaurar ejemplos** vuelves a los de Aula.
+
+- **Dónde se guarda.** Si existe `C:\ProgramData\Aula\centro\apps-permitidas.json`, esa es la
+  lista **del centro**: la comparten todas las consolas del equipo y solo un administrador puede
+  cambiarla. Si no, se guarda en la carpeta de esta consola. Para compartir la tuya con todo el
+  centro, un administrador copia ese archivo a `C:\ProgramData\Aula\centro\`. Los equipos de los
+  alumnos no necesitan nada: no hay que instalar la lista en ellos.
+- **Lo que nunca se abre, aunque esté en la lista.** Cada equipo de alumno revisa la ruta con sus
+  propias reglas, que vienen dentro de Aula:
+  - solo abre un `.exe` ya instalado en `Program Files`, `Program Files (x86)`, `Windows` o
+    `%LOCALAPPDATA%\Programs`;
+  - nunca abre nada en Documentos, Escritorio, Descargas ni la carpeta temporal, ni `cmd`,
+    PowerShell u otras herramientas del sistema;
+  - siempre la abre sin argumentos.
+
+  Si no cumple, en tu consola sale «su equipo no permite esa app».
+- Si un programa está instalado en otra carpeta en algunos equipos, en esos sale «esa app no está
+  instalada en su equipo».
+
 ## Acerca de
 
 - **Versión** de Aula Consola.

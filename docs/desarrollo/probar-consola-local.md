@@ -177,6 +177,19 @@ Con el aula simulada abierta (C-03) y dos simulados; emite antes un código Pyth
 | C-77 | Pon a Simulado 2 la falla «No confirma lo que recibe»; «Recoger otra vez» y espera 30 s; luego quítale la falla y «Recoger al que falta» | Simulado 2 queda «No se pudo: no respondió a tiempo» y el botón «Recoger al que falta» aparece; al pulsarlo, solo Simulado 2 pasa a «Recogido» (ronda 3) |
 | C-78 | Actividad `Ejercicio: 4` y crea; luego cierra la clase y vuelve a abrirla; a 900×600 y en oscuro | «Ese nombre no sirve para la carpeta» con «Ver en el manual», y nada sale. Tras reabrir, la pestaña está vacía, pero la carpeta del paso C-75 sigue en Documentos. Todo se lee sin barras horizontales. El log de la consola dice «collection opened/round saved» con `collect_id` y cantidades, **nunca** la actividad ni nombres |
 
+### Abrir página o app (10.11)
+
+Con el aula simulada abierta (C-03) y, para C-81 y C-82, un alumno real en otra ventana o VM
+(`instaladores-locales.md`). Lo nativo (el navegador que se abre y su foco) se mira a ojo.
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-79 | Ajustes › **Apps permitidas** | Dice «Son los ejemplos de Aula…» con la ruta donde se guardará y los 6 ejemplos (Bloc de notas … Scratch 3). Agrega «Consola» con `C:\Windows\System32\cmd.exe` y **Guardar**: sale el error «Una app de la lista no es válida…» y nada se guarda. Quítala, cambia el nombre de Paint y **Guardar**: «Lista de apps guardada»; cierra y vuelve a abrir Ajustes: sigue el cambio y dice «Lista de esta consola». **Restaurar ejemplos** y **Guardar** la deja como al principio |
+| C-80 | Solo con simulados: Alumnos › **Abrir** | El panel dice «Ninguno de estos equipos puede abrirlo…» y «Los alumnos simulados no abren páginas ni apps»; «Abrir» está desactivado. La ficha de un simulado no tiene «Abrir página o app» |
+| C-81 | Con un alumno real: **Abrir** › Página web `docs.python.org/3/tutorial` › **Abrir** | Toast «Se envió a 1 equipo»; la dirección se vacía y en «Últimas que abriste» aparece `https://docs.python.org/3/tutorial` con «Abierta en 1 de 1». En el alumno se abre su navegador en esa página |
+| C-82 | Restricciones › Sitios web › bloquear `youtube.com`; luego **Abrir** › escribe `youtube.com` | Debajo de la dirección aparece «El filtro web de la clase bloquea esta página en <equipo>…». Escribe `file:///C:/Windows` y **Abrir**: el error va junto al campo y no se envía nada |
+| C-83 | **Abrir** › App permitida › Thonny (o una que no esté instalada en el alumno) › **Abrir**; luego desde la ficha y la Pantalla grande del alumno, **Abrir página o app** | Si no la tiene: «Abierta en 0 de 1 · 1 no pudo» y «No se abrió en <equipo>: esa app no está instalada en su equipo». Desde la ficha y la Pantalla grande el mismo formulario se abre debajo del botón, va solo a ese alumno y debajo dice «Se abrió en <equipo>.» o el motivo. A 900×600 y en oscuro el panel y Ajustes se leen completos |
+
 ### Diagramas
 
 | # | Pasos | Esperado |
@@ -236,6 +249,8 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-22 | «Abrir carpeta»; luego cierra Aula al área de notificación y envía otro archivo | El Explorador abre `Documentos\Aula\Ejercicio 4` (nada más). Con Aula cerrada, la ventana no aparece: solo se marca el icono, y al abrirla está la tarjeta con «Nuevo». `aula-agente.log` dice «file push saved» con tamaños, nunca nombres |
 | A-23 | Con tu editor al frente, crea desde la consola la recolección `Ejercicio 4` con `*.py` | En la lista de Aula aparece arriba «Recolección: Ejercicio 4 · Guarda tu ejercicio en Documentos\Aula\recolecciones\<hoy>\Ejercicio 4 · Se recogerán: *.py» con «Nuevo» y «Abrir carpeta»; el editor conserva el foco. «Abrir carpeta» abre esa carpeta (existe y está vacía) |
 | A-24 | Guarda ahí `20231234-Ana.py` y un `notas.txt`, y otro `.py` en `Documentos\Aula` (fuera); desde la consola, «Recoger» | Primero el aviso «El profesor solicitó recoger tu ejercicio en Documentos\Aula\recolecciones\…»; luego «Tu profesor recogió tu ejercicio: 20231234-Ana.py (… KB).». La tarjeta dice «Recogido a las …: 1 archivo». Ni `notas.txt` ni el de afuera llegan a la consola; nada cambia en tu carpeta. Ninguno de los avisos quita el foco ni trae la ventana |
+| A-26 | Con tu editor al frente, abre desde la consola la página `docs.python.org/3/tutorial/?q=1` | Se abre tu navegador predeterminado en esa página y queda al frente; Aula **no** sale al frente ni deja el modo compacto. En la esquina de Aula: «Tu profesor abrió una página · <profesor> (canal <n>) abrió docs.python.org/3/tutorial en tu navegador (hh:mm)», sin el `?q=1`; al pasar el mouse se ve la dirección completa. «Entendido» lo cierra. Con Aula cerrada al área de notificación, solo se marca el icono y el aviso está al abrirla |
+| A-27 | Abre desde la consola la app Calculadora; luego guarda en la consola una app con la ruta `%LOCALAPPDATA%\Temp\x.exe` (sale error) y otra con `C:\Windows\System32\cmd.exe` editando a mano `apps-permitidas.json` y ábrela | La Calculadora se abre y el aviso dice «… abrió Calculadora en tu equipo». La de `cmd.exe` no se abre: la consola dice «su equipo no permite esa app…» y Aula no muestra aviso. `aula-agente.log` (o `aula-cliente.log`) dice «opened» / «open failed reason=not_allowed», **nunca** la URL ni la ruta |
 | A-25 | Cierra Aula al área de notificación y recoge otra vez | La ventana no aparece: solo se marca el icono; al abrirla están los avisos y la ronda nueva en la tarjeta. `aula-agente.log` dice «collection read/collected file acked» con tamaños, nunca nombres |
 
 ### Con alumnos reales (opcional, con `instaladores-locales.md`)

@@ -1224,3 +1224,21 @@ las dos VMs de §18, el agente **como servicio** en la VM 1 y en modo ventana en
 | **RC-F** Sin sesión | Cierra la sesión del alumno en la VM 1 y crea otra recolección. | La VM 1 no aparece en la tabla (no declara `file.collect`); al iniciar sesión recibe la carpeta sola. |
 
 **Para aceptar** bastan RC-A, RC-B y RC-C en ✅. Borra la *junction* de RC-B al terminar.
+
+## 23. Abrir una página o una app (10.11)
+
+Comprueba que la página o la app se abre en la sesión del alumno, que el alumno ve qué se abrió y
+quién lo pidió, y que nada fuera de las reglas se ejecuta (`docs/protocol.md` §5.22,
+`docs/privacidad.md` reglas 66–70). Con las dos VMs de §18, el agente **como servicio** en la VM 1
+y en modo ventana en la VM 2.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **OA-A** Una página en dos alumnos (**aceptación**) | Con el Bloc de notas al frente en las dos VMs, Alumnos › **Abrir** › Página web `docs.python.org/3/tutorial` › **Abrir**. | En las dos se abre el navegador predeterminado en esa página, como el usuario del alumno (en la VM 1, `Get-Process msedge -IncludeUserName` o el de Chrome muestra al alumno, no a SYSTEM). En la esquina de Aula: «<profesor> (canal 1) abrió docs.python.org/3/tutorial en tu navegador (hh:mm)». En la consola, «Abierta en 2 de 2». |
+| **OA-B** Rechazos (**aceptación**) | En la consola, intenta abrir `file:///C:/Windows/System32/cmd.exe` y `javascript:alert(1)`. Luego edita `apps-permitidas.json` de la consola para agregar `{"id":"consola","name":"Consola","path":"C:\\Windows\\System32\\cmd.exe"}` y otra con una ruta en `%LOCALAPPDATA%\\Temp`, reabre la consola y ábrelas. | Las URL se rechazan junto al campo y no salen de la consola. Las dos apps llegan a los alumnos pero **no se abren**: «su equipo no permite esa app». En las VMs no se abre ninguna ventana de consola ni hay aviso. |
+| **OA-C** Una app permitida | **Abrir** › App permitida › Calculadora; en la VM 2 desinstala o renombra un programa de la lista y ábrelo. | La Calculadora se abre como el alumno, con el aviso «… abrió Calculadora en tu equipo». El programa que falta queda «esa app no está instalada en su equipo» solo en esa VM. |
+| **OA-D** Filtro web | Restricciones › Sitios web › bloquear `youtube.com` a la VM 1; luego **Abrir** › `youtube.com`. | El panel avisa «El filtro web de la clase bloquea esta página en <VM 1>…». Al abrir, la VM 1 muestra el error del navegador (sitio no encontrado) y la VM 2 la página. |
+| **OA-E** Registros y simulados | Revisa `C:\ProgramData\Aula\alumno\logs\aula-agente.log` (VM 1), `aula-cliente.log` (VM 2) y el log de la consola; abre el aula simulada. | Los logs dicen «open sent», «opened» o «open failed» con `open_id` y el motivo, **nunca** la URL, el nombre ni la ruta. Los simulados no reciben nada y su ficha no tiene «Abrir página o app». |
+| **OA-F** Sin sesión | Cierra la sesión del alumno en la VM 1 y abre una página a todos. | La VM 1 no la recibe («No la reciben» o no está en la cuenta): sin ayudante no declara `open.url`. |
+
+**Para aceptar** bastan OA-A y OA-B en ✅.

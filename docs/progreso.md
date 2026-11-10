@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-06 (10.10 recolecciones implementadas, falta la prueba en VM;
+Última actualización: 2026-11-09 (10.11 abrir página o app implementada, falta la prueba en VM;
+10.10 recolecciones implementadas, falta la prueba en VM;
 10.9 enviar archivos y plantillas implementado, falta la prueba en
 VM; 10.8 temporizador de ejercicio implementado, falta la prueba en
 VM; 10.7 mensaje privado a un alumno implementado, falta la prueba
@@ -33,7 +34,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.8 | Temporizador compartido | ✅ Implementado y probado en CI con dobles y alumnos simulados; su sección en «Participación» (falta la prueba en VM, `docs/prueba-vms.md` §20, y los casos C-63 a C-67 y A-18 y A-19) |
 | 10.9 | Enviar archivos y plantillas de ejercicio | ✅ Implementado y probado en CI con dobles y alumnos simulados (falta la prueba en VM, `docs/prueba-vms.md` §21, y los casos C-68 a C-73 y A-20 a A-22) |
 | 10.10 | Recoger los archivos de cada alumno (recolecciones) | ✅ Implementado y probado en CI con dobles y alumnos simulados; pestaña «Recolecciones» de Archivos (falta la prueba en VM, `docs/prueba-vms.md` §22, y los casos C-74 a C-78 y A-23 a A-25). `code.collect` (entregar desde el overlay) sigue reservado |
-| 10.11 | Enviar una URL o abrir una app | ⏳ Pendiente |
+| 10.11 | Enviar una URL o abrir una app | ✅ Implementado y probado en CI con dobles; panel «Abrir» de la barra, la acción en la ficha y la Pantalla grande, y Ajustes › Apps permitidas (falta la prueba en VM, `docs/prueba-vms.md` §23, y los casos C-79 a C-83 y A-26 y A-27) |
 | 10.12 | Encuestas en vivo | ⏳ Pendiente |
 | 10.13 | Asistencia y bitácora | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.4.0-rc.1`) |
@@ -1141,6 +1142,55 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.11: abrir una página o una app — notas
+
+- **Diseño aprobado** (2026-11-09): el panel «Abrir» de la barra de acciones (con la acción
+  «Abrir página o app» en la Ficha y la Pantalla grande) y Ajustes › Apps permitidas con ejemplos.
+  **Lista permitida sin tocar los equipos** (los laboratorios tienen 40–50): la lista vive solo
+  en la consola (la del centro en `C:\ProgramData\Aula\centro\apps-permitidas.json` si existe, si
+  no la de la consola) y el agente aplica **reglas fijas** compiladas: solo un `.exe` ya instalado
+  en Program Files, Windows o `%LOCALAPPDATA%\Programs`, nunca en Documentos, Escritorio,
+  Descargas, Temp ni la carpeta de trabajo (así ni una consola comprometida lanza algo enviado
+  con `file.push`), nunca intérpretes ni herramientas del sistema, sin argumentos. Se descartó
+  una copia de la lista en cada alumno (trabajo de instalación) y que la consola la mande sin
+  reglas (ejecución arbitraria con la clave del centro).
+- **Protocolo** (`docs/protocol.md` §5.22, permisos en §5.22.1): `open.url` (`http`/`https`, con
+  host, sin usuario ni contraseña, ≤ 2048), `open.app` (`app_id`, `name`, `path`) y `open.ack`
+  (`opened` o `failed` con `not_allowed`, `not_installed`, `launch_failed` o `busy`);
+  capacidades `open.url` y `open.app`; ritmo de 3 seguidas y 1 cada 3 s. Una ruta fuera de las
+  reglas no es un error del protocolo: es `not_allowed`. No se reenvía al reconectar.
+- **`internal/openapp`** (nuevo, sin APIs del SO): `Expand`, `CheckPath`, `CheckSyntax`, `Shown`;
+  `Local` (expande en la sesión, aplica las reglas, resuelve enlaces y las vuelve a aplicar a la
+  ruta final); agente: `Opener` (ritmo, aviso con quién lo pidió); consola: `Normalize`/`Parse`
+  del catálogo con `Defaults` (Bloc de notas, Calculadora, Paint, VS Code, Thonny, Scratch 3) y
+  `Tracker` de acuses.
+- **`internal/platform`:** `Launcher` (`Folders` con las carpetas conocidas del usuario,
+  `Resolve` con `GetFinalPathNameByHandle`, `OpenURL` con `ShellExecuteW` en un hilo con COM,
+  `StartApp` sin argumentos y en su carpeta). Fallback «no soportado». Pruebas sin abrir nada en
+  el escritorio (`hostname.exe`).
+- **`internal/agentsvc`:** llamadas `open.url` y `open.app`, `Ready.Open` y el *proxy* `Opener`;
+  el ayudante vuelve a aplicar las reglas con sus carpetas.
+- **Alumno:** declara `open.*` con el lanzador (en servicio, con un ayudante que puede abrir);
+  aviso en la esquina `opened` con `Notice.Ref` y el evento `aula:opened`. `notify`, nunca
+  `raise`: el foco ya lo tomó lo que se abrió (regla 67).
+- **Consola:** panel «Abrir» (Página web | App permitida, aviso del filtro web con
+  `CheckOpenPage`, quién no puede, «Últimas que abriste» con los motivos), el mismo formulario en
+  la Ficha y la Pantalla grande (`ACCIONES_ALUMNO`), Ajustes › Apps permitidas (agregar, quitar,
+  restaurar ejemplos, guardar). «Abrir una página» y «Abrir una app permitida» en «Qué puede hacer
+  su equipo». Icono nuevo `app` en `internal/ui`. Errores `invalidUrl`, `noOpenTargets`,
+  `openAppGone`, `allowedAppInvalid`, `allowedAppsNotSaved`.
+- **Simulados:** nunca (`TestOnlySafeCapabilitiesAndFaults`).
+- **Documentación:** `docs/privacidad.md` reglas 66–70 (y la 34); manual (Ajustes › Apps
+  permitidas, Tareas frecuentes › «Abrir una página o una app en los equipos», Alumnos); diagramas
+  09 y 13 con sus SVG; `docs/eventos-ui.md`; casos C-79 a C-83, A-26 y A-27 y
+  `docs/prueba-vms.md` §23; `CLAUDE.md` lista `internal/openapp`; zonas `panel-abrir` y
+  `ajustes-apps` y mapa regenerado; `alumnos.webp` y `ficha-alumno.webp` del manual.
+- **Arnés:** escena `lab-abrir` y capturas 117–126 en `recorrido.mjs`; escena `abierto` y
+  capturas 76–77 en `recorrido-alumno.mjs`; caso `pagina-abierta` en `pruebas-alumno.mjs`.
+- **Fuera:** Linux y macOS (`xdg-open`, `open`), argumentos o carpetas para las apps, cerrar lo
+  que se abrió, abrir los archivos enviados y una lista firmada por el administrador.
+- **Falta de tu lado:** la prueba en VM (§23) y los casos manuales.
 
 ## Etapa 10.10: recoger el trabajo de los alumnos — notas
 

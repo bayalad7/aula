@@ -77,6 +77,12 @@ Dos aplicaciones, mismo monorepo:
     (`Responder`); del lado de la consola, de 4 en 4, el ensamblado y el guardado por alumno en
     `Documentos\Aula\recolecciones` con su `aula-recoleccion.json` (`Collector`). Lee por
     `platform.WorkFolderReader` (en servicio, el ayudante).
+  - `internal/openapp`: abrir una página o una app permitida en el equipo del alumno (`open.*`):
+    las reglas fijas del agente (solo URLs http/https; solo un `.exe` ya instalado en Program
+    Files, Windows o `%LOCALAPPDATA%\Programs`, sin argumentos y nunca una herramienta del
+    sistema), el `Opener` del agente con su ritmo y el aviso de qué se abrió; del lado de la
+    consola, el catálogo de Ajustes › Apps permitidas (`Catalog`, con ejemplos) y los acuses
+    (`Tracker`). Abre por `platform.Launcher` (en servicio, el ayudante, que revisa otra vez).
   - `internal/connectcheck`: el comprobador de conexión de la consola: recorre el camino de un
     alumno (anuncio mDNS, puerto, TLS y clave del centro) y lee la red y el firewall por
     `platform`; da las mismas causas que el agente (`session.Cause`).
@@ -85,7 +91,7 @@ Dos aplicaciones, mismo monorepo:
     frontend Wails bajo `sistema/`. Una sola copia: ninguna app guarda la suya. Su prueba de
     contraste (WCAG AA) vive con él.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `filepush`, `collect`, `ui` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `filepush`, `collect`, `openapp`, `ui` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

@@ -142,7 +142,7 @@
         "alumnos",
         "ayuda"
       ],
-      "hash": "sha256:0b84fdc53c2d5c50f903b2b55ea4be945ba334318accc823811feb66a1b48410",
+      "hash": "sha256:c2059630245c892da262892219e1de2d90330be6cc52eb9a3fe6763388a4da7b",
       "alt": "Transparencia: avisos e indicadores al alumno: Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, lo restringe o apaga su equipo",
       "claro": "generados/09-transparencia-avisos.claro.svg",
       "oscuro": "generados/09-transparencia-avisos.oscuro.svg"
@@ -207,7 +207,7 @@
       "pantallas": [
         "falta"
       ],
-      "hash": "sha256:d473e7d0e5cc407c18aea4d70f90e963459a01e2cbddb0cfe2f3896649d1a2c6",
+      "hash": "sha256:be654e50f8180e874ea82934d5ce982afb92e3a7732629ff7693c7a6069d9811",
       "alt": "El agente como servicio de Windows: Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
       "claro": "generados/13-agente-servicio.claro.svg",
       "oscuro": "generados/13-agente-servicio.oscuro.svg"

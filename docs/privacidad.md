@@ -236,6 +236,7 @@ Alumnos de prueba que la consola crea dentro de sí misma para probar Aula sin l
     «alumno simulado», y se guarda aparte (regla 46). Tampoco cambia un equipo levantar la mano
     o escribir al profesor (reglas 50–52): un simulado lo hace solo cuando el profesor lo pulsa
     en su fila, y llega a Participación marcado «Simulado».
+    Tampoco abrir una página o una app (regla 70): no les llega.
     Recibir archivos tampoco: el simulado los acusa sin guardarlos (regla 59). Ni que se recoja
     su trabajo: entrega de memoria el último código que recibió, y la consola lo guarda aparte, en
     `… (simulado)` (regla 64).
@@ -485,6 +486,43 @@ notificación.
     tamaños, cuántos archivos y el resultado; **nunca** el contenido, los nombres de los archivos,
     la actividad ni las carpetas. Los alumnos simulados no leen ningún disco: devuelven el último
     código que recibieron.
+
+## Abrir una página o una app (v0.12, Windows)
+
+Reglas para `open.*` (`docs/protocol.md` §5.22), aprobadas el 2026-11-09. El profesor abre una
+página web en el navegador del alumno o una app de la lista de apps permitidas de la consola.
+Es una **acción sobre el equipo**, pero puntual: no lleva banda, porque no queda nada activo.
+
+66. **El alumno ve qué se abrió y quién lo pidió.** En cuanto se abre, un aviso en la esquina:
+
+    > **Prof. Ruiz (canal 1) abrió `docs.python.org/3/tutorial` en tu navegador.**
+
+    o «… abrió **Thonny**». De la URL se muestra el dominio y la ruta, sin la consulta
+    (`?…`), recortada a 80 caracteres; el texto completo está en el aviso al pasar el mouse. El
+    aviso se queda hasta que el alumno pulsa «Entendido». Con la ventana cerrada, el aviso espera
+    a la próxima vez que la abra y se marca el icono del área de notificación. Si no se pudo
+    abrir, no se abrió nada y el alumno no ve aviso.
+67. **El foco lo toma lo que se abre, no Aula.** Es la excepción a «una acción sobre el equipo
+    trae la ventana al frente» (`raise`): el navegador o la app ya pasan al frente por sí
+    mismos, y traer Aula encima se los taparía. Por eso la ventana usa `notify`: no sale del
+    modo compacto ni roba el foco a lo que se acaba de abrir.
+68. **Nunca un comando.** La consola no puede ejecutar nada arbitrario: `open.url` solo abre
+    direcciones `http`/`https` validadas (sin usuario ni contraseña), y `open.app` solo lanza,
+    **sin argumentos**, un `.exe` ya instalado en `Program Files`, `Program Files (x86)`,
+    `Windows` o `%LOCALAPPDATA%\Programs`, nunca en Documentos, Escritorio, Descargas, la carpeta
+    temporal ni la carpeta de trabajo de Aula, y nunca un intérprete o herramienta del sistema
+    (`cmd`, `powershell`, `wscript`, `mshta`, `rundll32`…). Esas reglas están compiladas en el
+    agente: ninguna consola las cambia. Así, aunque alguien tuviera la clave del centro, solo
+    podría abrir lo que el alumno ya podría abrir con un doble clic, y nunca algo que haya
+    enviado con «Enviar archivos».
+69. **Como el alumno, y sin vigilar.** Se abre en la sesión del alumno con sus permisos (en
+    modo servicio, el ayudante; nunca como SYSTEM). Aula no sabe si el alumno se quedó en la
+    página, no cierra lo que abrió y no mira el historial del navegador. El filtro web sigue
+    mandando: un sitio bloqueado no carga, y la consola se lo advierte al profesor antes de
+    enviar. Sin sesión iniciada no se declara `open.*`.
+70. **Registros y simulados.** Los registros llevan `open_id`, el tipo, el resultado y el motivo,
+    **nunca** la URL, el nombre de la app ni su ruta. Los alumnos simulados no declaran `open.*`
+    (regla 34): no les llega.
 
 ## Pendiente para etapas futuras
 

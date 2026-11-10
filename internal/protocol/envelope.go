@@ -79,6 +79,10 @@ const (
 	TypeFileCollectAck         Type = "file.collect.ack"
 	TypeFileCollectResponse    Type = "file.collect.response"
 	TypeFileCollectResponseAck Type = "file.collect.response.ack"
+	// Opening a page or an app (docs/protocol.md §5.22).
+	TypeOpenURL Type = "open.url"
+	TypeOpenApp Type = "open.app"
+	TypeOpenAck Type = "open.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -296,6 +300,10 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeFileCollectAck:         decodeAs[FileCollectAck],
 	TypeFileCollectResponse:    decodeAs[FileCollectResponse],
 	TypeFileCollectResponseAck: decodeAs[FileCollectResponseAck],
+
+	TypeOpenURL: decodeAs[OpenURL],
+	TypeOpenApp: decodeAs[OpenApp],
+	TypeOpenAck: decodeAs[OpenAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

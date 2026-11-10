@@ -35,6 +35,11 @@ const (
 	// CapFileCollect reads the activity folder of a collection (§5.21).
 	// Windows, in window mode or as a service with its helper.
 	CapFileCollect Capability = "file.collect"
+	// CapOpenURL and CapOpenApp open a page or an allowed app in the student's
+	// session (§5.22). Windows, in window mode or as a service with its helper;
+	// never the simulated students.
+	CapOpenURL Capability = "open.url"
+	CapOpenApp Capability = "open.app"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -85,6 +90,9 @@ var requiredCapability = map[Type]Capability{
 	TypeFileCollectOpen:        CapFileCollect,
 	TypeFileCollectRequest:     CapFileCollect,
 	TypeFileCollectResponseAck: CapFileCollect,
+
+	TypeOpenURL: CapOpenURL,
+	TypeOpenApp: CapOpenApp,
 }
 
 // agentCapability lists the capability an agent must have declared before the

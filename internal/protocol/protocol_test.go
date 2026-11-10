@@ -118,6 +118,52 @@ func samplePayloads() []Payload {
 		FileCollectResponse{CollectID: testRefID, Round: 1, FileID: testSnippetID, Part: 2, Parts: 3, Data: []byte{1, 2}},
 		FileCollectResponseAck{RefID: testRefID, CollectID: testRefID, Round: 1, FileID: testSnippetID, Status: FilePushSaved},
 		FileCollectResponseAck{RefID: testRefID, CollectID: testRefID, Round: 1, FileID: testSnippetID, Status: FilePushFailed, Reason: CollectCorrupt},
+		OpenURL{OpenID: testSnippetID, URL: "https://docs.python.org/3/tutorial/"},
+		OpenApp{OpenID: testSnippetID, AppID: "thonny", Name: "Thonny", Path: `%ProgramFiles(x86)%\Thonny\thonny.exe`},
+		OpenAck{RefID: testRefID, OpenID: testSnippetID, Status: OpenOpened},
+		OpenAck{RefID: testRefID, OpenID: testSnippetID, Status: OpenFailed, Reason: OpenNotAllowed},
+	}
+}
+
+func TestOpenLimits(t *testing.T) {
+	for _, raw := range []string{
+		"", "javascript:alert(1)", "file:///C:/Windows/System32/cmd.exe", "ms-settings:display",
+		"ftp://example.com/", "https://", "https:example.com", "http://user:pass@example.com/",
+		"http://a@example.com/", "https://example.com/a b", "https://example.com/\x07",
+		`https://example.com\..\x`, "https://" + strings.Repeat("a", MaxOpenURL),
+		"C:\\Windows\\notepad.exe", "//example.com/",
+	} {
+		if err := (OpenURL{OpenID: testRefID, URL: raw}).Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("url %q: Validate = %v, want invalid_message", raw, err)
+		}
+	}
+	for _, raw := range []string{"https://python.org", "HTTP://Example.com:8080/a?b=c#d", "https://xn--espaol-zwa.org/"} {
+		if err := (OpenURL{OpenID: testRefID, URL: raw}).Validate(); err != nil {
+			t.Errorf("url %q: Validate = %v, want valid", raw, err)
+		}
+	}
+	app := OpenApp{OpenID: testRefID, AppID: "vscode", Name: "VS Code", Path: `C:\x.exe`}
+	for _, p := range []Payload{
+		OpenURL{OpenID: "x", URL: "https://python.org"},
+		OpenApp{OpenID: "x", AppID: app.AppID, Name: app.Name, Path: app.Path},
+		OpenApp{OpenID: testRefID, AppID: "VS Code", Name: app.Name, Path: app.Path},
+		OpenApp{OpenID: testRefID, AppID: strings.Repeat("a", 33), Name: app.Name, Path: app.Path},
+		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: "  ", Path: app.Path},
+		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: strings.Repeat("ñ", MaxOpenAppName+1), Path: app.Path},
+		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: "a\nb", Path: app.Path},
+		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: app.Name, Path: ""},
+		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: app.Name, Path: strings.Repeat("a", MaxOpenAppPath+1)},
+		OpenAck{RefID: testRefID, OpenID: testRefID, Status: OpenOpened, Reason: OpenBusy},
+		OpenAck{RefID: testRefID, OpenID: testRefID, Status: OpenFailed},
+		OpenAck{RefID: testRefID, OpenID: testRefID, Status: "closed"},
+		OpenAck{RefID: "x", OpenID: testRefID, Status: OpenOpened},
+	} {
+		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
+		}
+	}
+	if err := app.Validate(); err != nil {
+		t.Errorf("a path outside the rules is still a valid message (the agent answers not_allowed): %v", err)
 	}
 }
 
@@ -502,12 +548,13 @@ func TestRequiredCapability(t *testing.T) {
 		TypeScreenSnapshotRequest: CapScreenSnapshot,
 		TypeHandLower:             CapHand, TypeMsgStudentAck: CapMsgStudent,
 		TypeTimerStart: CapTimer, TypeTimerExtend: CapTimer, TypeTimerStop: CapTimer,
+		TypeOpenURL: CapOpenURL, TypeOpenApp: CapOpenApp,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}

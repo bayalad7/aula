@@ -313,6 +313,8 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `msg.student` | `msg.student`, `msg.student.ack` | v0.8 (§5.18). Igual que `hand`. |
 | `timer` | `timer.start`, `timer.extend`, `timer.stop` | v0.9 (§5.19). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana; también los alumnos simulados. |
 | `file.push` | `file.push` | v0.10 (§5.20). Windows, en modo ventana y como servicio con su ayudante (escribe en la sesión del alumno); también los alumnos simulados, que acusan sin escribir. Linux y macOS no la declaran. |
+| `open.url` | `open.url` | v0.12 (§5.22). Windows, en modo ventana y como servicio con su ayudante (abre en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
+| `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`. |
 | `poll` | `poll.*` | Reservada |
 
 Las dos últimas habilitan mensajes que **inicia el agente**: la consola acepta `hand.*` y
@@ -377,6 +379,9 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `file.collect.ack` | A → P | — | `ref_id`, `collect_id`, `round`, `status`, `path`?, `files`?, `total`?, `skipped`?, `reason`? | — |
 | `file.collect.response` | A → P | — | `collect_id`, `round`, `file_id`, `part`, `parts`, `data`; la parte 1 además `path`, `size`, `sha256`, `modified_at`, `index`, `files` | `file.collect.response.ack` al completar o rechazar |
 | `file.collect.response.ack` | P → A | `file.collect` | `ref_id`, `collect_id`, `round`, `file_id`, `status`, `reason`? | — |
+| `open.url` | P → A | `open.url` | `open_id`, `url` | `open.ack` o `error` |
+| `open.app` | P → A | `open.app` | `open_id`, `app_id`, `name`, `path` | `open.ack` o `error` |
+| `open.ack` | A → P | — | `ref_id`, `open_id`, `status`, `reason`? | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -1490,6 +1495,113 @@ Reglas de la consola:
 | Linux (pendiente) | `$XDG_DOCUMENTS_DIR/Aula`, con `O_NOFOLLOW`. | No se declara. |
 | macOS (pendiente) | `~/Documents/Aula`. | TCC puede pedir acceso a Documentos. No se declara. |
 
+### 5.22 Abrir una página o una app (`open.*`)
+
+> Aprobado el 2026-11-09 (prompt 10.11), para v0.12. Implementación en `internal/openapp`;
+> reglas en `docs/privacidad.md` 66–70. En la consola, el panel «Abrir página o app» de la barra
+> de acciones, la acción en la ficha y la Pantalla grande, y Ajustes › Apps permitidas.
+
+El profesor abre una página web en el navegador predeterminado de los alumnos («todos abran
+python.org/docs») o una app de la lista de **apps permitidas** de la consola («abran Thonny»).
+Es una orden puntual: el agente abre y acusa; no sigue lo que el alumno hace después, no cierra
+nada y no se reenvía al reconectar.
+
+**Nunca un comando.** La consola no envía líneas de comandos ni argumentos. `open.url` solo
+lleva una URL `http`/`https`; `open.app` lleva la ruta de un ejecutable, y el agente la acepta
+solo si cumple **sus reglas fijas** (abajo), compiladas en el agente y que ninguna consola puede
+cambiar. La lista de apps vive solo en la consola (Ajustes › Apps permitidas), así que no hay
+nada que instalar en los equipos de los alumnos.
+
+```
+Consola (P)                                        Agente (A)
+   |-- open.url (open_id, url) -------------------->|  valida la URL y su ritmo
+   |                                                |  abre el navegador (en servicio, el ayudante)
+   |<------------------------- open.ack (opened) ---|  aviso en la esquina: qué y quién
+   |-- open.app (open_id, app_id, name, path) ------>|  valida la ruta con sus reglas
+   |<------------------- open.ack (failed, reason) --|  no ejecuta nada
+```
+
+**`open.url` (P → A)**
+
+```json
+{ "open_id": "7d3a…", "url": "https://docs.python.org/3/tutorial/" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `open_id` | string | UUID v4 de la consola; el mismo para todos los destinatarios de una orden. |
+| `url` | string | 1–2048 caracteres. Esquema `http` o `https` (sin distinguir mayúsculas), con host, **sin** usuario ni contraseña (`usuario@`), sin espacios ni caracteres de control. Un host con acentos va en punycode o se convierte. |
+
+**`open.app` (P → A)**
+
+```json
+{ "open_id": "1b9e…", "app_id": "thonny", "name": "Thonny",
+  "path": "%ProgramFiles(x86)%\\Thonny\\thonny.exe" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `open_id` | string | UUID v4 de la consola. |
+| `app_id` | string | El id de la app en el catálogo de la consola, `^[a-z0-9-]{1,32}$`. Solo informa (acuses y registros). |
+| `name` | string | 1–60 caracteres, texto plano: lo que ve el alumno en el aviso. |
+| `path` | string | 1–260 caracteres. Ruta absoluta a un `.exe`; puede empezar con `%ProgramFiles%`, `%ProgramFiles(x86)%`, `%LOCALAPPDATA%` o `%SystemRoot%`, que el agente expande **en la sesión del alumno**. Ninguna otra variable. |
+
+**Reglas fijas del agente para `open.app`** (la consola las aplica también, para avisar antes):
+
+1. Tras expandir y normalizar (sin `..`, sin `\\?\`, sin rutas de red `\\servidor`), la ruta
+   está **dentro** de `%ProgramFiles%`, `%ProgramFiles(x86)%`, `%SystemRoot%` o
+   `%LOCALAPPDATA%\Programs` (ahí se instalan VS Code y Thonny por usuario).
+2. Nunca dentro de la carpeta de trabajo (`Documentos\Aula`), Documentos, Escritorio, Descargas
+   ni la carpeta temporal, aunque estuvieran bajo una raíz permitida: así ni una consola
+   comprometida puede enviar un ejecutable con `file.push` y lanzarlo.
+3. Termina en `.exe` y el archivo existe (el agente resuelve enlaces y comprueba que la ruta
+   final siga cumpliendo 1 y 2).
+4. No es un intérprete ni una herramienta del sistema: `cmd`, `powershell`, `pwsh`, `wscript`,
+   `cscript`, `mshta`, `rundll32`, `regsvr32`, `msiexec`, `reg`, `schtasks`, `wmic`, `bitsadmin`,
+   `certutil`, `bash`, `wsl`, `conhost`, `explorer` (por nombre de archivo, sin distinguir
+   mayúsculas).
+5. Se lanza **sin argumentos** y con el directorio de trabajo de su propia carpeta, como el
+   alumno (en modo servicio, el ayudante con el token del alumno; nunca como SYSTEM).
+
+**`open.ack` (A → P)**
+
+```json
+{ "ref_id": "<id del open.url o del open.app>", "open_id": "7d3a…", "status": "opened" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `ref_id` | string | El `id` de la orden. |
+| `open_id` | string | El de la orden. |
+| `status` | string | `opened`: el SO aceptó abrirla. `failed`: no se abrió. |
+| `reason` | string | Solo con `failed`: `not_allowed` (la ruta no cumple las reglas fijas), `not_installed` (el `.exe` no existe en ese equipo), `launch_failed` (el SO no pudo abrirla, o no hay navegador predeterminado) o `busy` (se pasó del ritmo). |
+
+Reglas:
+
+- **Ritmo:** cada agente abre como máximo 3 seguidas y luego 1 cada 3 s. Lo que se pasa se
+  acusa `failed` `busy` y no se abre.
+- Una URL inválida → `error` `invalid_message` (la consola ya no la envía). Una ruta que no
+  cumple las reglas no es un error del protocolo: es `open.ack` `failed` `not_allowed`, para
+  que la consola diga «en este equipo no se permite».
+- **Aviso al alumno, siempre** (`docs/privacidad.md` regla 66): tras `opened`, la ventana
+  muestra en la esquina qué se abrió y qué profesor lo pidió. Con `failed`, nada se abrió y el
+  alumno no ve nada.
+- El agente **no** aplica el filtro web a la orden: si el dominio está bloqueado (§5.14), el
+  navegador no lo encontrará. La consola lo advierte antes de enviar.
+- **Destinatarios:** la selección de Alumnos (o todos) o un alumno desde su ficha. La consola
+  envía la orden solo a sesiones reales que declararon la capacidad. Los alumnos simulados
+  **nunca** la declaran (cambia el equipo).
+- Los registros llevan `open_id`, el tipo, `status` y `reason`. **Nunca** `url`, `app_id`,
+  `name` ni `path`.
+
+#### 5.22.1 Permisos del sistema operativo
+
+| Orden | Windows | Requiere |
+|---|---|---|
+| `open.url` | `ShellExecuteW` con el verbo `open` sobre la URL ya validada, que abre el navegador predeterminado del alumno. En modo ventana, el propio agente; en modo servicio, el ayudante (`CallOpenURL`) en la sesión del alumno. | Ningún privilegio. Sin sesión iniciada o sin ayudante no se declara `open.url`. |
+| `open.app` | `CreateProcessW` con la ruta validada como `lpApplicationName`, la línea de comandos vacía (solo el nombre del programa) y `lpCurrentDirectory` en su carpeta. En modo servicio, el ayudante (`CallOpenApp`), que vuelve a comprobar las reglas antes de lanzar. | Ningún privilegio. Igual que `open.url`. |
+| Linux y macOS (pendiente) | `xdg-open` / `open`. | No se declaran. |
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -1531,6 +1643,9 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `file.collect.request` límites | `max_file_size` 1 B – 16 MiB, `max_total` 1 B – 32 MiB, `max_files` 1–50, `round` 1–1000 | `error` `invalid_message` |
 | `file.collect.response.data` | 512 KiB por parte antes de Base64; ≤ 32 partes; 16 MiB por archivo | `error` `message_too_large` (parte) o `invalid_message`; la sesión sigue. |
 | `file.collect.ack.skipped` | 50 entradas | `error` `invalid_message` |
+| `open.url.url` | 1–2048 caracteres, `http`/`https` | `error` `invalid_message` |
+| `open.app.app_id` / `name` / `path` | 1–32 / 1–60 / 1–260 caracteres | `error` `invalid_message` (longitud); `open.ack` `failed` `not_allowed` (reglas de ruta) |
+| `open.*` por agente | ráfaga 3 y 1 cada 3 s | `open.ack` `failed` `busy`; no se abre |
 | `screen.freeze.message` (pendiente) | 300 caracteres | `error` `invalid_message` |
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
 | `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
@@ -1581,6 +1696,8 @@ emisor verifica el tamaño final de la envoltura.
 - De `file.collect.*` se registran `collect_id`, `round`, `file_id`, `part`/`parts`, tamaños,
   cuántos archivos y omitidos, `status` y `reason`. **Nunca** `data`, `activity`, `patterns`,
   `path` ni la carpeta donde la consola guardó (todas nombran al alumno o su trabajo).
+- De `open.*` se registran `open_id`, el tipo, `status` y `reason`. **Nunca** `url`, `app_id`,
+  `name` ni `path` (dicen qué se le pidió al alumno abrir).
 - De un `msg.show` `personal` se registran el equipo, el `id` y la longitud; **nunca** el texto.
   En «Últimos envíos» la consola lo etiqueta «Mensaje privado a <equipo>», sin el texto.
 - De `hand.*` y `msg.student*` se registran `hand_id`, `message_id`, `by`, la longitud y el

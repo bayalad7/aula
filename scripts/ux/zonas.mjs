@@ -26,7 +26,7 @@ export const zonas = {
 
     // Paneles y diálogos que salen de Alumnos
     { id: "ficha", nombre: "Ficha del alumno", selector: "#panel-alumno", que: "Panel derecho con los datos de un alumno y sus acciones." },
-    { id: "ficha-acciones", dentro: "ficha", nombre: "Acciones sobre el alumno", selector: "#ficha-acciones", que: "Tomar control, Mensaje privado, Tomar captura: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js)." },
+    { id: "ficha-acciones", dentro: "ficha", nombre: "Acciones sobre el alumno", selector: "#ficha-acciones", que: "Tomar control, Mensaje privado, Tomar captura, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js)." },
     { id: "ficha-puede", dentro: "ficha", nombre: "Qué puede hacer su equipo", selector: "#ficha-puede", que: "Lista de capacidades del equipo del alumno." },
     { id: "pantalla-grande", nombre: "Pantalla grande", selector: "#pantalla-grande", que: "La pantalla de un alumno en grande; también la vista del control remoto." },
     { id: "pg-acciones", dentro: "pantalla-grande", nombre: "Acciones sobre el alumno (Pantalla grande)", selector: "#pg-acciones", que: "Las mismas acciones que en la Ficha del alumno." },
@@ -36,6 +36,7 @@ export const zonas = {
     { id: "panel-captura", nombre: "Panel Captura", selector: "#panel-captura", que: "Tomar capturas de varios alumnos." },
     { id: "panel-temporizador", nombre: "Panel Temporizador", selector: "#panel-temporizador", que: "Lanzar un temporizador de ejercicio." },
     { id: "panel-energia", nombre: "Panel Energía", selector: "#panel-energia", que: "Apagar, reiniciar o cerrar sesión." },
+    { id: "panel-abrir", nombre: "Panel Abrir página o app", selector: "#panel-abrir", que: "Abrir una página en el navegador o una app permitida en los equipos de la selección, y las últimas que abriste." },
     { id: "captura", nombre: "Vista previa de captura", selector: "#captura", que: "La captura de un alumno, con Guardar y Descartar." },
 
     // Código
@@ -69,7 +70,8 @@ export const zonas = {
     { id: "ayuda", nombre: "Vista Ayuda (manual)", selector: "[data-vista-de=ayuda]", que: "El manual, con búsqueda e índice." },
     { id: "panel-ayuda", nombre: "Panel de ayuda contextual", selector: "#panel-ayuda", que: "La página del manual de la vista actual, al costado." },
     { id: "falta", nombre: "Vista ¿Falta un alumno?", selector: "[data-vista-de=falta]", que: "Comprobar la conexión y el asistente paso a paso." },
-    { id: "ajustes", nombre: "Ajustes", selector: "#ajustes", que: "Diálogo con Clase, Apariencia y Acerca de." },
+    { id: "ajustes", nombre: "Ajustes", selector: "#ajustes", que: "Diálogo con Clase, Apariencia, Apps permitidas y Acerca de." },
+    { id: "ajustes-apps", dentro: "ajustes", nombre: "Apps permitidas", selector: "#aj-apps", que: "Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos." },
     { id: "confirmar", nombre: "Diálogo de confirmación", selector: "#confirmar", que: "«¿Seguro?» antes de una acción con consecuencias." },
     { id: "arranque", nombre: "Pantalla de arranque", selector: "#arranque", que: "Abrir la clase: canal y nombre." },
   ],

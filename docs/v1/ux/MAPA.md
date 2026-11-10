@@ -39,7 +39,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Ficha del alumno** | Panel derecho con los datos de un alumno y sus acciones. |
-| 2 | **Acciones sobre el alumno** | Tomar control, Mensaje privado, Tomar captura: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
+| 2 | **Acciones sobre el alumno** | Tomar control, Mensaje privado, Tomar captura, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
 | 3 | **Qué puede hacer su equipo** | Lista de capacidades del equipo del alumno. |
 
 ### Consola · Pantalla grande
@@ -60,6 +60,24 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, aula simulada), con su botón para detenerlo. |
 | 2 | **Panel Aviso** | Mandar un aviso a la selección. |
 | 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…). |
+
+### Consola · Abrir página o app
+
+![Consola · Abrir página o app](mapa/consola-abrir.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Panel Abrir página o app** | Abrir una página en el navegador o una app permitida en los equipos de la selección, y las últimas que abriste. |
+| 2 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…). |
+
+### Consola · Ajustes › Apps permitidas
+
+![Consola · Ajustes › Apps permitidas](mapa/consola-ajustes-apps.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Ajustes** | Diálogo con Clase, Apariencia, Apps permitidas y Acerca de. |
+| 2 | **Apps permitidas** | Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos. |
 
 ### Consola · Código
 
@@ -192,7 +210,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno con su nombre; un clic abre la Pantalla grande. |
 | `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…). |
 | `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y sus acciones. |
-| `ficha-acciones` | Ficha del alumno › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
+| `ficha-acciones` | Ficha del alumno › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
 | `ficha-puede` | Ficha del alumno › Qué puede hacer su equipo | Lista de capacidades del equipo del alumno. |
 | `pantalla-grande` | Pantalla grande | La pantalla de un alumno en grande; también la vista del control remoto. |
 | `pg-acciones` | Pantalla grande › Acciones sobre el alumno (Pantalla grande) | Las mismas acciones que en la Ficha del alumno. |
@@ -202,6 +220,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `panel-captura` | Panel Captura | Tomar capturas de varios alumnos. |
 | `panel-temporizador` | Panel Temporizador | Lanzar un temporizador de ejercicio. |
 | `panel-energia` | Panel Energía | Apagar, reiniciar o cerrar sesión. |
+| `panel-abrir` | Panel Abrir página o app | Abrir una página en el navegador o una app permitida en los equipos de la selección, y las últimas que abriste. |
 | `captura` | Vista previa de captura | La captura de un alumno, con Guardar y Descartar. |
 | `codigo` | Vista Código | Preparar y enviar código a los alumnos. |
 | `codigo-editor` | Vista Código › Tarjeta del editor | Título, lenguaje, editor, «Enviar a» y los botones de emitir. |
@@ -227,7 +246,8 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `ayuda` | Vista Ayuda (manual) | El manual, con búsqueda e índice. |
 | `panel-ayuda` | Panel de ayuda contextual | La página del manual de la vista actual, al costado. |
 | `falta` | Vista ¿Falta un alumno? | Comprobar la conexión y el asistente paso a paso. |
-| `ajustes` | Ajustes | Diálogo con Clase, Apariencia y Acerca de. |
+| `ajustes` | Ajustes | Diálogo con Clase, Apariencia, Apps permitidas y Acerca de. |
+| `ajustes-apps` | Ajustes › Apps permitidas | Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos. |
 | `confirmar` | Diálogo de confirmación | «¿Seguro?» antes de una acción con consecuencias. |
 | `arranque` | Pantalla de arranque | Abrir la clase: canal y nombre. |
 

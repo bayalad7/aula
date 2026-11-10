@@ -38,13 +38,8 @@ type Resolver struct {
 
 // Start listens on UDP and TCP; it fails if the port is taken.
 func (r *Resolver) Start() error {
-	pc, err := net.ListenPacket("udp", r.Addr)
+	pc, ln, err := listenUDPAndTCP(r.Addr)
 	if err != nil {
-		return fmt.Errorf("dns resolver: %w", err)
-	}
-	ln, err := net.Listen("tcp", pc.LocalAddr().String())
-	if err != nil {
-		pc.Close()
 		return fmt.Errorf("dns resolver: %w", err)
 	}
 	r.mu.Lock()
@@ -61,6 +56,34 @@ func (r *Resolver) Start() error {
 	<-started
 	<-started
 	return nil
+}
+
+// listenUDPAndTCP listens on UDP and TCP on the same port of addr. With port
+// 0 it retries with a new port when TCP cannot take the one UDP got: Windows
+// excludes TCP port ranges (Hyper-V, WinNAT) that UDP may still hand out.
+func listenUDPAndTCP(addr string) (net.PacketConn, net.Listener, error) {
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("listen %q: %w", addr, err)
+	}
+	attempts := 1
+	if port == "0" {
+		attempts = 10
+	}
+	for i := 0; ; i++ {
+		pc, err := net.ListenPacket("udp", addr)
+		if err != nil {
+			return nil, nil, err
+		}
+		ln, err := net.Listen("tcp", pc.LocalAddr().String())
+		if err == nil {
+			return pc, ln, nil
+		}
+		pc.Close()
+		if i+1 >= attempts {
+			return nil, nil, err
+		}
+	}
 }
 
 // LocalAddr is the address it listens on.

@@ -639,6 +639,10 @@ el que se trabajó antes; las notas de abajo lo conservan.
   - correr las pruebas de administrador de un paquete a la vez.
 
   Detalles en D-017.
+- **CI en GitHub (09/11/2026):** en `windows-latest`, `go test -race` de `internal/policy` falló
+  de forma intermitente: el puerto libre que daba UDP en `127.0.0.1:0` caía en un rango TCP
+  excluido por Windows (Hyper-V/WinNAT) y el `bind` TCP daba «forbidden». `listenUDPAndTCP`
+  reintenta con otro puerto cuando se pide el `0` (pruebas); el puerto 53 fijo no cambia.
 - **Falta:**
   - la prueba en VM de `docs/prueba-vms.md` §14, en especial RB-H (equipo idéntico), RB-J (caída)
     y RB-K (apagado);

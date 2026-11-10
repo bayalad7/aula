@@ -172,15 +172,11 @@ func fakeUpstream(t *testing.T) (port int, queries func() []string) {
 		m.Answer = append(m.Answer, rr)
 		_ = w.WriteMsg(m)
 	})
-	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	pc, ln, err := listenUDPAndTCP("127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	port = pc.LocalAddr().(*net.UDPAddr).Port
-	ln, err := net.Listen("tcp", pc.LocalAddr().String())
-	if err != nil {
-		t.Fatal(err)
-	}
 	udp, tcp := &dns.Server{PacketConn: pc, Handler: h}, &dns.Server{Listener: ln, Handler: h}
 	go udp.ActivateAndServe()
 	go tcp.ActivateAndServe()

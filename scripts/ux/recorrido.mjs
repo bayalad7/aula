@@ -235,6 +235,27 @@ await f("107-codigo-sin-archivos", "lab-archivos", { ruta: "codigo" });
 await f("108-ficha-capacidades-y-acciones", "lab", { h: 860, pasos: click(`${fila("lab-ubuntu-02")} .ficha`) });
 await f("109-pantalla-grande-acciones", "lab", { pasos: grande });
 
+// Abrir página o app (prompt 10.11): el panel de la barra, con el aviso del filtro web y las últimas
+// órdenes; la app permitida; la ficha y la Pantalla grande de un alumno; Ajustes › Apps permitidas
+// (también con un error); oscuro y 900×600.
+const panelAbrir = seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12")), click('[data-panel="abrir"]'));
+const escribirUrl = (u) => async (p) => { await p.type("#abrir-url", u); await sleep(500); };
+await f("117-panel-abrir-pagina", "lab-abrir", { pasos: seq(panelAbrir, escribirUrl("youtube.com/watch")) });
+await f("118-panel-abrir-app", "lab-abrir", { pasos: seq(panelAbrir, click("#abrir-tipo-app")) });
+await f("119-panel-abrir-enviado", "lab", { pasos: seq(panelAbrir, escribirUrl("docs.python.org/3/tutorial"), click("#abrir-enviar"),
+  async () => { await sleep(400); }) });
+await f("120-panel-abrir-url-invalida", "lab", { pasos: seq(panelAbrir, escribirUrl("file:///C:/Windows"), click("#abrir-enviar"),
+  async () => { await sleep(300); }) });
+await f("121-ficha-abrir", "lab", { pasos: seq(click(`${fila("LAB3-PC07")} .ficha`), click("#abrir1-abrir"), click("#abrir1-tipo-app")) });
+await f("122-pantalla-grande-abrir", "lab", { pasos: seq(grande, click("#pg-abrir1-abrir")) });
+await f("123-ajustes-apps-permitidas", "datos", { h: 800, pasos: ajustes("apps") });
+await f("124-ajustes-apps-error", "datos", { h: 800, pasos: seq(ajustes("apps"), click("#aj-apps-agregar"), async (p) => {
+  await p.type("#aj-apps-lista li:last-child .fila-app__nombre", "Consola");
+  await p.type("#aj-apps-lista li:last-child .fila-app__ruta", "C:\\Windows\\System32\\cmd.exe");
+}, click("#aj-apps-guardar"), async () => { await sleep(300); }) });
+await f("125-panel-abrir-oscuro-900x600", "lab-abrir", { oscuro: true, w: 900, h: 600, pasos: seq(panelAbrir, escribirUrl("youtube.com")) });
+await f("126-ajustes-apps-oscuro-900x600", "datos", { oscuro: true, w: 900, h: 600, pasos: ajustes("apps") });
+
 // Ventana angosta y tema oscuro
 await f("37-alumnos-900x600", "lab", { w: 900, h: 600, pasos: click(fila("LAB3-PC07")) });
 await f("38-codigo-900x600", "datos", { w: 900, h: 600, ruta: "codigo" });

@@ -57,6 +57,9 @@ type classHooks struct {
 	// file.collect.response and the errors (which may answer a file.push or
 	// a file.collect.request), from real and simulated students (§5.20–5.21).
 	onFile func(sessionID string, env protocol.Envelope)
+	// onOpen receives open.ack and the errors (which may answer an open.url
+	// or open.app), from real students only (§5.22).
+	onOpen func(sessionID string, env protocol.Envelope)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
 }
@@ -352,6 +355,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onFile != nil {
 					hooks.onFile(conn.ID(), env)
 				}
+			case protocol.OpenAck:
+				if hooks.onOpen != nil {
+					hooks.onOpen(conn.ID(), env)
+				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {
 					hooks.onBroadcast(conn.ID(), env)
@@ -368,6 +375,9 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 					}
 					if hooks.onFile != nil {
 						hooks.onFile(conn.ID(), env)
+					}
+					if hooks.onOpen != nil {
+						hooks.onOpen(conn.ID(), env)
 					}
 					if hooks.onError != nil {
 						hooks.onError(conn.ID(), p)

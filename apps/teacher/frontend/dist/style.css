@@ -145,3 +145,12 @@ a.insignia:hover { text-decoration: underline; }
 .archivos-destino input { flex: 1; min-width: 0; }
 .archivos-nueva-plantilla { align-items: flex-end; }
 .archivos-nueva-plantilla[hidden] { display: none; }
+
+/* Abrir página o app y Ajustes › Apps permitidas (prompt 10.11). */
+.abrir-orden strong, #abrir-ordenes strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#abrir-ordenes .fila { flex-wrap: nowrap; min-width: 0; }
+.fila-app { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 2fr) auto; gap: var(--e-1); align-items: center; }
+.fila-app input { min-width: 0; }
+.fila-app__ruta { font-size: var(--t-sm); }
+@media (max-width: 720px) { .fila-app { grid-template-columns: 1fr auto; } .fila-app__ruta { grid-column: 1 / -1; grid-row: 2; } }
+.abrir-editar { justify-self: start; }

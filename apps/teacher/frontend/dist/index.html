@@ -156,6 +156,7 @@
                 <button type="button" class="btn" data-panel="energia" aria-expanded="false" data-t-title="panel.energia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg><span class="btn__texto" data-t="panel.energia"></span></button>
                 <button type="button" class="btn" data-panel="captura" aria-expanded="false" data-t-title="panel.captura"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span class="btn__texto" data-t="panel.captura"></span></button>
                 <button type="button" class="btn" data-panel="temporizador" aria-expanded="false" data-t-title="panel.temporizador"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span class="btn__texto" data-t="panel.temporizador"></span></button>
+                <button type="button" class="btn" data-panel="abrir" aria-expanded="false" data-t-title="panel.abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#externo"/></svg><span class="btn__texto" data-t="panel.abrirCorto"></span></button>
               </div>
             </div>
           </section>
@@ -560,6 +561,8 @@
               </form>
               <p class="pequeno" id="privado-acuse" role="status" hidden></p>
             </div>
+            <!-- Abrir página o app (prompt 10.11): el formulario de la acción «abrir», lo arma formAbrir (main.js). -->
+            <div class="pila-mini" id="ficha-abrir"></div>
             <div class="pila-mini">
               <h3 class="con-info"><span data-t="ficha.puede"></span><button type="button" class="info-boton" data-info="capacidades" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></h3>
               <ul class="lista-limpia" id="ficha-puede"></ul>
@@ -696,6 +699,23 @@
           </div>
         </aside>
 
+        <!-- Abrir página o app (docs/protocol.md §5.22): el cuerpo lo arma formAbrir (main.js). -->
+        <aside class="panel-lateral" id="panel-abrir" hidden aria-labelledby="h-panel-abrir">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#externo"/></svg>
+            <h2 id="h-panel-abrir" tabindex="-1" data-t="panel.abrir"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo pila">
+            <p data-destino-hosts></p>
+            <div class="pila-mini" id="abrir-form"></div>
+            <section class="pila-mini" id="abrir-ultimas" hidden aria-labelledby="abrir-ultimas-titulo">
+              <h3 id="abrir-ultimas-titulo" data-t="abrir.ultimas"></h3>
+              <ul class="lista-limpia pila-mini" id="abrir-ordenes"></ul>
+            </section>
+          </div>
+        </aside>
+
         <aside class="panel-lateral" id="panel-energia" hidden aria-labelledby="h-panel-energia">
           <div class="panel-lateral__cabecera">
             <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg>
@@ -803,6 +823,8 @@
         </div>
       </form>
       <p class="pequeno" id="pg-privado-acuse" role="status" hidden></p>
+      <!-- Abrir página o app para este alumno (prompt 10.11), el mismo formulario que en la ficha. -->
+      <div class="pila-mini" id="pg-abrir"></div>
       <p class="aviso-en-linea" id="pg-control-estado" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span id="pg-control-estado-texto"></span></p>
       <img id="pg-imagen" alt="">
       <p class="pequeno suave" id="pg-nota" data-t="alumnos.avisoMiniaturas"></p>
@@ -842,6 +864,7 @@
       <div class="modal-ajustes__pestanas" role="tablist" aria-orientation="vertical" aria-labelledby="aj-titulo">
         <button type="button" role="tab" id="tab-clase" aria-controls="aj-clase" aria-selected="true"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span data-t="ajustes.clase"></span></button>
         <button type="button" role="tab" id="tab-apariencia" aria-controls="aj-apariencia" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#sol"/></svg><span data-t="ajustes.apariencia"></span></button>
+        <button type="button" role="tab" id="tab-apps" aria-controls="aj-apps" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#app"/></svg><span data-t="ajustes.apps"></span></button>
         <button type="button" role="tab" id="tab-acerca" aria-controls="aj-acerca" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="ajustes.acerca"></span></button>
       </div>
     </div>
@@ -871,6 +894,20 @@
             <button type="button" class="opcion-tarjeta" role="radio" data-tema="light"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#sol"/></svg><span data-t="ajustes.temaClaro"></span></button>
             <button type="button" class="opcion-tarjeta" role="radio" data-tema="dark"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#luna"/></svg><span data-t="ajustes.temaOscuro"></span></button>
           </div>
+        </div>
+      </section>
+      <!-- Apps permitidas (docs/protocol.md §5.22): el catálogo de «Abrir página o app». -->
+      <section role="tabpanel" id="aj-apps" aria-labelledby="tab-apps" hidden>
+        <h3 data-t="ajustes.apps"></h3>
+        <p class="pequeno" data-t="ajustes.appsAyuda"></p>
+        <p class="pequeno suave ruta" id="aj-apps-fuente"></p>
+        <ul class="lista-limpia pila-mini" id="aj-apps-lista"></ul>
+        <p class="pequeno suave" id="aj-apps-vacia" data-t="ajustes.appsVacia" hidden></p>
+        <p class="campo__error" id="aj-apps-error" role="alert" hidden></p>
+        <div class="grupo-botones">
+          <button type="button" class="btn" id="aj-apps-agregar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="ajustes.appsAgregar"></span></button>
+          <button type="button" class="btn btn--fantasma" id="aj-apps-ejemplos" data-t="ajustes.appsEjemplos"></button>
+          <button type="button" class="btn btn--primario" id="aj-apps-guardar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span data-t="ajustes.appsGuardar"></span></button>
         </div>
       </section>
       <section role="tabpanel" id="aj-acerca" aria-labelledby="tab-acerca" hidden>

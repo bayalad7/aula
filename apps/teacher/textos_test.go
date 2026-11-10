@@ -10,6 +10,7 @@ import (
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/connectcheck"
 	"github.com/bayalad7/aula/internal/filepush"
+	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/remote"
 	"github.com/bayalad7/aula/internal/snapshot"
@@ -136,6 +137,17 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 	for _, r := range reasons {
 		need("reco.motivo."+agentErrorKey(protocol.ErrorCode(r)), "main.js (collect reasons)")
+	}
+	// Opening a page or an app (internal/openapp): why a computer did not
+	// open it, each target's status and where the allowed apps come from.
+	for _, r := range []protocol.OpenReason{protocol.OpenNotAllowed, protocol.OpenNotInstalled, protocol.OpenLaunchFailed, protocol.OpenBusy} {
+		need("abrir.motivo."+agentErrorKey(protocol.ErrorCode(r)), "main.js (open.ack reason)")
+	}
+	for _, s := range []string{openapp.StatusSent, string(protocol.OpenOpened), string(protocol.OpenFailed), openapp.StatusError} {
+		need("abrir.acuse."+s, "main.js (openapp.Target.Status)")
+	}
+	for _, s := range []string{appsCentre, appsConsole, appsExamples} {
+		need("ajustes.appsFuente."+s, "main.js (AllowedApps.Source)")
 	}
 	// Error texts are chosen by the code Go returns (errores.go).
 	for _, code := range errorCodes {

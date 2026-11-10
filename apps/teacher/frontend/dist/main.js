@@ -341,6 +341,8 @@
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
     api.Simulation().then(pintarSimulacion);
+    api.AllowedApps().then(cargarAppsPermitidas, () => {});
+    api.OpenOrders().then(pintarOrdenesAbrir, () => {});
     if (!manual) {
       api.Manual().then(cargarManual, (e) => { $("ayuda-cargando").hidden = true; fallo(e); });
     }
@@ -477,7 +479,8 @@
       ["canBroadcast", "ficha.transmision", "transmitir"], ["canAppBlock", "ficha.apps", "candado"], ["canWebFilter", "ficha.web", "filtro"],
       ["canPower", "ficha.energia", "energia"], ["canRemote", "ficha.control", "control"], ["canSnapshot", "ficha.captura", "captura"],
       ["canHand", "ficha.mano", "mano"], ["canMessage", "ficha.mensajes", "mensaje"], ["canTimer", "ficha.temporizador", "reloj"],
-      ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"]];
+      ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"],
+      ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
       const si = !!s[c];
       const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
@@ -523,6 +526,10 @@
       // Reales y simulados, también mientras se le controla.
       visible: (s) => s.state === "connected" && s.canSnapshot,
       hacer: (s, b) => tomarCaptura(s, b) },
+    // Abrir página o app (prompt 10.11): solo reales; cambia el equipo (privacidad, regla 70).
+    { id: "abrir", icono: "externo", ids: { ficha: "abrir1-abrir", grande: "pg-abrir1-abrir" }, controla: { ficha: "abrir1", grande: "pg-abrir1" },
+      nota: "abrir.fichaNota", texto: () => T("abrir.boton"),
+      visible: (s, donde) => (donde === "ficha" ? abrir1Ficha : abrir1Grande).pintar(s), hacer: null },
   ];
   // Arma los botones de un lugar una sola vez y devuelve cómo pintarlos para un alumno.
   function montarAcciones(donde, contenedor, alumnoActual) {
@@ -625,6 +632,253 @@
   const privadoGrande = formPrivado("pg-privado", () => alumnoPorSesion(enControl ? control.sessionID : enGrande),
     () => { if (enControl) soltarTeclas(); });
   function pintarAcusePrivado() { privadoFicha.acuse(); privadoGrande.acuse(); }
+
+  // --- Abrir página o app (docs/protocol.md §5.22; privacidad, reglas 66–70) ----------------
+  // Un mismo formulario en tres lugares: el panel de la barra (la selección), la ficha y la
+  // Pantalla grande (un alumno, que lo abren con su botón de ACCIONES_ALUMNO). Solo alumnos
+  // reales: los simulados nunca lo reciben. La lista de apps es la de Ajustes › Apps permitidas.
+  const MOTIVO_ABRIR = "abrir.motivo."; // + razón de open.ack en camelCase
+  const ACUSE_ABRIR = "abrir.acuse."; // + estado del equipo (openapp.Target.Status)
+  const FUENTE_APPS = "ajustes.appsFuente."; // + de dónde es la lista (AllowedApps.Source)
+  let appsPermitidas = []; // [{id, name, path}]
+  let ordenesAbrir = []; // las últimas, de aula:opens
+  function formAbrir(pre, cont, objetivo, uno) {
+    const id = (s) => pre + s;
+    const form = el("form", "pila-mini");
+    form.id = pre;
+    form.noValidate = true;
+    let tipo = "pagina";
+    let estado = { clave: "", orden: "" }; // un alumno: a quién y su última orden
+    const grupo = el("div", "segmentado");
+    grupo.setAttribute("role", "group");
+    grupo.setAttribute("aria-label", T("abrir.tipo"));
+    const segmento = (texto) => { const x = el("button"); x.type = "button"; x.append(el("span", "", texto)); return x; };
+    const bPagina = segmento(T("abrir.pagina"));
+    const bApp = segmento(T("abrir.app"));
+    bPagina.id = id("-tipo-pagina");
+    bApp.id = id("-tipo-app");
+    grupo.append(bPagina, bApp);
+
+    const campoUrl = el("label", "campo");
+    const url = el("input");
+    Object.assign(url, { type: "url", id: id("-url"), autocomplete: "off", spellcheck: false, maxLength: 2048, placeholder: T("abrir.urlEjemplo") });
+    url.inputMode = "url";
+    const error = el("span", "campo__error");
+    error.id = id("-error");
+    error.hidden = true;
+    const ayudaUrl = el("span", "campo__ayuda", T("abrir.urlAyuda"));
+    ayudaUrl.id = id("-url-ayuda");
+    url.setAttribute("aria-describedby", ayudaUrl.id + " " + error.id);
+    campoUrl.append(el("span", "campo__etiqueta", T("abrir.url")), url, ayudaUrl, error);
+
+    const campoApp = el("div", "campo");
+    const etApp = el("label", "campo__etiqueta", T("abrir.appEtiqueta"));
+    const sel = el("select");
+    sel.id = id("-app");
+    etApp.htmlFor = sel.id;
+    const ayudaApp = el("span", "campo__ayuda", T("abrir.appAyuda"));
+    const sinApps = el("span", "campo__ayuda", T("abrir.sinApps"));
+    sinApps.id = id("-sin-apps");
+    const editar = boton(T("abrir.editarLista"), "btn--fantasma btn--sm abrir-editar");
+    editar.id = id("-editar");
+    editar.addEventListener("click", () => abrirAjustes("apps"));
+    campoApp.append(etApp, sel, ayudaApp, sinApps, editar);
+
+    const linea = (ic, sufijo, tipoAviso) => {
+      const p = el("p", "aviso-en-linea" + (tipoAviso ? " aviso-en-linea--" + tipoAviso : ""));
+      p.id = id(sufijo);
+      p.hidden = true;
+      const t = el("span");
+      p.append(icono(ic), t);
+      return [p, t];
+    };
+    const [filtrada, filtradaTexto] = linea("advertencia", "-filtrada", "advertencia");
+    const [sinSoporte, sinSoporteTexto] = linea("info", "-sin-soporte");
+    const enviar = el("button", "btn btn--primario" + (uno ? " btn--sm" : ""));
+    enviar.type = "submit";
+    enviar.id = id("-enviar");
+    enviar.append(icono("externo"), el("span", "", T("abrir.abrir")));
+    const botones = el("div", "grupo-botones");
+    botones.append(enviar);
+    let cancelar = null;
+    if (uno) {
+      cancelar = boton(T("comun.cancelar"), "btn--fantasma btn--sm");
+      cancelar.id = id("-cancelar");
+      botones.append(cancelar);
+    }
+    form.append(grupo, campoUrl, campoApp, filtrada, sinSoporte, el("p", "pequeno suave", T("abrir.transparencia")), botones);
+    const acuse = el("p", "pequeno");
+    acuse.id = id("-acuse");
+    acuse.setAttribute("role", "status");
+    acuse.hidden = true;
+    cont.append(form);
+    if (uno) {
+      form.hidden = true;
+      cont.append(acuse);
+    }
+
+    const pintarApps = () => {
+      const antes = sel.value;
+      sel.replaceChildren(...appsPermitidas.map((a) => Object.assign(el("option", "", a.name), { value: a.id })));
+      if (appsPermitidas.some((a) => a.id === antes)) sel.value = antes;
+      sel.disabled = appsPermitidas.length === 0;
+      sinApps.hidden = appsPermitidas.length > 0;
+      ayudaApp.hidden = appsPermitidas.length === 0;
+    };
+    const cap = () => (tipo === "pagina" ? "canOpenUrl" : "canOpenApp");
+    const pintar = () => {
+      bPagina.setAttribute("aria-pressed", String(tipo === "pagina"));
+      bApp.setAttribute("aria-pressed", String(tipo === "app"));
+      campoUrl.hidden = tipo !== "pagina";
+      campoApp.hidden = tipo !== "app";
+      if (tipo !== "pagina") filtrada.hidden = true;
+      pintarApps();
+      const { alumnos: lista, simulados } = objetivo();
+      const pueden = lista.filter((s) => s[cap()]).length;
+      enviar.disabled = pueden === 0 || (tipo === "app" && appsPermitidas.length === 0);
+      const partes = [];
+      if (pueden === 0) partes.push(T("abrir.nadiePuede"));
+      else if (pueden < lista.length) partes.push(P("abrir.algunosNo", lista.length - pueden));
+      if (simulados) partes.push(T("abrir.simuladosNo"));
+      sinSoporte.hidden = partes.length === 0;
+      sinSoporteTexto.textContent = partes.join(" ");
+    };
+    let revisar = 0;
+    const revisarFiltro = () => {
+      clearTimeout(revisar);
+      const u = url.value.trim();
+      if (!u || tipo !== "pagina") { filtrada.hidden = true; return; }
+      revisar = setTimeout(() => {
+        api.CheckOpenPage(u, objetivo().hosts).then((c) => {
+          filtrada.hidden = c.filtered.length === 0;
+          filtradaTexto.textContent = T("abrir.filtrada", { lista: c.filtered.join(", ") });
+        }, () => { filtrada.hidden = true; });
+      }, 300);
+    };
+    const elegir = (t) => { tipo = t; pintar(); (t === "pagina" ? url : sel).focus(); revisarFiltro(); };
+    bPagina.addEventListener("click", () => elegir("pagina"));
+    bApp.addEventListener("click", () => elegir("app"));
+    url.addEventListener("input", () => { limpiarCampo(url, error); revisarFiltro(); });
+
+    const pintarAcuse = () => {
+      if (!uno) return;
+      const o = estado.orden && ordenesAbrir.find((x) => x.id === estado.orden);
+      const s = alumnos.students.find((x) => clave(x) === estado.clave);
+      const t = o && s && o.targets.find((x) => x.sessionId === s.id);
+      acuse.hidden = !t;
+      if (!t) return;
+      acuse.textContent = t.status === "failed"
+        ? T("abrir.acuse.failed", { equipo: s.hostname, motivo: T(MOTIVO_ABRIR + camel(t.reason)) })
+        : T(ACUSE_ABRIR + t.status, { equipo: s.hostname });
+    };
+    const abridor = () => $(id("-abrir"));
+    const cerrar = (foco) => {
+      if (!uno) return;
+      form.hidden = true;
+      const b = abridor();
+      if (b) b.setAttribute("aria-expanded", "false");
+      limpiarCampo(url, error);
+      if (foco && b) b.focus();
+    };
+    if (cancelar) cancelar.addEventListener("click", () => cerrar(true));
+    form.addEventListener("keydown", (e) => {
+      if (uno && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cerrar(true); }
+    });
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const hosts = objetivo().hosts;
+      let p;
+      if (tipo === "pagina") {
+        if (!url.value.trim()) { errorEnCampo(url, error, T("abrir.urlVacia")); return; }
+        p = api.OpenPage({ url: url.value, hosts });
+      } else {
+        p = api.OpenApp({ appId: sel.value, hosts });
+      }
+      ocupado(enviar, true);
+      p.then((r) => {
+        let texto = "";
+        if (r.unsupported.length) texto += T("abrir.noLaSoportan", { lista: r.unsupported.join(", ") }) + " ";
+        if (r.failed.length) texto += T("abrir.noLlego", { lista: r.failed.join(", ") });
+        toast(r.failed.length ? "advertencia" : "exito", P("abrir.enviado", r.sent), texto.trim() || T("abrir.transparencia"));
+        url.value = "";
+        filtrada.hidden = true;
+        if (uno) { estado.orden = r.openId; cerrar(true); pintarAcuse(); }
+      }, (err) => {
+        const m = amable(err);
+        if (m.codigo === "invalidUrl") errorEnCampo(url, error, m.texto);
+        else fallo(err);
+      }).finally(() => { ocupado(enviar, false); pintar(); });
+    });
+    // Un alumno: el botón de ACCIONES_ALUMNO muestra u oculta el formulario.
+    const conectarAbridor = () => {
+      const b = abridor();
+      if (!b || b.dataset.abrirListo) return;
+      b.dataset.abrirListo = "1";
+      b.addEventListener("click", () => {
+        if (!form.hidden) { cerrar(true); return; }
+        if (pre === "pg-abrir1" && enControl) soltarTeclas();
+        form.hidden = false;
+        b.setAttribute("aria-expanded", "true");
+        pintar();
+        (tipo === "pagina" ? url : sel).focus();
+      });
+    };
+    if (!uno) pintar(); // el de un alumno se pinta al abrirlo (enControl aún no existe aquí)
+    return {
+      // Para ACCIONES_ALUMNO: si el botón se ve para este alumno.
+      pintar: (s) => {
+        conectarAbridor();
+        if (estado.clave !== clave(s)) {
+          estado = { clave: clave(s), orden: "" };
+          cerrar(false);
+          url.value = "";
+        }
+        pintarAcuse();
+        if (!form.hidden) pintar();
+        return !s.simulated && s.state === "connected" && (s.canOpenUrl || s.canOpenApp);
+      },
+      refrescar: () => { pintar(); pintarAcuse(); },
+    };
+  }
+  // El panel: la selección (o todos), solo equipos reales.
+  const abrirPanelForm = formAbrir("abrir", $("abrir-form"), () => {
+    const lista = seleccion.size ? seleccionados() : conectados();
+    return { alumnos: lista.filter((s) => !s.simulated), simulados: lista.some((s) => s.simulated), hosts: equiposReales() };
+  }, false);
+  const unAlumno = (buscar) => () => {
+    const s = buscar();
+    return { alumnos: s ? [s] : [], simulados: false, hosts: s ? [s.hostname] : ["-"] };
+  };
+  const abrir1Ficha = formAbrir("abrir1", $("ficha-abrir"), unAlumno(() => alumnos.students.find((x) => clave(x) === fichaClave)), true);
+  const abrir1Grande = formAbrir("pg-abrir1", $("pg-abrir"), unAlumno(() => alumnoPorSesion(enControl ? control.sessionID : enGrande)), true);
+  function pintarOrdenesAbrir(lista) {
+    ordenesAbrir = lista || [];
+    $("abrir-ultimas").hidden = ordenesAbrir.length === 0;
+    $("abrir-ordenes").replaceChildren(...ordenesAbrir.map((o) => {
+      const li = el("li", "pila-mini");
+      const titulo = el("span", "fila");
+      titulo.append(icono(o.kind === "app" ? "app" : "externo", "icono--sm"), el("strong", "recorte", o.label));
+      li.title = o.label;
+      const partes = [T("abrir.estado", { abiertas: o.opened, total: o.targets.length })];
+      if (o.pending) partes.push(P("abrir.pendientes", o.pending));
+      if (o.refused) partes.push(P("abrir.rechazos", o.refused));
+      li.append(titulo, el("span", "pequeno suave", partes.join(" · ")));
+      for (const t of o.targets.filter((x) => x.status === "failed" || x.status === "error")) {
+        li.append(el("span", "pequeno", t.status === "failed"
+          ? T("abrir.acuse.failed", { equipo: t.hostname, motivo: T(MOTIVO_ABRIR + camel(t.reason)) })
+          : T("abrir.acuse.error", { equipo: t.hostname })));
+      }
+      return li;
+    }));
+    abrir1Ficha.refrescar();
+    abrir1Grande.refrescar();
+  }
+  function cargarAppsPermitidas(c) {
+    appsPermitidas = (c && c.apps) || [];
+    abrirPanelForm.refrescar();
+    abrir1Ficha.refrescar();
+    abrir1Grande.refrescar();
+  }
 
   // Miniaturas: las imágenes solo viven aquí, en memoria.
   const tarjetas = new Map(); // clave → <li>
@@ -1175,6 +1429,7 @@
     pintarDestinoEquipos();
     if (panel === "captura") pintarLote();
     if (panel === "temporizador") pintarPanelTemporizador();
+    if (panel === "abrir") abrirPanelForm.refrescar();
   }
 
   // --- Información junto a los campos técnicos -------------------------------------------
@@ -1232,6 +1487,7 @@
     if (id === "energia") pintarPanelEnergia();
     if (id === "captura") pintarLote();
     if (id === "temporizador") pintarPanelTemporizador();
+    if (id === "abrir") abrirPanelForm.refrescar();
     if (id === "alumno") pintarFicha();
     $("h-panel-" + id).focus();
   }
@@ -2878,9 +3134,68 @@
     api.Collections().then((c) => { $("aj-reco-ruta").textContent = c.folder || T("reco.motivoSinCarpeta"); $("aj-reco-abrir").disabled = !c.folder; }, () => {});
     aplicarTema(tema);
     elegirPestana($("tab-" + (pestana || "clase")), false);
+    if (pestana === "apps") api.AllowedApps().then(pintarAppsAjustes, fallo);
     $("ajustes").showModal();
   }
   $("nav-ajustes").addEventListener("click", () => abrirAjustes());
+
+  // Ajustes › Apps permitidas: el catálogo de «Abrir página o app». Cada fila es un nombre y la
+  // ruta del .exe; la consola revisa la forma y cada alumno vuelve a aplicar sus reglas fijas.
+  function filaApp(a) {
+    const li = el("li", "fila-app");
+    li.dataset.id = a.id || "";
+    const nombre = Object.assign(el("input"), { type: "text", value: a.name || "", maxLength: 60, autocomplete: "off" });
+    nombre.className = "control fila-app__nombre";
+    nombre.setAttribute("aria-label", T("ajustes.appsNombre"));
+    const ruta = Object.assign(el("input"), { type: "text", value: a.path || "", maxLength: 260, autocomplete: "off", spellcheck: false });
+    ruta.className = "control fila-app__ruta mono";
+    ruta.setAttribute("aria-label", T("ajustes.appsRuta"));
+    ruta.title = T("ajustes.appsRutaAyuda");
+    const quitar = el("button", "btn btn--fantasma btn--icono btn--sm");
+    quitar.type = "button";
+    quitar.setAttribute("aria-label", T("ajustes.appsQuitar", { nombre: a.name || T("ajustes.appsNombre") }));
+    quitar.append(icono("cerrar"));
+    quitar.addEventListener("click", () => { li.remove(); pintarVaciaApps(); $("aj-apps-agregar").focus(); });
+    for (const i of [nombre, ruta]) i.addEventListener("input", () => { $("aj-apps-error").hidden = true; });
+    li.append(nombre, ruta, quitar);
+    return li;
+  }
+  function pintarVaciaApps() { $("aj-apps-vacia").hidden = $("aj-apps-lista").children.length > 0; }
+  function pintarAppsAjustes(c) {
+    $("aj-apps-fuente").textContent = T(FUENTE_APPS + c.source, { ruta: c.path });
+    $("aj-apps-lista").replaceChildren(...c.apps.map(filaApp));
+    $("aj-apps-error").hidden = true;
+    pintarVaciaApps();
+  }
+  function appsEscritas() {
+    return [...$("aj-apps-lista").children].map((li) => ({ id: li.dataset.id, name: li.querySelector(".fila-app__nombre").value,
+      path: li.querySelector(".fila-app__ruta").value }));
+  }
+  $("tab-apps").addEventListener("click", () => api.AllowedApps().then(pintarAppsAjustes, fallo));
+  $("aj-apps-agregar").addEventListener("click", () => {
+    const li = filaApp({});
+    $("aj-apps-lista").append(li);
+    pintarVaciaApps();
+    li.querySelector("input").focus();
+  });
+  $("aj-apps-ejemplos").addEventListener("click", () => api.DefaultAllowedApps().then((apps) => {
+    $("aj-apps-lista").replaceChildren(...apps.map(filaApp));
+    pintarVaciaApps();
+  }, fallo));
+  $("aj-apps-guardar").addEventListener("click", () => {
+    const b = $("aj-apps-guardar");
+    ocupado(b, true);
+    api.SaveAllowedApps(appsEscritas()).then((c) => {
+      pintarAppsAjustes(c);
+      cargarAppsPermitidas(c);
+      toast("exito", T("ajustes.appsGuardada"), T("ajustes.appsGuardadaTexto"));
+    }, (err) => {
+      const m = amable(err);
+      const caja = $("aj-apps-error");
+      caja.hidden = false;
+      caja.replaceChildren(icono("error", "icono--sm"), document.createTextNode(m.texto + (m.detalle ? " (" + m.detalle + ")" : "")));
+    }).finally(() => ocupado(b, false));
+  });
   $("f-clave-que-hago").addEventListener("click", () => abrirAjustes("acerca"));
 
   // Cambiar de canal o de nombre: reabre la clase, con la consecuencia dicha
@@ -2976,6 +3291,8 @@
   rt.EventsOn(ev.TIMER, alTemporizador);
   rt.EventsOn(ev.FILES, pintarArchivos);
   rt.EventsOn(ev.COLLECTIONS, pintarRecolecciones);
+  rt.EventsOn(ev.OPENS, pintarOrdenesAbrir);
+  rt.EventsOn(ev.ALLOWED_APPS, cargarAppsPermitidas);
   rt.EventsOn(ev.CONNECT_CHECK, pintarComprobacion);
   rt.EventsOn(ev.CLASS, (v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
 

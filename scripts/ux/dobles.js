@@ -25,9 +25,10 @@
     canTimer: s.capabilities.includes("timer"),
     canFiles: s.capabilities.includes("file.push"),
     canCollect: s.capabilities.includes("file.collect"),
+    canOpenUrl: s.capabilities.includes("open.url"), canOpenApp: s.capabilities.includes("open.app"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push", "file.collect"];
+    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -108,7 +109,51 @@
     return { students: list, connected: real.length, simulated: c.length - real.length,
       canCode: n("canCode"), canNotice: n("canNotice"), canThumb: n("canThumb"),
       canBroadcast: r("canBroadcast"), canAppBlock: r("canAppBlock"), canWebFilter: r("canWebFilter"), canPower: r("canPower"),
-      canSnapshot: n("canSnapshot"), canTimer: n("canTimer"), canCollect: n("canCollect") };
+      canSnapshot: n("canSnapshot"), canTimer: n("canTimer"), canCollect: n("canCollect"),
+      canOpenUrl: r("canOpenUrl"), canOpenApp: r("canOpenApp") };
+  };
+
+  // Abrir página o app (apps/teacher/open.go): el catálogo de Ajustes y las últimas órdenes.
+  // En lab-abrir ya hay una abierta en un equipo y fallida en otro (no tiene la app).
+  const appsEjemplo = [
+    { id: "bloc-de-notas", name: "Bloc de notas", path: "%SystemRoot%\\System32\\notepad.exe" },
+    { id: "calculadora", name: "Calculadora", path: "%SystemRoot%\\System32\\calc.exe" },
+    { id: "paint", name: "Paint", path: "%SystemRoot%\\System32\\mspaint.exe" },
+    { id: "vscode", name: "Visual Studio Code", path: "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe" },
+    { id: "thonny", name: "Thonny", path: "%LOCALAPPDATA%\\Programs\\Thonny\\thonny.exe" },
+    { id: "scratch", name: "Scratch 3", path: "%ProgramFiles(x86)%\\Scratch 3\\Scratch 3.exe" },
+  ];
+  const rutaApps = "C:\\Users\\profe\\AppData\\Roaming\\Aula\\consola\\apps-permitidas.json";
+  let allowed = { apps: appsEjemplo.slice(), source: "ejemplos", path: rutaApps };
+  let opens = [];
+  const contar = (o) => {
+    o.opened = o.targets.filter((t) => t.status === "opened").length;
+    o.pending = o.targets.filter((t) => t.status === "sent").length;
+    o.refused = o.targets.length - o.opened - o.pending;
+    return o;
+  };
+  const nuevaOrden = (kind, label, hosts, capacidad) => {
+    const objetivo = list.filter((s) => s.state === "connected" && !s.simulated && (!hosts.length || hosts.includes(s.hostname)));
+    const o = { id: "o" + (opens.length + 1), kind, label, at: new Date().toISOString(), failed: [],
+      targets: objetivo.filter((s) => s[capacidad]).map((s) => ({ sessionId: s.id, hostname: s.hostname, status: "sent" })),
+      unsupported: objetivo.filter((s) => !s[capacidad]).map((s) => s.hostname) };
+    opens = [contar(o), ...opens].slice(0, 5);
+    return o;
+  };
+  if (scene === "lab-abrir") {
+    const o = nuevaOrden("app", "Thonny", [], "canOpenApp");
+    o.targets[0].status = "opened";
+    if (o.targets[1]) Object.assign(o.targets[1], { status: "failed", reason: "not_installed" });
+    contar(o);
+  }
+  const responderOrden = (o) => despues(() => {
+    o.targets.forEach((t, i) => Object.assign(t, i === 1 && o.kind === "app" ? { status: "failed", reason: "not_installed" } : { status: "opened" }));
+    contar(o);
+    window.__emit("aula:opens", opens.slice());
+  });
+  const urlValida = (u) => {
+    const s = u.trim().includes("://") ? u.trim() : "https://" + u.trim();
+    return /^https?:\/\/[^\s/@]+(\/\S*)?$/i.test(s) ? s : null;
   };
 
   const code3 = "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(5))\n";
@@ -279,6 +324,40 @@
     BroadcastState: call("BroadcastState", () => view().broadcast),
     PowerAction: call("PowerAction", { sent: 3, unsupported: ["lab-ubuntu-02"], failed: [] }),
     PowerCancel: call("PowerCancel", { sent: 3, unsupported: [], failed: [] }),
+    AllowedApps: call("AllowedApps", () => allowed),
+    DefaultAllowedApps: call("DefaultAllowedApps", () => appsEjemplo.slice()),
+    SaveAllowedApps: call("SaveAllowedApps", (apps) => {
+      if (apps.some((a) => !a.name.trim() || !/\.exe$/i.test(a.path.trim()) || /\\(cmd|powershell)\.exe$/i.test(a.path.trim()))) {
+        return new Error("aula:allowedAppInvalid: app 1: la ruta debe ser un .exe instalado");
+      }
+      allowed = { apps: apps.map((a, i) => ({ id: a.id || "app-" + i, name: a.name.trim(), path: a.path.trim() })), source: "consola", path: rutaApps };
+      despues(() => window.__emit("aula:allowed-apps", allowed));
+      return allowed;
+    }),
+    CheckOpenPage: call("CheckOpenPage", (u) => {
+      const v = urlValida(u);
+      if (!v) return new Error("aula:invalidUrl: la dirección debe empezar con http:// o https://");
+      return { url: v, filtered: scene === "lab-abrir" && /youtube\.com/i.test(v) ? ["LAB3-PC12"] : [] };
+    }),
+    OpenPage: call("OpenPage", (req) => {
+      const v = urlValida(req.url);
+      if (!v) return new Error("aula:invalidUrl: la dirección debe empezar con http:// o https://");
+      const o = nuevaOrden("url", v, req.hosts, "canOpenUrl");
+      if (!o.targets.length) return new Error("aula:noOpenTargets: ningún alumno conectado de la selección puede abrirlo");
+      window.__emit("aula:opens", opens.slice());
+      responderOrden(o);
+      return { openId: o.id, sent: o.targets.length, unsupported: o.unsupported, failed: [] };
+    }),
+    OpenApp: call("OpenApp", (req) => {
+      const app = allowed.apps.find((a) => a.id === req.appId);
+      if (!app) return new Error("aula:openAppGone: esa app ya no está en la lista de apps permitidas");
+      const o = nuevaOrden("app", app.name, req.hosts, "canOpenApp");
+      if (!o.targets.length) return new Error("aula:noOpenTargets: ningún alumno conectado de la selección puede abrirlo");
+      window.__emit("aula:opens", opens.slice());
+      responderOrden(o);
+      return { openId: o.id, sent: o.targets.length, unsupported: o.unsupported, failed: [] };
+    }),
+    OpenOrders: call("OpenOrders", () => opens.slice()),
     Restrictions: call("Restrictions", restrictions),
     Simulation: call("Simulation", simView),
     SimulationStart: call("SimulationStart", simView),

@@ -79,6 +79,11 @@ const (
 	codeCollectGone          = "collectGone"
 	codeCollectNoStudents    = "collectNoStudents"
 	codeCollectNothing       = "collectNothing"
+	codeInvalidURL           = "invalidUrl"
+	codeNoOpenTargets        = "noOpenTargets"
+	codeOpenAppGone          = "openAppGone"
+	codeAllowedAppInvalid    = "allowedAppInvalid"
+	codeAllowedAppsNotSaved  = "allowedAppsNotSaved"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -96,6 +101,7 @@ var errorCodes = []string{
 	codePushNoFiles, codePushTooLarge, codePushPathInvalid, codePushFileGone, codePushUnsupported,
 	codeTemplateExists, codeTemplateInvalid, codeTemplateGone,
 	codeCollectActivity, codeCollectFolder, codeCollectGone, codeCollectNoStudents, codeCollectNothing,
+	codeInvalidURL, codeNoOpenTargets, codeOpenAppGone, codeAllowedAppInvalid, codeAllowedAppsNotSaved,
 }
 
 // errorHelp is the section of the manual (docs/v1/administracion) that each
@@ -168,6 +174,11 @@ var errorHelp = map[string]string{
 	codeCollectGone:          "archivos#recolecciones",
 	codeCollectNoStudents:    "archivos#si-falta-alguien",
 	codeCollectNothing:       "archivos#dónde-queda-lo-recogido",
+	codeInvalidURL:           "tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos",
+	codeNoOpenTargets:        "tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos",
+	codeOpenAppGone:          "ajustes#apps-permitidas",
+	codeAllowedAppInvalid:    "ajustes#apps-permitidas",
+	codeAllowedAppsNotSaved:  "ajustes#apps-permitidas",
 }
 
 // codedError is an error the UI can explain by its code.

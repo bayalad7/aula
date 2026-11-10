@@ -59,6 +59,11 @@ const (
 	// starts, is extended, stops, ends or a student acknowledges it
 	// (docs/protocol.md §5.19). The window counts the seconds by itself.
 	EventTimer = "aula:timer"
+	// EventOpens carries the last openings ([]openapp.Order, newest first)
+	// whenever one is sent or a student acknowledges it (§5.22).
+	EventOpens = "aula:opens"
+	// EventAllowedApps carries AllowedApps whenever the catalog is saved.
+	EventAllowedApps = "aula:allowed-apps"
 )
 
 // Setup is what the channel selection screen needs.
@@ -110,6 +115,8 @@ type Student struct {
 	CanTimer     bool     `json:"canTimer"`     // timer (every OS with a window, simulated students)
 	CanFiles     bool     `json:"canFiles"`     // file.push (Windows agents, simulated students)
 	CanCollect   bool     `json:"canCollect"`   // file.collect (Windows agents, simulated students)
+	CanOpenURL   bool     `json:"canOpenUrl"`   // open.url (Windows agents; never simulated students)
+	CanOpenApp   bool     `json:"canOpenApp"`   // open.app (the same)
 	// Hand is this student's place in the line of raised hands (0: down);
 	// NewMessages, their messages not answered yet. The badge in Notas.
 	Hand        int `json:"hand"`
@@ -151,6 +158,10 @@ type Students struct {
 	CanFiles int `json:"canFiles"`
 	// CanCollect counts connected agents with file.collect, simulated ones included.
 	CanCollect int `json:"canCollect"`
+	// CanOpenURL and CanOpenApp count connected agents with each; simulated
+	// students never have them (they change the computer, §5.22).
+	CanOpenURL int `json:"canOpenUrl"`
+	CanOpenApp int `json:"canOpenApp"`
 	// Connected counts real students only; Simulated counts the connected
 	// simulated ones. CanCode, CanNotice and CanThumb include both.
 	Simulated int `json:"simulated"`

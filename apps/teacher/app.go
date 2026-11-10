@@ -16,6 +16,7 @@ import (
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/filepush"
+	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
@@ -78,6 +79,7 @@ type App struct {
 
 	restr *policy.ClassPolicy  // class restrictions: who has what (D-017)
 	power *power.Tracker       // power orders and each agent's answer (§5.15)
+	opens *openapp.Tracker     // pages and apps opened, and each agent's answer (§5.22)
 	desk  *remote.Desk         // remote control: one computer at a time (§5.16)
 	snaps *snapshot.Store      // screenshots of students, in memory until saved (§5.17)
 	board *participation.Board // raised hands and students' messages, in memory (§5.18)
@@ -125,6 +127,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.broadcastUDPPort = a.port + 1
 	a.restr = policy.NewClassPolicy()
 	a.power = &power.Tracker{Now: func() time.Time { return a.now() }}
+	a.opens = &openapp.Tracker{}
 	a.desk = &remote.Desk{Now: func() time.Time { return a.now() }}
 	a.snaps = &snapshot.Store{Now: func() time.Time { return a.now() }, Logger: log,
 		OnChange: func(l []snapshot.Snapshot) { a.emit(EventSnapshots, Snapshots{Snapshots: l}) }}
@@ -232,7 +235,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
 		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage,
 		onRemote: a.onRemoteMessage, onSnapshot: a.onSnapshotMessage, onClassroom: a.onClassroomMessage,
-		onTimer: a.onTimerAck, onFile: a.onFileMessage, onError: a.onAgentError}, a.log)
+		onTimer: a.onTimerAck, onFile: a.onFileMessage, onOpen: a.onOpenMessage, onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -242,7 +245,9 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	a.class, a.info, a.startErr = class, info, ""
 	a.mu.Unlock()
 	a.power.Reset() // orders of another class are not followed
-	a.resetTimer()  // nor its timer
+	a.opens.Clear() // nor its openings
+	a.emit(EventOpens, a.OpenOrders())
+	a.resetTimer() // nor its timer
 
 	s := loadSettings(a.dir)
 	s.remember(channel, consoleName)
@@ -646,6 +651,7 @@ func studentsOf(list []session.Session) Students {
 			CanSnapshot: s.Can(protocol.CapScreenSnapshot), LastCodeAck: s.LastCodeAck,
 			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer),
 			CanFiles: s.Can(protocol.CapFilePush), CanCollect: s.Can(protocol.CapFileCollect),
+			CanOpenURL: s.Can(protocol.CapOpenURL), CanOpenApp: s.Can(protocol.CapOpenApp),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))
@@ -691,6 +697,12 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanCollect {
 				out.CanCollect++
+			}
+			if st.CanOpenURL {
+				out.CanOpenURL++
+			}
+			if st.CanOpenApp {
+				out.CanOpenApp++
 			}
 		}
 		out.Students = append(out.Students, st)

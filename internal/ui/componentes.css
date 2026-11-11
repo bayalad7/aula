@@ -271,6 +271,31 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
 /* El tiempo de un temporizador (prompt 10.8): cifras de ancho fijo para que el texto
    no baile al cambiar cada segundo. */
 .cuenta { font-variant-numeric: tabular-nums; }
+.franja--encuesta { background: var(--c-acento-suave); color: var(--c-acento-sobre-suave); }
+
+/* --- Resultados de una encuesta: una barra por opción, siempre con su texto y su número (no solo
+   color). Las filas comparten columnas (subgrid): todas las barras miden lo mismo. Lo simulado va
+   en su propio tramo rayado y se cuenta aparte en la cifra. ------------------------------------ */
+.barras {
+  display: grid; grid-template-columns: minmax(3rem, max-content) minmax(6rem, 1fr) max-content;
+  gap: var(--e-2) var(--e-3); margin: 0; padding: 0; list-style: none;
+}
+.barra-opcion { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; }
+.barra-opcion__texto { min-width: 0; max-width: 16rem; overflow-wrap: anywhere; }
+.barra-opcion__pista {
+  display: flex; height: 0.875rem; overflow: hidden;
+  border: 1px solid var(--c-borde-fuerte); border-radius: var(--r-sm); background: var(--c-superficie-2);
+}
+.barra-opcion__relleno { height: 100%; background: var(--c-acento); }
+.barra-opcion__relleno--simulado {
+  background: repeating-linear-gradient(135deg, var(--c-simulado) 0 4px, transparent 4px 7px);
+}
+.barra-opcion__cifra { font-size: var(--t-sm); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.barra-opcion[data-elegida="true"] .barra-opcion__texto { font-weight: var(--peso-fuerte); }
+@media (max-width: 34rem) {
+  .barras { grid-template-columns: 1fr max-content; row-gap: var(--e-1); }
+  .barra-opcion__pista { grid-column: 1 / -1; grid-row: 2; }
+}
 
 /* --- Diálogo de confirmación --------------------------------------------------------------- */
 .dialogo {

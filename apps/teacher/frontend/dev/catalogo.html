@@ -164,6 +164,7 @@ discord</textarea></label>
         <p class="franja franja--transmitiendo"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#transmitir"/></svg><span class="franja__texto">Transmitiendo tu pantalla a 7 de 7 alumnos <span class="franja__nota">La ventana de Aula no aparece en la transmisión.</span></span><button class="btn btn--sm">Detener</button></p>
         <p class="franja franja--energia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#energia"/></svg><span class="franja__texto">Reinicio pendiente en 2 equipos · el primero en 0:24</span><button class="btn btn--sm">Cancelar</button></p>
         <p class="franja franja--simulada"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#simulado"/></svg><span class="franja__texto">Aula simulada activa: 2 alumnos de prueba</span><button class="btn btn--sm">Salir</button></p>
+        <p class="franja franja--encuesta"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#encuesta"/></svg><span class="franja__texto">Encuesta abierta · 12 de 20 respondieron</span><button class="btn btn--sm">Ver resultados</button><button class="btn btn--sm">Cerrar</button></p>
         <p class="franja franja--advertencia"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#llave"/></svg><span class="franja__texto">Este equipo no tiene la clave del centro: los alumnos no reconocerán esta consola.</span><a href="#">¿Qué hago?</a></p>
       </div>
     </section>
@@ -247,6 +248,16 @@ discord</textarea></label>
         <a href="#menu-contador"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#alumnos"/></svg><span class="nav-lateral__texto">Alumnos</span></a>
         <a href="#menu-contador" aria-current="page"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#participacion"/></svg><span class="nav-lateral__texto">Participación</span><span class="nav-lateral__contador">3</span></a>
       </nav>
+    </section>
+
+    <section id="resultados" aria-labelledby="h-resultados">
+      <h2 id="h-resultados">Resultados de una encuesta</h2>
+      <p class="suave">Una barra por opción, con su texto y su número: el color nunca es lo único que dice algo. El tramo rayado son los alumnos simulados, contados aparte.</p>
+      <ol class="barras">
+        <li class="barra-opcion"><span class="barra-opcion__texto">1.5</span><span class="barra-opcion__pista" aria-hidden="true"><span class="barra-opcion__relleno" style="width:25%"></span></span><span class="barra-opcion__cifra">3 (25 %)</span></li>
+        <li class="barra-opcion" data-elegida="true"><span class="barra-opcion__texto">1</span><span class="barra-opcion__pista" aria-hidden="true"><span class="barra-opcion__relleno" style="width:50%"></span><span class="barra-opcion__relleno barra-opcion__relleno--simulado" style="width:17%"></span></span><span class="barra-opcion__cifra">8 (67 %) · 2 simulados</span></li>
+        <li class="barra-opcion"><span class="barra-opcion__texto">2</span><span class="barra-opcion__pista" aria-hidden="true"><span class="barra-opcion__relleno" style="width:8%"></span></span><span class="barra-opcion__cifra">1 (8 %)</span></li>
+      </ol>
     </section>
 
     <section id="iconos" aria-labelledby="h-iconos">

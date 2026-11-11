@@ -313,6 +313,24 @@
       "alt": "Enviar archivos y plantillas: Cómo llegan los archivos del profesor a la carpeta de trabajo de cada alumno, sin salir de ella, y cómo sabe la consola quién los tiene",
       "claro": "generados/19-enviar-archivos.claro.svg",
       "oscuro": "generados/19-enviar-archivos.oscuro.svg"
+    },
+    {
+      "id": "20-encuestas",
+      "titulo": "Encuestas",
+      "descripcion": "Cómo llega una encuesta del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ven al compartir los resultados",
+      "audiencia": [
+        "profesor",
+        "alumno",
+        "desarrollador",
+        "auditor"
+      ],
+      "pantallas": [
+        "participacion"
+      ],
+      "hash": "sha256:c01b8c10de4ddbbddfcfff75a574f0e3863845cd37c3be55fceab860ebab0271",
+      "alt": "Encuestas: Cómo llega una encuesta del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ven al compartir los resultados",
+      "claro": "generados/20-encuestas.claro.svg",
+      "oscuro": "generados/20-encuestas.oscuro.svg"
     }
   ]
 }

@@ -190,6 +190,19 @@ Con el aula simulada abierta (C-03) y, para C-81 y C-82, un alumno real en otra 
 | C-82 | Restricciones › Sitios web › bloquear `youtube.com`; luego **Abrir** › escribe `youtube.com` | Debajo de la dirección aparece «El filtro web de la clase bloquea esta página en <equipo>…». Escribe `file:///C:/Windows` y **Abrir**: el error va junto al campo y no se envía nada |
 | C-83 | **Abrir** › App permitida › Thonny (o una que no esté instalada en el alumno) › **Abrir**; luego desde la ficha y la Pantalla grande del alumno, **Abrir página o app** | Si no la tiene: «Abierta en 0 de 1 · 1 no pudo» y «No se abrió en <equipo>: esa app no está instalada en su equipo». Desde la ficha y la Pantalla grande el mismo formulario se abre debajo del botón, va solo a ese alumno y debajo dice «Se abrió en <equipo>.» o el motivo. A 900×600 y en oscuro el panel y Ajustes se leen completos |
 
+### Encuestas (10.12)
+
+Con el aula simulada abierta (C-03): los simulados responden solos. Para C-87, un alumno real en
+otra ventana o VM (`instaladores-locales.md`).
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-84 | Alumnos › **Encuesta** › «¿Qué imprime print(3 // 2)?», opción múltiple con `1.5`, `1`, `2` › **Lanzar** | Toast «Encuesta lanzada» con «Ver resultados». Arriba aparece la franja «Encuesta abierta: «¿Qué imprime…»» con cuántos respondieron. En Participación › **Encuestas**, las barras se llenan una por una (rayadas: son simulados) con «n (pct %) · n simulados». Sin escribir la pregunta o con una sola opción, el error va junto al campo y no se lanza nada |
+| C-85 | Con la encuesta abierta, **Encuesta** otra vez | El panel avisa «Ya hay una encuesta abierta («…»). Al lanzar esta, aquella se cierra.»; al lanzar, la anterior pasa a «Anteriores de esta clase» |
+| C-86 | **Cerrar encuesta** en la franja | La franja desaparece; en Participación la recién cerrada queda desplegada, con sus barras y **Compartir resultados**. Al compartir: insignia «Resultados compartidos» y el botón desaparece. En una de respuesta corta no hay botón y dice que no se comparten |
+| C-87 | Con un alumno real: una de **Sí o no** con **Ver quién respondió qué** marcada; responde en el alumno | En Participación aparece «Nominal», «Quién respondió qué: <equipo> · <usuario>: Sí» y «Aún no responden: …» con los que faltan. En una anónima de respuesta corta solo se ven los textos, sin equipo ni hora |
+| C-88 | Cierra el aula simulada con una encuesta abierta; luego cierra la clase | Las respuestas simuladas desaparecen de las barras; al cerrar la clase, la sección vuelve a «Aún no has lanzado una encuesta». En la ficha de un alumno, «Responder encuestas» aparece en «Qué puede hacer su equipo». A 900×600 y en oscuro el panel y la sección se leen completos |
+
 ### Diagramas
 
 | # | Pasos | Esperado |
@@ -252,22 +265,6 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-26 | Con tu editor al frente, abre desde la consola la página `docs.python.org/3/tutorial/?q=1` | Se abre tu navegador predeterminado en esa página y queda al frente; Aula **no** sale al frente ni deja el modo compacto. En la esquina de Aula: «Tu profesor abrió una página · <profesor> (canal <n>) abrió docs.python.org/3/tutorial en tu navegador (hh:mm)», sin el `?q=1`; al pasar el mouse se ve la dirección completa. «Entendido» lo cierra. Con Aula cerrada al área de notificación, solo se marca el icono y el aviso está al abrirla |
 | A-27 | Abre desde la consola la app Calculadora; luego guarda en la consola una app con la ruta `%LOCALAPPDATA%\Temp\x.exe` (sale error) y otra con `C:\Windows\System32\cmd.exe` editando a mano `apps-permitidas.json` y ábrela | La Calculadora se abre y el aviso dice «… abrió Calculadora en tu equipo». La de `cmd.exe` no se abre: la consola dice «su equipo no permite esa app…» y Aula no muestra aviso. `aula-agente.log` (o `aula-cliente.log`) dice «opened» / «open failed reason=not_allowed», **nunca** la URL ni la ruta |
 | A-25 | Cierra Aula al área de notificación y recoge otra vez | La ventana no aparece: solo se marca el icono; al abrirla están los avisos y la ronda nueva en la tarjeta. `aula-agente.log` dice «collection read/collected file acked» con tamaños, nunca nombres |
-
-### Con alumnos reales (opcional, con `instaladores-locales.md`)
-
-| # | Pasos | Esperado |
-|---|---|---|
-| C-20 | Con 1 VM de alumno y los simulados abiertos | El real cuenta en «conectados» y los simulados aparte. Energía y Restricciones solo se ofrecen para el real |
-
-## Revisión automática del frontend (arnés web)
-
-Antes de pedir la prueba en la ventana real, corre el arnés de `scripts/ux/` (ver su
-`README.md`): recorre 41 pantallas en Chromium headless con datos de demostración, falla si hay
-errores de JS o violaciones serias de accesibilidad, y regenera las capturas del manual. No
-sustituye estos casos: no ve la ventana nativa ni el backend.
-
-## Si algo falla
-
-- Log de la consola: `%LOCALAPPDATA%\Aula\consola\aula-consola.log`. Las líneas de los simulados
-  llevan `simulated=true`.
-- Anota el caso, la captura de la ventana (solo de la ventana de Aula) y el commit.
+| A-28 | Con tu editor al frente, lanza desde la consola una encuesta de opción múltiple | Arriba de la lista de Aula aparece la tarjeta «Encuesta» con «Nuevo», «Abierta», la pregunta y «Elige una opción. Anónima: tu profesor ve el total, no tu respuesta.»; el editor conserva el foco y el título dice «(1) Aula — …». No aparece ningún diálogo. En modo compacto, la tira dice «1 nuevo»; con la ventana cerrada solo se marca el icono |
+| A-29 | Elige una opción con el teclado (Tab hasta las opciones, flechas, Enter); luego otra y **Cambiar mi respuesta** | «Enviando tu respuesta…» y en seguida «Respuesta enviada: 1. Puedes cambiarla mientras siga abierta.»; en la consola cuenta una sola vez, con la última. Al cerrar la encuesta: «Encuesta cerrada. Respondiste: …» y las opciones quedan desactivadas |
+| A-30 | La consola comparte los resultados; luego revisa `aula-agente.log` (o `aula-cliente.log`) | En la tarjeta: «Resultados de la clase» con una barra por opción, su número y porcentaje, la tuya marcada «(tu respuesta)» y «Respondieron n de m». El log dice «poll arrived», «poll answered», «poll closed» con `poll` y longitudes, **nunca** la pregunta, las opciones ni tu respuesta |

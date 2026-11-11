@@ -53,6 +53,7 @@ lleve `foreignObject`.
 | 17 | [Control remoto de un alumno](17-control-remoto.md) | `sequenceDiagram` | profesor, alumno, desarrollador |
 | 18 | [Manos y mensajes del alumno](18-manos-mensajes.md) | `sequenceDiagram` | profesor, alumno, desarrollador |
 | 19 | [Enviar archivos y plantillas](19-enviar-archivos.md) | `sequenceDiagram` | profesor, alumno, desarrollador, auditor |
+| 20 | [Encuestas](20-encuestas.md) | `sequenceDiagram` | profesor, alumno, desarrollador, auditor |
 
 Una fila sin enlace debe decir «(pendiente)»: así se lista un diagrama cuya función aún no
 existe.

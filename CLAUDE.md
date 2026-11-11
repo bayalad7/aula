@@ -65,6 +65,11 @@ Dos aplicaciones, mismo monorepo:
     vigente, para quién es, qué se mandó y acusó cada sesión y el reenvío al reconectar
     (`Class`); del lado del agente, la cuenta por lo que falta (nunca por la hora), el fin una sola
     vez y lo que muestra la ventana (`Countdown`). Solo informa: nada cambia en el equipo.
+  - `internal/poll`: las encuestas en vivo (`poll.*`): del lado de la consola, la abierta y las
+    cerradas de la clase, un voto por alumno (cuenta el último), los totales y el reenvío al
+    reconectar (`Class`); del lado del agente, las tarjetas, la respuesta que espera su acuse y los
+    resultados compartidos (`Ballot`). Solo en memoria; nunca registra la pregunta ni las
+    respuestas.
   - `internal/filepush`: enviar archivos y plantillas (`file.push`): las reglas de ruta de los dos
     lados (`CheckName`, `CheckDest`, `CheckRel`, sin corregir nunca una ruta); del lado de la
     consola, el envío archivo por archivo con sus acuses (`Pusher`) y las plantillas en
@@ -91,7 +96,7 @@ Dos aplicaciones, mismo monorepo:
     frontend Wails bajo `sistema/`. Una sola copia: ninguna app guarda la suya. Su prueba de
     contraste (WCAG AA) vive con él.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `filepush`, `collect`, `openapp`, `ui` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `poll`, `filepush`, `collect`, `openapp`, `ui` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

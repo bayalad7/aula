@@ -40,6 +40,18 @@ Los alumnos ven cuánto falta en su barra de arriba, sin que les tape el trabajo
 tu consola puedes **Extender** o **Detener**. Más detalles en
 [Participación › Temporizador](participacion#temporizador).
 
+## Hacer una pregunta rápida a la clase
+
+1. Pulsa **Encuesta** en la barra de acciones.
+2. Escribe la pregunta y elige el tipo: opción múltiple (escribe las opciones), sí o no, o
+   respuesta corta.
+3. Si quieres saber quién respondió qué, marca **Ver quién respondió qué**; si no, es anónima.
+4. Pulsa **Lanzar**.
+
+Las respuestas llegan en vivo a **Participación**, con una barra por opción. Cuando quieras, pulsa
+**Cerrar encuesta** y, si es de opción múltiple o de sí o no, **Compartir resultados**: los
+alumnos ven solo el total. Más detalles en [Participación › Encuestas](participacion#encuestas).
+
 ## Recoger el ejercicio
 
 1. En **Archivos**, abre la pestaña **Recolecciones**.

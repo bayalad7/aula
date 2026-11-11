@@ -1,8 +1,8 @@
 // Regenera las capturas del manual (docs/v1/administracion/img/) con el
 // arnés web y datos de demostración, para que nunca queden viejas a mano.
-//   node capturas-manual.mjs
+//   node capturas-manual.mjs [--solo=participacion]   (solo las que contienen alguna palabra)
 import path from "node:path";
-import { abrir, click, raiz, seq } from "./arnes.mjs";
+import { abrir, click, raiz, seq, sleep, soloCapturas } from "./arnes.mjs";
 
 const img = path.join(raiz, "docs", "v1", "administracion", "img");
 const fila = (host) => `#alumnos-filas tr[data-clave="r:${host}"]`;
@@ -24,10 +24,16 @@ const capturas = {
   "recolecciones.webp": ["lab-recolecciones", { ruta: "archivos/recolecciones", h: 800 }],
   "simulada.webp": ["simulada", { ruta: "simulada" }],
   "participacion.webp": ["lab-participacion", { ruta: "participacion" }],
+  "participacion-encuesta.webp": ["lab-encuesta", { ruta: "participacion", pasos: async (p) => {
+    await p.evaluate(() => document.getElementById("encuestas").scrollIntoView());
+    await sleep(200);
+  } }],
 };
+const incluir = soloCapturas();
 
 let mal = 0;
 for (const [archivo, [escena, o]] of Object.entries(capturas)) {
+  if (!incluir(archivo)) continue;
   const r = await foto(path.join(img, archivo), escena, o);
   mal += r.errores.length;
   console.log((r.errores.length ? "✗ " : "✓ ") + path.relative(raiz, path.join(img, archivo)));

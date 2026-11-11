@@ -524,6 +524,39 @@ Es una **acción sobre el equipo**, pero puntual: no lleva banda, porque no qued
     **nunca** la URL, el nombre de la app ni su ruta. Los alumnos simulados no declaran `open.*`
     (regla 34): no les llega.
 
+## Encuestas en vivo (v0.13, todos los sistemas)
+
+El profesor hace una pregunta rápida a la clase o a una selección (opción múltiple, sí o no o
+respuesta corta) y ve las respuestas llegar en la vista «Participación» (`docs/protocol.md`
+§5.23). No observa ni controla el equipo: no lleva banda ni aviso fijo, y responder es decisión
+del alumno.
+
+71. **Llega sin interrumpir.** La encuesta es una tarjeta arriba de la lista de la ventana, con
+    «Nuevo» y `notify`: nunca un diálogo, nunca `raise`, nunca quita el foco. Con la ventana
+    cerrada solo se marca el icono del área de notificación; en el modo compacto cuenta como
+    «sin ver». El alumno puede no responder, y puede cambiar su respuesta hasta que se cierre.
+72. **Anónima o nominal, y el alumno lo sabe antes.** Por omisión la encuesta es **anónima**: la
+    consola solo muestra cuántos eligieron cada opción y cuántos respondieron; en una de respuesta
+    corta, los textos sin nombre ni hora, en orden alfabético. El profesor puede marcar «Ver quién
+    respondió qué» en cada encuesta (para saber a quién ayudar); entonces es **nominal** y ve la
+    respuesta de cada alumno y quién no ha respondido. La tarjeta del alumno dice cuál de las dos
+    es **antes** de que responda («Anónima: tu profesor ve el total, no tu respuesta» o «Tu
+    profesor verá tu respuesta con tu nombre»). En una anónima la consola guarda en memoria a qué
+    equipo corresponde cada voto, solo para contar uno por alumno y aceptar el reenvío tras una
+    desconexión; ninguna pantalla lo muestra y nada lo escribe.
+73. **Los compañeros solo ven el total, y solo si el profesor lo comparte.** Ningún alumno ve la
+    respuesta de otro. «Compartir resultados» manda a quienes recibieron la encuesta **solo los
+    totales** de una de opción múltiple o de sí o no, ya cerrada, aunque haya sido nominal; las
+    respuestas cortas nunca se comparten. Los votos de los alumnos simulados se cuentan aparte y
+    no entran en ese total (regla 32).
+74. **Solo en memoria, sin texto en los registros.** La consola guarda las encuestas de la clase
+    (como mucho 20) en memoria y las borra al cerrar la clase o cambiar de canal; lo de los
+    alumnos simulados se borra al cerrar el aula simulada. Los registros de la consola y del
+    agente llevan `poll_id`, el tipo, si es nominal, los estados y los totales; **nunca** la
+    pregunta, las opciones ni el texto de una respuesta, y en una anónima tampoco qué eligió cada
+    equipo. Exportar resultados será parte de la asistencia y bitácora (prompt 10.13), con su
+    propia regla.
+
 ## Pendiente para etapas futuras
 
 - Linux y macOS (incluida la recepción de la transmisión, las restricciones, el control remoto

@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-09 (10.11 abrir página o app implementada, falta la prueba en VM;
+Última actualización: 2026-11-11 (10.12 encuestas en vivo implementadas, falta la prueba en VM;
+10.11 abrir página o app implementada, falta la prueba en VM;
 10.10 recolecciones implementadas, falta la prueba en VM;
 10.9 enviar archivos y plantillas implementado, falta la prueba en
 VM; 10.8 temporizador de ejercicio implementado, falta la prueba en
@@ -35,7 +36,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.9 | Enviar archivos y plantillas de ejercicio | ✅ Implementado y probado en CI con dobles y alumnos simulados (falta la prueba en VM, `docs/prueba-vms.md` §21, y los casos C-68 a C-73 y A-20 a A-22) |
 | 10.10 | Recoger los archivos de cada alumno (recolecciones) | ✅ Implementado y probado en CI con dobles y alumnos simulados; pestaña «Recolecciones» de Archivos (falta la prueba en VM, `docs/prueba-vms.md` §22, y los casos C-74 a C-78 y A-23 a A-25). `code.collect` (entregar desde el overlay) sigue reservado |
 | 10.11 | Enviar una URL o abrir una app | ✅ Implementado y probado en CI con dobles; panel «Abrir» de la barra, la acción en la ficha y la Pantalla grande, y Ajustes › Apps permitidas (falta la prueba en VM, `docs/prueba-vms.md` §23, y los casos C-79 a C-83 y A-26 y A-27) |
-| 10.12 | Encuestas en vivo | ⏳ Pendiente |
+| 10.12 | Encuestas en vivo | ✅ Implementado y probado en CI con dobles y alumnos simulados; panel «Encuesta» de la barra, franja y sección «Encuestas» de Participación (falta la prueba en VM, `docs/prueba-vms.md` §24, y los casos C-84 a C-88 y A-28 a A-30) |
 | 10.13 | Asistencia y bitácora | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.4.0-rc.1`) |
 | 12 (09.2) | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
@@ -1142,6 +1143,54 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 10.12: encuestas en vivo — notas
+
+- **Diseño aprobado** (2026-11-11): panel «Encuesta» en la barra de acciones (todos o la
+  selección), **franja global** mientras está abierta (además del encaje del prompt: CLAUDE.md
+  pide franja para lo que sigue activo) y sección «Encuestas» en Participación. **Anónima por
+  omisión**, con «Ver quién respondió qué» por encuesta, que el alumno lee en la tarjeta antes de
+  responder. **El alumno puede cambiar su respuesta** hasta el cierre: un voto por alumno, cuenta
+  el último. Compartir: solo totales, solo de opción múltiple o de sí o no ya cerradas.
+- **Protocolo** (`docs/protocol.md` §5.23): `poll.open` (`kind` `choice`/`yesno`/`open`,
+  `question` ≤ 200, 2–6 `options` ≤ 80, `named`), `poll.vote` (`choice` o `text` ≤ 140),
+  `poll.vote.ack` (`accepted`, `closed`, `unknown`), `poll.close`, `poll.results` (`counts`,
+  `voters`, `recipients`) y `poll.ack` (`shown`, `closed`, `results`). Capacidad `poll` en todos
+  los SO cuando hay ventana; la consola acepta `poll.vote` solo de quien la declaró. Al
+  reconectar, la consola manda el estado de la última encuesta de ese alumno; el agente cierra
+  las tarjetas que no le reenvían en 3 s (como el temporizador).
+- **Lógica** (`internal/poll`, paquete nuevo): `Class` (consola: una abierta, 20 por clase,
+  votos por equipo y usuario, `Plan` con lo que falta mandar a cada sesión, totales sin simulados,
+  `ForgetSimulated`) y `Ballot` (agente: 5 tarjetas, respuesta pendiente de acuse y su reenvío,
+  una por segundo, huérfanas tras reconectar). Sin SO.
+- **Consola:** botón y panel «Encuesta» (pregunta, tipo, 2–6 opciones, nominal; avisos de quién
+  no puede verla y de que reemplaza a la abierta), franja «Encuesta abierta: «…» · n de N
+  respondieron» con «Ver resultados» y «Cerrar encuesta», y la sección en Participación (barras
+  con texto, número y porcentaje, lo simulado rayado y contado aparte; en nominal quién respondió
+  qué y quién falta; anteriores plegables con «Compartir resultados»). Bindings `Polls`,
+  `OpenPoll`, `ClosePoll`, `SharePollResults`; evento `aula:polls`; errores `invalidPoll`,
+  `noPollTargets`, `pollGone`, `pollNotShareable`; «Responder encuestas» en la ficha. Sistema de
+  diseño: icono `encuesta`, `.franja--encuesta` y el componente `.barras` / `.barra-opcion`
+  (subgrid, en el catálogo).
+- **Alumno:** tarjeta «Encuesta» arriba de la lista con «Nuevo», si es anónima o nominal, radios
+  con teclado (o campo de 140) y «Enviar» / «Cambiar mi respuesta»; cerrada, las opciones quedan
+  desactivadas; con resultados, sus barras con «(tu respuesta)». `notify`, nunca `raise`; sin
+  banda. Binding `AnswerPoll` (también por el ayudante del servicio), evento `aula:polls`.
+- **Simulados:** declaran `poll` y responden solos al segundo y algo, cada uno una opción
+  distinta; sus votos se cuentan aparte, no entran en lo compartido y se borran al cerrar el aula
+  simulada.
+- **Documentación:** reglas 71–74; manual (Participación › Encuestas y «Compartir los
+  resultados», Tareas frecuentes › «Hacer una pregunta rápida a la clase»); diagrama 20
+  «Encuestas»; `docs/eventos-ui.md`; `CLAUDE.md` (paquete nuevo); zonas y mapa; casos C-84 a
+  C-88 y A-28 a A-30; `docs/prueba-vms.md` §24. `capturas-manual.mjs` y `mapa.mjs` aceptan
+  `--solo=` como el recorrido.
+- **Pruebas:** protocolo (ida y vuelta, límites, `ValidFor`, ejemplos válidos e inválidos);
+  `poll` (un voto por alumno y el último, ritmo, cierre, selección, reconexión, reemplazo,
+  anonimato, simulados, tope de 20 y de 5 tarjetas, huérfanas); el agente con una consola real
+  (`notify` sin `raise`, sin texto en el log); los simulados; los bindings de la consola; arnés
+  (capturas 127–136 de la consola, 78–83 del alumno y los casos `encuesta`,
+  `encuesta-sin-elegir`, `encuesta-cerrada-resultados` y `encuesta-compacto`).
+- **Falta de tu lado:** la prueba en VM (§24) y los casos manuales.
 
 ## Etapa 10.11: abrir una página o una app — notas
 

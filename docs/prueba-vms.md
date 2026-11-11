@@ -1242,3 +1242,21 @@ y en modo ventana en la VM 2.
 | **OA-F** Sin sesión | Cierra la sesión del alumno en la VM 1 y abre una página a todos. | La VM 1 no la recibe («No la reciben» o no está en la cuenta): sin ayudante no declara `open.url`. |
 
 **Para aceptar** bastan OA-A y OA-B en ✅.
+
+## 24. Encuestas en vivo (10.12)
+
+Comprueba que una encuesta llega a dos o tres alumnos sin quitarles el foco, que cada uno cuenta
+una vez, que el agregado se actualiza en vivo y que se respeta el anonimato acordado
+(`docs/protocol.md` §5.23, `docs/privacidad.md` reglas 71–74). Con las dos VMs de §18 (el agente
+**como servicio** en la VM 1, en modo ventana en la VM 2) y, si hay, una tercera; el aula
+simulada cerrada para ver solo los reales.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **EN-A** Votar y ver el agregado en vivo (**aceptación**) | Con el Bloc de notas al frente en las VMs, Alumnos › **Encuesta** › «¿Qué imprime print(3 // 2)?» con `1.5`, `1`, `2` › **Lanzar**. Responde en cada VM, una por una, con opciones distintas. | En cada VM aparece la tarjeta arriba con «Nuevo» sin quitar el foco del Bloc de notas. En la consola, cada respuesta mueve su barra en cuanto llega y la franja dice «n de N respondieron». |
+| **EN-B** Un voto por alumno y cerrar (**aceptación**) | En la VM 1 cambia la respuesta dos veces; luego **Cerrar encuesta** y trata de responder en la VM 2. | La VM 1 cuenta una sola vez, con la última. Tras cerrar, la VM 2 dice «Encuesta cerrada» y sus opciones están desactivadas; las barras no cambian. |
+| **EN-C** Anonimato (**aceptación**) | Lanza una de respuesta corta **sin** marcar «Ver quién respondió qué» y responde en las VMs; luego una de sí o no **con** la casilla. Comparte los resultados de la de sí o no. | La anónima solo muestra los textos, sin equipo ni hora, y la tarjeta del alumno lo decía antes de responder. La nominal muestra quién respondió qué y quién falta, y su tarjeta decía «Tu profesor verá tu respuesta con tu nombre». Al compartir, cada VM ve solo los totales con su respuesta marcada, nunca la de otro. |
+| **EN-D** Reconexión | Con una encuesta abierta, desconecta la red de la VM 1, responde y vuelve a conectarla; luego, desconectada, cierra la encuesta y vuelve a conectarla. | La respuesta dada sin red llega al reconectar y cuenta. Cerrada mientras no estaba, al reconectar la tarjeta dice «Encuesta cerrada» (en unos 3 s). |
+| **EN-E** Registros | Revisa `C:\ProgramData\Aula\alumno\logs\aula-agente.log` (VM 1), `aula-cliente.log` (VM 2) y el log de la consola. | Dicen «poll opened/arrived/answered/closed» con `poll`, el tipo y longitudes, **nunca** la pregunta, las opciones ni las respuestas. |
+
+**Para aceptar** bastan EN-A, EN-B y EN-C en ✅.

@@ -5,6 +5,7 @@ import (
 
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
+	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/remote"
 	"github.com/bayalad7/aula/internal/snapshot"
@@ -59,6 +60,10 @@ const (
 	// starts, is extended, stops, ends or a student acknowledges it
 	// (docs/protocol.md §5.19). The window counts the seconds by itself.
 	EventTimer = "aula:timer"
+	// EventPolls carries a poll.View whenever a poll opens, closes, its
+	// totals are shared, a student answers or acknowledges it
+	// (docs/protocol.md §5.23).
+	EventPolls = "aula:polls"
 	// EventOpens carries the last openings ([]openapp.Order, newest first)
 	// whenever one is sent or a student acknowledges it (§5.22).
 	EventOpens = "aula:opens"
@@ -113,6 +118,7 @@ type Student struct {
 	CanHand      bool     `json:"canHand"`      // hand (every OS with a window, simulated students)
 	CanMessage   bool     `json:"canMessage"`   // msg.student (the same)
 	CanTimer     bool     `json:"canTimer"`     // timer (every OS with a window, simulated students)
+	CanPoll      bool     `json:"canPoll"`      // poll (the same)
 	CanFiles     bool     `json:"canFiles"`     // file.push (Windows agents, simulated students)
 	CanCollect   bool     `json:"canCollect"`   // file.collect (Windows agents, simulated students)
 	CanOpenURL   bool     `json:"canOpenUrl"`   // open.url (Windows agents; never simulated students)
@@ -154,6 +160,8 @@ type Students struct {
 	CanSnapshot int `json:"canSnapshot"`
 	// CanTimer counts connected agents with timer, simulated ones included.
 	CanTimer int `json:"canTimer"`
+	// CanPoll counts connected agents with poll, simulated ones included.
+	CanPoll int `json:"canPoll"`
 	// CanFiles counts connected agents with file.push, simulated ones included.
 	CanFiles int `json:"canFiles"`
 	// CanCollect counts connected agents with file.collect, simulated ones included.
@@ -247,6 +255,8 @@ type View struct {
 	Participation Participation `json:"participation"`
 	// Timer is the exercise timer of the class, if any.
 	Timer classtimer.Snapshot `json:"timer"`
+	// Polls are the live polls of the class (§5.23).
+	Polls poll.View `json:"polls"`
 }
 
 // Snapshots is the list of screenshots in memory, oldest request first.

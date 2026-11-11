@@ -66,6 +66,10 @@ const (
 	codeNoTimerTargets       = "noTimerTargets"
 	codeTimerGone            = "timerGone"
 	codeTimerTooLong         = "timerTooLong"
+	codeInvalidPoll          = "invalidPoll"
+	codeNoPollTargets        = "noPollTargets"
+	codePollGone             = "pollGone"
+	codePollNotShareable     = "pollNotShareable"
 	codePushNoFiles          = "pushNoFiles"
 	codePushTooLarge         = "pushTooLarge"
 	codePushPathInvalid      = "pushPathInvalid"
@@ -98,6 +102,7 @@ var errorCodes = []string{
 	codeSnapshotUnsupported, codeSnapshotTooMany, codeSnapshotGone, codeSnapshotSaveFailed, codeSnapshotFolder,
 	codeHandGone, codeMessageGone, codeStudentGone, codeSimTooSoon, codeNoticeUnsupported,
 	codeInvalidTimer, codeNoTimerTargets, codeTimerGone, codeTimerTooLong,
+	codeInvalidPoll, codeNoPollTargets, codePollGone, codePollNotShareable,
 	codePushNoFiles, codePushTooLarge, codePushPathInvalid, codePushFileGone, codePushUnsupported,
 	codeTemplateExists, codeTemplateInvalid, codeTemplateGone,
 	codeCollectActivity, codeCollectFolder, codeCollectGone, codeCollectNoStudents, codeCollectNothing,
@@ -161,6 +166,10 @@ var errorHelp = map[string]string{
 	codeNoTimerTargets:       "participacion#temporizador",
 	codeTimerGone:            "participacion#temporizador",
 	codeTimerTooLong:         "participacion#temporizador",
+	codeInvalidPoll:          "participacion#encuestas",
+	codeNoPollTargets:        "participacion#encuestas",
+	codePollGone:             "participacion#encuestas",
+	codePollNotShareable:     "participacion#compartir-los-resultados",
 	codePushNoFiles:          "archivos#enviar-archivos-y-plantillas",
 	codePushTooLarge:         "archivos#enviar-archivos-y-plantillas",
 	codePushPathInvalid:      "archivos#enviar-archivos-y-plantillas",

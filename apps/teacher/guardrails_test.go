@@ -131,7 +131,9 @@ func TestSimulatedStudentsOnlyDeclareHarmlessCapabilities(t *testing.T) {
 	// file.collect hands in their last code from memory: no disk is read and
 	// nothing changes on a computer (rule 65; prompt 10.10).
 	allowed := []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-		protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect}
+		protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect,
+		// poll only shows a question and answers it (rules 71-74; prompt 10.12).
+		protocol.CapPoll}
 	for _, c := range simclass.Capabilities {
 		if !slices.Contains(allowed, c) {
 			t.Errorf("simulated students may declare %q; review docs/privacidad.md (rules 32–35) before allowing it", c)

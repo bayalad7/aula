@@ -94,6 +94,13 @@
         </span>
         <button type="button" class="btn btn--sm" id="f-temporizador-detener"></button>
       </section>
+      <!-- La encuesta abierta (prompt 10.12): sin aria-live, que leería cada respuesta. -->
+      <section class="franja franja--encuesta" id="f-encuesta" data-t-aria-label="encuesta.franjaEtiqueta" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg>
+        <span class="franja__texto"><span id="f-encuesta-texto"></span> <span class="franja__nota" id="f-encuesta-nota"></span></span>
+        <a class="btn btn--sm" href="#participacion" id="f-encuesta-ver" data-t="encuesta.verResultados"></a>
+        <button type="button" class="btn btn--sm" id="f-encuesta-cerrar" data-t="encuesta.cerrar"></button>
+      </section>
       <p class="franja franja--simulada" id="f-simulada" role="status" hidden>
         <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg>
         <span class="franja__texto"><span id="f-simulada-texto"></span> <span class="franja__nota" data-t="simulada.franjaNota"></span></span>
@@ -156,6 +163,7 @@
                 <button type="button" class="btn" data-panel="energia" aria-expanded="false" data-t-title="panel.energia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg><span class="btn__texto" data-t="panel.energia"></span></button>
                 <button type="button" class="btn" data-panel="captura" aria-expanded="false" data-t-title="panel.captura"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span class="btn__texto" data-t="panel.captura"></span></button>
                 <button type="button" class="btn" data-panel="temporizador" aria-expanded="false" data-t-title="panel.temporizador"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span class="btn__texto" data-t="panel.temporizador"></span></button>
+                <button type="button" class="btn" data-panel="encuesta" aria-expanded="false" data-t-title="panel.encuesta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg><span class="btn__texto" data-t="panel.encuesta"></span></button>
                 <button type="button" class="btn" data-panel="abrir" aria-expanded="false" data-t-title="panel.abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#externo"/></svg><span class="btn__texto" data-t="panel.abrirCorto"></span></button>
               </div>
             </div>
@@ -365,6 +373,24 @@
                   <div id="mensajes" class="pila-mini" hidden>
                     <h3 id="h-mensajes"></h3>
                     <ul class="lista-limpia" id="mensajes-lista" aria-labelledby="h-mensajes"></ul>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Encuestas (prompt 10.12): la abierta con sus barras en vivo y las anteriores. -->
+              <section class="tarjeta" id="encuestas" aria-labelledby="h-encuestas">
+                <div class="tarjeta__cabecera"><h2 id="h-encuestas" data-t="encuesta.seccion"></h2>
+                  <button type="button" class="btn btn--sm" id="encuesta-nueva"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg><span data-t="encuesta.nueva"></span></button></div>
+                <div class="tarjeta__cuerpo pila">
+                  <div id="encuestas-vacio" class="vacio">
+                    <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg>
+                    <p data-t="encuesta.vacio"></p>
+                    <p class="pequeno suave" data-t="encuesta.vacioNota"></p>
+                  </div>
+                  <div id="encuesta-actual" class="pila-mini" hidden></div>
+                  <div id="encuestas-anteriores" class="pila-mini" hidden>
+                    <h3 id="h-encuestas-anteriores" data-t="encuesta.anteriores"></h3>
+                    <ul class="lista-limpia pila-mini" id="encuestas-lista" aria-labelledby="h-encuestas-anteriores"></ul>
                   </div>
                 </div>
               </section>
@@ -696,6 +722,45 @@
           <div class="panel-lateral__pie">
             <button type="button" class="btn" data-cerrar-panel data-t="comun.cancelar"></button>
             <button type="button" class="btn btn--primario" id="temporizador-iniciar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span data-t="temporizador.iniciar"></span></button>
+          </div>
+        </aside>
+
+        <!-- Encuesta (docs/protocol.md §5.23): la pregunta, su tipo y si es nominal. -->
+        <aside class="panel-lateral" id="panel-encuesta" hidden aria-labelledby="h-panel-encuesta">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg>
+            <h2 id="h-panel-encuesta" tabindex="-1" data-t="panel.encuestaTitulo"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p data-destino></p>
+            <p class="aviso-en-linea" id="encuesta-sin-soporte" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="encuesta-sin-soporte-texto"></span></p>
+            <p class="aviso-en-linea" id="encuesta-reemplaza" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg><span id="encuesta-reemplaza-texto"></span></p>
+            <label class="campo"><span class="campo__etiqueta" data-t="encuesta.pregunta"></span>
+              <input type="text" id="encuesta-pregunta" maxlength="200" autocomplete="off" data-t-placeholder="encuesta.ejemplo" aria-describedby="encuesta-pregunta-error">
+              <span class="campo__error" id="encuesta-pregunta-error" hidden></span></label>
+            <fieldset class="campo"><legend class="campo__etiqueta" data-t="encuesta.tipo"></legend>
+              <div class="fila">
+                <label class="opcion"><input type="radio" name="encuesta-tipo" value="choice" checked> <span data-t="encuesta.tipo.choice"></span></label>
+                <label class="opcion"><input type="radio" name="encuesta-tipo" value="yesno"> <span data-t="encuesta.tipo.yesno"></span></label>
+                <label class="opcion"><input type="radio" name="encuesta-tipo" value="open"> <span data-t="encuesta.tipo.open"></span></label>
+              </div>
+            </fieldset>
+            <fieldset class="campo" id="encuesta-opciones-campo"><legend class="campo__etiqueta" data-t="encuesta.opciones"></legend>
+              <ol class="lista-limpia pila-mini" id="encuesta-opciones"></ol>
+              <div><button type="button" class="btn btn--sm" id="encuesta-agregar"><span data-t="encuesta.agregarOpcion"></span></button></div>
+              <span class="campo__error" id="encuesta-opciones-error" hidden></span>
+            </fieldset>
+            <p class="pequeno suave" id="encuesta-tipo-nota"></p>
+            <div class="campo">
+              <label class="opcion"><input type="checkbox" id="encuesta-nominal" aria-describedby="encuesta-nominal-ayuda"> <span data-t="encuesta.nominal"></span></label>
+              <span class="campo__ayuda" id="encuesta-nominal-ayuda" data-t="encuesta.nominalAyuda"></span>
+            </div>
+            <p class="pequeno suave" data-t="encuesta.discreta"></p>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn" data-cerrar-panel data-t="comun.cancelar"></button>
+            <button type="button" class="btn btn--primario" id="encuesta-lanzar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg><span data-t="encuesta.lanzar"></span></button>
           </div>
         </aside>
 

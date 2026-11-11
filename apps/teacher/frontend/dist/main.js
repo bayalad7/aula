@@ -337,6 +337,7 @@
     alCapturas(v.snapshots || []);
     pintarParticipacion(v.participation || participacion);
     pintarTemporizador(v.timer || temporizador);
+    if (v.polls) pintarEncuestas(v.polls);
     pintarHistorial(v.history);
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
@@ -478,7 +479,7 @@
     const puede = [["canCode", "ficha.codigo", "codigo"], ["canNotice", "ficha.avisos", "aviso"], ["canThumb", "ficha.miniaturas", "miniaturas"],
       ["canBroadcast", "ficha.transmision", "transmitir"], ["canAppBlock", "ficha.apps", "candado"], ["canWebFilter", "ficha.web", "filtro"],
       ["canPower", "ficha.energia", "energia"], ["canRemote", "ficha.control", "control"], ["canSnapshot", "ficha.captura", "captura"],
-      ["canHand", "ficha.mano", "mano"], ["canMessage", "ficha.mensajes", "mensaje"], ["canTimer", "ficha.temporizador", "reloj"],
+      ["canHand", "ficha.mano", "mano"], ["canMessage", "ficha.mensajes", "mensaje"], ["canTimer", "ficha.temporizador", "reloj"], ["canPoll", "ficha.encuestas", "encuesta"],
       ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"],
       ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
@@ -1429,6 +1430,7 @@
     pintarDestinoEquipos();
     if (panel === "captura") pintarLote();
     if (panel === "temporizador") pintarPanelTemporizador();
+    if (panel === "encuesta") pintarPanelEncuesta();
     if (panel === "abrir") abrirPanelForm.refrescar();
   }
 
@@ -1487,6 +1489,7 @@
     if (id === "energia") pintarPanelEnergia();
     if (id === "captura") pintarLote();
     if (id === "temporizador") pintarPanelTemporizador();
+    if (id === "encuesta") pintarPanelEncuesta();
     if (id === "abrir") abrirPanelForm.refrescar();
     if (id === "alumno") pintarFicha();
     $("h-panel-" + id).focus();
@@ -1857,6 +1860,220 @@
       pintarTemporizador(t);
       cerrarPanel();
       toast("exito", T("temporizador.iniciado"), T("temporizador.iniciadoTexto", { nombre: nombreTemporizador(t), tiempo: hmmss(t.remainingMs) }));
+    }, fallo).finally(() => ocupado(b, false));
+  });
+
+  // --- Encuestas (docs/protocol.md §5.23) --------------------------------------------------
+  // Panel «Encuesta» de la barra de acciones (todos o la selección), franja mientras está abierta
+  // y su sección de Participación: barras con texto y número (no solo color), lo simulado en su
+  // tramo rayado y contado aparte. En una anónima no se dice quién eligió qué (regla 72).
+  let encuestas = { current: null, closed: [] };
+  const plegadoEncuesta = new Map(); // pollId → desplegada, cuando el profesor la tocó
+  const ET = "encuesta.tipo."; // + protocol.PollKind
+  const MAX_OPCIONES = 6;
+  const opcionesEncuesta = (p) => (p.kind === "yesno" ? [T("encuesta.si"), T("encuesta.no")] : p.options.map((o) => o.label));
+  const respondieron = (p) => p.answered + p.answeredSimulated;
+
+  function pintarEncuestas(v) {
+    encuestas = v;
+    const p = v.current;
+    // Franja: lo que sigue activo mientras corre la clase.
+    $("f-encuesta").hidden = !p;
+    if (p) {
+      $("f-encuesta-texto").textContent = T("encuesta.franja", { pregunta: p.question });
+      $("f-encuesta-nota").textContent = notaRespondieron(p);
+    }
+    $("encuestas-vacio").hidden = !!p || v.closed.length > 0;
+    $("encuesta-actual").hidden = !p;
+    if (p) $("encuesta-actual").replaceChildren(...vistaEncuesta(p));
+    $("encuestas-anteriores").hidden = v.closed.length === 0;
+    // Las anteriores se pliegan, salvo la recién cerrada (para ver sus barras y compartirlas) si no
+    // hay otra abierta. Lo que el profesor despliega o pliega se respeta al repintar.
+    $("encuestas-lista").replaceChildren(...v.closed.map((c, i) => {
+      const li = el("li");
+      const d = el("details", "encuesta-anterior");
+      d.dataset.encuesta = c.pollId;
+      d.open = plegadoEncuesta.has(c.pollId) ? plegadoEncuesta.get(c.pollId) : i === 0 && !p;
+      const sum = el("summary", "", c.question);
+      // Solo lo que hace el profesor (el clic, también con Enter o Espacio), no el valor inicial.
+      sum.addEventListener("click", () => plegadoEncuesta.set(c.pollId, !d.open));
+      sum.append(el("span", "pequeno suave", " · " + T("encuesta.cerradaA", { hora: horaCorta(c.closedAt) }) + " · " + notaRespondieron(c)));
+      const cuerpo = el("div", "pila-mini encuesta-anterior__cuerpo");
+      cuerpo.append(...vistaEncuesta(c));
+      d.append(sum, cuerpo);
+      li.append(d);
+      return li;
+    }));
+    if (panel === "encuesta") pintarPanelEncuesta();
+  }
+
+  function notaRespondieron(p) {
+    const n = respondieron(p);
+    let t = p.open ? T("encuesta.respondieron", { n, total: p.eligible }) : P("encuesta.respuestas", n);
+    if (p.answeredSimulated) t += " " + P("encuesta.deEllosSimulados", p.answeredSimulated);
+    return t;
+  }
+
+  // Lo que se ve de una encuesta: la pregunta, cómo es, sus barras o respuestas, y sus botones.
+  function vistaEncuesta(p) {
+    const out = [];
+    const cab = el("div", "fila encuesta-cabecera");
+    cab.append(el("strong", "encuesta-pregunta", p.question));
+    cab.append(p.open ? insignia("conectado", "", T("encuesta.abierta")) : insignia("", "", T("encuesta.cerradaInsignia")));
+    cab.append(insignia(p.named ? "advertencia" : "", "", T(p.named ? "encuesta.esNominal" : "encuesta.esAnonima")));
+    if (p.shared) cab.append(insignia("info", "hecho", T("encuesta.compartida")));
+    out.push(cab);
+    const para = p.all ? T("encuesta.paraTodos") : P("encuesta.paraSeleccion", p.hosts.length);
+    out.push(el("p", "pequeno suave", T(ET + p.kind) + " · " + para + " · " + T("encuesta.abiertaA", { hora: horaCorta(p.openedAt) })));
+    const total = respondieron(p);
+    if (p.kind !== "open") {
+      const ol = el("ol", "barras");
+      ol.setAttribute("aria-label", T("encuesta.resultadosDe", { pregunta: p.question }));
+      opcionesEncuesta(p).forEach((texto, i) => {
+        const o = p.options[i];
+        const n = o.count + o.simulated;
+        const pct = total ? Math.round((n * 100) / total) : 0;
+        const fila = el("li", "barra-opcion");
+        const barra = el("span", "barra-opcion__pista");
+        barra.setAttribute("aria-hidden", "true");
+        const real = el("span", "barra-opcion__relleno");
+        real.style.width = (total ? (o.count * 100) / total : 0) + "%";
+        const sim = el("span", "barra-opcion__relleno barra-opcion__relleno--simulado");
+        sim.style.width = (total ? (o.simulated * 100) / total : 0) + "%";
+        barra.append(real, sim);
+        let cifra = T("encuesta.cifra", { n, pct });
+        if (o.simulated) cifra += " · " + P("encuesta.simulados", o.simulated);
+        fila.append(el("span", "barra-opcion__texto", texto), barra, el("span", "barra-opcion__cifra", cifra));
+        ol.append(fila);
+      });
+      out.push(ol);
+    }
+    // Quién respondió qué (nominal) o las respuestas abiertas, sin nombre si es anónima.
+    if (p.answers.length) {
+      const ul = el("ul", "lista-limpia pila-mini encuesta-respuestas");
+      for (const a of p.answers) {
+        const li = el("li", "pequeno");
+        const quien = a.hostname ? T("encuesta.quien", { equipo: a.hostname, usuario: a.username }) : "";
+        const que = a.choice >= 0 ? opcionesEncuesta(p)[a.choice] || "" : a.text;
+        li.append(document.createTextNode(quien ? T("encuesta.respuestaDe", { quien, respuesta: que }) : que));
+        if (a.simulated) li.append(document.createTextNode(" "), insignia("simulado", "", T("alumnos.simulado")));
+        ul.append(li);
+      }
+      const h = el("p", "pequeno", T(p.named ? "encuesta.quienRespondio" : "encuesta.respuestasAnonimas"));
+      out.push(h, ul);
+    }
+    out.push(el("p", "pequeno", notaRespondieron(p)));
+    if (p.open && p.missing.length) out.push(el("p", "pequeno suave", T("encuesta.faltan", { lista: p.missing.map((m) => m.hostname).join(", ") })));
+    if (p.open && p.unsupported.length) out.push(el("p", "pequeno suave", T("encuesta.noPueden", { lista: p.unsupported.join(", ") })));
+    const botones = el("div", "grupo-botones");
+    if (p.open) {
+      const b = boton(T("encuesta.cerrar"), "btn--sm");
+      b.addEventListener("click", cerrarEncuesta);
+      botones.append(b);
+    }
+    if (p.shareable) {
+      const b = boton(T("encuesta.compartir"), "btn--sm", "enviar");
+      b.addEventListener("click", () => {
+        ocupado(b, true);
+        api.SharePollResults(p.pollId).then((v) => {
+          pintarEncuestas(v);
+          toast("exito", T("encuesta.compartidos"), T("encuesta.compartidosTexto"));
+        }, fallo).finally(() => ocupado(b, false));
+      });
+      botones.append(b);
+    }
+    if (!p.open && p.kind === "open") out.push(el("p", "pequeno suave", T("encuesta.abiertaNoSeComparte")));
+    if (botones.childElementCount) out.push(botones);
+    return out;
+  }
+
+  const cerrarEncuesta = () => api.ClosePoll().then((v) => {
+    pintarEncuestas(v);
+    toast("info", T("encuesta.cerrada"), T("encuesta.cerradaTexto"));
+  }, fallo);
+  $("f-encuesta-cerrar").addEventListener("click", cerrarEncuesta);
+  $("encuesta-nueva").addEventListener("click", () => { irA("alumnos"); abrirPanel("encuesta"); });
+
+  // El panel: la pregunta, el tipo, las opciones (2 a 6) y si es nominal.
+  const tipoEncuesta = () => document.querySelector('input[name="encuesta-tipo"]:checked').value;
+  function filaOpcion(valor) {
+    const li = el("li", "encuesta-opcion");
+    const n = $("encuesta-opciones").childElementCount + 1;
+    const input = Object.assign(el("input"), { type: "text", maxLength: 80, autocomplete: "off", value: valor || "" });
+    input.setAttribute("aria-label", T("encuesta.opcionN", { n }));
+    input.className = "control";
+    input.addEventListener("input", () => limpiarCampo(input, $("encuesta-opciones-error")));
+    const quitar = el("button", "btn btn--fantasma btn--icono btn--sm");
+    quitar.type = "button";
+    quitar.setAttribute("aria-label", T("encuesta.quitarOpcion", { n }));
+    quitar.append(icono("cerrar"));
+    quitar.addEventListener("click", () => { li.remove(); numerarOpciones(); $("encuesta-opciones").querySelector("input")?.focus(); });
+    li.append(el("span", "suave pequeno encuesta-opcion__n", String(n)), input, quitar);
+    return li;
+  }
+  function numerarOpciones() {
+    const filas = [...$("encuesta-opciones").children];
+    filas.forEach((li, i) => {
+      li.querySelector(".encuesta-opcion__n").textContent = String(i + 1);
+      li.querySelector("input").setAttribute("aria-label", T("encuesta.opcionN", { n: i + 1 }));
+      const q = li.querySelector("button");
+      q.setAttribute("aria-label", T("encuesta.quitarOpcion", { n: i + 1 }));
+      q.hidden = filas.length <= 2;
+    });
+    $("encuesta-agregar").disabled = filas.length >= MAX_OPCIONES;
+  }
+  $("encuesta-opciones").append(filaOpcion(), filaOpcion(), filaOpcion());
+  numerarOpciones();
+  $("encuesta-agregar").addEventListener("click", () => {
+    const li = filaOpcion();
+    $("encuesta-opciones").append(li);
+    numerarOpciones();
+    li.querySelector("input").focus();
+  });
+  function pintarTipoEncuesta() {
+    const k = tipoEncuesta();
+    $("encuesta-opciones-campo").hidden = k !== "choice";
+    $("encuesta-tipo-nota").hidden = k === "choice";
+    $("encuesta-tipo-nota").textContent = k === "yesno" ? T("encuesta.notaSiNo") : T("encuesta.notaAbierta");
+  }
+  for (const r of $$('input[name="encuesta-tipo"]')) r.addEventListener("change", pintarTipoEncuesta);
+  pintarTipoEncuesta();
+  $("encuesta-pregunta").addEventListener("input", () => limpiarCampo($("encuesta-pregunta"), $("encuesta-pregunta-error")));
+
+  function pintarPanelEncuesta() {
+    const objetivo = seleccion.size ? seleccionados() : conectados();
+    const pueden = objetivo.filter((s) => s.canPoll).length;
+    $("encuesta-lanzar").disabled = pueden === 0;
+    $("encuesta-sin-soporte").hidden = pueden === objetivo.length && pueden > 0;
+    $("encuesta-sin-soporte-texto").textContent = pueden === 0 ? T("encuesta.nadiePuede") : P("encuesta.algunosNo", objetivo.length - pueden);
+    const p = encuestas.current;
+    $("encuesta-reemplaza").hidden = !p;
+    if (p) $("encuesta-reemplaza-texto").textContent = T("encuesta.reemplaza", { pregunta: p.question });
+  }
+  $("encuesta-lanzar").addEventListener("click", () => {
+    const question = $("encuesta-pregunta").value.trim();
+    if (!question) {
+      errorEnCampo($("encuesta-pregunta"), $("encuesta-pregunta-error"), T("encuesta.faltaPregunta"));
+      return;
+    }
+    const kind = tipoEncuesta();
+    const options = kind === "choice" ? [...$$("#encuesta-opciones input")].map((i) => i.value.trim()).filter(Boolean) : [];
+    if (kind === "choice" && options.length < 2) {
+      const vacio = [...$$("#encuesta-opciones input")].find((i) => !i.value.trim());
+      errorEnCampo(vacio || $("encuesta-opciones").querySelector("input"), $("encuesta-opciones-error"), T("encuesta.faltanOpciones"));
+      return;
+    }
+    // La selección va por equipo, simulados incluidos: una encuesta no cambia nada en el equipo.
+    const hosts = seleccion.size ? seleccionados().map((s) => s.hostname) : [];
+    const b = $("encuesta-lanzar");
+    ocupado(b, true);
+    api.OpenPoll({ kind, question, options, named: $("encuesta-nominal").checked, hosts }).then((v) => {
+      pintarEncuestas(v);
+      cerrarPanel();
+      toast("exito", T("encuesta.lanzada"), T("encuesta.lanzadaTexto"), "", "", { texto: T("encuesta.verResultados"), href: "#participacion" });
+      // La siguiente empieza en blanco; el tipo y si es nominal se conservan.
+      $("encuesta-pregunta").value = "";
+      for (const i of $$("#encuesta-opciones input")) i.value = "";
     }, fallo).finally(() => ocupado(b, false));
   });
 
@@ -2392,7 +2609,7 @@
   const FALLAS =[["none", "simulada.fallaNinguna"], ["slow", "simulada.fallaLenta"], ["noack", "simulada.fallaNoAcusa"], ["disconnected", "simulada.fallaDesconectado"]];
   const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla", "screen.snapshot": "simulada.capCaptura",
     "hand": "simulada.capMano", "msg.student": "simulada.capMensajes", "file.push": "simulada.capArchivos",
-    "file.collect": "simulada.capRecoger" };
+    "file.collect": "simulada.capRecoger", "poll": "simulada.capEncuestas" };
   function pintarSimulacion(v) {
     simulada = v;
     $("f-simulada").hidden = !v.active;
@@ -2934,7 +3151,7 @@
       api.ManualSearch(q).then((rs) => {
         $("ayuda-resultados-titulo").textContent = rs.length ? P("ayuda.resultados", rs.length) : T("ayuda.sinResultados");
         $("ayuda-resultados-lista").replaceChildren(...rs.map((r) => {
-          const li = el("li", "resultado");
+          const li = el("li", "barra-opcion");
           if (r.diagram) {
             const b = el("button", "enlace", r.title);
             b.type = "button";
@@ -3289,6 +3506,7 @@
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);
   rt.EventsOn(ev.PARTICIPATION, alParticipar);
   rt.EventsOn(ev.TIMER, alTemporizador);
+  rt.EventsOn(ev.POLLS, pintarEncuestas);
   rt.EventsOn(ev.FILES, pintarArchivos);
   rt.EventsOn(ev.COLLECTIONS, pintarRecolecciones);
   rt.EventsOn(ev.OPENS, pintarOrdenesAbrir);

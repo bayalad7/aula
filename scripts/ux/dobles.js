@@ -22,13 +22,13 @@
     canPower: s.capabilities.includes("power"), canRemote: s.capabilities.includes("remote"),
     canSnapshot: s.capabilities.includes("screen.snapshot"),
     canHand: s.capabilities.includes("hand"), canMessage: s.capabilities.includes("msg.student"),
-    canTimer: s.capabilities.includes("timer"),
+    canTimer: s.capabilities.includes("timer"), canPoll: s.capabilities.includes("poll"),
     canFiles: s.capabilities.includes("file.push"),
     canCollect: s.capabilities.includes("file.collect"),
     canOpenUrl: s.capabilities.includes("open.url"), canOpenApp: s.capabilities.includes("open.app"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app"];
+    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -48,12 +48,12 @@
       lastCodeAck: "sn-3", ackedAt: "10:42:08" }),
     student({ hostname: "LAB3-PC15", username: "", capabilities: ["power"] }),
     student({ hostname: "lab-ubuntu-02", username: "maria", os: "linux", osVersion: "Ubuntu 24.04",
-      capabilities: ["code.view", "msg.show", "hand", "msg.student", "timer"], lastCodeAck: "sn-2", ackedAt: "10:39:50",
+      capabilities: ["code.view", "msg.show", "hand", "msg.student", "timer", "poll"], lastCodeAck: "sn-2", ackedAt: "10:39:50",
       lastError: scene === "lab-errores" ? { code: "unsupported_capability", at: "10:43:12" } : null }),
     student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL }),
   ];
   const simStudents = [1, 2].map((i) => student({ hostname: "Simulado " + i, username: "Alumno de prueba", osVersion: "simulado",
-    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "file.push", "file.collect"], simulated: true,
+    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "file.push", "file.collect", "poll"], simulated: true,
     lastCodeAck: i === 1 ? "sn-3" : "", ackedAt: i === 1 ? "10:42:09" : "" }));
   let list = scene === "simulada-sola" ? simStudents.slice() : scene === "simulada" ? [...sims.slice(0, 1), ...simStudents] : scene === "vacia" || scene.startsWith("setup") ? [] : scene.startsWith("lab") ? lab : [...sims,
     student({ hostname: "SIM-03", username: "simulado", osVersion: "simulado", agentVersion: "0.1.0-sim",
@@ -109,7 +109,7 @@
     return { students: list, connected: real.length, simulated: c.length - real.length,
       canCode: n("canCode"), canNotice: n("canNotice"), canThumb: n("canThumb"),
       canBroadcast: r("canBroadcast"), canAppBlock: r("canAppBlock"), canWebFilter: r("canWebFilter"), canPower: r("canPower"),
-      canSnapshot: n("canSnapshot"), canTimer: n("canTimer"), canCollect: n("canCollect"),
+      canSnapshot: n("canSnapshot"), canTimer: n("canTimer"), canPoll: n("canPoll"), canCollect: n("canCollect"),
       canOpenUrl: r("canOpenUrl"), canOpenApp: r("canOpenApp") };
   };
 
@@ -225,6 +225,29 @@
   let timer = scene === "lab-temporizador" ? temporizadorDe("Ejercicio 1", 600, 272000, [])
     : scene === "lab-temporizador-fin" ? temporizadorDe("Ejercicio 1", 600, 0, []) : sinTemporizador();
   const emitTimer = () => window.__emit("aula:timer", Object.assign({}, timer));
+  // Encuestas (apps/teacher/poll.go, poll.View). lab-encuesta: una de opción múltiple abierta,
+  // anónima, con 3 respuestas (una simulada) y una de sí o no cerrada y compartida;
+  // lab-encuesta-nominal: una abierta corta nominal, con quién respondió y quién falta.
+  const conPoll = () => list.filter((s) => s.state === "connected" && s.canPoll);
+  const encuestaDe = (o) => Object.assign({ pollId: "pl-" + Date.now(), kind: "choice", question: "", named: false, open: true,
+    shared: false, shareable: false, all: true, hosts: [], openedAt: "2026-11-11T10:12:00-06:00", closedAt: null, options: [],
+    answered: 0, answeredSimulated: 0, received: conPoll().length, eligible: conPoll().length,
+    unsupported: list.filter((s) => s.state === "connected" && !s.canPoll).map((s) => s.hostname), answers: [], missing: [] }, o);
+  const anterior = encuestaDe({ pollId: "pl-1", kind: "yesno", question: "¿Entendiste cómo funciona el ciclo for?", open: false,
+    shared: true, openedAt: "2026-11-11T10:02:00-06:00", closedAt: "2026-11-11T10:05:00-06:00",
+    options: [{ label: "", count: 2, simulated: 0 }, { label: "", count: 1, simulated: 0 }], answered: 3, unsupported: [] });
+  const polls = {
+    "lab-encuesta": { current: encuestaDe({ pollId: "pl-2", question: "¿Qué imprime print(3 // 2)?",
+      options: [{ label: "1.5", count: 1, simulated: 0 }, { label: "1", count: 1, simulated: 1 }, { label: "2", count: 0, simulated: 0 }, { label: "Error", count: 0, simulated: 0 }],
+      answered: 2, answeredSimulated: 1, eligible: 4, received: 4 }), closed: [anterior] },
+    "lab-encuesta-nominal": { current: encuestaDe({ pollId: "pl-3", kind: "open", question: "¿Qué fue lo que más te costó del ejercicio?",
+      named: true, answered: 2, answers: [
+        { hostname: "LAB3-PC07", username: "alumno07", simulated: false, choice: -1, text: "Los índices de la lista", at: "2026-11-11T10:13:00-06:00" },
+        { hostname: "LAB3-PC12", username: "alumno12", simulated: false, choice: -1, text: "Cuándo usar while", at: "2026-11-11T10:13:20-06:00" }],
+      missing: [{ hostname: "lab-ubuntu-02", username: "maria", simulated: false }] }), closed: [] },
+  }[scene] || { current: null, closed: [] };
+  const emitPolls = () => window.__emit("aula:polls", JSON.parse(JSON.stringify(polls)));
+  const copiaPolls = () => JSON.parse(JSON.stringify(polls));
   const view = () => ({
     active: !scene.startsWith("setup"), class: cls, students: studentsView(), history, deliveries,
     hotkey: scene === "atajo-ocupado"
@@ -232,7 +255,7 @@
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true },
     restrictions, remote, snapshots: snaps, participation: Object.assign({}, part, { arrival: null }),
-    timer: Object.assign({}, timer),
+    timer: Object.assign({}, timer), polls: copiaPolls(),
   });
 
 
@@ -397,6 +420,37 @@
       return Object.assign({}, timer);
     }),
     StopTimer: call("StopTimer", () => { timer = sinTemporizador(); return Object.assign({}, timer); }),
+    Polls: call("Polls", copiaPolls),
+    OpenPoll: call("OpenPoll", (r) => {
+      if (!r.question.trim()) return new Error("aula:invalidPoll: encuesta no válida");
+      if (polls.current) polls.closed.unshift(Object.assign(polls.current, { open: false, closedAt: new Date().toISOString(), shareable: polls.current.kind !== "open" }));
+      const opciones = r.kind === "choice" ? r.options.map((label) => ({ label, count: 0, simulated: 0 }))
+        : r.kind === "yesno" ? [{ label: "", count: 0, simulated: 0 }, { label: "", count: 0, simulated: 0 }] : [];
+      polls.current = encuestaDe({ kind: r.kind, question: r.question, named: r.named, all: !r.hosts.length, hosts: r.hosts,
+        options: opciones, openedAt: new Date().toISOString(), received: 0 });
+      // Las respuestas llegan poco después, una por una.
+      despues(() => {
+        const c = polls.current;
+        if (!c || !c.open) return;
+        c.received = c.eligible;
+        if (c.options.length) { c.options[c.options.length > 1 ? 1 : 0].count++; c.answered++; }
+        emitPolls();
+      });
+      return copiaPolls();
+    }),
+    ClosePoll: call("ClosePoll", () => {
+      if (!polls.current) return new Error("aula:pollGone: ya no hay una encuesta abierta");
+      polls.closed.unshift(Object.assign(polls.current, { open: false, closedAt: new Date().toISOString(),
+        shareable: polls.current.kind !== "open", missing: [], unsupported: [] }));
+      polls.current = null;
+      return copiaPolls();
+    }),
+    SharePollResults: call("SharePollResults", (id) => {
+      const c = polls.closed.find((x) => x.pollId === id);
+      if (!c) return new Error("aula:pollGone: esa encuesta ya no está en la clase");
+      Object.assign(c, { shared: true, shareable: false });
+      return copiaPolls();
+    }),
     // Mensaje privado (prompt 10.7): la etiqueta no lleva el texto; el alumno lo ve poco después.
     SendPrivateNotice: call("SendPrivateNotice", (id) => {
       const s = list.find((x) => x.id === id) || {};

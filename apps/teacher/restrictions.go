@@ -174,7 +174,9 @@ func (a *App) stopSimulationOf(class classroom) {
 		host.StopSimulation()
 	}
 	a.board.ForgetSimulated() // what they sent goes with them (rule 35)
+	a.polls.ForgetSimulated() // and what they answered
 	a.emit(EventParticipation, a.participation(class, nil))
+	a.emitPolls(class)
 }
 
 // cleanApps takes app names as a teacher types them: one per line, with or

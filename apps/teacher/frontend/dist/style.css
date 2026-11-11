@@ -154,3 +154,10 @@ a.insignia:hover { text-decoration: underline; }
 .fila-app__ruta { font-size: var(--t-sm); }
 @media (max-width: 720px) { .fila-app { grid-template-columns: 1fr auto; } .fila-app__ruta { grid-column: 1 / -1; grid-row: 2; } }
 .abrir-editar { justify-self: start; }
+/* Encuestas (prompt 10.12): las opciones del panel en una línea (número, texto, quitar) y las
+   anteriores plegables en Participación. */
+.encuesta-opcion { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto; gap: var(--e-2); align-items: center; }
+.encuesta-opcion button[hidden] { display: none; }
+.encuesta-cabecera { align-items: center; }
+.encuesta-anterior > summary { cursor: pointer; }
+.encuesta-anterior__cuerpo { padding: var(--e-2) 0 var(--e-2) var(--e-4); }

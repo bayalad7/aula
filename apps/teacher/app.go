@@ -20,6 +20,7 @@ import (
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
+	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/remote"
@@ -84,6 +85,7 @@ type App struct {
 	snaps *snapshot.Store      // screenshots of students, in memory until saved (§5.17)
 	board *participation.Board // raised hands and students' messages, in memory (§5.18)
 	timer *classtimer.Class    // the exercise timer of the class (§5.19)
+	polls *poll.Class          // the live polls of the class (§5.23)
 	// files and pusher send the teacher's files (§5.20); chooseFiles opens
 	// the system dialog (replaced in tests: never a window on the desktop).
 	files       fileState
@@ -133,6 +135,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 		OnChange: func(l []snapshot.Snapshot) { a.emit(EventSnapshots, Snapshots{Snapshots: l}) }}
 	a.board = participation.NewBoard()
 	a.timer = classtimer.NewClass(nil)
+	a.polls = poll.NewClass(nil)
 	a.pusher = &filepush.Pusher{Send: a.sendToSession, OnOutcome: a.onFileOutcome, Logger: log}
 	a.chooseFiles = a.openFilesDialog
 	a.collector = &collect.Collector{Send: a.sendToSession, Root: a.collectRoot, Logger: log,
@@ -235,7 +238,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
 		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage,
 		onRemote: a.onRemoteMessage, onSnapshot: a.onSnapshotMessage, onClassroom: a.onClassroomMessage,
-		onTimer: a.onTimerAck, onFile: a.onFileMessage, onOpen: a.onOpenMessage, onError: a.onAgentError}, a.log)
+		onTimer: a.onTimerAck, onPoll: a.onPollMessage, onFile: a.onFileMessage, onOpen: a.onOpenMessage, onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -248,6 +251,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	a.opens.Clear() // nor its openings
 	a.emit(EventOpens, a.OpenOrders())
 	a.resetTimer() // nor its timer
+	a.resetPolls() // nor its polls
 
 	s := loadSettings(a.dir)
 	s.remember(channel, consoleName)
@@ -275,6 +279,7 @@ func (a *App) EndClass() {
 		a.stopFiles()       // what was being sent stops with the class
 		a.stopCollections() // and the collections are forgotten; their folders stay
 		a.resetTimer()
+		a.resetPolls()
 		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
 		class.Stop()
@@ -302,8 +307,10 @@ func (a *App) View() View {
 	v.Participation = a.participation(a.class, nil)
 	if a.class != nil {
 		v.Timer = a.timer.Snapshot(a.class.Sessions(), simSessionsOf(a.class))
+		v.Polls = a.polls.Snapshot(a.class.Sessions(), simSessionsOf(a.class))
 	} else {
 		v.Timer = a.timer.Snapshot(nil, nil)
+		v.Polls = a.polls.Snapshot(nil, nil)
 	}
 	return v
 }
@@ -603,6 +610,7 @@ func (a *App) onChange() {
 	a.bc.Sync(class.Sessions())
 	a.sendRestrictions(class, a.restr.Plan(class.Sessions())) // students who reconnect get them again
 	a.syncTimer(class)                                        // and the timer, with what is left
+	a.syncPolls(class)                                        // and the open poll, or how it ended
 	a.syncCollections(class)                                  // and the folders of the open collections
 }
 
@@ -649,7 +657,7 @@ func studentsOf(list []session.Session) Students {
 			CanAppBlock: s.Can(protocol.CapAppBlock), CanWebFilter: s.Can(protocol.CapWebFilter),
 			CanPower: s.Can(protocol.CapPower), CanRemote: s.Can(protocol.CapRemote),
 			CanSnapshot: s.Can(protocol.CapScreenSnapshot), LastCodeAck: s.LastCodeAck,
-			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer),
+			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer), CanPoll: s.Can(protocol.CapPoll),
 			CanFiles: s.Can(protocol.CapFilePush), CanCollect: s.Can(protocol.CapFileCollect),
 			CanOpenURL: s.Can(protocol.CapOpenURL), CanOpenApp: s.Can(protocol.CapOpenApp),
 		}
@@ -691,6 +699,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanTimer {
 				out.CanTimer++
+			}
+			if st.CanPoll {
+				out.CanPoll++
 			}
 			if st.CanFiles {
 				out.CanFiles++

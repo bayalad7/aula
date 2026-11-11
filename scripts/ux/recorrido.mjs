@@ -256,6 +256,31 @@ await f("124-ajustes-apps-error", "datos", { h: 800, pasos: seq(ajustes("apps"),
 await f("125-panel-abrir-oscuro-900x600", "lab-abrir", { oscuro: true, w: 900, h: 600, pasos: seq(panelAbrir, escribirUrl("youtube.com")) });
 await f("126-ajustes-apps-oscuro-900x600", "datos", { oscuro: true, w: 900, h: 600, pasos: ajustes("apps") });
 
+// Encuestas (prompt 10.12): el panel de la barra (opción múltiple, sí o no y su error), la franja
+// al lanzar, la sección de Participación (anónima con simulados, nominal con quién falta), cerrar
+// y compartir, el aviso de que reemplaza a la abierta, y oscuro a 900×600.
+const panelEncuesta = seq(click(fila("LAB3-PC07")), click(fila("lab-ubuntu-02")), click('[data-panel="encuesta"]'), async (p) => {
+  await p.type("#encuesta-pregunta", "¿Qué imprime print(3 // 2)?");
+  const ops = await p.$$("#encuesta-opciones input");
+  for (const [i, t] of ["1.5", "1", "2"].entries()) await ops[i].type(t);
+});
+const aEncuestas = async (p) => { await p.evaluate(() => document.getElementById("encuestas").scrollIntoView()); await sleep(200); };
+await f("127-panel-encuesta", "lab", { pasos: panelEncuesta });
+await f("128-panel-encuesta-sino-nominal", "lab", { pasos: seq(click('[data-panel="encuesta"]'), async (p) => {
+  await p.type("#encuesta-pregunta", "¿Entendiste cómo funciona el ciclo for?");
+}, click('input[name="encuesta-tipo"][value="yesno"]'), click("#encuesta-nominal")) });
+await f("129-panel-encuesta-sin-opciones", "lab", { pasos: seq(click('[data-panel="encuesta"]'), async (p) => {
+  await p.type("#encuesta-pregunta", "¿Cuál es correcta?");
+}, click("#encuesta-lanzar")) });
+await f("130-encuesta-franja", "lab", { pasos: seq(panelEncuesta, click("#encuesta-lanzar"), async () => { await sleep(400); }) });
+await f("131-participacion-encuesta", "lab-encuesta", { ruta: "participacion", pasos: aEncuestas });
+await f("132-participacion-encuesta-nominal", "lab-encuesta-nominal", { ruta: "participacion", pasos: aEncuestas });
+await f("133-encuesta-cerrada-compartir", "lab-encuesta", { ruta: "participacion", pasos: seq(click("#f-encuesta-cerrar"),
+  async () => { await sleep(300); }, aEncuestas) });
+await f("134-panel-encuesta-reemplaza", "lab-encuesta", { pasos: click('[data-panel="encuesta"]') });
+await f("135-participacion-encuesta-oscuro-900x600", "lab-encuesta", { oscuro: true, w: 900, h: 600, ruta: "participacion", pasos: aEncuestas });
+await f("136-panel-encuesta-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: panelEncuesta });
+
 // Ventana angosta y tema oscuro
 await f("37-alumnos-900x600", "lab", { w: 900, h: 600, pasos: click(fila("LAB3-PC07")) });
 await f("38-codigo-900x600", "datos", { w: 900, h: 600, ruta: "codigo" });

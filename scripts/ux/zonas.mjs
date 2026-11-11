@@ -11,7 +11,7 @@ export const zonas = {
     // Marco
     { id: "menu", nombre: "Menú", selector: ".nav-lateral", que: "Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes." },
     { id: "menu-clase", dentro: "menu", nombre: "Selector de clase", selector: "#nav-clase", que: "Canal y nombre de la clase abierta; abre «Cambiar de canal»." },
-    { id: "franja", nombre: "Franja global", selector: ".principal > .franja", que: "Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, aula simulada), con su botón para detenerlo." },
+    { id: "franja", nombre: "Franja global", selector: ".principal > .franja", que: "Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo." },
     { id: "cabecera", nombre: "Cabecera de la vista", selector: ".vista__cabecera", que: "Título de la vista, su resumen y el «?» de ayuda contextual." },
     { id: "avisos", nombre: "Avisos (toasts)", selector: "#avisos", que: "Mensajes breves abajo a la derecha tras una acción." },
 
@@ -22,7 +22,7 @@ export const zonas = {
     { id: "fila-alumno", dentro: "alumnos-lista", nombre: "Fila del alumno", selector: "#alumnos-filas > tr", que: "Un alumno: casilla, equipo, estado, insignias y el botón de su ficha." },
     { id: "alumnos-miniaturas", dentro: "alumnos", nombre: "Miniaturas", selector: "#alumnos-miniaturas", que: "Cuadrícula con la pantalla de cada alumno." },
     { id: "tarjeta-alumno", dentro: "alumnos-miniaturas", nombre: "Tarjeta del alumno", selector: "#alumnos-cuadricula > li", que: "La miniatura de un alumno con su nombre; un clic abre la Pantalla grande." },
-    { id: "barra-acciones", dentro: "alumnos", nombre: "Barra de acciones", selector: ".barra-acciones", que: "Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…)." },
+    { id: "barra-acciones", dentro: "alumnos", nombre: "Barra de acciones", selector: ".barra-acciones", que: "Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…)." },
 
     // Paneles y diálogos que salen de Alumnos
     { id: "ficha", nombre: "Ficha del alumno", selector: "#panel-alumno", que: "Panel derecho con los datos de un alumno y sus acciones." },
@@ -36,6 +36,7 @@ export const zonas = {
     { id: "panel-captura", nombre: "Panel Captura", selector: "#panel-captura", que: "Tomar capturas de varios alumnos." },
     { id: "panel-temporizador", nombre: "Panel Temporizador", selector: "#panel-temporizador", que: "Lanzar un temporizador de ejercicio." },
     { id: "panel-energia", nombre: "Panel Energía", selector: "#panel-energia", que: "Apagar, reiniciar o cerrar sesión." },
+    { id: "panel-encuesta", nombre: "Panel Encuesta", selector: "#panel-encuesta", que: "La pregunta, el tipo de respuesta, las opciones y «Ver quién respondió qué»; Lanzar a todos o a la selección." },
     { id: "panel-abrir", nombre: "Panel Abrir página o app", selector: "#panel-abrir", que: "Abrir una página en el navegador o una app permitida en los equipos de la selección, y las últimas que abriste." },
     { id: "captura", nombre: "Vista previa de captura", selector: "#captura", que: "La captura de un alumno, con Guardar y Descartar." },
 
@@ -63,6 +64,7 @@ export const zonas = {
     { id: "participacion", nombre: "Vista Participación", selector: "[data-vista-de=participacion]", que: "Lo que responden los alumnos en vivo." },
     { id: "manos", dentro: "participacion", nombre: "Manos levantadas", selector: "#manos", que: "La fila de manos, por orden de llegada." },
     { id: "mensajes", dentro: "participacion", nombre: "Mensajes de los alumnos", selector: "#mensajes", que: "La bandeja de mensajes con Responder." },
+    { id: "part-encuestas", dentro: "participacion", nombre: "Sección Encuestas", selector: "#encuestas", que: "La encuesta abierta con sus barras en vivo y Cerrar, y las anteriores con Compartir resultados." },
     { id: "part-temporizador", dentro: "participacion", nombre: "Sección Temporizador", selector: "#temporizador-activo, #temporizador-vacio", que: "Quién ve el temporizador y quién falta." },
 
     // Otras vistas
@@ -85,6 +87,8 @@ export const zonas = {
     { id: "redactar", nombre: "Mensaje al profesor", selector: "#redactar", que: "La tarjeta para escribirle al profesor." },
     { id: "enviados", nombre: "Tus mensajes", selector: "#enviados", que: "Los mensajes enviados y si llegaron." },
     { id: "vacio", nombre: "Estado vacío", selector: "#empty", que: "Lo que se ve cuando no hay código ni archivos." },
+    { id: "encuestas", nombre: "Encuestas", selector: "#encuestas", que: "Una tarjeta por encuesta del profesor, arriba de la lista." },
+    { id: "tarjeta-encuesta", dentro: "encuestas", nombre: "Tarjeta de encuesta", selector: "#encuestas > li", que: "La pregunta, si es anónima, las opciones con Enviar y, si el profesor los comparte, los resultados de la clase." },
     { id: "recolecciones", nombre: "Recolecciones", selector: "#recolecciones", que: "Una tarjeta por recolección del profesor." },
     { id: "tarjeta-recoleccion", dentro: "recolecciones", nombre: "Tarjeta de recolección", selector: "#recolecciones > li", que: "Dónde guardar el ejercicio, qué se recogió y cuándo, y Abrir carpeta." },
     { id: "archivos", nombre: "Archivos recibidos", selector: "#archivos", que: "Una tarjeta por envío de archivos." },

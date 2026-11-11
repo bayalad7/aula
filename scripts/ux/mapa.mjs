@@ -1,10 +1,10 @@
 // Mapa de la interfaz: una captura por pantalla con sus zonas numeradas y, debajo, el nombre de
 // cada zona. Los nombres salen de zonas.mjs, los mismos que muestra el anotador. Escribe
 // docs/v1/ux/MAPA.md y las imágenes en docs/v1/ux/mapa/ (WebP).
-//   node mapa.mjs
+//   node mapa.mjs [--solo=encuesta]   (vuelve a capturar solo esas imágenes; MAPA.md, siempre completo)
 import fs from "node:fs";
 import path from "node:path";
-import { abrir, click, cuadros, raiz, seq, sleep } from "./arnes.mjs";
+import { abrir, click, cuadros, raiz, seq, sleep, soloCapturas } from "./arnes.mjs";
 import { zonas } from "./zonas.mjs";
 
 const dir = path.join(raiz, "docs", "v1", "ux", "mapa");
@@ -37,12 +37,19 @@ const pantallas = [
     zonas: ["archivos-pestanas", "reco-nueva", "recoleccion", "reco-fila"] },
   { app: "profesor", archivo: "consola-participacion", titulo: "Consola · Participación", escena: "lab-participacion", ruta: "participacion",
     zonas: ["cabecera", "manos", "mensajes", "part-temporizador"] },
+  { app: "profesor", archivo: "consola-encuesta", titulo: "Consola · Encuesta (panel de la barra)", escena: "lab",
+    pasos: click('.barra-acciones [data-panel="encuesta"]'), zonas: ["panel-encuesta", "barra-acciones"] },
+  { app: "profesor", archivo: "consola-participacion-encuestas", titulo: "Consola · Participación › Encuestas", escena: "lab-encuesta", ruta: "participacion",
+    pasos: async (p) => { await p.evaluate(() => document.getElementById("encuestas").scrollIntoView()); await sleep(200); },
+    zonas: ["franja", "part-encuestas"] },
   { app: "alumno", archivo: "alumno-bandas", titulo: "Alumno · Tira de identidad y bandas", escena: "todo", w: 900, h: 700,
     zonas: ["tira", "tira-botones", "bandas", "vacio"] },
   { app: "alumno", archivo: "alumno-codigo", titulo: "Alumno · Código recibido", escena: "varios-codigos", w: 900, h: 700,
     zonas: ["tira", "codigos", "tarjeta-codigo"] },
   { app: "alumno", archivo: "alumno-archivos", titulo: "Alumno · Archivos y mensajes", escena: "archivos", w: 900, h: 700,
     pasos: click("#escribir"), zonas: ["tira", "redactar", "archivos", "tarjeta-archivo"] },
+  { app: "alumno", archivo: "alumno-encuestas", titulo: "Alumno · Encuestas", escena: "encuesta", w: 900, h: 700,
+    zonas: ["tira", "encuestas", "tarjeta-encuesta"] },
   { app: "alumno", archivo: "alumno-recolecciones", titulo: "Alumno · Recolección", escena: "recoleccion-aviso", w: 900, h: 700,
     zonas: ["tira", "tarjeta-recoleccion", "avisos"] },
   { app: "alumno", archivo: "alumno-avisos", titulo: "Alumno · Mano levantada y avisos", escena: "mano", w: 900, h: 700,
@@ -94,6 +101,7 @@ Los nombres de cada zona de las dos apps, para hablar de la interfaz sin ambigü
 archivo y sus imágenes los genera \`node scripts/ux/mapa.mjs\` (no se editan a mano).
 `];
 
+const incluir = soloCapturas();
 for (const app of ["profesor", "alumno"]) {
   const { foto, cerrar } = await abrir({ app });
   const porId = Object.fromEntries(zonas[app].map((z) => [z.id, z]));
@@ -101,16 +109,18 @@ for (const app of ["profesor", "alumno"]) {
   for (const pt of pantallas.filter((x) => x.app === app)) {
     const lista = pt.zonas.map((id, i) => ({ n: i + 1, selector: porId[id].selector }));
     const archivo = path.join(dir, pt.archivo + ".webp");
-    const r = await foto(archivo, pt.escena, { w: pt.w || 1280, h: pt.h || 760, ruta: pt.ruta || "", revisar: false,
-      pasos: seq(pt.pasos || (async () => {}), numerar(lista)) });
-    if (r.errores.length) console.log("  JS " + r.errores.join(" | "));
+    if (incluir(pt.archivo)) {
+      const r = await foto(archivo, pt.escena, { w: pt.w || 1280, h: pt.h || 760, ruta: pt.ruta || "", revisar: false,
+        pasos: seq(pt.pasos || (async () => {}), numerar(lista)) });
+      if (r.errores.length) console.log("  JS " + r.errores.join(" | "));
+      console.log("✓ " + pt.archivo);
+    }
     md.push(`### ${pt.titulo}\n\n![${pt.titulo}](mapa/${pt.archivo}.webp)\n\n| # | Zona | Qué es |\n|---|---|---|`);
     for (const [i, id] of pt.zonas.entries()) {
       const z = porId[id];
       md.push(`| ${i + 1} | **${z.nombre}** | ${z.que} |`);
     }
     md.push("");
-    console.log("✓ " + pt.archivo);
   }
   await cerrar();
 }

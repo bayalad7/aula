@@ -20,7 +20,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 4 | **Selector Lista | Miniaturas** | Cambia entre la tabla y las miniaturas de pantalla. |
 | 5 | **Lista de alumnos** | Tabla con un alumno por fila. |
 | 6 | **Fila del alumno** | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha. |
-| 7 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…). |
+| 7 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
 
 ### Consola · Alumnos (miniaturas)
 
@@ -30,7 +30,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 |---|---|---|
 | 1 | **Miniaturas** | Cuadrícula con la pantalla de cada alumno. |
 | 2 | **Tarjeta del alumno** | La miniatura de un alumno con su nombre; un clic abre la Pantalla grande. |
-| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…). |
+| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
 
 ### Consola · Ficha del alumno
 
@@ -57,9 +57,9 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, aula simulada), con su botón para detenerlo. |
+| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
 | 2 | **Panel Aviso** | Mandar un aviso a la selección. |
-| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…). |
+| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
 
 ### Consola · Abrir página o app
 
@@ -68,7 +68,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Panel Abrir página o app** | Abrir una página en el navegador o una app permitida en los equipos de la selección, y las últimas que abriste. |
-| 2 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…). |
+| 2 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
 
 ### Consola · Ajustes › Apps permitidas
 
@@ -125,6 +125,24 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 3 | **Mensajes de los alumnos** | La bandeja de mensajes con Responder. |
 | 4 | **Sección Temporizador** | Quién ve el temporizador y quién falta. |
 
+### Consola · Encuesta (panel de la barra)
+
+![Consola · Encuesta (panel de la barra)](mapa/consola-encuesta.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Panel Encuesta** | La pregunta, el tipo de respuesta, las opciones y «Ver quién respondió qué»; Lanzar a todos o a la selección. |
+| 2 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
+
+### Consola · Participación › Encuestas
+
+![Consola · Participación › Encuestas](mapa/consola-participacion-encuestas.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
+| 2 | **Sección Encuestas** | La encuesta abierta con sus barras en vivo y Cerrar, y las anteriores con Compartir resultados. |
+
 
 ## App del alumno
 
@@ -159,6 +177,16 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 2 | **Mensaje al profesor** | La tarjeta para escribirle al profesor. |
 | 3 | **Archivos recibidos** | Una tarjeta por envío de archivos. |
 | 4 | **Tarjeta de archivo** | Qué llegó, dónde quedó y Abrir carpeta. |
+
+### Alumno · Encuestas
+
+![Alumno · Encuestas](mapa/alumno-encuestas.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 2 | **Encuestas** | Una tarjeta por encuesta del profesor, arriba de la lista. |
+| 3 | **Tarjeta de encuesta** | La pregunta, si es anónima, las opciones con Enviar y, si el profesor los comparte, los resultados de la clase. |
 
 ### Alumno · Recolección
 
@@ -199,7 +227,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 |---|---|---|
 | `menu` | Menú | Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes. |
 | `menu-clase` | Menú › Selector de clase | Canal y nombre de la clase abierta; abre «Cambiar de canal». |
-| `franja` | Franja global | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, aula simulada), con su botón para detenerlo. |
+| `franja` | Franja global | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
 | `cabecera` | Cabecera de la vista | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | `avisos` | Avisos (toasts) | Mensajes breves abajo a la derecha tras una acción. |
 | `alumnos` | Vista Alumnos | Los alumnos del canal, en lista o miniaturas. |
@@ -208,7 +236,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `fila-alumno` | Vista Alumnos › Lista de alumnos › Fila del alumno | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha. |
 | `alumnos-miniaturas` | Vista Alumnos › Miniaturas | Cuadrícula con la pantalla de cada alumno. |
 | `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno con su nombre; un clic abre la Pantalla grande. |
-| `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, energía…). |
+| `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
 | `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y sus acciones. |
 | `ficha-acciones` | Ficha del alumno › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
 | `ficha-puede` | Ficha del alumno › Qué puede hacer su equipo | Lista de capacidades del equipo del alumno. |
@@ -220,6 +248,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `panel-captura` | Panel Captura | Tomar capturas de varios alumnos. |
 | `panel-temporizador` | Panel Temporizador | Lanzar un temporizador de ejercicio. |
 | `panel-energia` | Panel Energía | Apagar, reiniciar o cerrar sesión. |
+| `panel-encuesta` | Panel Encuesta | La pregunta, el tipo de respuesta, las opciones y «Ver quién respondió qué»; Lanzar a todos o a la selección. |
 | `panel-abrir` | Panel Abrir página o app | Abrir una página en el navegador o una app permitida en los equipos de la selección, y las últimas que abriste. |
 | `captura` | Vista previa de captura | La captura de un alumno, con Guardar y Descartar. |
 | `codigo` | Vista Código | Preparar y enviar código a los alumnos. |
@@ -241,6 +270,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `participacion` | Vista Participación | Lo que responden los alumnos en vivo. |
 | `manos` | Vista Participación › Manos levantadas | La fila de manos, por orden de llegada. |
 | `mensajes` | Vista Participación › Mensajes de los alumnos | La bandeja de mensajes con Responder. |
+| `part-encuestas` | Vista Participación › Sección Encuestas | La encuesta abierta con sus barras en vivo y Cerrar, y las anteriores con Compartir resultados. |
 | `part-temporizador` | Vista Participación › Sección Temporizador | Quién ve el temporizador y quién falta. |
 | `simulada` | Vista Aula simulada | Alumnos de prueba y sus fallas. |
 | `ayuda` | Vista Ayuda (manual) | El manual, con búsqueda e índice. |
@@ -263,6 +293,8 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `redactar` | Mensaje al profesor | La tarjeta para escribirle al profesor. |
 | `enviados` | Tus mensajes | Los mensajes enviados y si llegaron. |
 | `vacio` | Estado vacío | Lo que se ve cuando no hay código ni archivos. |
+| `encuestas` | Encuestas | Una tarjeta por encuesta del profesor, arriba de la lista. |
+| `tarjeta-encuesta` | Encuestas › Tarjeta de encuesta | La pregunta, si es anónima, las opciones con Enviar y, si el profesor los comparte, los resultados de la clase. |
 | `recolecciones` | Recolecciones | Una tarjeta por recolección del profesor. |
 | `tarjeta-recoleccion` | Recolecciones › Tarjeta de recolección | Dónde guardar el ejercicio, qué se recogió y cuándo, y Abrir carpeta. |
 | `archivos` | Archivos recibidos | Una tarjeta por envío de archivos. |

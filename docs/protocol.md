@@ -315,11 +315,12 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `file.push` | `file.push` | v0.10 (§5.20). Windows, en modo ventana y como servicio con su ayudante (escribe en la sesión del alumno); también los alumnos simulados, que acusan sin escribir. Linux y macOS no la declaran. |
 | `open.url` | `open.url` | v0.12 (§5.22). Windows, en modo ventana y como servicio con su ayudante (abre en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
 | `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`. |
-| `poll` | `poll.*` | Reservada |
+| `poll` | `poll.open`, `poll.close`, `poll.results`, `poll.vote.ack`; y acepta `poll.vote` | v0.13 (§5.23). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 
-Las dos últimas habilitan mensajes que **inicia el agente**: la consola acepta `hand.*` y
-`msg.student` solo de un agente que declaró la capacidad (si no, responde `error`
-`unsupported_capability`), y solo le envía `hand.lower` y `msg.student.ack` a ese agente.
+`hand`, `msg.student` y `poll` habilitan mensajes que **inicia el agente**: la consola acepta
+`hand.*`, `msg.student` y `poll.vote` solo de un agente que declaró la capacidad (si no, responde
+`error` `unsupported_capability`), y solo le envía `hand.lower`, `msg.student.ack` y
+`poll.vote.ack` a ese agente.
 
 Las capacidades desconocidas en `hello` se ignoran (un agente más nuevo puede declarar cosas
 que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 caracteres.
@@ -382,6 +383,12 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `open.url` | P → A | `open.url` | `open_id`, `url` | `open.ack` o `error` |
 | `open.app` | P → A | `open.app` | `open_id`, `app_id`, `name`, `path` | `open.ack` o `error` |
 | `open.ack` | A → P | — | `ref_id`, `open_id`, `status`, `reason`? | — |
+| `poll.open` | P → A | `poll` | `poll_id`, `kind`, `question`, `options`?, `named` | `poll.ack` (`shown`) o `error` |
+| `poll.vote` | A → P | `poll` | `poll_id`, `choice` o `text` | `poll.vote.ack` o `error` |
+| `poll.vote.ack` | P → A | `poll` | `ref_id`, `poll_id`, `status` | — |
+| `poll.close` | P → A | `poll` | `poll_id` | `poll.ack` (`closed`) |
+| `poll.results` | P → A | `poll` | `poll_id`, `counts`, `voters`, `recipients` | `poll.ack` (`results`) |
+| `poll.ack` | A → P | — | `ref_id`, `poll_id`, `status` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -1602,6 +1609,145 @@ Reglas:
 | `open.app` | `CreateProcessW` con la ruta validada como `lpApplicationName`, la línea de comandos vacía (solo el nombre del programa) y `lpCurrentDirectory` en su carpeta. En modo servicio, el ayudante (`CallOpenApp`), que vuelve a comprobar las reglas antes de lanzar. | Ningún privilegio. Igual que `open.url`. |
 | Linux y macOS (pendiente) | `xdg-open` / `open`. | No se declaran. |
 
+### 5.23 Encuestas en vivo (`poll.*`)
+
+> Aprobado el 2026-11-11 (prompt 10.12), para v0.13. Implementación en `internal/poll`; reglas en
+> `docs/privacidad.md` 71–74. En la consola, el panel «Encuesta» de la barra de acciones, la
+> sección «Encuestas» de la vista «Participación» y su franja mientras está abierta.
+
+El profesor hace una pregunta rápida para comprobar que se entendió («¿Qué imprime
+`print(3 // 2)`?»): de **opción múltiple**, de **sí o no** o **abierta corta**. Llega a todo el
+canal o a una selección como una tarjeta en la ventana del alumno, que responde cuando quiere;
+el profesor ve las respuestas llegar como barras, la cierra y, si quiere, **comparte el resultado
+agregado**. Lo inicia el profesor y lo responde el alumno; nada de esto toca el equipo.
+
+```
+Consola (P)                                               Agente (A)
+   |-- poll.open (poll_id, kind, question, options, named) -->|  tarjeta «Encuesta · Nuevo»
+   |<------------------------------------ poll.ack (shown) ---|
+   |<----------------------- poll.vote (poll_id, choice|text) -|  «Enviar»
+   |-- poll.vote.ack (accepted) ----------------------------->|  «Respuesta enviada»
+   |<----------------------- poll.vote (otra opción) ---------|  cambia su respuesta
+   |-- poll.vote.ack (accepted) ----------------------------->|
+   |-- poll.close (poll_id) --------------------------------->|  «Encuesta cerrada»
+   |<----------------------------------- poll.ack (closed) ---|
+   |-- poll.results (poll_id, counts, voters, recipients) --->|  barras con el total
+   |<---------------------------------- poll.ack (results) ---|
+```
+
+**`poll.open` (P → A)**
+
+```json
+{ "poll_id": "c2d7…", "kind": "choice", "question": "¿Qué imprime print(3 // 2)?",
+  "options": ["1.5", "1", "2", "Error"], "named": false }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `poll_id` | string | UUID v4 de la consola; identifica la encuesta en el voto, el cierre, los resultados y los acuses. |
+| `kind` | string | `choice` (opción múltiple), `yesno` (sí o no) u `open` (respuesta abierta corta). |
+| `question` | string | 1–200 caracteres, texto plano. |
+| `options` | arreglo | Solo con `choice`: 2–6 opciones de 1–80 caracteres, texto plano. Con `yesno` y `open` va vacío o ausente: la ventana del alumno pone «Sí» y «No» con sus propios textos. |
+| `named` | bool | `false`: anónima, el profesor ve solo el total. `true`: el profesor ve qué respondió cada alumno. La tarjeta lo dice **antes** de que el alumno responda (`docs/privacidad.md` regla 72). |
+
+**`poll.vote` (A → P)**
+
+```json
+{ "poll_id": "c2d7…", "choice": 1 }
+{ "poll_id": "c2d7…", "text": "Que el for no termina" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `poll_id` | string | La encuesta que responde. |
+| `choice` | entero | Con `choice` y `yesno`: el índice de la opción, desde 0 (`yesno`: 0 = sí, 1 = no). |
+| `text` | string | Con `open`: 1–140 caracteres, texto plano. |
+
+Lleva exactamente uno de los dos: `choice` **o** `text`. Los dos, ninguno, un índice fuera de
+las opciones, o el campo que no corresponde al tipo de la encuesta → `error` `invalid_message`.
+
+**`poll.vote.ack` (P → A)**
+
+```json
+{ "ref_id": "<id del poll.vote>", "poll_id": "c2d7…", "status": "accepted" }
+```
+
+| `status` | Cuándo |
+|---|---|
+| `accepted` | La respuesta cuenta (reemplaza a la anterior de ese alumno, si la había). |
+| `closed` | La encuesta ya se cerró: la respuesta **no** cuenta. |
+| `unknown` | La consola no conoce esa encuesta o no era para ese alumno. No cuenta. |
+
+**`poll.close` (P → A)**
+
+```json
+{ "poll_id": "c2d7…" }
+```
+
+La tarjeta queda como «Encuesta cerrada», con lo que el alumno respondió, y deja de aceptar
+respuestas. Si el agente no conoce esa encuesta, la ignora.
+
+**`poll.results` (P → A)**
+
+```json
+{ "poll_id": "c2d7…", "counts": [3, 14, 2, 1], "voters": 20, "recipients": 22 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `poll_id` | string | Una encuesta **cerrada** que el agente conoce; otra se ignora. |
+| `counts` | arreglo | Cuántos eligieron cada opción, en el orden de `options` (`yesno`: sí, no). 2–6 enteros ≥ 0. |
+| `voters` | entero | Cuántos respondieron: la suma de `counts`. 0–10 000. |
+| `recipients` | entero | A cuántos les llegó. `voters`–10 000. |
+
+Solo totales: nunca quién eligió qué. Solo para `choice` y `yesno`; las respuestas abiertas no
+se comparten.
+
+**`poll.ack` (A → P)**
+
+```json
+{ "ref_id": "<id del poll.open>", "poll_id": "c2d7…", "status": "shown" }
+```
+
+| `status` | Responde a |
+|---|---|
+| `shown` | `poll.open`: la tarjeta está en la ventana (también al reenviarla). |
+| `closed` | `poll.close`. |
+| `results` | `poll.results`: el resultado se ve en la tarjeta. |
+
+Reglas de la consola:
+
+- **Una encuesta abierta por clase.** Abrir otra cierra la vigente primero (`poll.close` a sus
+  destinatarios); el panel lo avisa antes. Las cerradas se conservan en memoria (como máximo
+  **20** por clase) para verlas y compartir su resultado.
+- **Un voto por alumno**, identificado como en el resto de la consola (equipo y usuario), y
+  **cuenta el último**: el alumno puede cambiar su respuesta hasta el cierre. Un voto después del
+  cierre se acusa `closed` y no cambia nada.
+- **Destinatarios:** «todos» (el canal, también quien se conecta con la encuesta abierta) o una
+  selección. Solo a las sesiones que declararon `poll`. Un voto de quien no es destinatario se
+  acusa `unknown`.
+- **Reconexión** (§3.5): al llegar `hello`, la consola le manda a ese alumno el estado de la
+  última encuesta que le correspondía: `poll.open` con el mismo `poll_id` si sigue abierta, o
+  `poll.close` (y `poll.results`, si se compartió) si se cerró mientras no estaba.
+- **Ritmo por agente:** ráfaga de 3 `poll.vote` y uno por segundo después. Lo que excede se
+  descarta y se responde `error` `invalid_message` («demasiado seguido»), sin acuse.
+- Los votos de los **alumnos simulados** se cuentan aparte y no entran en `poll.results`
+  (`docs/privacidad.md` regla 32).
+- Todo vive en memoria y se descarta al cerrar la clase o cambiar de canal.
+
+Reglas del agente:
+
+- Un `poll.open` con un `poll_id` que ya tiene conserva la tarjeta y lo que el alumno eligió; si
+  había un voto sin acuse, lo reenvía con el mismo contenido. Uno nuevo agrega su tarjeta arriba
+  de la lista con «Nuevo» (`notify`, nunca `raise`); en el modo compacto cuenta como «sin ver».
+- Al reconectar, espera **3 s** a que la consola reenvíe cada encuesta que tenía abierta; la que
+  no llega queda cerrada (se cerró mientras no estaba, o es otra clase), y una respuesta que
+  esperaba su acuse ya no cuenta.
+- Guarda como máximo las **5** tarjetas de encuesta más recientes.
+- Ritmo: «Enviar» acepta una respuesta por segundo.
+- Si la consola responde `unknown_type` o `unsupported_capability` al voto (una consola
+  anterior), la tarjeta dice que esa consola no recibe respuestas.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -1612,7 +1758,6 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 |---|---|
 | `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
 | `code.collect` | Recolectar el código que el alumno entrega desde el overlay. |
-| `poll.*` | Encuestas y preguntas rápidas a los alumnos. |
 
 ---
 
@@ -1646,6 +1791,11 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `open.url.url` | 1–2048 caracteres, `http`/`https` | `error` `invalid_message` |
 | `open.app.app_id` / `name` / `path` | 1–32 / 1–60 / 1–260 caracteres | `error` `invalid_message` (longitud); `open.ack` `failed` `not_allowed` (reglas de ruta) |
 | `open.*` por agente | ráfaga 3 y 1 cada 3 s | `open.ack` `failed` `busy`; no se abre |
+| `poll.open.question` / `options` | 1–200 caracteres / 2–6 opciones de 1–80 caracteres (solo `choice`) | `error` `invalid_message` |
+| `poll.vote.text` | 1–140 caracteres | `error` `invalid_message` |
+| `poll.vote` por agente | ráfaga 3 y 1 por s | `error` `invalid_message`; se descarta |
+| `poll.results.voters` / `recipients` | 0–10 000 | `error` `invalid_message` |
+| Encuestas guardadas en la consola | 20 por clase | Se descarta la cerrada más vieja |
 | `screen.freeze.message` (pendiente) | 300 caracteres | `error` `invalid_message` |
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
 | `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
@@ -1698,6 +1848,9 @@ emisor verifica el tamaño final de la envoltura.
   `path` ni la carpeta donde la consola guardó (todas nombran al alumno o su trabajo).
 - De `open.*` se registran `open_id`, el tipo, `status` y `reason`. **Nunca** `url`, `app_id`,
   `name` ni `path` (dicen qué se le pidió al alumno abrir).
+- De `poll.*` se registran `poll_id`, `kind`, `named`, `status`, el índice elegido, la longitud
+  de `text` y los totales. **Nunca** `question`, `options` ni `text` (son texto del profesor y del
+  alumno), y en una encuesta anónima tampoco qué eligió cada equipo.
 - De un `msg.show` `personal` se registran el equipo, el `id` y la longitud; **nunca** el texto.
   En «Últimos envíos» la consola lo etiqueta «Mensaje privado a <equipo>», sin el texto.
 - De `hand.*` y `msg.student*` se registran `hand_id`, `message_id`, `by`, la longitud y el

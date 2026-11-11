@@ -122,8 +122,23 @@ func samplePayloads() []Payload {
 		OpenApp{OpenID: testSnippetID, AppID: "thonny", Name: "Thonny", Path: `%ProgramFiles(x86)%\Thonny\thonny.exe`},
 		OpenAck{RefID: testRefID, OpenID: testSnippetID, Status: OpenOpened},
 		OpenAck{RefID: testRefID, OpenID: testSnippetID, Status: OpenFailed, Reason: OpenNotAllowed},
+		PollOpen{PollID: testRefID, Kind: PollKindChoice, Question: "¿Qué imprime print(3 // 2)?", Options: []string{"1.5", "1", "2", "Error"}},
+		PollOpen{PollID: testRefID, Kind: PollKindYesNo, Question: "¿Entendiste el for?", Named: true},
+		PollOpen{PollID: testRefID, Kind: PollKindOpen, Question: "¿Qué te costó más?"},
+		PollVote{PollID: testRefID, Choice: intp(1)},
+		PollVote{PollID: testRefID, Choice: intp(0)},
+		PollVote{PollID: testRefID, Text: "Que el for no termina"},
+		PollVoteAck{RefID: testSnippetID, PollID: testRefID, Status: PollVoteAccepted},
+		PollVoteAck{RefID: testSnippetID, PollID: testRefID, Status: PollVoteClosed},
+		PollClose{PollID: testRefID},
+		PollResults{PollID: testRefID, Counts: []int{3, 14, 2, 1}, Voters: 20, Recipients: 22},
+		PollResults{PollID: testRefID, Counts: []int{0, 0}, Voters: 0, Recipients: 0},
+		PollAck{RefID: testSnippetID, PollID: testRefID, Status: PollAckShown},
+		PollAck{RefID: testSnippetID, PollID: testRefID, Status: PollAckResults},
 	}
 }
+
+func intp(n int) *int { return &n }
 
 func TestOpenLimits(t *testing.T) {
 	for _, raw := range []string{
@@ -549,17 +564,18 @@ func TestRequiredCapability(t *testing.T) {
 		TypeHandLower:             CapHand, TypeMsgStudentAck: CapMsgStudent,
 		TypeTimerStart: CapTimer, TypeTimerExtend: CapTimer, TypeTimerStop: CapTimer,
 		TypeOpenURL: CapOpenURL, TypeOpenApp: CapOpenApp,
+		TypePollOpen: CapPoll, TypePollVoteAck: CapPoll, TypePollClose: CapPoll, TypePollResults: CapPoll,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}
 	}
-	for typ, want := range map[Type]Capability{TypeHandRaise: CapHand, TypeHandLower: CapHand, TypeMsgStudent: CapMsgStudent} {
+	for typ, want := range map[Type]Capability{TypeHandRaise: CapHand, TypeHandLower: CapHand, TypeMsgStudent: CapMsgStudent, TypePollVote: CapPoll} {
 		if c, ok := AgentCapability(typ); !ok || c != want {
 			t.Errorf("agent-started %s requires %q, %v; want %q", typ, c, ok, want)
 		}
@@ -827,5 +843,74 @@ func TestFilePushLimits(t *testing.T) {
 	}
 	if _, has := RequiredCapability(TypeFilePushAck); has {
 		t.Error("file.push.ack goes to the console and must not require a capability")
+	}
+}
+
+func TestPollLimits(t *testing.T) {
+	six := []string{"a", "b", "c", "d", "e", "f"}
+	for _, p := range []Payload{
+		PollOpen{PollID: "x", Kind: PollKindYesNo, Question: "¿Sí?"},
+		PollOpen{PollID: testRefID, Kind: "rating", Question: "¿Sí?"},
+		PollOpen{PollID: testRefID, Kind: PollKindYesNo, Question: "   "},
+		PollOpen{PollID: testRefID, Kind: PollKindYesNo, Question: strings.Repeat("ñ", MaxPollQuestion+1)},
+		PollOpen{PollID: testRefID, Kind: PollKindChoice, Question: "¿?", Options: []string{"solo una"}},
+		PollOpen{PollID: testRefID, Kind: PollKindChoice, Question: "¿?", Options: append(six, "g")},
+		PollOpen{PollID: testRefID, Kind: PollKindChoice, Question: "¿?", Options: []string{"a", " "}},
+		PollOpen{PollID: testRefID, Kind: PollKindChoice, Question: "¿?", Options: []string{"a", strings.Repeat("ñ", MaxPollOption+1)}},
+		PollOpen{PollID: testRefID, Kind: PollKindYesNo, Question: "¿?", Options: []string{"Sí", "No"}},
+		PollOpen{PollID: testRefID, Kind: PollKindOpen, Question: "¿?", Options: []string{"a", "b"}},
+		PollVote{PollID: testRefID},
+		PollVote{PollID: testRefID, Choice: intp(1), Text: "y"},
+		PollVote{PollID: testRefID, Choice: intp(-1)},
+		PollVote{PollID: testRefID, Choice: intp(MaxPollOptions)},
+		PollVote{PollID: testRefID, Text: "  "},
+		PollVote{PollID: testRefID, Text: strings.Repeat("ñ", MaxPollText+1)},
+		PollVoteAck{RefID: testRefID, PollID: testRefID, Status: "duplicate"},
+		PollClose{PollID: ""},
+		PollResults{PollID: testRefID, Counts: []int{1}, Voters: 1, Recipients: 1},
+		PollResults{PollID: testRefID, Counts: []int{1, 2}, Voters: 4, Recipients: 4},
+		PollResults{PollID: testRefID, Counts: []int{1, -1}, Voters: 0, Recipients: 0},
+		PollResults{PollID: testRefID, Counts: []int{1, 2}, Voters: 3, Recipients: 2},
+		PollAck{RefID: testRefID, PollID: testRefID, Status: "voted"},
+	} {
+		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
+		}
+	}
+	for _, p := range []Payload{
+		PollOpen{PollID: testRefID, Kind: PollKindChoice, Question: strings.Repeat("ñ", MaxPollQuestion), Options: []string{"a", strings.Repeat("ñ", MaxPollOption)}},
+		PollOpen{PollID: testRefID, Kind: PollKindChoice, Question: "¿?", Options: six},
+		PollVote{PollID: testRefID, Choice: intp(MaxPollOptions - 1)},
+		PollVote{PollID: testRefID, Text: strings.Repeat("ñ", MaxPollText)},
+		PollResults{PollID: testRefID, Counts: []int{MaxPollVoters, 0}, Voters: MaxPollVoters, Recipients: MaxPollVoters},
+	} {
+		if err := p.Validate(); err != nil {
+			t.Errorf("%T: the limits must be valid: %v", p, err)
+		}
+	}
+}
+
+func TestPollVoteValidFor(t *testing.T) {
+	opts := []string{"a", "b", "c"}
+	for _, c := range []struct {
+		vote PollVote
+		kind PollKind
+		ok   bool
+	}{
+		{PollVote{Choice: intp(2)}, PollKindChoice, true},
+		{PollVote{Choice: intp(3)}, PollKindChoice, false},
+		{PollVote{Text: "x"}, PollKindChoice, false},
+		{PollVote{Choice: intp(1)}, PollKindYesNo, true},
+		{PollVote{Choice: intp(2)}, PollKindYesNo, false},
+		{PollVote{Text: "x"}, PollKindOpen, true},
+		{PollVote{Choice: intp(0)}, PollKindOpen, false},
+	} {
+		var o []string
+		if c.kind == PollKindChoice {
+			o = opts
+		}
+		if err := c.vote.ValidFor(c.kind, o); (err == nil) != c.ok {
+			t.Errorf("%+v for %s: %v, want ok=%v", c.vote, c.kind, err, c.ok)
+		}
 	}
 }

@@ -40,13 +40,15 @@ const (
 	// never the simulated students.
 	CapOpenURL Capability = "open.url"
 	CapOpenApp Capability = "open.app"
+	// CapPoll shows the teacher's polls in the window and lets the student
+	// answer (§5.23). Every OS, whenever the agent has a window.
+	CapPoll Capability = "poll"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
 const (
 	CapScreenFreeze Capability = "screen.freeze" // documented, pending (§6)
 	CapCodeCollect  Capability = "code.collect"
-	CapPoll         Capability = "poll"
 )
 
 // requiredCapability lists the capability an agent must declare before the
@@ -93,6 +95,11 @@ var requiredCapability = map[Type]Capability{
 
 	TypeOpenURL: CapOpenURL,
 	TypeOpenApp: CapOpenApp,
+
+	TypePollOpen:    CapPoll,
+	TypePollVoteAck: CapPoll,
+	TypePollClose:   CapPoll,
+	TypePollResults: CapPoll,
 }
 
 // agentCapability lists the capability an agent must have declared before the
@@ -101,6 +108,7 @@ var agentCapability = map[Type]Capability{
 	TypeHandRaise:  CapHand,
 	TypeHandLower:  CapHand,
 	TypeMsgStudent: CapMsgStudent,
+	TypePollVote:   CapPoll,
 }
 
 // AgentCapability reports the capability an agent must have declared for the

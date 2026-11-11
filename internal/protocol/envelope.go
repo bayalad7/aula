@@ -83,6 +83,13 @@ const (
 	TypeOpenURL Type = "open.url"
 	TypeOpenApp Type = "open.app"
 	TypeOpenAck Type = "open.ack"
+	// Live polls (docs/protocol.md §5.23).
+	TypePollOpen    Type = "poll.open"
+	TypePollVote    Type = "poll.vote"
+	TypePollVoteAck Type = "poll.vote.ack"
+	TypePollClose   Type = "poll.close"
+	TypePollResults Type = "poll.results"
+	TypePollAck     Type = "poll.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -304,6 +311,13 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeOpenURL: decodeAs[OpenURL],
 	TypeOpenApp: decodeAs[OpenApp],
 	TypeOpenAck: decodeAs[OpenAck],
+
+	TypePollOpen:    decodeAs[PollOpen],
+	TypePollVote:    decodeAs[PollVote],
+	TypePollVoteAck: decodeAs[PollVoteAck],
+	TypePollClose:   decodeAs[PollClose],
+	TypePollResults: decodeAs[PollResults],
+	TypePollAck:     decodeAs[PollAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

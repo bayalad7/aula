@@ -150,6 +150,37 @@
       { id: "op-n2", level: "info", text: "", kind: "opened", ref: "op-2", at: "2026-11-09T10:41:00-06:00" });
   }
 
+  // Las encuestas del profesor (poll.BallotView de internal/poll, prompt 10.12), lo más nuevo
+  // primero. Escenas: encuesta (una de opción múltiple abierta y una de sí o no cerrada con los
+  // resultados de la clase) y encuesta-texto (una abierta corta, nominal).
+  const tarjeta = (pollId, kind, question, options, extra) => Object.assign({ pollId, kind, question,
+    options, named: false, open: true, choice: -1, text: "", vote: "none", results: null, at: ahora }, extra);
+  const polls = { arrived: "", cards: {
+    encuesta: [
+      tarjeta("pl-2", "choice", "¿Qué imprime print(3 // 2)?", ["1.5", "1", "2", "Error"]),
+      tarjeta("pl-1", "yesno", "¿Entendiste cómo funciona el ciclo for?", [], { open: false, choice: 0, vote: "accepted",
+        at: "2026-11-11T10:05:00-06:00", results: { counts: [14, 4], voters: 18, recipients: 20 } }),
+    ],
+    "encuesta-texto": [tarjeta("pl-3", "open", "¿Qué fue lo que más te costó del ejercicio?", [], { named: true })],
+  }[scene] || [] };
+  const copiaPolls = () => JSON.parse(JSON.stringify(polls));
+  // Una encuesta que la prueba emite (como si llegara de Go) queda también en el doble, para
+  // poder responderla.
+  const emitirBase = window.__emit;
+  window.__emit = (name, data) => {
+    if (name === "aula:polls" && data) polls.cards = JSON.parse(JSON.stringify(data.cards || []));
+    emitirBase(name, data);
+  };
+  const responder = (pollId, choice, text) => {
+    const c = polls.cards.find((x) => x.pollId === pollId);
+    if (!c) return new Error("aula:unknown");
+    if (!c.open) return new Error("aula:closed");
+    if (c.kind === "open" && !text.trim()) return new Error("aula:empty");
+    Object.assign(c, { choice: c.kind === "open" ? -1 : choice, text: c.kind === "open" ? text.trim() : "", vote: "sending" });
+    setTimeout(() => { c.vote = "accepted"; window.__emit("aula:polls", copiaPolls()); }, 300);
+    return copiaPolls();
+  };
+
 
   // Lo que Go contestaría: el acuse llega poco después («Enviando…» → «Recibido»).
   let nMsg = 0;
@@ -172,7 +203,7 @@
     return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
   };
   window.go = { main: { App: {
-    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened })),
+    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened, polls: copiaPolls() })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
     ReportMedia: call("ReportMedia"),
@@ -188,5 +219,6 @@
     SendTeacherMessage: call("SendTeacherMessage", escribir),
     OpenReceivedFolder: call("OpenReceivedFolder", (id) => (scene === "archivo-sin-carpeta" ? new Error("esa carpeta ya no está disponible") : null)),
     OpenCollectionFolder: call("OpenCollectionFolder"),
+    AnswerPoll: call("AnswerPoll", responder),
   } } };
 })();

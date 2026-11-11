@@ -329,6 +329,8 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	h.Capabilities = append(h.Capabilities, protocol.CapHand, protocol.CapMsgStudent)
 	// And the timer badge of its strip (§5.19).
 	h.Capabilities = append(h.Capabilities, protocol.CapTimer)
+	// And the poll cards of its list (§5.23).
+	h.Capabilities = append(h.Capabilities, protocol.CapPoll)
 	if sa.ready.Capture {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb, protocol.CapScreenSnapshot)
 	}
@@ -472,6 +474,11 @@ func (sa *serviceAgent) binding(_ context.Context, name string, data json.RawMes
 			return nil, err
 		}
 		return a.SendTeacherMessage(s1)
+	case "AnswerPoll":
+		if err := errors.Join(b.Arg(0, &id), b.Arg(1, &line), b.Arg(2, &s1)); err != nil {
+			return nil, err
+		}
+		return a.AnswerPoll(id, line, s1)
 	case "OpenReceivedFolder":
 		if err := b.Arg(0, &id); err != nil {
 			return nil, err

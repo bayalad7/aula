@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bayalad7/aula/internal/participation"
+	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/transport"
 )
@@ -61,7 +62,13 @@ func (a *App) onConnect(ctx context.Context, cl *transport.Client) {
 	a.mu.Lock()
 	a.cl = cl
 	a.mu.Unlock()
-	a.timerReconnected() // before the console can send it again (§5.19)
+	a.timerReconnected()   // before the console can send it again (§5.19)
+	a.ballot.Reconnected() // the console sends the open poll again (§5.23)
+	time.AfterFunc(poll.ReconnectGrace, func() {
+		if a.ballot.Orphans() {
+			a.emitPolls("")
+		}
+	})
 	for _, p := range a.desk.Reconnected() {
 		a.sendParticipation(ctx, cl, p)
 	}

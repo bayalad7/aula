@@ -79,6 +79,16 @@ body.watching #contenido { display: none; }
 .archivo-recibido__lista li[data-estado="renamed"], .archivo-recibido__lista li[data-estado="replaced"] { color: var(--c-texto-suave); }
 /* Recolecciones (prompt 10.10): misma tarjeta; lo que no se recogió, en suave; lo que falló, en error. */
 .recoleccion p { margin: 0; overflow-wrap: anywhere; }
+/* Encuestas (prompt 10.12): la pregunta, las opciones en columna (radios con teclado) y el total. */
+.encuesta p { margin: 0; overflow-wrap: anywhere; }
+.encuesta-campo { display: grid; gap: var(--e-2); margin: 0; padding: 0; border: 0; min-width: 0; }
+.encuesta-pregunta { padding: 0; font-weight: var(--peso-fuerte); overflow-wrap: anywhere; }
+.encuesta-opciones { display: grid; gap: var(--e-2); }
+.encuesta-opciones:empty, .encuesta-texto[hidden], .encuesta-botones[hidden], .encuesta-error[hidden],
+.encuesta-voto:empty, .encuesta-resultados[hidden], .encuesta .nuevo[hidden] { display: none; }
+.encuesta-opciones .opcion { overflow-wrap: anywhere; }
+.encuesta-resultados { display: grid; gap: var(--e-2); }
+.encuesta-resultados__titulo { margin: 0; font-size: var(--t-base, 1rem); }
 .recoleccion-estado[hidden] { display: none; }
 .recoleccion-lista li[data-estado="round"], .recoleccion-lista li[data-estado="empty"] { list-style: none; margin-inline-start: calc(-1 * var(--e-5)); font-weight: var(--peso-medio); }
 .recoleccion-lista li[data-estado="skipped"] { color: var(--c-texto-suave); }

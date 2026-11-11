@@ -23,6 +23,7 @@ import (
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/policy"
+	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/remote"
@@ -51,6 +52,7 @@ type App struct {
 	snap      *snapshot.Taker       // still screenshots; inert until enableScreen
 	desk      *participation.Desk   // the student's hand and messages to the teacher (§5.18)
 	countdown *classtimer.Countdown // the exercise timer (§5.19)
+	ballot    *poll.Ballot          // the polls of the teacher (§5.23)
 	files     *filepush.Receiver    // file.push; inert until enableFiles (§5.20)
 	inbox     *filepush.Inbox       // what arrived, for the window
 	collect   *collect.Responder    // file.collect; inert until enableCollect (§5.21)
@@ -127,7 +129,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	clip platform.Clipboard, clipErr error, log *slog.Logger) *App {
 	a := &App{
 		cfg: cfg, pub: pub, cfgErr: cfgErr, hello: hello,
-		board: codedist.NewBoard(0), desk: participation.NewDesk(), countdown: classtimer.NewCountdown(nil), clip: clip, clipEr: clipErr, log: log,
+		board: codedist.NewBoard(0), desk: participation.NewDesk(), countdown: classtimer.NewCountdown(nil), ballot: poll.NewBallot(nil), clip: clip, clipEr: clipErr, log: log,
 		emit: func(string, any) {}, raise: func() {}, notify: func() {}, maximize: func(bool) {}, onTop: func(bool) {},
 		mediaReady: make(chan struct{}), restart: make(chan struct{}, 1),
 	}
@@ -415,7 +417,7 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		_, err := cl.Send(ctx, p)
 		return err
 	}
-	if a.handleParticipation(env) || a.handleTimer(ctx, cl, env) {
+	if a.handleParticipation(env) || a.handleTimer(ctx, cl, env) || a.handlePoll(ctx, cl, env) {
 		return
 	}
 	var reply protocol.Payload
@@ -524,7 +526,8 @@ func (a *App) View() View {
 	return View{Status: a.status, Snippets: snippets, Notices: append([]codedist.Notice{}, a.notices...),
 		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
 		Participation: a.desk.View(), Timer: a.countdown.View(), Files: a.filesView(a.inbox.List()),
-		Collections: a.collectionsView(), Opened: Opened{List: append([]openapp.Opened{}, a.opened...)}}
+		Collections: a.collectionsView(), Opened: Opened{List: append([]openapp.Opened{}, a.opened...)},
+		Polls: a.ballot.View()}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

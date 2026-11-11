@@ -9,6 +9,7 @@ import (
 
 	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/participation"
+	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/session"
 )
@@ -102,6 +103,17 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 	for _, c := range partErrorCodes {
 		need("mano.error."+c, "participation.go (partErrorCodes)")
+	}
+	// A poll (poll.BallotView): its kind, the state of the answer and the
+	// errors of AnswerPoll.
+	for _, k := range []protocol.PollKind{protocol.PollKindChoice, protocol.PollKindYesNo, protocol.PollKindOpen} {
+		need("encuesta.tipo."+string(k), "poll.Card.Kind")
+	}
+	for _, s := range []poll.VoteState{poll.VoteSending, poll.VoteAccepted, poll.VoteLate, poll.VoteUnknown, poll.VoteUnsupported, poll.VoteRefused} {
+		need("encuesta.voto."+string(s), "poll.Card.Vote")
+	}
+	for _, c := range pollErrorCodes {
+		need("encuesta.error."+c, "poll.go (pollErrorCodes)")
 	}
 	// Why a file was not saved (protocol.FilePushReason), in camelCase.
 	for _, r := range protocol.FilePushReasons {

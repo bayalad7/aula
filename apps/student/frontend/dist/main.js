@@ -4,7 +4,7 @@
 // BroadcastFailed; los del aviso de energía: PowerPostpone, DismissPower; y los
 // de la mano y los mensajes al profesor: RaiseHand, LowerHand, SendTeacherMessage; y
 // «Abrir carpeta» de los archivos recibidos y de las recolecciones: OpenReceivedFolder,
-// OpenCollectionFolder).
+// OpenCollectionFolder; y la respuesta a una encuesta: AnswerPoll).
 // Go manda estados; los textos salen de textos.es-MX.js (T) y el título de la
 // ventana lo pone esta página (docs/privacidad.md, regla 1).
 // Seguridad: todo texto recibido se inserta con textContent; el único HTML es
@@ -104,7 +104,7 @@
   // pantalla vista. No queda encima de las demás ni toma el foco.
   let compacto = false;
   // Lo que el alumno aún no ve: código y archivos «Nuevo» y avisos abiertos.
-  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + archivosNuevos() + recoNuevas() + avisos.length;
+  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + archivosNuevos() + recoNuevas() + encuestasNuevas() + avisos.length;
   function pintarCompacto() {
     const v = { canal: status.channel, profesor: status.teacher };
     $("compacto").dataset.estado = status.state;
@@ -140,7 +140,7 @@
   // El estado vacío se va con el primer código o el primer archivo.
   let nCodigos = 0;
   let nRecolecciones = 0;
-  function pintarListaVacia() { empty.hidden = nCodigos + nArchivos + nRecolecciones > 0; }
+  function pintarListaVacia() { empty.hidden = nCodigos + nArchivos + nRecolecciones + nEncuestas > 0; }
 
   // Identificadores de Monaco/protocolo → gramática de Prism.
   const aliases = {
@@ -623,6 +623,178 @@
     pintarCompacto();
   }
 
+  // --- Encuestas del profesor (docs/protocol.md §5.23) ---------------------------------------------
+  // Una tarjeta por encuesta, arriba de la lista, con «Nuevo» (regla 71): nunca un diálogo ni el
+  // foco. Las opciones son radios (flechas para moverse, Enter envía) y la respuesta se puede
+  // cambiar mientras siga abierta. Go manda el estado (poll.BallotView) y aquí se arma el texto.
+  const encuestasLista = $("encuestas");
+  const encuestaTpl = $("encuesta-template");
+  const nodosEncuesta = new Map(); // pollId → li
+  let encuestasPrimeraVez = true;
+  let nEncuestas = 0;
+  const EV = "encuesta.voto."; // + poll.VoteState
+  const EE = "encuesta.error."; // + código de apps/student/poll.go
+  const ET = "encuesta.tipo."; // + protocol.PollKind
+  function encuestasNuevas() { return encuestasLista.querySelectorAll(".nuevo:not([hidden])").length; }
+  const errorEncuesta = (err) => {
+    const m = /aula:(\w+)/.exec(String(err && err.message ? err.message : err));
+    return m && typeof TX[EE + m[1]] === "string" ? T(EE + m[1]) : String(err);
+  };
+  // Las opciones que ve el alumno: las del profesor, o «Sí» y «No».
+  const opcionesDe = (c) => (c.kind === "yesno" ? [T("encuesta.si"), T("encuesta.no")] : c.options || []);
+  const respuestaDe = (c) => (c.kind === "open" ? c.text : opcionesDe(c)[c.choice] || "");
+
+  function nodoEncuesta(c, nuevo) {
+    const li = encuestaTpl.content.firstElementChild.cloneNode(true);
+    aplicarTextos(li);
+    li.dataset.encuesta = c.pollId;
+    li.tabIndex = -1;
+    const marca = li.querySelector(".nuevo");
+    marca.textContent = T("codigo.nuevo");
+    marca.hidden = !nuevo;
+    const visto = () => { if (!marca.hidden) { marca.hidden = true; title(); pintarCompacto(); } };
+    li.addEventListener("focusin", visto);
+    li.addEventListener("pointerdown", visto);
+    const form = li.querySelector(".encuesta-form");
+    const error = li.querySelector(".encuesta-error");
+    const campo = li.querySelector(".encuesta-texto input");
+    const ayuda = li.querySelector(".encuesta-ayuda");
+    const contar = () => { ayuda.textContent = T("encuesta.ayuda", { n: [...campo.value].length }); };
+    campo.addEventListener("input", () => { contar(); error.hidden = true; });
+    contar();
+    // Las opciones se arman una vez: así no se pierde lo que el alumno marcó al llegar un evento.
+    const opciones = li.querySelector(".encuesta-opciones");
+    if (c.kind === "open") {
+      li.querySelector(".encuesta-texto").hidden = false;
+    } else {
+      opcionesDe(c).forEach((texto, i) => {
+        const label = document.createElement("label");
+        label.className = "opcion";
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "encuesta-" + c.pollId;
+        radio.value = String(i);
+        radio.addEventListener("change", () => { error.hidden = true; });
+        const span = document.createElement("span");
+        span.textContent = texto;
+        label.append(radio, span);
+        opciones.appendChild(label);
+      });
+    }
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      visto();
+      error.hidden = true;
+      let choice = -1, text = "";
+      if (c.kind === "open") {
+        text = campo.value;
+      } else {
+        const marcado = form.querySelector("input[type=radio]:checked");
+        if (!marcado) { error.textContent = T("encuesta.eligeAntes"); error.hidden = false; return; }
+        choice = Number(marcado.value);
+      }
+      const boton = li.querySelector(".encuesta-enviar");
+      boton.setAttribute("aria-busy", "true");
+      api.AnswerPoll(c.pollId, choice, text).then(renderEncuestas, (err) => {
+        error.textContent = errorEncuesta(err);
+        error.hidden = false;
+      }).finally(() => boton.removeAttribute("aria-busy"));
+    });
+    return li;
+  }
+
+  function pintarEncuesta(li, c) {
+    li.querySelector(".encuesta-pregunta").textContent = c.question;
+    li.querySelector(".encuesta-hora").textContent = hora(c.at);
+    li.querySelector(".encuesta-privacidad").textContent =
+      T(ET + c.kind) + " " + (c.named ? T("encuesta.nominal") : T("encuesta.anonima"));
+    const insignia = li.querySelector(".encuesta-estado-insignia");
+    insignia.textContent = c.open ? T("encuesta.abierta") : T("encuesta.cerrada");
+    insignia.classList.toggle("insignia--conectado", c.open);
+    // Cerrada: las opciones quedan a la vista, sin poder cambiarlas.
+    const puede = c.open && c.vote !== "unsupported";
+    for (const x of li.querySelectorAll(".encuesta-campo input")) x.disabled = !puede;
+    li.querySelector(".encuesta-botones").hidden = !puede;
+    const contestada = c.vote === "accepted" || c.vote === "sending";
+    li.querySelector(".encuesta-enviar span").textContent = contestada ? T("encuesta.cambiar") : T("encuesta.enviar");
+    // Lo que respondió, marcado, si el alumno no está eligiendo otra cosa.
+    if (!li.contains(document.activeElement)) {
+      if (c.kind !== "open" && c.choice >= 0) {
+        const r = li.querySelector('input[type=radio][value="' + c.choice + '"]');
+        if (r) r.checked = true;
+      }
+      if (c.kind === "open" && c.text) li.querySelector(".encuesta-texto input").value = c.text;
+    }
+    let voto = "";
+    const respuesta = respuestaDe(c);
+    if (!c.open && c.vote === "accepted") voto = T("encuesta.cerradaRespondiste", { respuesta });
+    else if (!c.open && c.vote === "none") voto = T("encuesta.cerradaSinRespuesta");
+    else if (c.vote === "accepted") voto = T(EV + "accepted", { respuesta });
+    else if (c.vote !== "none") voto = T(EV + c.vote);
+    li.querySelector(".encuesta-voto").textContent = voto;
+    // Resultados de la clase, si el profesor los compartió: texto y número, no solo la barra.
+    const caja = li.querySelector(".encuesta-resultados");
+    caja.hidden = !c.results;
+    if (!c.results) return;
+    const lista = caja.querySelector(".barras");
+    lista.replaceChildren();
+    const total = c.results.voters;
+    opcionesDe(c).forEach((texto, i) => {
+      const n = c.results.counts[i] || 0;
+      const pct = total ? Math.round((n * 100) / total) : 0;
+      const fila = document.createElement("li");
+      fila.className = "barra-opcion";
+      const tuya = i === c.choice && c.vote === "accepted";
+      if (tuya) fila.dataset.elegida = "true";
+      const op = document.createElement("span");
+      op.className = "barra-opcion__texto";
+      op.textContent = tuya ? T("encuesta.tuya", { opcion: texto }) : texto;
+      const barra = document.createElement("span");
+      barra.className = "barra-opcion__pista";
+      barra.setAttribute("aria-hidden", "true");
+      const relleno = document.createElement("span");
+      relleno.className = "barra-opcion__relleno";
+      relleno.style.width = pct + "%";
+      barra.appendChild(relleno);
+      const cifra = document.createElement("span");
+      cifra.className = "barra-opcion__cifra";
+      cifra.textContent = T("encuesta.cifra", { n, pct });
+      fila.append(op, barra, cifra);
+      lista.appendChild(fila);
+    });
+    caja.querySelector(".encuesta-total").textContent = T("encuesta.total", { n: total, total: c.results.recipients });
+  }
+
+  function renderEncuestas(v) {
+    if (!v) return;
+    const cards = v.cards || [];
+    const vivos = new Set(cards.map((c) => c.pollId));
+    for (const [id, li] of nodosEncuesta) {
+      if (!vivos.has(id)) { li.remove(); nodosEncuesta.delete(id); }
+    }
+    let anterior = null;
+    for (const c of cards) { // lo más nuevo primero
+      let li = nodosEncuesta.get(c.pollId);
+      if (!li) {
+        li = nodoEncuesta(c, !encuestasPrimeraVez || v.arrived === c.pollId);
+        nodosEncuesta.set(c.pollId, li);
+      }
+      pintarEncuesta(li, c);
+      const lugar = anterior ? anterior.nextSibling : encuestasLista.firstChild;
+      if (li !== lugar) encuestasLista.insertBefore(li, lugar);
+      anterior = li;
+    }
+    if (v.arrived) {
+      const c = cards.find((x) => x.pollId === v.arrived);
+      if (c) anunciar(T("encuesta.anuncio", { pregunta: c.question }));
+    }
+    encuestasPrimeraVez = false;
+    nEncuestas = cards.length;
+    pintarListaVacia();
+    title();
+    pintarCompacto();
+  }
+
   // Lo que abrió el profesor (docs/protocol.md §5.22): los avisos «opened» toman de aquí qué
   // se abrió y quién lo pidió. La ventana no se trae al frente: el foco ya lo tiene lo abierto.
   let abiertos = [];
@@ -1074,6 +1246,7 @@
   rt.EventsOn(ev.FILES, renderArchivos);
   rt.EventsOn(ev.COLLECTIONS, renderRecolecciones);
   rt.EventsOn(ev.OPENED, renderAbiertos);
+  rt.EventsOn(ev.POLLS, renderEncuestas);
   api.View().then((v) => {
     abiertos = (v.opened && v.opened.list) || [];
     renderStatus(v.status);
@@ -1086,6 +1259,7 @@
     if (v.timer) renderTemporizador(v.timer);
     renderArchivos(v.files);
     renderRecolecciones(v.collections);
+    renderEncuestas(v.polls);
   });
   probeMedia();
 })();

@@ -135,6 +135,8 @@
       <h2 id="vacio-titulo"></h2>
       <p id="vacio-texto"></p>
     </div>
+    <!-- Encuestas (prompt 10.12): la pregunta del profesor arriba de la lista, con «Nuevo». -->
+    <ol id="encuestas" class="codigos" data-t-aria-label="encuestas.lista"></ol>
     <!-- Recolecciones (prompt 10.10): dónde guardar el ejercicio y qué se recogió, y cuándo. -->
     <ol id="recolecciones" class="codigos" data-t-aria-label="recolecciones.lista"></ol>
     <!-- Archivos que envió el profesor (prompt 10.9): una tarjeta por envío, con dónde quedaron. -->
@@ -221,6 +223,40 @@
         <ul class="archivo-recibido__lista recoleccion-lista"></ul>
         <p class="campo__error archivo-recibido__error" role="alert" hidden></p>
       </div>
+    </li>
+  </template>
+
+  <template id="encuesta-template">
+    <li class="codigo-recibido encuesta">
+      <div class="codigo-recibido__cabecera">
+        <div class="codigo-recibido__info">
+          <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg>
+          <h2 class="codigo-recibido__titulo encuesta-titulo" data-t="encuesta.titulo"></h2>
+          <span class="insignia insignia--conectado nuevo" hidden></span>
+          <span class="insignia encuesta-estado-insignia"></span>
+          <span class="codigo-recibido__meta encuesta-hora"></span>
+        </div>
+      </div>
+      <form class="archivo-recibido__cuerpo encuesta-form" novalidate>
+        <fieldset class="encuesta-campo">
+          <legend class="encuesta-pregunta"></legend>
+          <p class="suave encuesta-privacidad"></p>
+          <div class="encuesta-opciones"></div>
+          <label class="campo encuesta-texto" hidden><span class="campo__etiqueta" data-t="encuesta.respuestaEtiqueta"></span>
+            <input type="text" maxlength="140" autocomplete="off">
+            <span class="campo__ayuda encuesta-ayuda"></span></label>
+        </fieldset>
+        <div class="grupo-botones encuesta-botones">
+          <button type="submit" class="btn btn--primario btn--sm encuesta-enviar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span></span></button>
+        </div>
+        <p class="campo__error encuesta-error" role="alert" hidden></p>
+        <p class="encuesta-voto" role="status"></p>
+        <div class="encuesta-resultados" hidden>
+          <h3 class="encuesta-resultados__titulo" data-t="encuesta.resultados"></h3>
+          <ol class="barras"></ol>
+          <p class="suave encuesta-total"></p>
+        </div>
+      </form>
     </li>
   </template>
 

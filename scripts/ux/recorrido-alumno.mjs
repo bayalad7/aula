@@ -123,6 +123,20 @@ await f("75-recoleccion-angosta", "recoleccion-aviso", { w: 480, h: 360 });
 await f("76-abierto", "abierto");
 await f("77-abierto-oscuro", "abierto", { oscuro: true });
 
+// Encuestas (prompt 10.12): la tarjeta arriba con «Nuevo» y si es anónima, la respuesta enviada
+// (con teclado), una cerrada con los resultados de la clase, la abierta corta nominal, oscuro,
+// ventana mínima y el modo compacto cuando llega una.
+await f("78-encuesta", "encuesta");
+await f("79-encuesta-respondida", "encuesta", { pasos: seq(click('#encuestas > li:first-child input[value="1"]'),
+  click("#encuestas > li:first-child .encuesta-enviar"), async () => { await sleep(500); }) });
+await f("80-encuesta-texto", "encuesta-texto", { pasos: async (p) => {
+  await p.type("#encuestas > li:first-child .encuesta-texto input", "Los índices de la lista");
+} });
+await f("81-encuesta-oscuro", "encuesta", { oscuro: true });
+await f("82-encuesta-angosta", "encuesta", { w: 480, h: 360 });
+await f("83-compacto-encuesta-nueva", "conectado", { w: 380, h: 80, pasos: seq(click("#compactar"), emitir("aula:polls", { arrived: "pl-9", cards: [{ pollId: "pl-9", kind: "choice", question: "¿Qué imprime print(3 // 2)?",
+  options: ["1.5", "1", "2", "Error"], named: false, open: true, choice: -1, text: "", vote: "none", results: null, at: new Date().toISOString() }] })) });
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

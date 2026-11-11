@@ -489,6 +489,64 @@ await caso("temporizador-compacto", "temporizador", async (p) => {
   ok(v[0] && v[1] && v[2] === "Ejercicio 1 · terminó", "compacto: " + v.join());
 }, { w: 380, h: 80 });
 
+// Encuestas (prompt 10.12): la tarjeta llega arriba con «Nuevo» sin quitar el foco (notify, nunca un
+// diálogo), no es banda, se responde con el teclado (flechas y Enter) y cuenta como «sin ver».
+const encuestaNueva = { arrived: "pl-9", cards: [{ pollId: "pl-9", kind: "choice", question: "¿Qué imprime print(3 // 2)?",
+  options: ["1.5", "1", "2", "Error"], named: false, open: true, choice: -1, text: "", vote: "none", results: null, at: new Date().toISOString() }] };
+await caso("encuesta", "un-codigo", async (p) => {
+  await p.focus("#snippets > li .copy");
+  await emitir(p, "aula:polls", encuestaNueva);
+  await sleep(150);
+  const llego = await p.evaluate(() => {
+    const li = document.querySelector("#encuestas > li");
+    return { hay: !!li, nuevo: li && !li.querySelector(".nuevo").hidden, bandas: !!(li && li.closest(".bandas")),
+      dialogo: !!document.querySelector("dialog[open], [role=dialog]:not([hidden])"),
+      antes: li && !!(li.compareDocumentPosition(document.getElementById("snippets")) & Node.DOCUMENT_POSITION_FOLLOWING),
+      foco: document.activeElement.classList.contains("copy"), titulo: document.title,
+      privacidad: li && li.querySelector(".encuesta-privacidad").textContent };
+  });
+  ok(llego.hay && llego.nuevo && !llego.bandas && !llego.dialogo && llego.antes, "tarjeta: " + JSON.stringify(llego));
+  ok(llego.foco, "la encuesta le quitó el foco al alumno");
+  ok(/^\(1\)/.test(llego.titulo), "el título no cuenta la encuesta como nueva: " + llego.titulo);
+  ok(llego.privacidad.includes("Anónima"), "no dice que es anónima: " + llego.privacidad);
+  // Con el teclado: a la primera opción, flecha abajo y Enter.
+  await p.focus('#encuestas > li input[value="0"]');
+  await p.keyboard.press("ArrowDown");
+  await p.keyboard.press("Enter");
+  await sleep(500);
+  const r = await p.evaluate(() => ({ llamada: window.__calls.filter((c) => c[0] === "AnswerPoll").pop(),
+    voto: document.querySelector("#encuestas > li .encuesta-voto").textContent,
+    boton: document.querySelector("#encuestas > li .encuesta-enviar span").textContent,
+    nuevo: !document.querySelector("#encuestas > li .nuevo").hidden }));
+  ok(r.llamada && r.llamada[1][1] === 1, "AnswerPoll: " + JSON.stringify(r.llamada));
+  ok(r.voto.startsWith("Respuesta enviada: 1.") && r.boton === "Cambiar mi respuesta" && !r.nuevo, "respondida: " + JSON.stringify(r));
+});
+await caso("encuesta-sin-elegir", "encuesta", async (p) => {
+  await p.click("#encuestas > li:first-child .encuesta-enviar");
+  await sleep(150);
+  const e = await p.evaluate(() => [document.querySelector("#encuestas > li .encuesta-error").hidden,
+    document.querySelector("#encuestas > li .encuesta-error").textContent, window.__calls.some((c) => c[0] === "AnswerPoll")]);
+  ok(!e[0] && e[1] === "Elige una opción antes de enviar." && !e[2], "sin elegir: " + e.join());
+});
+await caso("encuesta-cerrada-resultados", "encuesta", async (p) => {
+  const c = await p.evaluate(() => {
+    const li = document.querySelectorAll("#encuestas > li")[1];
+    return { deshabilitada: [...li.querySelectorAll("input")].every((i) => i.disabled), sinEnviar: li.querySelector(".encuesta-botones").hidden,
+      filas: [...li.querySelectorAll(".barras > li")].map((f) => f.textContent), voto: li.querySelector(".encuesta-voto").textContent };
+  });
+  ok(c.deshabilitada && c.sinEnviar, "cerrada: se puede responder");
+  ok(c.filas.length === 2 && c.filas[0] === "Sí (tu respuesta)14 (78 %)" && c.filas[1] === "No4 (22 %)", "resultados: " + c.filas.join(" | "));
+  ok(c.voto === "Encuesta cerrada. Respondiste: Sí", "estado: " + c.voto);
+});
+await caso("encuesta-compacto", "conectado", async (p) => {
+  await p.click("#compactar");
+  await emitir(p, "aula:polls", encuestaNueva);
+  await sleep(150);
+  const v = await p.evaluate(() => [document.body.classList.contains("compacto"), !document.getElementById("compacto-nuevos").hidden,
+    document.getElementById("compacto-nuevos").textContent]);
+  ok(v[0] && v[1] && v[2] === "1 nuevo", "compacto: " + v.join());
+}, { w: 380, h: 80 });
+
 // A 480×360, un solo aviso a la vista.
 await caso("avisos-angosta", "muchos-avisos", async (p) => {
   ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 1), "a 480 se ve más de un aviso");

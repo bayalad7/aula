@@ -5,6 +5,7 @@ import (
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/policy"
+	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/power"
 )
 
@@ -16,9 +17,10 @@ import (
 // Frontend → backend: the bound methods of App (View, Copy, DismissNotice,
 // ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed,
 // PowerPostpone, DismissPower, SetCompact, ReportWindow, RaiseHand, LowerHand,
-// SendTeacherMessage, OpenReceivedFolder, OpenCollectionFolder).
+// SendTeacherMessage, OpenReceivedFolder, OpenCollectionFolder, AnswerPoll).
 // EventParticipation is in participation.go, EventTimer in timer.go,
-// EventFiles in files.go and EventCollections in collect.go.
+// EventFiles in files.go, EventCollections in collect.go and EventPolls in
+// poll.go.
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -140,4 +142,6 @@ type View struct {
 	Collections Collections `json:"collections"`
 	// Opened is what the teacher opened in this session (§5.22).
 	Opened Opened `json:"opened"`
+	// Polls are the teacher's polls of this session, newest first (§5.23).
+	Polls poll.BallotView `json:"polls"`
 }

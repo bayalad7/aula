@@ -18,6 +18,7 @@ import (
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/participation"
+	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/session"
@@ -56,7 +57,7 @@ const (
 // (filepush with an in-memory folder that keeps only the names). And a
 // collection gets their last code, from memory too (collect.go).
 var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect}
+	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect, protocol.CapPoll}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities
@@ -112,6 +113,8 @@ type Student struct {
 	Sent int                     `json:"sent"`
 	// Timer is the exercise timer it shows, if any (§5.19).
 	Timer classtimer.View `json:"timer"`
+	// Poll is the newest poll it shows and what it answered, if any (§5.23).
+	Poll *poll.Card `json:"poll"`
 }
 
 // Class is a set of simulated students connected to one console. It is safe
@@ -171,7 +174,7 @@ func (c *Class) Add(os protocol.OS, caps []protocol.Capability) (Student, error)
 	s := &student{
 		class: c, id: protocol.NewID(), name: "Simulado " + strconv.Itoa(c.next), os: os,
 		caps: slices.Clone(caps), index: c.next, fault: FaultNone, board: codedist.NewBoard(0),
-		desk: participation.NewDesk(), countdown: classtimer.NewCountdown(nil),
+		desk: participation.NewDesk(), countdown: classtimer.NewCountdown(nil), ballot: poll.NewBallot(nil),
 	}
 	if err := s.hello().Validate(); err != nil {
 		c.mu.Unlock()
@@ -278,6 +281,7 @@ type student struct {
 	board     *codedist.Board
 	desk      *participation.Desk   // its hand and messages to the teacher
 	countdown *classtimer.Countdown // the exercise timer it shows
+	ballot    *poll.Ballot          // the polls it shows and answers
 
 	mu         sync.Mutex
 	cl         *transport.Client // the connection, nil while not connected
@@ -359,6 +363,12 @@ func (s *student) start() {
 			s.cl = cl
 			s.mu.Unlock()
 			s.countdown.Reconnected()
+			s.ballot.Reconnected()
+			time.AfterFunc(poll.ReconnectGrace, func() {
+				if s.ballot.Orphans() {
+					s.class.changed()
+				}
+			})
 			s.armTimer()
 			for _, p := range s.desk.Reconnected() {
 				s.send(ctx, cl, p)
@@ -433,6 +443,9 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 		if s.handleTimer(ctx, cl, env, fault) {
 			return
 		}
+		if s.handlePoll(ctx, cl, env, fault) {
+			return
+		}
 		if s.handleFile(ctx, send, env) {
 			return
 		}
@@ -505,7 +518,7 @@ func (s *student) snapshot() Student {
 	out := Student{
 		ID: s.id, Name: s.name, OS: s.os, Capabilities: slices.Clone(s.caps), Connected: s.connected,
 		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, Private: s.private, LastNotice: s.lastNotice, Snapshots: s.snapshots, Files: s.received, Snippets: []Snippet{},
-		Hand: s.desk.View().Hand, Sent: s.sent, Timer: s.countdown.View(),
+		Hand: s.desk.View().Hand, Sent: s.sent, Timer: s.countdown.View(), Poll: s.pollView(),
 	}
 	if s.fault == FaultSlow {
 		out.DelayMs = int(s.delay / time.Millisecond)

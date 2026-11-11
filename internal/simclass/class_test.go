@@ -8,12 +8,14 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"slices"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/participation"
+	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
@@ -40,6 +42,8 @@ type console struct {
 	timers []protocol.TimerAck
 	files  []protocol.FilePushAck
 	msgs   []protocol.Envelope // msg.student
+	votes  []protocol.PollVote
+	polls  []protocol.PollAck
 }
 
 func startConsole(t *testing.T) *console {
@@ -80,6 +84,11 @@ func startConsole(t *testing.T) *console {
 				c.files = append(c.files, p)
 			case protocol.MsgStudent:
 				c.msgs = append(c.msgs, env)
+			case protocol.PollAck:
+				c.polls = append(c.polls, p)
+			case protocol.PollVote:
+				c.votes = append(c.votes, p)
+				go conn.Send(context.Background(), protocol.PollVoteAck{RefID: env.ID, PollID: p.PollID, Status: protocol.PollVoteAccepted})
 			}
 		},
 	}
@@ -473,4 +482,58 @@ func TestSimulatedStudentsAcknowledgeFilesWithoutDisk(t *testing.T) {
 	if cl.Students()[1].Files != 1 {
 		t.Fatal("the noack student still receives the file")
 	}
+}
+
+func (c *console) pollState() ([]protocol.PollVote, []protocol.PollAck) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.Clone(c.votes), slices.Clone(c.polls)
+}
+
+// Simulated students show a poll, answer it by themselves (different students,
+// different options) and acknowledge the close and the totals; with "noack"
+// they answer without acknowledging.
+func TestSimulatedStudentsAnswerPolls(t *testing.T) {
+	c := startConsole(t)
+	cl := newClass(t, c)
+	a, _ := cl.Add(protocol.OSWindows, nil)
+	b, _ := cl.Add(protocol.OSWindows, nil)
+	eventually(t, "connected", func() bool { return len(c.connected()) == 2 })
+	if err := cl.SetFault(b.ID, FaultNoAck, 0); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	open := protocol.PollOpen{PollID: protocol.NewID(), Kind: protocol.PollKindChoice, Question: "¿Qué imprime print(3 // 2)?",
+		Options: []string{"1.5", "1", "2"}}
+	for _, st := range []Student{a, b} {
+		if _, err := c.Send(ctx, sessionOf(t, c, st.Name).ID, open); err != nil {
+			t.Fatal(err)
+		}
+	}
+	eventually(t, "both answered", func() bool {
+		votes, _ := c.pollState()
+		return len(votes) == 2
+	})
+	votes, acks := c.pollState()
+	if *votes[0].Choice == *votes[1].Choice {
+		t.Errorf("two simulated students chose the same option: %d", *votes[0].Choice)
+	}
+	if len(acks) != 1 || acks[0].Status != protocol.PollAckShown {
+		t.Errorf("acks = %+v (noack must not acknowledge)", acks)
+	}
+	eventually(t, "accepted", func() bool {
+		p := cl.Students()[0].Poll
+		return p != nil && p.Vote == poll.VoteAccepted
+	})
+	if _, err := c.Send(ctx, sessionOf(t, c, a.Name).ID, protocol.PollClose{PollID: open.PollID}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Send(ctx, sessionOf(t, c, a.Name).ID, protocol.PollResults{PollID: open.PollID, Counts: []int{1, 1, 0}, Voters: 2, Recipients: 2}); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "results", func() bool {
+		_, acks := c.pollState()
+		p := cl.Students()[0].Poll
+		return len(acks) == 3 && p != nil && !p.Open && p.Results != nil
+	})
 }

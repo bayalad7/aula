@@ -1168,6 +1168,14 @@ Para que cada función pendiente respete lo implementado:
   de JS ni violaciones serias; 54 pruebas del alumno; mapa y capturas del manual regenerados;
   casos C-95 a C-98 y los C-xx/A-xx que usaban la ficha, al día.
 
+## Notas de interfaz 014–019 (2026-11-12)
+
+- 014 pie de envío de Código en una fila con tooltips; 015 globo flotante de la «i»; 016 eliminar
+  plantilla (`Templates.Delete`, `DeleteTemplate`, error `templateNotDeleted`); 017 «¿Qué envías?»
+  y «Nueva plantilla…» en su diálogo; 018 descripción del temporizador (`timer.start.description`,
+  v0.15, opcional; tarjeta «Qué hacer» en el alumno, nunca en los registros); 019 rejilla de
+  duraciones con «Otro…». Casos C-102 a C-107.
+
 ## Etapa 12.2: transmisión a una selección, y modos ventana y pantalla completa — notas
 
 - **Protocolo (v0.15, compatible):** `screen.broadcast.start` lleva `mode` opcional (`window` o

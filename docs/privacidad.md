@@ -423,8 +423,10 @@ con la ventana cerrada, solo la marca en el icono del área de notificación.
 54. **El temporizador solo informa.** Al llegar a cero no se bloquea, no se recoge ni se cambia
     nada en el equipo: el alumno sigue trabajando. Por eso también lo reciben los alumnos
     simulados (regla 34 no aplica). Los registros llevan `timer_id`, la duración y lo que falta,
-    **nunca** el nombre que le puso el profesor (`label`), que es texto suyo. La consola lo
-    guarda en memoria y lo olvida al cerrar la clase o cambiar de canal.
+    **nunca** el nombre que le puso el profesor (`label`) ni su descripción (`description`, lo
+    que hay que hacer), que son texto suyo. La consola los guarda en memoria y los olvida al
+    cerrar la clase o cambiar de canal. La descripción llega a una tarjeta de la lista con
+    «Nuevo», sin quitar el foco ni traer la ventana, y se va con el temporizador.
 
 ## Archivos que envía el profesor (v0.10, Windows)
 

@@ -15,7 +15,9 @@ guardas las plantillas que usas en cada clase y, en la pestaña **Recolecciones*
 
 ## Enviar archivos y plantillas
 
-1. Pulsa **Elegir archivos…** y marca uno o varios, o elige una **Plantilla**.
+1. En **¿Qué envías?** elige **Archivos sueltos** (pulsa **Elegir archivos…** y marca uno o
+   varios) o **Una plantilla** (elígela en la lista; ves sus archivos, que se cambian en su
+   carpeta).
 2. En **Guardar en** escribe la carpeta donde lo recibirán, dentro de su `Documentos\Aula`; por
    ejemplo, `Ejercicio 4`. Vacío: directo en `Documentos\Aula`.
 3. Elige **Enviar a** (todos o tu selección) y pulsa **Enviar**.
@@ -43,7 +45,8 @@ Una plantilla es una carpeta en `Documentos\Aula\plantillas` de tu equipo, con l
 repartes siempre juntos (por ejemplo, `main.py`, `datos.csv` y `LEEME.txt`). Se conserva entre
 clases.
 
-- **Guardar como plantilla…** crea una con los archivos que elegiste.
+- **Nueva plantilla…**, arriba de la tabla, abre un diálogo: escribe su nombre, elige sus archivos
+  y pulsa **Guardar plantilla**. Si ya elegiste archivos sueltos arriba, empieza con ellos.
 - En la tabla **Plantillas**, **Usar** la carga arriba para enviarla y **Abrir carpeta** la abre en
   el Explorador: ahí agregas, quitas o cambias archivos, también en subcarpetas. **Carpeta de
   plantillas** abre la de todas.

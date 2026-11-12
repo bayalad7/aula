@@ -83,10 +83,13 @@ En [Código › Últimos envíos](codigo#últimos-envíos) ves quién ya lo vio.
 ## Dar tiempo a un ejercicio
 
 1. Pulsa **Temporizador**.
-2. Escribe el nombre («Ejercicio 1») y elige la duración.
-3. Pulsa **Iniciar**.
+2. Escribe el nombre («Ejercicio 1») y, si quieres, una **Descripción** con lo que tienen que
+   hacer (hasta 1000 caracteres).
+3. Elige la duración: 1 a 60 minutos, u **Otro…** para escribir los minutos (hasta 240).
+4. Pulsa **Iniciar**.
 
-Los alumnos ven cuánto falta en su barra de arriba, sin que les tape el trabajo. En la franja de
+Los alumnos ven cuánto falta en su barra de arriba, sin que les tape el trabajo. Si escribiste
+una descripción, la leen en una tarjeta «Qué hacer» arriba de su lista mientras corre el tiempo. En la franja de
 tu consola puedes **Extender** o **Detener**. Más detalles en
 [Participación › Temporizador](participacion#temporizador).
 

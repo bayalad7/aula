@@ -108,8 +108,10 @@ Las respuestas **cortas no se comparten** con la clase: son texto de cada alumno
 
 Para dar un tiempo a un ejercicio («Ejercicio 1 · 10 min»), elige a quién en **Alumnos** (o a
 nadie, para toda la clase) y pulsa **Temporizador** en la barra de acciones. Escribe un nombre (lo
-ven los alumnos; vacío dice «Tiempo»), elige la duración (1, 5, 10, 15 o 20 minutos, o escribe de
-1 a 240) y pulsa **Iniciar**. También puedes empezarlo desde aquí, con **Nuevo temporizador**.
+ven los alumnos; vacío dice «Tiempo») y, si quieres, una **Descripción** con lo que tienen que
+hacer (hasta 1000 caracteres). Elige la duración (1, 5, 10, 15, 20, 30, 45 o 60 minutos, u
+**Otro…** para escribir de 1 a 240; **Volver a las opciones** regresa a los botones) y pulsa
+**Iniciar**. También puedes empezarlo desde aquí, con **Nuevo temporizador**.
 
 Mientras corre, una franja azul arriba de la consola dice «Ejercicio 1 · 4:32 · 18 de 20 lo ven»,
 en cualquier pantalla:
@@ -122,6 +124,9 @@ En esta sección ves lo mismo con más detalle: cuánto queda, para quién es, q
 confirma** (por ejemplo, un equipo que se acaba de desconectar) y quién **no puede verlo** (una
 versión de Aula anterior). Un temporizador nuevo reemplaza al que estaba corriendo; el panel te
 avisa antes.
+
+Si escribiste una descripción, el alumno la lee en una tarjeta «Qué hacer: Ejercicio 1» arriba
+de su lista, con «Nuevo» y el tiempo; se va con el temporizador.
 
 En el equipo del alumno aparece como una insignia en su barra de arriba, «Ejercicio 1 · 4:32»,
 también con la ventana encogida. **No tapa su trabajo ni le quita el teclado.** En el último

@@ -371,7 +371,7 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `hand.lower` | A ↔ P | `hand` | `hand_id`, `by` | — |
 | `msg.student` | A → P | `msg.student` | `message_id`, `text` | `msg.student.ack` o `error` |
 | `msg.student.ack` | P → A | `msg.student` | `ref_id`, `message_id` | — |
-| `timer.start` | P → A | `timer` | `timer_id`, `label`, `duration_s`, `remaining_ms` | `timer.ack` o `error` |
+| `timer.start` | P → A | `timer` | `timer_id`, `label`, `duration_s`, `remaining_ms` (opcional `description`) | `timer.ack` o `error` |
 | `timer.extend` | P → A | `timer` | `timer_id`, `add_s`, `remaining_ms` | `timer.ack`; con otro `timer_id` se ignora |
 | `timer.stop` | P → A | `timer` | `timer_id` | `timer.ack` (`stopped`); sin temporizador vigente se ignora |
 | `timer.ack` | A → P | — | `ref_id`, `timer_id`, `status`, `remaining_ms` | — |
@@ -1170,13 +1170,15 @@ Consola (P)                                                 Agente (A)
 **`timer.start` (P → A)**
 
 ```json
-{ "timer_id": "e4b1…", "label": "Ejercicio 1", "duration_s": 600, "remaining_ms": 600000 }
+{ "timer_id": "e4b1…", "label": "Ejercicio 1", "duration_s": 600, "remaining_ms": 600000,
+  "description": "Resuelve los ejercicios 3 a 5 de la hoja." }
 ```
 
 | Campo | Tipo | Regla |
 |---|---|---|
 | `timer_id` | string | UUID v4 de la consola; identifica el temporizador en `extend`, `stop` y `ack`. |
 | `label` | string | 0–40 caracteres, texto plano. Vacío: la ventana dice «Tiempo». |
+| `description` | string, opcional | Qué tienen que hacer (v0.15, nota de interfaz 18): 0–1000 caracteres, texto plano, con saltos de línea. La ventana la muestra en una tarjeta de la lista mientras el temporizador está, sin quitar el foco. Ausente o vacía: solo la insignia. Un agente anterior la ignora. Va también en el reenvío al reconectar. |
 | `duration_s` | entero | El total con el que se lanzó, 10–14 400 s (4 h). Solo informa. |
 | `remaining_ms` | entero | Lo que falta al enviar, 1–14 400 000 (4 h). **Manda sobre todo lo demás.** Puede pasar de `duration_s` si se extendió y se reenvía al reconectar. |
 
@@ -1232,7 +1234,7 @@ Reglas:
   mismo mensaje a cada sesión, solo a las que declararon `timer`.
 - La ventana del alumno quita sola la insignia de «terminó» a los 5 minutos si no llega
   `timer.stop`.
-- Los registros llevan `timer_id`, `duration_s` y `remaining_ms`, nunca `label`
+- Los registros llevan `timer_id`, `duration_s` y `remaining_ms`, nunca `label` ni `description`
   (`docs/privacidad.md` regla 54).
 
 ### 5.20 Enviar archivos a los alumnos (`file.push`)
@@ -1956,6 +1958,7 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `msg.student` / `hand.*` por agente | ráfaga 5 y 1 cada 3 s / ráfaga 3 y 1 por s | `error` `invalid_message`; se descarta |
 | Mensajes guardados por alumno en la consola | 20 | Se descarta el respondido más viejo |
 | `timer.start.label` | 40 caracteres | `error` `invalid_message` |
+| `timer.start.description` | 1000 caracteres | `error` `invalid_message` |
 | `timer.start.duration_s` / `timer.*.remaining_ms` | 10–14 400 s / 1–14 400 000 ms (4 h; `0` solo en `timer.ack`) | `error` `invalid_message` |
 | `timer.extend.add_s` | 60–3600 s | `error` `invalid_message` |
 | `screen.thumb.start.interval_ms` | 500–10 000 ms (≤ 2 cuadros/s) | `error` `invalid_message` |

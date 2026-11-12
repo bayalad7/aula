@@ -137,6 +137,14 @@ await f("82-encuesta-angosta", "encuesta", { w: 480, h: 360 });
 await f("83-compacto-encuesta-nueva", "conectado", { w: 380, h: 80, pasos: seq(click("#compactar"), emitir("aula:polls", { arrived: "pl-9", cards: [{ pollId: "pl-9", kind: "choice", question: "¿Qué imprime print(3 // 2)?",
   options: ["1.5", "1", "2", "Error"], named: false, open: true, choice: -1, text: "", vote: "none", results: null, at: new Date().toISOString() }] })) });
 
+// Tu pantalla mostrada a la clase (prompt 12.1; privacidad, reglas 75-82): la banda sin botones (la
+// decide el profesor), el oscuro, la ventana mínima, el compacto y la pantalla de un compañero.
+await f("84-mostrando", "mostrando");
+await f("85-mostrando-oscuro", "mostrando", { oscuro: true });
+await f("86-mostrando-angosta", "mostrando", { w: 480, h: 360 });
+await f("87-mostrando-compacto", "mostrando", { w: 380, h: 80, pasos: click("#compactar") });
+await f("88-viendo-companero", "transmision-alumno");
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

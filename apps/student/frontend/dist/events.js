@@ -17,4 +17,5 @@ window.AulaEvents = Object.freeze({
   COLLECTIONS: "aula:collections",
   OPENED: "aula:opened",
   POLLS: "aula:polls",
+  PRESENT: "aula:present",
 });

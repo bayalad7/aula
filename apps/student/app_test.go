@@ -234,7 +234,7 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{EventStatus, EventBoard, EventNotices, EventBroadcast, EventSignal, EventRestrictions, EventAppClosed, EventPower} {
+	for _, name := range []string{EventStatus, EventBoard, EventNotices, EventBroadcast, EventSignal, EventRestrictions, EventAppClosed, EventPower, EventPresent} {
 		if !strings.Contains(string(js), `"`+name+`"`) {
 			t.Errorf("events.js does not define %q", name)
 		}

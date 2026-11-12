@@ -19,6 +19,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/bayalad7/aula/internal/agentsvc"
+	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/platform"
 )
 
@@ -68,6 +69,13 @@ func main() {
 		app.enableScreen(capture, indicator)
 	} else {
 		log.Info("screen thumbnails not available", "capture", capErr, "indicator", indErr)
+	}
+	if dc, err := platform.NewDisplayCapture(); err == nil && app.screen.Available() {
+		// The window and the badge are this process's: they leave the capture.
+		app.enablePresent(&broadcast.LocalPublisher{Capture: dc, NewEncoder: platform.NewH264Encoder,
+			Exclude: platform.ExcludeFromCapture, Logger: log})
+	} else {
+		log.Info("showing this screen to the class not available", "err", err)
 	}
 	if in, err := platform.NewInputInjector(); err == nil && app.screen.Available() {
 		app.enableRemote(in)

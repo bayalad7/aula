@@ -625,7 +625,47 @@ await caso("compacto-control", "conectado", async (p) => {
 });
 await caso("bandas-orden", "todo", async (p) => {
   const orden = await p.evaluate(() => [...document.querySelectorAll("#bandas > .franja")].filter((b) => !b.hidden).map((b) => b.id));
-  ok(orden.join() === "power,banda-control,banda-vista,restrictions", "orden " + orden.join());
+  ok(orden.join() === "power,banda-control,banda-vista,banda-mostrando,restrictions", "orden " + orden.join());
+});
+
+// Tu pantalla mostrada a la clase (prompt 12.1; privacidad, reglas 75-82). La decide y la termina
+// el profesor: la banda no tiene botones, no se oculta con el teclado y no hay nada que responder.
+await caso("mostrando-banda", "mostrando", async (p) => {
+  const b = await p.evaluate(() => {
+    const banda = document.getElementById("banda-mostrando");
+    return { visible: !banda.hidden, botones: banda.querySelectorAll("button").length, titulo: document.title,
+      texto: banda.textContent.trim(), tarjeta: !!document.getElementById("permiso") };
+  });
+  ok(b.visible && b.texto === "Tu pantalla se está mostrando a la clase", "banda: " + JSON.stringify(b));
+  ok(b.botones === 0, "la banda tiene " + b.botones + " botones: el alumno no la cierra ni la termina");
+  ok(!b.tarjeta, "hay una tarjeta de permiso: el alumno no decide");
+  ok(b.titulo.startsWith("Aula — tu pantalla se está mostrando a la clase"), "título: " + b.titulo);
+  await p.keyboard.press("Escape");
+  ok(await p.evaluate(() => !document.getElementById("banda-mostrando").hidden), "Escape ocultó la banda");
+  // El profesor la detiene: la banda se va.
+  await emitir(p, "aula:present", { phase: "" });
+  await sleep(100);
+  ok(await p.evaluate(() => document.getElementById("banda-mostrando").hidden), "la banda sigue tras detenerla el profesor");
+});
+// Es una acción del profesor sobre el equipo: saca la ventana del modo compacto. Mientras dura,
+// en el modo compacto se ve «Mostrando a la clase».
+await caso("mostrando-sale-de-compacto", "conectado", async (p) => {
+  await p.click("#compactar");
+  await emitir(p, "aula:present", { phase: "live", presentId: "pr-9" });
+  await sleep(100);
+  ok(await p.evaluate(() => document.getElementById("compacto").hidden && !document.getElementById("banda-mostrando").hidden),
+    "la proyección no sacó la ventana del modo compacto");
+});
+await caso("mostrando-compacto", "mostrando", async (p) => {
+  await p.click("#compactar");
+  ok(await p.evaluate(() => !document.getElementById("compacto-mostrando").hidden), "en el modo compacto no se ve «Mostrando a la clase»");
+});
+// La pantalla de un compañero: la misma vista, con su nombre (nunca «del profesor»).
+await caso("viendo-companero", "transmision-alumno", async (p) => {
+  const t = await p.evaluate(() => [document.getElementById("bc-notice").textContent, document.title, document.getElementById("bc-wait").textContent]);
+  ok(t[0] === "Estás viendo la pantalla de LAB3-PC07 (canal 1)", "franja: " + t[0]);
+  ok(t[1].includes("viendo la pantalla de LAB3-PC07"), "título: " + t[1]);
+  ok(t[2].includes("LAB3-PC07"), "espera: " + t[2]);
 });
 
 // «Aula cerró…» se queda hasta que el alumno lo lee (ya no se esfuma a los 8 s)

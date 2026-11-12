@@ -46,11 +46,16 @@
   const ES = "estado."; // + estado de la conexión
   let restricted = false;
   let pendingPower = "";
+  let bcSource = "";            // el compañero cuya pantalla se ve (§5.24); "" si es la del profesor
+  let presentV = { phase: "" }; // tu pantalla mostrada a la clase (reglas 75-82)
 
   const TI = "titulo."; // + estado, o pendiente.<acción>
   function title() {
     const v = { canal: status.channel, profesor: status.teacher };
-    let t = status.control ? T("titulo.control", v) : status.viewed ? T("titulo.vista", v) : status.watching ? T("titulo.recibiendo", v) : T(TI + status.state, v);
+    let t = status.control ? T("titulo.control", v) : status.presenting ? T("titulo.mostrando", v)
+      : status.viewed ? T("titulo.vista", v)
+      : status.watching ? (bcSource ? T("titulo.recibiendoAlumno", { equipo: bcSource, canal: status.channel }) : T("titulo.recibiendo", v))
+      : T(TI + status.state, v);
     if (restricted && status.state === "connected") t += T("titulo.restricciones");
     if (pendingPower && status.state !== "unconfigured") t += T(TI + "pendiente." + pendingPower);
     // Lo nuevo que el alumno aún no mira, al frente del título (barra de tareas).
@@ -114,8 +119,9 @@
     $("compacto-nuevos").textContent = n ? P("compacto.nuevos", n) : "";
     $("compacto").dataset.nuevo = String(n > 0);
     $("compacto-control").hidden = !status.control;
-    // El control implica la pantalla vista: una insignia basta.
-    $("compacto-vista").hidden = !status.viewed || !!status.control;
+    // El control implica la pantalla vista: una insignia basta. Mostrarla a la clase lleva la suya.
+    $("compacto-mostrando").hidden = !status.presenting;
+    $("compacto-vista").hidden = !status.viewed || !!status.control || !!status.presenting;
     pintarMano();
   }
   function ponerCompacto(on, avisarAGo) {
@@ -1030,9 +1036,13 @@
   const bcSection = $("broadcast");
   const video = $("bc-video");
   const wait = $("bc-wait");
-  let pc = null;
-  let pcKey = "";       // broadcastId#attempt of the connection in force
-  let pending = [];     // remote candidates that arrived before the offer was set
+  // La conexión la arma el receptor compartido (sistema/receptor-video.js), el mismo de la
+  // Pantalla grande de la consola.
+  const receptor = window.AulaReceptor.crear({ video, espera: wait,
+    answer: (...a) => api.BroadcastAnswer(...a), candidate: (...a) => api.BroadcastCandidate(...a),
+    failed: (...a) => api.BroadcastFailed(...a) });
+  const closeConnection = receptor.cerrar;
+  const onSignal = receptor.senal;
 
   function probeMedia() {
     const webrtc = typeof window.RTCPeerConnection === "function";
@@ -1044,62 +1054,18 @@
     api.ReportMedia(webrtc, h264);
   }
 
+  // La pantalla de un compañero (§5.24) usa la misma vista: la franja dice de quién es.
   function renderBroadcast(b) {
     document.body.classList.toggle("watching", b.active);
     bcSection.hidden = !b.active;
-    $("bc-notice").textContent = b.active ? T("banda.recibiendo", { profesor: b.teacher, canal: b.channel }) : "";
+    bcSource = b.active ? b.source || "" : "";
+    $("bc-notice").textContent = !b.active ? ""
+      : bcSource ? T("banda.recibiendoAlumno", { equipo: bcSource, canal: b.channel })
+      : T("banda.recibiendo", { profesor: b.teacher, canal: b.channel });
+    wait.textContent = bcSource ? T("banda.conectandoAlumno", { equipo: bcSource }) : T("banda.conectando");
+    title();
     if (b.active) salirDeCompacto();
     if (!b.active) closeConnection();
-  }
-
-  function closeConnection() {
-    if (pc) pc.close();
-    pc = null;
-    pcKey = "";
-    pending = [];
-    video.srcObject = null;
-    wait.hidden = false;
-  }
-
-  async function answerOffer(s) {
-    closeConnection();
-    const key = s.broadcastId + "#" + s.attempt;
-    const conn = new RTCPeerConnection({ iceServers: [] });
-    pc = conn;
-    pcKey = key;
-    conn.ontrack = (e) => {
-      video.srcObject = e.streams[0] || new MediaStream([e.track]);
-    };
-    conn.onicecandidate = (e) => {
-      if (pcKey !== key) return;
-      const c = e.candidate;
-      api.BroadcastCandidate(s.broadcastId, s.attempt, c ? c.candidate : "", (c && c.sdpMid) || "0",
-        (c && c.sdpMLineIndex) || 0).catch(() => {});
-    };
-    conn.onconnectionstatechange = () => {
-      if (pcKey === key) wait.hidden = conn.connectionState === "connected";
-    };
-    try {
-      await conn.setRemoteDescription({ type: "offer", sdp: s.sdp });
-      for (const c of pending) await conn.addIceCandidate(c).catch(() => {});
-      pending = [];
-      await conn.setLocalDescription(await conn.createAnswer());
-      if (pcKey !== key) return;
-      await api.BroadcastAnswer(s.broadcastId, s.attempt, conn.localDescription.sdp);
-    } catch (err) {
-      if (pcKey === key) api.BroadcastFailed(s.broadcastId, s.attempt).catch(() => {});
-    }
-  }
-
-  function onSignal(s) {
-    if (s.kind === "offer") {
-      answerOffer(s);
-      return;
-    }
-    if (s.broadcastId + "#" + s.attempt !== pcKey || !s.candidate) return;
-    const c = { candidate: s.candidate, sdpMid: s.sdpMid || "0", sdpMLineIndex: s.sdpMLineIndex };
-    if (pc.remoteDescription) pc.addIceCandidate(c).catch(() => {});
-    else pending.push(c);
   }
 
   $("bc-size").addEventListener("click", () => {
@@ -1109,6 +1075,21 @@
     $("bc-size").textContent = real ? T("banda.ajustar") : T("banda.tamanoReal");
     $("bc-size").setAttribute("aria-pressed", String(real));
   });
+
+  // --- Mostrar tu pantalla a la clase (docs/privacidad.md, reglas 75-82) ------------------------
+  // Lo decide el profesor, como el control remoto: Go trae la ventana al frente y manda la fase
+  // (live o nada) antes del primer cuadro. La banda no tiene botones: se va cuando el profesor
+  // detiene la proyección.
+  function renderPresent(v) {
+    const antes = presentV.phase;
+    presentV = v && v.phase ? v : { phase: "" };
+    const live = presentV.phase === "live";
+    $("banda-mostrando").hidden = !live;
+    if (live && antes !== "live") salirDeCompacto();
+    if (antes === "live" && !live) anunciar(T("banda.mostrandoFin"));
+    title();
+    pintarCompacto();
+  }
 
   // --- Restricciones de la clase (docs/privacidad.md, reglas 20-22) --------------------------------
   // La política se muestra antes de aplicarse; los detalles listan las primeras
@@ -1247,6 +1228,7 @@
   rt.EventsOn(ev.COLLECTIONS, renderRecolecciones);
   rt.EventsOn(ev.OPENED, renderAbiertos);
   rt.EventsOn(ev.POLLS, renderEncuestas);
+  rt.EventsOn(ev.PRESENT, renderPresent);
   api.View().then((v) => {
     abiertos = (v.opened && v.opened.list) || [];
     renderStatus(v.status);
@@ -1260,6 +1242,7 @@
     renderArchivos(v.files);
     renderRecolecciones(v.collections);
     renderEncuestas(v.polls);
+    renderPresent(v.present);
   });
   probeMedia();
 })();

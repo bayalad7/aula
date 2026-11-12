@@ -15,6 +15,8 @@ window.AulaTextos = Object.freeze({
   "titulo.control": "Aula — {profesor} controla este equipo (canal {canal})",
   "titulo.vista": "Aula — tu pantalla está siendo vista por {profesor} (canal {canal})",
   "titulo.recibiendo": "Aula — viendo la pantalla de {profesor} (canal {canal})",
+  "titulo.recibiendoAlumno": "Aula — viendo la pantalla de {equipo} (canal {canal})",
+  "titulo.mostrando": "Aula — tu pantalla se está mostrando a la clase (canal {canal} - {profesor})",
   "titulo.restricciones": " · restricciones activas",
   "titulo.pendiente.reboot": " · reinicio pendiente",
   "titulo.pendiente.shutdown": " · apagado pendiente",
@@ -30,6 +32,7 @@ window.AulaTextos = Object.freeze({
   "compacto.nuevos.varios": "{n} nuevos",
   "compacto.vista": "Pantalla vista",
   "compacto.control": "Controlado",
+  "compacto.mostrando": "Mostrando a la clase",
 
   // Tira de identidad
   "estado.connected": "Conectado al canal {canal} · {profesor}",
@@ -235,6 +238,10 @@ window.AulaTextos = Object.freeze({
   "banda.control.paused": "{profesor} (canal {canal}) está controlando tu equipo. Su control está en pausa mientras usas tu mouse o tu teclado.",
   "banda.vista": "Tu pantalla la está viendo {profesor} (canal {canal})",
   "banda.recibiendo": "Estás viendo la pantalla de {profesor} (canal {canal})",
+  "banda.recibiendoAlumno": "Estás viendo la pantalla de {equipo} (canal {canal})",
+  "banda.conectandoAlumno": "Conectando con la pantalla de {equipo}…",
+  "banda.mostrando": "Tu pantalla se está mostrando a la clase",
+  "banda.mostrandoFin": "Tu pantalla ya no se está mostrando a la clase.",
   "banda.tamanoReal": "Tamaño real",
   "banda.ajustar": "Ajustar a la ventana",
   "banda.conectando": "Conectando con la pantalla del profesor…",

@@ -66,7 +66,7 @@ func (a *App) onBroadcastView(v broadcast.View) error {
 
 func (a *App) broadcastView(v broadcast.View, st Status) BroadcastView {
 	return BroadcastView{Active: v.Active, BroadcastID: v.BroadcastID, Width: v.Width, Height: v.Height,
-		FPS: v.FPS, Teacher: st.Teacher, Channel: st.Channel}
+		FPS: v.FPS, Teacher: st.Teacher, Channel: st.Channel, Source: v.Source}
 }
 
 func (a *App) onBroadcastSignal(s broadcast.Signal) { a.emit(EventSignal, s) }

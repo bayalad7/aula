@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/participation"
@@ -19,8 +20,8 @@ import (
 // PowerPostpone, DismissPower, SetCompact, ReportWindow, RaiseHand, LowerHand,
 // SendTeacherMessage, OpenReceivedFolder, OpenCollectionFolder, AnswerPoll).
 // EventParticipation is in participation.go, EventTimer in timer.go,
-// EventFiles in files.go, EventCollections in collect.go and EventPolls in
-// poll.go.
+// EventFiles in files.go, EventCollections in collect.go, EventPolls in
+// poll.go and EventPresent in present.go.
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -95,6 +96,8 @@ type Status struct {
 	// Control is "active" while the teacher controls this computer, "paused"
 	// while the student uses it meanwhile, and "" otherwise (rules 36-41).
 	Control string `json:"control"`
+	// Presenting is set while this screen is shown to the class (rules 75-82).
+	Presenting bool `json:"presenting"`
 }
 
 // BroadcastView is the broadcast of the teacher's screen as the window shows
@@ -108,6 +111,9 @@ type BroadcastView struct {
 	FPS         int    `json:"fps"`
 	Teacher     string `json:"teacher"`
 	Channel     string `json:"channel"`
+	// Source is the classmate whose screen this is; "" for the teacher's
+	// (§5.24).
+	Source string `json:"source,omitempty"`
 }
 
 // Board is the list of snippets, oldest first.
@@ -144,4 +150,6 @@ type View struct {
 	Opened Opened `json:"opened"`
 	// Polls are the teacher's polls of this session, newest first (§5.23).
 	Polls poll.BallotView `json:"polls"`
+	// Present is the band of a presentation of this screen, if any (§5.24).
+	Present broadcast.PresentView `json:"present"`
 }

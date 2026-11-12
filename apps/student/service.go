@@ -265,6 +265,7 @@ func restoreOnlyManager() *policy.Manager {
 type serviceAgent struct {
 	app    *App
 	helper *agentsvc.Current
+	pub    *agentsvc.Publisher // the helper captures and publishes (§5.24)
 	base   protocol.HelloInfo
 	policy *policy.Manager // the class restrictions
 
@@ -278,7 +279,10 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	sa.base.Username = "" // the service runs as SYSTEM: the user is the session's
 	app := NewApp(cfg, pub, cfgErr, sa.base, agentsvc.Clipboard{Helper: sa.helper}, nil, log)
 	app.screen.Capture = agentsvc.Capture{Helper: sa.helper}
-	app.screen.Indicator = agentsvc.Indicator{Helper: sa.helper}
+	app.setBadge(agentsvc.Indicator{Helper: sa.helper})
+	// The helper captures, encodes and publishes, as the student (§5.24).
+	sa.pub = &agentsvc.Publisher{Helper: sa.helper}
+	app.present.Publisher = sa.pub
 	app.snap.Capture = agentsvc.Capture{Helper: sa.helper} // the helper captures; the service cannot
 	app.control.Input = agentsvc.Input{Helper: sa.helper}
 	// The helper writes: the files belong to the student, never to SYSTEM.
@@ -335,7 +339,13 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb, protocol.CapScreenSnapshot)
 	}
 	if sa.ready.Broadcast {
-		h.Capabilities = append(h.Capabilities, protocol.CapScreenBroadcast)
+		// It also shows a classmate's screen with its name (§5.24).
+		h.Capabilities = append(h.Capabilities, protocol.CapScreenBroadcast, protocol.CapScreenPresentView)
+	}
+	if sa.ready.Capture && sa.ready.Present {
+		// The helper shows the band and the badge, and captures as the
+		// student: never the service (rule 17).
+		h.Capabilities = append(h.Capabilities, protocol.CapScreenPresent)
 	}
 	if sa.ready.Files {
 		// The helper saves in the work folder of the session's user (§5.20).
@@ -376,6 +386,9 @@ func (sa *serviceAgent) apply() {
 func (sa *serviceAgent) serve(ctx context.Context, s platform.Session, conn net.Conn) {
 	var link *agentsvc.Link
 	link = agentsvc.NewLink(conn, sa.binding, func(name string, data json.RawMessage) {
+		if sa.pub.Event(name, data) {
+			return
+		}
 		if name != agentsvc.EventReady {
 			return
 		}
@@ -412,6 +425,7 @@ func (sa *serviceAgent) serve(ctx context.Context, s platform.Session, conn net.
 		// end, and the agent reconnects without capabilities.
 		sa.app.screen.Stop()
 		sa.app.viewer.Stop()
+		sa.pub.HelperGone() // the presentation fails: nothing is captured any more
 		if sa.policy != nil {
 			_ = sa.policy.Clear("helper gone")
 		}

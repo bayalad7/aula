@@ -18,7 +18,7 @@
   const channel = "1";
   // El estado: Go manda estados, no frases (apps/student/events.go, Status).
   const st = (state, extra) => Object.assign({ state, teacher: state === "searching" || state === "unconfigured" ? "" : teacher,
-    channel: state === "unconfigured" ? "" : channel, detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "" }, extra);
+    channel: state === "unconfigured" ? "" : channel, detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "", presenting: false }, extra);
   const conectado = st("connected");
   const status = {
     "sin-configurar": st("unconfigured", { detail: "no hay configuración: falta config.json en C:\ProgramData\Aula\alumno (canal y clave pública del centro); pide al administrador que instale Aula en este equipo" }),
@@ -28,13 +28,17 @@
     "otra-clave": st("searching", { cause: "wrongKey", detail: `Se encontró la consola «Sala 2» del canal ${channel}, pero su clave no es la de este centro: no se le obedece. Si es la consola de tu profesor, este equipo tiene otra clave del centro; avisa al administrador.` }),
     "pantalla-vista": st("connected", { viewed: true }),
     transmision: st("connected", { watching: true }),
+    // La pantalla de un compañero (prompt 12.1): la misma vista, con su nombre.
+    "transmision-alumno": st("connected", { watching: true }),
+    // Tu pantalla mostrada a la clase (docs/privacidad.md, reglas 75-82).
+    mostrando: st("connected", { presenting: true }),
     restricciones: st("connected", { restricted: true }),
     // El control remoto implica la pantalla vista (docs/privacidad.md, regla 37).
     control: st("connected", { viewed: true, control: "active" }),
     // Una captura durante las miniaturas: la banda de vista sigue, el aviso es aparte.
     "captura-vista": st("connected", { viewed: true }),
     "control-pausa": st("connected", { viewed: true, control: "paused" }),
-    todo: st("connected", { restricted: true, viewed: true, control: "active" }),
+    todo: st("connected", { restricted: true, viewed: true, control: "active", presenting: true }),
   }[scene] || conectado;
 
   const ahora = new Date().toISOString();
@@ -70,9 +74,14 @@
     web: { policyId: "p-web", mode: "deny", items: ["youtube.com", "tiktok.com", "instagram.com", "facebook.com", "x.com"], total: 11 },
   } : { apps: null, web: null };
 
-  const broadcast = scene === "transmision"
-    ? { active: true, broadcastId: "b-1", width: 1920, height: 1080, fps: 15, teacher, channel }
-    : { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "" };
+  const broadcast = scene === "transmision" || scene === "transmision-alumno"
+    ? { active: true, broadcastId: "b-1", width: 1920, height: 1080, fps: 15, teacher, channel,
+      source: scene === "transmision-alumno" ? "LAB3-PC07" : "" }
+    : { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "", source: "" };
+
+  // Tu pantalla mostrada a la clase (broadcast.PresentView, prompt 12.1): la decide el
+  // profesor; el alumno no responde nada. Escenas: mostrando y todo (la banda).
+  const present = { mostrando: { phase: "live", presentId: "pr-1" }, todo: { phase: "live", presentId: "pr-1" } }[scene] || { phase: "" };
 
   const potencia = (state, action, extra) => ({ notice: Object.assign({ action_id: "pw-1", action, state,
     remaining_s: 87, postpones_left: 2, force: false }, extra), teacher, channel });
@@ -203,7 +212,7 @@
     return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
   };
   window.go = { main: { App: {
-    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened, polls: copiaPolls() })),
+    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened, polls: copiaPolls(), present })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
     ReportMedia: call("ReportMedia"),

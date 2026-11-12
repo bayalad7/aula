@@ -58,6 +58,12 @@
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg>
       <span id="banda-vista-texto" class="franja__texto"></span>
     </p>
+    <!-- Tu pantalla mostrada a la clase (reglas 75-82): después de la pantalla vista. Sin botones:
+         la decide y la termina el profesor (regla 77). -->
+    <p id="banda-mostrando" class="franja franja--vista" role="status" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg>
+      <span class="franja__texto" data-t="banda.mostrando"></span>
+    </p>
     <section id="restrictions" class="franja franja--restricciones" role="status" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg>
       <span id="restr-text" class="franja__texto"></span>
@@ -83,6 +89,7 @@
     <span id="compacto-temporizador" class="insignia insignia--info temporizador" role="timer" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span id="compacto-temporizador-texto" class="cuenta"></span></span>
     <span id="compacto-control" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span data-t="compacto.control"></span></span>
     <span id="compacto-vista" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg><span data-t="compacto.vista"></span></span>
+    <span id="compacto-mostrando" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg><span data-t="compacto.mostrando"></span></span>
     <button type="button" id="compacto-mano" class="btn btn--sm btn--icono mano-boton" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg></button>
     <button type="button" id="compacto-escribir" class="btn btn--sm btn--icono" data-t-aria-label="mensaje.boton" data-t-title="mensaje.boton"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg></button>
     <button type="button" id="restaurar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.restaurar" data-t-title="ventana.restaurar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#expandir"/></svg></button>
@@ -292,6 +299,7 @@
   <script src="vendor/prism/prism-json.min.js"></script>
   <script src="vendor/prism/prism-rust.min.js"></script>
   <script src="vendor/prism/prism-kotlin.min.js"></script>
+  <script src="sistema/receptor-video.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

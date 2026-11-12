@@ -45,20 +45,22 @@ type App struct {
 	hello     protocol.HelloInfo
 	board     *codedist.Board
 	recv      *codedist.Receiver
-	screen    *screen.Streamer      // screen thumbnails; inert until enableScreen
-	power     *power.Countdown      // power.*; inert until enablePower
-	viewer    *broadcast.Viewer     // the teacher's screen; declared after ReportMedia
-	control   *remote.Agent         // remote control; inert until enableRemote
-	snap      *snapshot.Taker       // still screenshots; inert until enableScreen
-	desk      *participation.Desk   // the student's hand and messages to the teacher (§5.18)
-	countdown *classtimer.Countdown // the exercise timer (§5.19)
-	ballot    *poll.Ballot          // the polls of the teacher (§5.23)
-	files     *filepush.Receiver    // file.push; inert until enableFiles (§5.20)
-	inbox     *filepush.Inbox       // what arrived, for the window
-	collect   *collect.Responder    // file.collect; inert until enableCollect (§5.21)
-	opener    *openapp.Opener       // open.*; inert until enableOpen (§5.22)
-	work      platform.WorkFolder   // «Abrir carpeta»; nil without a work folder
-	clip      platform.Clipboard    // nil when the system has none
+	screen    *screen.Streamer        // screen thumbnails; inert until enableScreen
+	power     *power.Countdown        // power.*; inert until enablePower
+	viewer    *broadcast.Viewer       // the teacher's screen; declared after ReportMedia
+	present   *broadcast.Presenter    // this screen shown to the class (§5.24); inert until enablePresent
+	badge     *broadcast.IndicatorMux // the native badge, shared by the screen stream and a presentation
+	control   *remote.Agent           // remote control; inert until enableRemote
+	snap      *snapshot.Taker         // still screenshots; inert until enableScreen
+	desk      *participation.Desk     // the student's hand and messages to the teacher (§5.18)
+	countdown *classtimer.Countdown   // the exercise timer (§5.19)
+	ballot    *poll.Ballot            // the polls of the teacher (§5.23)
+	files     *filepush.Receiver      // file.push; inert until enableFiles (§5.20)
+	inbox     *filepush.Inbox         // what arrived, for the window
+	collect   *collect.Responder      // file.collect; inert until enableCollect (§5.21)
+	opener    *openapp.Opener         // open.*; inert until enableOpen (§5.22)
+	work      platform.WorkFolder     // «Abrir carpeta»; nil without a work folder
+	clip      platform.Clipboard      // nil when the system has none
 	clipEr    error
 	log       *slog.Logger
 
@@ -103,18 +105,19 @@ type App struct {
 	reload      func() (Config, ed25519.PublicKey, error)
 	reloadEvery time.Duration
 
-	mu       sync.Mutex
-	status   Status
-	notices  []codedist.Notice
-	diag     string            // why the agent is not connected (session.Agent.OnDiagnostic)
-	cause    session.Cause     // the same, classified (session.Agent.OnCause)
-	viewed   bool              // the console is receiving this screen (docs/privacidad.md rule 6)
-	restrict policy.State      // class restrictions in force (rules 20-21)
-	watching bool              // this screen shows the teacher's broadcast (rule 12)
-	powerV   PowerView         // power notice in force (rules 26-28)
-	ctrl     remote.State      // remote control in force (rules 36-41)
-	cl       *transport.Client // the connection with the console; nil while not connected
-	opened   []openapp.Opened  // what the teacher opened, for the corner notices (rule 66)
+	mu         sync.Mutex
+	status     Status
+	notices    []codedist.Notice
+	diag       string            // why the agent is not connected (session.Agent.OnDiagnostic)
+	cause      session.Cause     // the same, classified (session.Agent.OnCause)
+	viewed     bool              // the console is receiving this screen (docs/privacidad.md rule 6)
+	restrict   policy.State      // class restrictions in force (rules 20-21)
+	watching   bool              // this screen shows the teacher's broadcast (rule 12)
+	presenting bool              // this screen is shown to the class (rules 75-82)
+	powerV     PowerView         // power notice in force (rules 26-28)
+	ctrl       remote.State      // remote control in force (rules 36-41)
+	cl         *transport.Client // the connection with the console; nil while not connected
+	opened     []openapp.Opened  // what the teacher opened, for the corner notices (rule 66)
 
 	timerMu sync.Mutex
 	timerT  *time.Timer // the next tick of the countdown
@@ -136,6 +139,8 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a.recv = &codedist.Receiver{Board: a.board, OnBoard: a.onBoard, OnNotice: a.onNotice}
 	a.screen = &screen.Streamer{Logger: log, OnViewed: a.onViewed}
 	a.viewer = &broadcast.Viewer{Logger: log, OnView: a.onBroadcastView, OnSignal: a.onBroadcastSignal}
+	a.badge = &broadcast.IndicatorMux{}
+	a.present = &broadcast.Presenter{OnView: a.onPresent, Logger: log}
 	a.power = &power.Countdown{OnChange: a.onPower, Logger: log}
 	a.control = &remote.Agent{Video: a.screen, OnState: a.onControl, Logger: log}
 	a.snap = &snapshot.Taker{Indicator: a.screen, Identity: a.identity, OnTaken: a.onSnapshot, Logger: log}
@@ -294,6 +299,7 @@ func (a *App) stop() {
 	a.control.Stop()
 	a.screen.Stop()
 	a.viewer.Stop()
+	a.present.Stop()
 	a.snap.Wait() // its connection is closed: it drops the image
 	a.files.Wait()
 	a.collect.Wait() // its connection is closed: the round is abandoned
@@ -306,12 +312,24 @@ func (a *App) stop() {
 // screen.thumb and screen.snapshot in hello. Call it before start; without
 // both pieces the agent declares neither.
 func (a *App) enableScreen(c platform.ScreenCapture, i platform.ScreenIndicator) {
-	a.screen.Capture, a.screen.Indicator = c, i
+	a.setBadge(i)
+	a.screen.Capture = c
 	a.hello.Capabilities = append(slices.Clone(a.hello.Capabilities), a.screen.Capabilities()...)
 	if a.screen.Available() {
 		a.snap.Capture = c
 		a.hello.Capabilities = append(a.hello.Capabilities, a.snap.Capabilities()...)
 	}
+}
+
+// setBadge shares the native badge between the screen stream and a
+// presentation (whose text wins while it is live).
+func (a *App) setBadge(i platform.ScreenIndicator) {
+	if i == nil {
+		return
+	}
+	a.badge.Indicator = i
+	a.screen.Indicator = a.badge.Stream()
+	a.present.Indicator = a.badge.Presentation()
 }
 
 func (a *App) source() session.ConsoleSource {
@@ -351,6 +369,7 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 		a.control.Stop() // first: it releases the keys and gives the stream back
 		a.screen.Stop()
 		a.viewer.Stop()
+		a.present.Stop()  // the band and the badge go; nothing is captured any more
 		a.files.Reset()   // a file half received is dropped, never written
 		a.collect.Reset() // a round half sent is abandoned; what was collected stays listed
 		if a.onLeave != nil {
@@ -451,6 +470,9 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 	if !ok {
 		reply, ok = a.viewer.Handle(ctx, send, env)
 	}
+	if !ok {
+		reply, ok = a.present.Handle(ctx, send, env)
+	}
 	if ok {
 		if reply != nil {
 			if err := send(ctx, reply); err != nil {
@@ -492,6 +514,7 @@ func (a *App) setStatus(s Status) {
 	a.mu.Lock()
 	s.Viewed = a.viewed && s.State == StateConnected
 	s.Watching = a.watching && s.State == StateConnected
+	s.Presenting = a.presenting && s.State == StateConnected
 	s.Restricted = a.restrict.Active() && s.State == StateConnected
 	s.Control = controlState(a.ctrl, s.State)
 	a.status = s
@@ -527,7 +550,7 @@ func (a *App) View() View {
 		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
 		Participation: a.desk.View(), Timer: a.countdown.View(), Files: a.filesView(a.inbox.List()),
 		Collections: a.collectionsView(), Opened: Opened{List: append([]openapp.Opened{}, a.opened...)},
-		Polls: a.ballot.View()}
+		Polls: a.ballot.View(), Present: a.present.Current()}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

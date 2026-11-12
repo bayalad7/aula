@@ -11,6 +11,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/bayalad7/aula/internal/agentsvc"
+	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/filepush"
 	"github.com/bayalad7/aula/internal/openapp"
@@ -34,7 +35,12 @@ type helper struct {
 	work      platform.WorkFolder       // nil when the OS has no work folder (file.push)
 	read      platform.WorkFolderReader // nil without a work folder (file.collect)
 	launch    platform.Launcher         // nil when the OS cannot open pages or apps (open.*)
+	publish   *broadcast.LocalPublisher // nil when this session cannot be shown to the class (§5.24)
+	link      *agentsvc.Link            // to the service: present.* events
 	log       *slog.Logger
+
+	presMu sync.Mutex
+	pub    broadcast.Publication // the presentation in force
 }
 
 // runHelper connects to the service's channel and runs the window until the
@@ -68,6 +74,11 @@ func runHelper(channel string, log *slog.Logger) int {
 	if l, err := platform.NewLauncher(); err == nil {
 		h.launch = l
 	}
+	if dc, err := platform.NewDisplayCapture(); err == nil && h.capture != nil {
+		// The window and the badge are this process's: they leave the capture.
+		h.publish = &broadcast.LocalPublisher{Capture: dc, NewEncoder: platform.NewH264Encoder,
+			Exclude: platform.ExcludeFromCapture, Logger: log}
+	}
 
 	// The App only serves the window's bindings, forwarding them to the
 	// agent in the service; it does not connect to any console.
@@ -81,11 +92,13 @@ func runHelper(channel string, log *slog.Logger) int {
 		}
 	})
 	app.remote = link
+	h.link = link
 	var once sync.Once
 	ready := func(webrtc, h264 bool) {
 		once.Do(func() {
 			r := agentsvc.Ready{Capture: h.capture != nil, Clipboard: clipErr == nil, Broadcast: webrtc && h264,
-				Input: h.input != nil, Files: h.work != nil && h.read != nil, Open: h.launch != nil}
+				Input: h.input != nil, Files: h.work != nil && h.read != nil, Open: h.launch != nil,
+				Present: h.publish.Available()}
 			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input, "files", r.Files, "open", r.Open)
 			_ = link.Notify(agentsvc.EventReady, r)
 		})
@@ -110,6 +123,7 @@ func runHelper(channel string, log *slog.Logger) int {
 		if h.input != nil {
 			h.input.releaseAll() // nothing stays pressed if the service goes away
 		}
+		h.closePresentation() // the windows can be captured again
 		if h.indicator != nil {
 			_ = h.indicator.Hide()
 		}
@@ -204,6 +218,8 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 		return h.collectCall(name, data)
 	case agentsvc.CallOpenURL, agentsvc.CallOpenApp:
 		return h.openCall(name, data)
+	case agentsvc.CallPresentOpen, agentsvc.CallPresentAnswer, agentsvc.CallPresentCandidate, agentsvc.CallPresentClose:
+		return h.presentCall(name, data)
 	case agentsvc.CallPower:
 		var a agentsvc.PowerArgs
 		if err := json.Unmarshal(data, &a); err != nil {
@@ -400,4 +416,74 @@ func (h *helper) openCall(name string, data json.RawMessage) (any, error) {
 		h.log.Info("helper did not open", "kind", name, "reason", openapp.Reason(err))
 	}
 	return agentsvc.OpenResult{Reason: openapp.Reason(err)}, nil
+}
+
+// presentCall publishes this session's screen for the service (§5.24): the
+// capture, the encoder and the WebRTC connection live here, with the
+// student's rights; the service only passes the signaling.
+func (h *helper) presentCall(name string, data json.RawMessage) (any, error) {
+	h.presMu.Lock()
+	defer h.presMu.Unlock()
+	switch name {
+	case agentsvc.CallPresentOpen:
+		var opt broadcast.PublishOptions
+		if err := json.Unmarshal(data, &opt); err != nil {
+			return nil, err
+		}
+		if !h.publish.Available() {
+			return agentsvc.PresentOpenResult{Error: agentsvc.PresentErrCapture}, nil
+		}
+		h.closeLocked()
+		pub, err := h.publish.Open(opt, broadcast.PublishEvents{
+			OnCandidate: func(attempt int, c broadcast.Candidate) {
+				_ = h.link.Notify(agentsvc.EventPresentCandidate, agentsvc.PresentCandidateArgs{
+					Attempt: attempt, Candidate: c.Candidate, SDPMid: c.SDPMid, SDPMLineIndex: c.SDPMLineIndex})
+			},
+			OnFail: func(err error) { _ = h.link.Notify(agentsvc.EventPresentFail, err.Error()) },
+		})
+		if err != nil {
+			h.log.Warn("presentation not opened", "err", err)
+			return agentsvc.PresentOpenResult{Error: agentsvc.PresentOpenError(err)}, nil
+		}
+		h.pub = pub
+		w, ht := pub.Size()
+		return agentsvc.PresentOpenResult{Width: w, Height: ht}, nil
+	case agentsvc.CallPresentAnswer:
+		var a agentsvc.PresentAnswerArgs
+		if err := json.Unmarshal(data, &a); err != nil {
+			return nil, err
+		}
+		if h.pub == nil {
+			return nil, broadcast.ErrNoPresentation
+		}
+		return h.pub.Answer(a.Attempt, a.Offer)
+	case agentsvc.CallPresentCandidate:
+		var c agentsvc.PresentCandidateArgs
+		if err := json.Unmarshal(data, &c); err != nil {
+			return nil, err
+		}
+		if h.pub == nil {
+			return nil, nil
+		}
+		return nil, h.pub.AddCandidate(c.Attempt, broadcast.Candidate{Candidate: c.Candidate, SDPMid: c.SDPMid, SDPMLineIndex: c.SDPMLineIndex})
+	default: // CallPresentClose
+		h.closeLocked()
+		return nil, nil
+	}
+}
+
+// closePresentation ends the presentation in force, if any.
+func (h *helper) closePresentation() {
+	h.presMu.Lock()
+	defer h.presMu.Unlock()
+	h.closeLocked()
+}
+
+func (h *helper) closeLocked() {
+	if h.pub != nil {
+		if err := h.pub.Close(); err != nil {
+			h.log.Warn("presentation close", "err", err)
+		}
+		h.pub = nil
+	}
 }

@@ -321,7 +321,7 @@ func TestOnlySafeCapabilitiesAndFaults(t *testing.T) {
 	c := startConsole(t)
 	cl := newClass(t, c)
 	for _, k := range []protocol.Capability{protocol.CapPower, protocol.CapAppBlock, protocol.CapWebFilter, protocol.CapScreenBroadcast, protocol.CapRemote, protocol.CapOpenURL, protocol.CapOpenApp,
-		protocol.CapScreenPresent, protocol.CapScreenPresentView} {
+		protocol.CapScreenPresent, protocol.CapScreenPresentView, protocol.CapScreenFreeze} {
 		if _, err := cl.Add(protocol.OSWindows, []protocol.Capability{k}); !errors.Is(err, ErrBadCapability) {
 			t.Errorf("capability %s: %v", k, err)
 		}

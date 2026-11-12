@@ -56,11 +56,18 @@ func (a *App) Displays() []DisplayInfo {
 	return out
 }
 
-// StartBroadcast shows monitor display to every student whose agent can
-// receive it, and to those who join later. The console window is excluded
-// from the capture first, so the class never sees the students' list or
-// screens (docs/privacidad.md rule 15).
-func (a *App) StartBroadcast(display int) (BroadcastState, error) {
+// StartBroadcast shows monitor display in mode ("window" or "fullscreen",
+// docs/privacidad.md rule 12) to the computers named in hostnames, also when
+// they reconnect, or, with none, to every student whose agent can receive
+// it, also to those who join later. The console window is excluded from the
+// capture first, so the class never sees the students' list or screens
+// (rule 15). Simulated students never receive it: they cannot declare
+// screen.broadcast.
+func (a *App) StartBroadcast(display int, mode string, hostnames []string) (BroadcastState, error) {
+	m := protocol.BroadcastMode(mode)
+	if m != protocol.BroadcastWindow && m != protocol.BroadcastFullscreen {
+		return a.BroadcastState(), codedf(codeBroadcastFailed, "no se pudo transmitir: modo %q desconocido", mode)
+	}
 	class := a.currentClass()
 	if class == nil {
 		return a.BroadcastState(), errNoClass
@@ -80,7 +87,8 @@ func (a *App) StartBroadcast(display int) (BroadcastState, error) {
 	a.mu.Lock()
 	a.bcClass = class
 	a.mu.Unlock()
-	if err := a.bc.Start(display, class.Sessions()); err != nil {
+	opts := broadcast.Options{Display: display, Mode: m, Hostnames: hostnames}
+	if err := a.bc.Start(opts, class.Sessions()); err != nil {
 		_ = a.exclude(false)
 		a.log.Warn("broadcast not started", "display", display, "err", err)
 		return a.BroadcastState(), friendlyBroadcast(err)
@@ -118,7 +126,7 @@ func (a *App) stateOf(s broadcast.Status) BroadcastState {
 		display = a.bc.Display()
 	}
 	return BroadcastState{Active: s.Active, Display: display, Receivers: s.Receivers, Eligible: s.Eligible,
-		Available: a.bc.Capture != nil}
+		Available: a.bc.Capture != nil, Mode: string(s.Mode), Targeted: s.Targeted}
 }
 
 // onBroadcastStatus forwards the receiver counts; it runs on the caster's

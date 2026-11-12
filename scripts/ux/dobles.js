@@ -262,7 +262,8 @@
     hotkey: scene === "atajo-ocupado"
       ? { combo: "Ctrl+Alt+Shift+C", active: false, reason: "InUse", error: "" }
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
-    broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true },
+    broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true,
+      mode: bcActive ? "fullscreen" : "", targeted: 0 },
     restrictions, remote, snapshots: snaps, participation: Object.assign({}, part, { arrival: null }),
     timer: Object.assign({}, timer), polls: copiaPolls(), present: Object.assign({}, present),
   });

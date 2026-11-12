@@ -602,9 +602,17 @@
             <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
           </div>
           <div class="panel-lateral__cuerpo">
+            <p data-destino-hosts></p>
             <p id="pantalla-destino"></p>
             <label class="campo"><span class="campo__etiqueta" data-t="transmitir.monitor"></span><select id="pantalla-monitor" data-icono="pantalla"></select>
               <span class="campo__ayuda" data-t="transmitir.nota"></span></label>
+            <fieldset class="campo"><legend class="campo__etiqueta" data-t="transmitir.modo"></legend>
+              <div class="opciones-seg">
+              <label class="opcion-seg"><input type="radio" name="pantalla-modo" value="window" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#app"/></svg> <span data-t="transmitir.modoVentana"></span></label>
+              <label class="opcion-seg"><input type="radio" name="pantalla-modo" value="fullscreen"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#expandir"/></svg> <span data-t="transmitir.modoCompleta"></span></label>
+              </div>
+              <span class="campo__ayuda" id="pantalla-modo-ayuda"></span>
+            </fieldset>
             <p class="aviso-en-linea" id="pantalla-no-disponible" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="transmitir.noDisponible"></span></p>
           </div>
           <div class="panel-lateral__pie">

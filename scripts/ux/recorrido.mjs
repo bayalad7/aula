@@ -320,6 +320,11 @@ await f("152-archivos-enviar-oscuro-900x600", "lab", { ruta: "archivos", oscuro:
 await f("153-panel-aviso-iconos", "lab", { pasos: click('[data-panel="aviso"]') });
 await f("154-panel-energia-iconos", "lab", { pasos: click('[data-panel="energia"]') });
 await f("155-dialogo-privado-oscuro", "lab", { oscuro: true, pasos: seq(grande, click("#pg-privado-abrir")) });
+// Mostrar mi pantalla (privacidad, regla 12): «Para» la selección y «Modo» ventana o pantalla completa;
+// la franja dice el modo y a cuántos.
+await f("156-panel-pantalla-seleccion-completa", "lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12")),
+  click('[data-panel="pantalla"]'), click('input[name="pantalla-modo"][value="fullscreen"]')) });
+await f("157-panel-pantalla-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: click('[data-panel="pantalla"]') });
 
 await cerrar();
 let graves = 0;

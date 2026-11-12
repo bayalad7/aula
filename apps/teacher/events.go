@@ -194,6 +194,10 @@ type BroadcastState struct {
 	Receivers int  `json:"receivers"` // students whose video connection is up
 	Eligible  int  `json:"eligible"`  // connected students who can receive it
 	Available bool `json:"available"` // this machine can capture its monitors
+	// Mode is "window" or "fullscreen" while on air (v0.15).
+	Mode string `json:"mode"`
+	// Targeted is how many computers were selected; 0 means every one.
+	Targeted int `json:"targeted"`
 }
 
 // History is the numbered list of snippets of the session.

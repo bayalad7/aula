@@ -103,7 +103,7 @@ func TestPresentAsksTheSourceAndReachesTheOthers(t *testing.T) {
 // broadcast ends the presentation, and the other way round.
 func TestPresentAndBroadcastReplaceEachOther(t *testing.T) {
 	h := presentHarness(t)
-	if _, err := h.app.StartBroadcast(0); err != nil {
+	if _, err := h.app.StartBroadcast(0, "window", nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := h.app.StartPresent("src"); err != nil {
@@ -112,7 +112,7 @@ func TestPresentAndBroadcastReplaceEachOther(t *testing.T) {
 	if h.app.BroadcastState().Active {
 		t.Fatal("the teacher's broadcast goes on while presenting")
 	}
-	if _, err := h.app.StartBroadcast(0); err != nil {
+	if _, err := h.app.StartBroadcast(0, "window", nil); err != nil {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(3 * time.Second)

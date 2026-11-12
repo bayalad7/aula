@@ -11,6 +11,7 @@ import (
 
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
+	"github.com/bayalad7/aula/internal/session"
 )
 
 type fakeMonitors struct{}
@@ -109,11 +110,11 @@ func TestBroadcastStartsHidesTheConsoleAndFollowsTheClass(t *testing.T) {
 		t.Fatalf("view before %+v / %+v", v.Students, v.Broadcast)
 	}
 
-	st, err := h.app.StartBroadcast(0)
+	st, err := h.app.StartBroadcast(0, "window", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !st.Active || st.Display != 0 {
+	if !st.Active || st.Display != 0 || st.Mode != "window" || st.Targeted != 0 {
 		t.Fatalf("state %+v", st)
 	}
 	if on, n := ex.last(); !on || n != 1 {
@@ -123,10 +124,15 @@ func TestBroadcastStartsHidesTheConsoleAndFollowsTheClass(t *testing.T) {
 	if ts := types(got, "s1"); len(ts) < 2 || ts[0] != protocol.TypeScreenBroadcastStart || ts[1] != protocol.TypeScreenBroadcastOffer {
 		t.Fatalf("s1 got %v", ts)
 	}
+	for _, d := range got {
+		if p, ok := d.p.(protocol.ScreenBroadcastStart); ok && p.Mode != protocol.BroadcastWindow {
+			t.Fatalf("start %+v: the mode did not reach the agent", p)
+		}
+	}
 	if ts := types(got, "s2"); len(ts) != 0 {
 		t.Fatalf("an agent without screen.broadcast got %v", ts)
 	}
-	if _, err := h.app.StartBroadcast(1); err == nil {
+	if _, err := h.app.StartBroadcast(1, "window", nil); err == nil {
 		t.Fatal("second broadcast accepted")
 	}
 
@@ -169,7 +175,7 @@ func TestBroadcastStartsHidesTheConsoleAndFollowsTheClass(t *testing.T) {
 		t.Fatal("console still excluded from captures after the broadcast")
 	}
 	waitState(func(s BroadcastState) bool { return !s.Active && s.Display == -1 })
-	if _, err := h.app.StartBroadcast(0); !errors.Is(err, errNoClass) {
+	if _, err := h.app.StartBroadcast(0, "window", nil); !errors.Is(err, errNoClass) {
 		t.Fatalf("StartBroadcast without class = %v", err)
 	}
 }
@@ -177,7 +183,7 @@ func TestBroadcastStartsHidesTheConsoleAndFollowsTheClass(t *testing.T) {
 func TestBroadcastRefusedWhenTheConsoleCannotBeHidden(t *testing.T) {
 	h, ex := broadcastHarness(t)
 	ex.err = errors.New("access denied")
-	if _, err := h.app.StartBroadcast(0); err == nil {
+	if _, err := h.app.StartBroadcast(0, "window", nil); err == nil {
 		t.Fatal("broadcast started with the console visible in the capture")
 	}
 	time.Sleep(50 * time.Millisecond)
@@ -194,11 +200,61 @@ func TestBroadcastWithoutEncoderExplainsWhy(t *testing.T) {
 	h.app.bc.NewEncoder = func(platform.VideoEncoderConfig) (platform.VideoEncoder, error) {
 		return nil, platform.ErrNotSupported
 	}
-	_, err := h.app.StartBroadcast(0)
+	_, err := h.app.StartBroadcast(0, "window", nil)
 	if err == nil || !strings.Contains(err.Error(), "H.264") || !strings.Contains(err.Error(), "Media Feature Pack") {
 		t.Fatalf("error %v", err)
 	}
 	if on, _ := ex.last(); on {
 		t.Fatal("console left excluded after a failed start")
+	}
+}
+
+// TestBroadcastToTheSelection: «Para» the selected computers (by name, as
+// restrictions and power): only they get the broadcast, in full screen, also
+// when one reconnects; one that joins later and was not selected gets
+// nothing. A mode the panel does not offer is refused before sending.
+func TestBroadcastToTheSelection(t *testing.T) {
+	h, _ := broadcastHarness(t)
+	h.class.mu.Lock()
+	h.class.sessions = append(h.class.sessions, student("s4", "PC04", protocol.CapScreenBroadcast))
+	h.class.mu.Unlock()
+
+	if _, err := h.app.StartBroadcast(0, "kiosk", nil); err == nil {
+		t.Fatal("unknown mode accepted")
+	}
+	if d := h.class.takeDirect(); len(d) != 0 {
+		t.Fatalf("sent %v with an unknown mode", d)
+	}
+
+	st, err := h.app.StartBroadcast(0, "fullscreen", []string{"PC01"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Mode != "fullscreen" || st.Targeted != 1 {
+		t.Fatalf("state %+v", st)
+	}
+	got := waitDirect(t, h, "s1", 2)
+	time.Sleep(100 * time.Millisecond)
+	got = append(got, h.class.takeDirect()...)
+	if ts := types(got, "s4"); len(ts) != 0 {
+		t.Fatalf("PC04 was not selected and got %v", ts)
+	}
+	for _, d := range got {
+		if p, ok := d.p.(protocol.ScreenBroadcastStart); ok && p.Mode != protocol.BroadcastFullscreen {
+			t.Fatalf("start %+v", p)
+		}
+	}
+
+	// PC01 reconnects as s1b; PC05 joins.
+	h.class.mu.Lock()
+	h.class.sessions = []session.Session{student("s1b", "PC01", protocol.CapScreenBroadcast),
+		student("s4", "PC04", protocol.CapScreenBroadcast), student("s5", "PC05", protocol.CapScreenBroadcast)}
+	h.class.mu.Unlock()
+	h.hooks.onChange()
+	got = waitDirect(t, h, "s1b", 2)
+	time.Sleep(100 * time.Millisecond)
+	got = append(got, h.class.takeDirect()...)
+	if ts := append(types(got, "s4"), types(got, "s5")...); len(ts) != 0 {
+		t.Fatalf("computers not selected got %v", ts)
 	}
 }

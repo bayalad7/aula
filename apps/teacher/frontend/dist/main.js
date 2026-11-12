@@ -1163,6 +1163,7 @@
     for (const id of [...imagenes.keys()]) if (!capturas.has(id)) imagenes.delete(id);
     if (capturaActual) pintarCaptura();
     if (panel === "captura") pintarLote();
+    if (panel === "pantalla" && !bc.active) pintarTransmision(bc);
   }
   function imagenDe(id) {
     if (imagenes.has(id)) return Promise.resolve(imagenes.get(id));
@@ -1537,8 +1538,16 @@
     for (const p of $$("[data-destino-hosts]")) p.textContent = texto;
   }
 
-  // Mostrar mi pantalla: va a todos los que pueden recibirla.
+  // Mostrar mi pantalla: a la selección de Alumnos o, sin selección, a todos los que pueden
+  // recibirla (como Aviso y Energía), en una ventana o en pantalla completa (privacidad, regla 12).
+  // Los simulados nunca: no declaran canBroadcast.
   let monitores = [];
+  const receptoresPantalla = () => (seleccion.size ? seleccionados() : conectados()).filter((s) => s.canBroadcast && !s.simulated);
+  const modoPantalla = () => document.querySelector('input[name="pantalla-modo"]:checked').value;
+  function pintarModoPantalla() {
+    $("pantalla-modo-ayuda").textContent = T(modoPantalla() === "fullscreen" ? "transmitir.modoCompletaAyuda" : "transmitir.modoVentanaAyuda");
+  }
+  for (const r of $$('input[name="pantalla-modo"]')) r.addEventListener("change", pintarModoPantalla);
   function pintarPanelPantalla() {
     api.Displays().then((ds) => {
       monitores = ds;
@@ -1554,9 +1563,12 @@
     $("f-transmitiendo").hidden = !s.active;
     if (s.active) {
       const m = monitores.find((d) => d.index === s.display);
-      $("f-transmitiendo-texto").textContent = T("transmitir.franja", { monitor: m ? m.label.split(" · ")[0] : "", r: s.receivers, n: s.eligible });
+      const TF = "transmitir.franja."; // + BroadcastState.Mode (window, fullscreen)
+      $("f-transmitiendo-texto").textContent = T(TF + (s.mode || "window"), { monitor: m ? m.label.split(" · ")[0] : T("transmitir.monitorN", { n: s.display + 1 }), r: s.receivers, n: s.eligible });
     }
-    $("pantalla-destino").textContent = s.eligible ? P("transmitir.destino", s.eligible) : T("transmitir.nadie");
+    const n = s.active ? s.eligible : receptoresPantalla().length;
+    $("pantalla-destino").textContent = n ? P("transmitir.destino", n) : T(seleccion.size ? "transmitir.nadieSeleccion" : "transmitir.nadie");
+    pintarModoPantalla();
     $("pantalla-no-disponible").hidden = s.available;
     const b = $("pantalla-empezar");
     b.textContent = s.active ? T("transmitir.detener") : T("transmitir.empezar");
@@ -1564,6 +1576,7 @@
     b.dataset.icono = s.active ? "detener" : "transmitir";
     b.disabled = !s.available || (!s.active && $("pantalla-monitor").options.length === 0);
     $("pantalla-monitor").disabled = s.active;
+    for (const r of $$('input[name="pantalla-modo"]')) r.disabled = s.active;
   }
   $("pantalla-empezar").addEventListener("click", () => {
     const b = $("pantalla-empezar");
@@ -1574,7 +1587,8 @@
     seguir.then((si) => {
       if (!si) return;
       b.setAttribute("aria-busy", "true");
-      const p = bc.active ? api.StopBroadcast() : api.StartBroadcast(Number($("pantalla-monitor").value));
+      const p = bc.active ? api.StopBroadcast()
+        : api.StartBroadcast(Number($("pantalla-monitor").value), modoPantalla(), seleccion.size ? equiposReales() : []);
       p.then((s) => { pintarTransmision(s); if (s.active) cerrarPanel(); }, fallo).finally(() => b.removeAttribute("aria-busy"));
     });
   });

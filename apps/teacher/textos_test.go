@@ -155,6 +155,9 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, p := range []string{broadcast.ProjectConnecting, broadcast.ProjectLive} {
 		need("proyectar.franja."+p, "main.js (PresentState.Phase)")
 	}
+	for _, m := range []protocol.BroadcastMode{protocol.BroadcastWindow, protocol.BroadcastFullscreen} {
+		need("transmitir.franja."+string(m), "main.js (BroadcastState.Mode)")
+	}
 	for _, o := range []string{broadcast.ProjectFailed, broadcast.ProjectSourceLeft} {
 		need("proyectar.fin."+agentErrorKey(protocol.ErrorCode(o)), "main.js (PresentState.Ended)")
 	}

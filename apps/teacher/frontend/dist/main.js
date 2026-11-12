@@ -332,6 +332,7 @@
     $("f-clave").hidden = clase.keySource === "centro";
     pintarAlumnos(v.students);
     pintarTransmision(v.broadcast);
+    if (v.present) pintarProyeccion(v.present);
     pintarRestricciones(v.restrictions);
     if (v.remote) pintarControl(v.remote);
     alCapturas(v.snapshots || []);
@@ -481,7 +482,8 @@
       ["canPower", "ficha.energia", "energia"], ["canRemote", "ficha.control", "control"], ["canSnapshot", "ficha.captura", "captura"],
       ["canHand", "ficha.mano", "mano"], ["canMessage", "ficha.mensajes", "mensaje"], ["canTimer", "ficha.temporizador", "reloj"], ["canPoll", "ficha.encuestas", "encuesta"],
       ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"],
-      ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"]];
+      ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"],
+      ["canPresent", "ficha.proyectar", "transmitir"], ["canPresentView", "ficha.verCompanero", "ojo"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
       const si = !!s[c];
       const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
@@ -513,6 +515,7 @@
   // con su botón en cada lugar (ids estables para el arnés), su condición y lo que hace.
   // `hacer` nulo: el botón lo maneja otro (el formulario del mensaje privado).
   const controlandoA = (s) => control.live && control.sessionID === s.id;
+  const proyectandoA = (s) => proy.active && proy.sessionId === s.id;
   const ACCIONES_ALUMNO = [
     { id: "control", icono: "control", primario: true, ids: { ficha: "ficha-tomar", grande: "pg-tomar" }, nota: "control.fichaNota",
       texto: (s, donde) => T(donde === "ficha" && controlandoA(s) ? "control.verPantalla" : "control.tomar"),
@@ -527,6 +530,12 @@
       // Reales y simulados, también mientras se le controla.
       visible: (s) => s.state === "connected" && s.canSnapshot,
       hacer: (s, b) => tomarCaptura(s, b) },
+    // Proyectar su pantalla a la clase (prompt 12.1): solo reales, y se le pregunta primero
+    // (privacidad, regla 75). Mientras dura, el mismo botón la detiene.
+    { id: "proyectar", icono: "transmitir", ids: { ficha: "ficha-proyectar", grande: "pg-proyectar" }, nota: "proyectar.fichaNota",
+      texto: (s) => T(proyectandoA(s) ? "proyectar.detener" : "proyectar.boton"),
+      visible: (s) => !s.simulated && s.state === "connected" && s.canPresent,
+      hacer: (s, b) => (proyectandoA(s) ? detenerProyeccion() : proyectar(s, b)) },
     // Abrir página o app (prompt 10.11): solo reales; cambia el equipo (privacidad, regla 70).
     { id: "abrir", icono: "externo", ids: { ficha: "abrir1-abrir", grande: "pg-abrir1-abrir" }, controla: { ficha: "abrir1", grande: "pg-abrir1" },
       nota: "abrir.fichaNota", texto: () => T("abrir.boton"),
@@ -951,6 +960,14 @@
   }
   $("pantalla-grande").addEventListener("close", () => {
     $("pg-imagen").removeAttribute("src");
+    if (enProyeccion) {
+      // Cerrar la vista no detiene la proyección: queda la franja con «Ver» y «Detener».
+      modoProyeccion(false);
+      receptorConsola.cerrar();
+      api.ClosePresentView();
+      enGrande = "";
+      return;
+    }
     privadoGrande.cerrar(false);
     if (enControl) {
       // Cerrar la vista no suelta el control: queda la franja con «Ver» y «Soltar».
@@ -1549,11 +1566,94 @@
   }
   $("pantalla-empezar").addEventListener("click", () => {
     const b = $("pantalla-empezar");
-    b.setAttribute("aria-busy", "true");
-    const p = bc.active ? api.StopBroadcast() : api.StartBroadcast(Number($("pantalla-monitor").value));
-    p.then((s) => { pintarTransmision(s); if (s.active) cerrarPanel(); }, fallo).finally(() => b.removeAttribute("aria-busy"));
+    // Mostrar tu pantalla termina la proyección de un alumno: se confirma (misma vista, mismo puerto).
+    const seguir = bc.active || !proy.active ? Promise.resolve(true) : confirmar({
+      titulo: T("transmitir.reemplazaTitulo", { equipo: proy.hostname }),
+      texto: T("transmitir.reemplazaTexto", { equipo: proy.hostname }), si: T("transmitir.reemplazaSi") });
+    seguir.then((si) => {
+      if (!si) return;
+      b.setAttribute("aria-busy", "true");
+      const p = bc.active ? api.StopBroadcast() : api.StartBroadcast(Number($("pantalla-monitor").value));
+      p.then((s) => { pintarTransmision(s); if (s.active) cerrarPanel(); }, fallo).finally(() => b.removeAttribute("aria-busy"));
+    });
   });
   $("f-transmitiendo-detener").addEventListener("click", () => api.StopBroadcast().then(pintarTransmision, fallo));
+
+  // --- Proyectar la pantalla de un alumno (docs/protocol.md §5.24; privacidad, reglas 75-82) ---
+  // Desde ACCIONES_ALUMNO (ficha y Pantalla grande). Se le pregunta al alumno; mientras dura, la
+  // franja dice a quién y cuántos lo ven, con «Ver» (la Pantalla grande con el video) y «Detener».
+  let proy = { active: false, sessionId: "", hostname: "", phase: "", receivers: 0, eligible: 0, ended: "", reason: "" };
+  let enProyeccion = false; // la Pantalla grande muestra el video de la proyección
+  const PROY_FRANJA = "proyectar.franja."; // + fase (connecting, live)
+  const PROY_FIN = "proyectar.fin.";       // + cómo terminó en camelCase (failed, sourceLeft)
+  const PROY_FALLO = "proyectar.fallo.";   // + motivo de failed en camelCase
+  function pintarProyeccion(p) {
+    proy = p;
+    $("f-proyectando").hidden = !p.active;
+    if (p.active) {
+      const v = { equipo: p.hostname, r: p.receivers, n: p.eligible };
+      $("f-proyectando-texto").textContent = T(PROY_FRANJA + p.phase, v);
+      $("f-proyectando-detener").textContent = T("proyectar.detener");
+      if (enProyeccion) pintarVideoProyeccion();
+    }
+    // Cómo terminó, si no lo detuvo el profesor (el alumno no puede: lo decide el profesor).
+    if (!p.active && p.ended && p.ended !== "stopped") {
+      const v = { equipo: p.hostname };
+      let texto = T(PROY_FIN + camel(p.ended), v);
+      if (p.ended === "failed" && ["capture_unavailable", "encoder_unavailable", "busy", "no_answer"].includes(p.reason)) texto += " " + T(PROY_FALLO + camel(p.reason));
+      toast(p.ended === "failed" ? "advertencia" : "info", T("proyectar.terminado", v), texto);
+    }
+    if (!p.active && enProyeccion) $("pantalla-grande").close();
+    if (panel === "alumno") pintarFicha();
+    pintarAccionesGrande();
+  }
+  function proyectar(s, b) {
+    const seguir = !bc.active ? Promise.resolve(true) : confirmar({
+      titulo: T("proyectar.reemplazaTitulo"), texto: T("proyectar.reemplazaTexto", { equipo: s.hostname }),
+      si: T("proyectar.reemplazaSi", { equipo: s.hostname }) });
+    seguir.then((si) => {
+      if (!si) return;
+      ocupado(b, true);
+      api.StartPresent(s.id).then((p) => {
+        pintarProyeccion(p);
+      }, fallo).finally(() => ocupado(b, false));
+    });
+  }
+  function detenerProyeccion() { return api.StopPresent().then(pintarProyeccion, fallo); }
+  $("f-proyectando-detener").addEventListener("click", detenerProyeccion);
+  $("f-proyectando-ver").addEventListener("click", abrirProyeccion);
+
+  // La consola es un receptor más (no cuenta entre los alumnos): el mismo receptor de video que
+  // la ventana del alumno (sistema/receptor-video.js).
+  const receptorConsola = window.AulaReceptor.crear({ video: $("pg-video"), espera: $("pg-video-espera"),
+    answer: (...a) => api.PresentViewAnswer(...a), candidate: (...a) => api.PresentViewCandidate(...a),
+    failed: (...a) => api.PresentViewFailed(...a) });
+  function pintarVideoProyeccion() {
+    $("pg-video-espera").textContent = T("proyectar.espera", { equipo: proy.hostname });
+  }
+  function modoProyeccion(on) {
+    enProyeccion = on;
+    $("pg-video-caja").hidden = !on;
+    $("pg-video-nota").hidden = !on;
+    $("pg-imagen").hidden = on;
+    $("pg-nota").hidden = on;
+  }
+  function abrirProyeccion() {
+    if (!proy.active) return;
+    if (enControl) $("pantalla-grande").close();
+    if (enGrande) api.ViewScreen("");
+    enGrande = proy.sessionId; // sus acciones (Detener, Tomar control…) siguen arriba
+    modoProyeccion(true);
+    pintarAccionesGrande();
+    $("pg-titulo").textContent = T("proyectar.titulo", { equipo: proy.hostname });
+    $("pg-video").setAttribute("aria-label", T("proyectar.imagen", { equipo: proy.hostname }));
+    pintarVideoProyeccion();
+    const d = $("pantalla-grande");
+    if (!d.open) d.showModal();
+    api.OpenPresentView();
+  }
+  rt.EventsOn(ev.PRESENT_VIEW, (v) => { if (!v.active) receptorConsola.cerrar(); });
+  rt.EventsOn(ev.PRESENT_SIGNAL, (s) => receptorConsola.senal(s));
 
   // Aviso
   $("aviso-enviar").addEventListener("click", () => {
@@ -3502,6 +3602,7 @@
   rt.EventsOn(ev.REMOTE_FRAME, alCuadroControl);
   rt.EventsOn(ev.SNAPSHOTS, (l) => alCapturas(l.snapshots));
   rt.EventsOn(ev.BROADCAST, pintarTransmision);
+  rt.EventsOn(ev.PRESENT, pintarProyeccion);
   rt.EventsOn(ev.RESTRICTIONS, pintarRestricciones);
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);
   rt.EventsOn(ev.PARTICIPATION, alParticipar);

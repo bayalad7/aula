@@ -70,6 +70,13 @@
         <span class="franja__texto"><span id="f-transmitiendo-texto"></span> <span class="franja__nota" data-t="transmitir.nota"></span></span>
         <button type="button" class="btn btn--sm" id="f-transmitiendo-detener" data-t="transmitir.detener"></button>
       </p>
+      <!-- La pantalla de un alumno mostrada a la clase (prompt 12.1), como «Mostrar mi pantalla». -->
+      <p class="franja franja--transmitiendo" id="f-proyectando" role="status" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg>
+        <span class="franja__texto"><span id="f-proyectando-texto"></span> <span class="franja__nota" data-t="proyectar.nota"></span></span>
+        <button type="button" class="btn btn--sm" id="f-proyectando-ver" data-t="proyectar.ver"></button>
+        <button type="button" class="btn btn--sm" id="f-proyectando-detener"></button>
+      </p>
       <p class="franja franja--control" id="f-control" role="status" hidden>
         <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg>
         <span class="franja__texto" id="f-control-texto"></span>
@@ -892,6 +899,12 @@
       <div class="pila-mini" id="pg-abrir"></div>
       <p class="aviso-en-linea" id="pg-control-estado" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span id="pg-control-estado-texto"></span></p>
       <img id="pg-imagen" alt="">
+      <!-- La proyección de un alumno (prompt 12.1): la consola la recibe como un alumno más. -->
+      <div class="pg-video" id="pg-video-caja" hidden>
+        <video id="pg-video" autoplay muted playsinline></video>
+        <p class="pg-video__espera" id="pg-video-espera"></p>
+      </div>
+      <p class="pequeno suave" id="pg-video-nota" data-t="proyectar.notaGrande" hidden></p>
       <p class="pequeno suave" id="pg-nota" data-t="alumnos.avisoMiniaturas"></p>
       <p class="pequeno suave" id="pg-control-nota" data-t="control.nota" hidden></p>
     </div>
@@ -1153,6 +1166,7 @@
   <script src="events.js"></script>
   <script src="textos.es-MX.js"></script>
   <script src="vendor/monaco/vs/loader.js"></script>
+  <script src="sistema/receptor-video.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

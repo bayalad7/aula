@@ -88,6 +88,8 @@ const (
 	codeOpenAppGone          = "openAppGone"
 	codeAllowedAppInvalid    = "allowedAppInvalid"
 	codeAllowedAppsNotSaved  = "allowedAppsNotSaved"
+	codePresentUnsupported   = "presentUnsupported"
+	codePresentFailed        = "presentFailed"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -107,6 +109,7 @@ var errorCodes = []string{
 	codeTemplateExists, codeTemplateInvalid, codeTemplateGone,
 	codeCollectActivity, codeCollectFolder, codeCollectGone, codeCollectNoStudents, codeCollectNothing,
 	codeInvalidURL, codeNoOpenTargets, codeOpenAppGone, codeAllowedAppInvalid, codeAllowedAppsNotSaved,
+	codePresentUnsupported, codePresentFailed,
 }
 
 // errorHelp is the section of the manual (docs/v1/administracion) that each
@@ -135,6 +138,8 @@ var errorHelp = map[string]string{
 	codeHideConsole:          "solucion-de-problemas#no-puedo-mostrar-mi-pantalla",
 	codeAlreadyBroadcasting:  "solucion-de-problemas#no-puedo-mostrar-mi-pantalla",
 	codeBroadcastFailed:      "solucion-de-problemas#no-puedo-mostrar-mi-pantalla",
+	codePresentUnsupported:   "tareas-frecuentes#proyectar-la-pantalla-de-un-alumno",
+	codePresentFailed:        "solucion-de-problemas#no-se-puede-proyectar-a-un-alumno",
 	codeInvalidPower:         "tareas-frecuentes#apagar-o-reiniciar-los-equipos",
 	codeNoPowerTargets:       "tareas-frecuentes#apagar-o-reiniciar-los-equipos",
 	codeInvalidRestriction:   "tareas-frecuentes#bloquear-aplicaciones-o-sitios",

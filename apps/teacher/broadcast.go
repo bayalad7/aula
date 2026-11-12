@@ -65,6 +65,11 @@ func (a *App) StartBroadcast(display int) (BroadcastState, error) {
 	if class == nil {
 		return a.BroadcastState(), errNoClass
 	}
+	// Showing a student's screen uses the same view and port: it ends
+	// first (the frontend confirmed it).
+	if a.proj.Status().Active {
+		a.StopPresent()
+	}
 	a.bcMu.Lock()
 	defer a.bcMu.Unlock()
 	if err := a.exclude(true); err != nil {
@@ -126,9 +131,12 @@ func (a *App) onBroadcastStatus(s broadcast.Status) {
 	a.emit(EventBroadcast, a.stateOf(s))
 }
 
-// onBroadcastMessage takes the agents' answers, candidates and errors.
+// onBroadcastMessage takes the agents' answers, candidates and errors, of
+// the teacher's broadcast and of a student's presentation (§5.24).
 func (a *App) onBroadcastMessage(sessionID string, env protocol.Envelope) {
-	a.bc.Handle(sessionID, env)
+	if !a.bc.Handle(sessionID, env) {
+		a.proj.Handle(sessionID, env)
+	}
 }
 
 func friendlyBroadcast(err error) error {

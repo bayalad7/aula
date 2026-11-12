@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/connectcheck"
 	"github.com/bayalad7/aula/internal/filepush"
@@ -148,6 +149,17 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 	for _, s := range []string{appsCentre, appsConsole, appsExamples} {
 		need("ajustes.appsFuente."+s, "main.js (AllowedApps.Source)")
+	}
+	// A student's screen shown to the class (internal/broadcast): the strip by
+	// phase, the toast by how it ended and why it failed.
+	for _, p := range []string{broadcast.ProjectConnecting, broadcast.ProjectLive} {
+		need("proyectar.franja."+p, "main.js (PresentState.Phase)")
+	}
+	for _, o := range []string{broadcast.ProjectFailed, broadcast.ProjectSourceLeft} {
+		need("proyectar.fin."+agentErrorKey(protocol.ErrorCode(o)), "main.js (PresentState.Ended)")
+	}
+	for _, r := range []protocol.PresentReason{protocol.PresentCaptureUnavailable, protocol.PresentEncoderUnavailable, protocol.PresentBusy, broadcast.ReasonNoAnswer} {
+		need("proyectar.fallo."+agentErrorKey(protocol.ErrorCode(r)), "main.js (PresentState.Reason)")
 	}
 	// Error texts are chosen by the code Go returns (errores.go).
 	for _, code := range errorCodes {

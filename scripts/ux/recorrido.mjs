@@ -281,6 +281,23 @@ await f("134-panel-encuesta-reemplaza", "lab-encuesta", { pasos: click('[data-pa
 await f("135-participacion-encuesta-oscuro-900x600", "lab-encuesta", { oscuro: true, w: 900, h: 600, ruta: "participacion", pasos: aEncuestas });
 await f("136-panel-encuesta-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: panelEncuesta });
 
+// Proyectar la pantalla de un alumno (docs/protocol.md §5.24, prompt 12.1): la acción en la ficha y en
+// la Pantalla grande, la franja mientras conecta y mientras dura, la vista en grande, un fallo del
+// equipo y la confirmación cuando ya transmites tu pantalla.
+const fichaPc07 = click(`${fila("LAB3-PC07")} .ficha`);
+await f("137-ficha-proyectar", "lab", { pasos: fichaPc07 });
+await f("138-proyectar-conectando", "lab-proyectar-conectando", { pasos: fichaPc07 });
+await f("139-proyectando-franja", "lab-proyectando", { pasos: fichaPc07 });
+await f("140-proyectando-ver", "lab-proyectando", { pasos: seq(click("#f-proyectando-ver"), async () => { await sleep(300); }) });
+await f("141-proyectar-fallo", "lab-proyectando", { pasos: async (p) => {
+  await p.evaluate(() => window.__emit("aula:present", { active: false, sessionId: "s-LAB3-PC07", hostname: "LAB3-PC07", phase: "",
+    receivers: 0, eligible: 0, ended: "failed", reason: "capture_unavailable" }));
+  await sleep(300);
+} });
+await f("142-proyectar-reemplaza-transmision", "lab-transmitiendo", { pasos: seq(fichaPc07, click("#ficha-proyectar"), async () => { await sleep(200); }) });
+await f("143-proyectando-oscuro-900x600", "lab-proyectando", { oscuro: true, w: 900, h: 600, pasos: seq(click("#f-proyectando-ver"), async () => { await sleep(300); }) });
+await f("144-pantalla-grande-proyectar", "lab", { pasos: grande });
+
 // Ventana angosta y tema oscuro
 await f("37-alumnos-900x600", "lab", { w: 900, h: 600, pasos: click(fila("LAB3-PC07")) });
 await f("38-codigo-900x600", "datos", { w: 900, h: 600, ruta: "codigo" });

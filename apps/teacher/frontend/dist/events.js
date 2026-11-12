@@ -22,4 +22,7 @@ window.AulaEvents = Object.freeze({
   COLLECTIONS: "aula:collections",
   OPENS: "aula:opens",
   ALLOWED_APPS: "aula:allowed-apps",
+  PRESENT: "aula:present",
+  PRESENT_VIEW: "aula:present-view",
+  PRESENT_SIGNAL: "aula:present-signal",
 });

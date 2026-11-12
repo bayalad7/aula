@@ -370,6 +370,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onOpen != nil {
 					hooks.onOpen(conn.ID(), env)
 				}
+			case protocol.StudentPresentAck, protocol.StudentPresentAnswer, protocol.StudentPresentICE:
+				if hooks.onBroadcast != nil {
+					hooks.onBroadcast(conn.ID(), env)
+				}
 			case protocol.ScreenBroadcastAnswer, protocol.ScreenBroadcastICE, protocol.ErrorPayload:
 				if hooks.onBroadcast != nil {
 					hooks.onBroadcast(conn.ID(), env)

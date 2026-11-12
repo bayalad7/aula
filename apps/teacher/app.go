@@ -77,6 +77,10 @@ type App struct {
 	exclude          func(bool) error
 	broadcastUDPPort int       // ws port + 1 (docs/protocol.md §5.12)
 	bcClass          classroom // the class the broadcast goes to; guarded by mu
+	// A student's screen shown to the class (§5.24): one at a time, and
+	// never with the teacher's broadcast (same view, same port).
+	proj      *broadcast.Projector
+	presClass classroom // the class the presentation goes to; guarded by mu
 
 	restr *policy.ClassPolicy  // class restrictions: who has what (D-017)
 	power *power.Tracker       // power orders and each agent's answer (§5.15)
@@ -143,6 +147,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.chooseFolder = a.openFolderDialog
 	a.documents, a.openFolder = platform.DocumentsDir, platform.OpenFolder
 	a.bc = a.newBroadcaster(broadcastKbps(m))
+	a.proj = a.newProjector(broadcastKbps(m))
 	a.checks = newConnectChecks(log)
 	return a
 }
@@ -272,6 +277,7 @@ func (a *App) EndClass() {
 	if class != nil {
 		a.stopSimulationOf(class)
 		a.StopBroadcast() // agents also stop when the connection closes
+		a.StopPresent()
 		a.endControl(class)
 		a.snaps.Reset() // unsaved screenshots never outlive the class (rule 45)
 		a.board.Reset() // nor hands and messages (rule 51)
@@ -302,6 +308,7 @@ func (a *App) View() View {
 	}
 	v.Restrictions = a.Restrictions()
 	v.Broadcast = a.stateOf(a.bc.Status())
+	v.Present = presentStateOf(a.proj.Status())
 	v.Remote = a.desk.Current()
 	v.Snapshots = a.snaps.List()
 	v.Participation = a.participation(a.class, nil)
@@ -608,6 +615,7 @@ func (a *App) onChange() {
 	a.syncRemote(class.Sessions())
 	a.syncSnapshots(class)
 	a.bc.Sync(class.Sessions())
+	a.proj.Sync(class.Sessions())                             // a source that leaves ends it; who joins receives it
 	a.sendRestrictions(class, a.restr.Plan(class.Sessions())) // students who reconnect get them again
 	a.syncTimer(class)                                        // and the timer, with what is left
 	a.syncPolls(class)                                        // and the open poll, or how it ended
@@ -660,6 +668,7 @@ func studentsOf(list []session.Session) Students {
 			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer), CanPoll: s.Can(protocol.CapPoll),
 			CanFiles: s.Can(protocol.CapFilePush), CanCollect: s.Can(protocol.CapFileCollect),
 			CanOpenURL: s.Can(protocol.CapOpenURL), CanOpenApp: s.Can(protocol.CapOpenApp),
+			CanPresent: s.Can(protocol.CapScreenPresent), CanPresentView: s.Can(protocol.CapScreenPresentView),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))

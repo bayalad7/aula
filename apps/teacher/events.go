@@ -123,6 +123,9 @@ type Student struct {
 	CanCollect   bool     `json:"canCollect"`   // file.collect (Windows agents, simulated students)
 	CanOpenURL   bool     `json:"canOpenUrl"`   // open.url (Windows agents; never simulated students)
 	CanOpenApp   bool     `json:"canOpenApp"`   // open.app (the same)
+	CanPresent   bool     `json:"canPresent"`   // screen.present (Windows agents; never simulated students)
+	// CanPresentView: screen.present.view, it can be shown a classmate's screen.
+	CanPresentView bool `json:"canPresentView"`
 	// Hand is this student's place in the line of raised hands (0: down);
 	// NewMessages, their messages not answered yet. The badge in Notas.
 	Hand        int `json:"hand"`
@@ -245,6 +248,8 @@ type View struct {
 	Deliveries []codedist.Delivery     `json:"deliveries"`
 	Hotkey     HotkeyStatus            `json:"hotkey"`
 	Broadcast  BroadcastState          `json:"broadcast"`
+	// Present is a student's screen shown to the class, if any (§5.24).
+	Present PresentState `json:"present"`
 	// Restrictions are the class restrictions.
 	Restrictions RestrictionsView `json:"restrictions"`
 	// Remote is the remote control on record (the last one, if it ended).

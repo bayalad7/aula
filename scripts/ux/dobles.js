@@ -26,9 +26,10 @@
     canFiles: s.capabilities.includes("file.push"),
     canCollect: s.capabilities.includes("file.collect"),
     canOpenUrl: s.capabilities.includes("open.url"), canOpenApp: s.capabilities.includes("open.app"),
+    canPresent: s.capabilities.includes("screen.present"), canPresentView: s.capabilities.includes("screen.present.view"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll"];
+    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "screen.present", "screen.present.view"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -183,6 +184,14 @@
   const cls = { channel: "1", consoleName: "Prof. Ayala", publicKey: "aula-ed25519:Hq0rB7Gm1o5dYH0yXx3l0k3pG2b8m2w7m0K1q0b9JzA=",
     fingerprint: "K7QD-3MX2-9PLA-W4TZ", keySource: personal ? "personal" : "centro", port: 47830, certExpires: "2036-10-29" };
   const bcActive = scene === "lab-transmitiendo";
+  // La pantalla de un alumno mostrada a la clase (PresentState de apps/teacher/present.go,
+  // prompt 12.1). Escenas: lab-proyectar-conectando y lab-proyectando (la ven 1 de 2). «Proyectar a la clase» conecta y,
+  // poco después, la ven los dos (el alumno no responde nada: lo decide el profesor).
+  const sinProyeccion = { active: false, sessionId: "", hostname: "", phase: "", receivers: 0, eligible: 0, ended: "", reason: "" };
+  const proyeccionDe = (phase, receivers) => ({ active: true, sessionId: "s-LAB3-PC07", hostname: "LAB3-PC07", phase,
+    receivers, eligible: 2, ended: "", reason: "" });
+  let present = scene === "lab-proyectando" ? proyeccionDe("live", 1)
+    : scene === "lab-proyectar-conectando" ? proyeccionDe("connecting", 0) : Object.assign({}, sinProyeccion);
   // Control remoto (apps/teacher/remote.go, remote.Control): LAB3-PC07 en lab-control*.
   const pc07 = { sessionID: "s-LAB3-PC07", hostname: "LAB3-PC07", controlID: "c-1", viewing: true };
   let remote = scene === "lab-control" ? Object.assign({ status: "active" }, pc07)
@@ -255,7 +264,7 @@
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true },
     restrictions, remote, snapshots: snaps, participation: Object.assign({}, part, { arrival: null }),
-    timer: Object.assign({}, timer), polls: copiaPolls(),
+    timer: Object.assign({}, timer), polls: copiaPolls(), present: Object.assign({}, present),
   });
 
 
@@ -345,6 +354,23 @@
     StartBroadcast: call("StartBroadcast", () => view().broadcast),
     StopBroadcast: call("StopBroadcast", () => view().broadcast),
     BroadcastState: call("BroadcastState", () => view().broadcast),
+    StartPresent: call("StartPresent", (id) => {
+      const s = studentsView().students.find((x) => x.id === id);
+      present = Object.assign(proyeccionDe("connecting", 0), { sessionId: id, hostname: s ? s.hostname : "" });
+      setTimeout(() => {
+        if (!present.active) return;
+        present = Object.assign({}, present, { phase: "live", receivers: 2 });
+        window.__emit("aula:present", Object.assign({}, present));
+      }, 400);
+      return Object.assign({}, present);
+    }),
+    StopPresent: call("StopPresent", () => { present = Object.assign({}, sinProyeccion); return Object.assign({}, present); }),
+    PresentState: call("PresentState", () => Object.assign({}, present)),
+    OpenPresentView: call("OpenPresentView"),
+    ClosePresentView: call("ClosePresentView"),
+    PresentViewAnswer: call("PresentViewAnswer"),
+    PresentViewCandidate: call("PresentViewCandidate"),
+    PresentViewFailed: call("PresentViewFailed"),
     PowerAction: call("PowerAction", { sent: 3, unsupported: ["lab-ubuntu-02"], failed: [] }),
     PowerCancel: call("PowerCancel", { sent: 3, unsupported: [], failed: [] }),
     AllowedApps: call("AllowedApps", () => allowed),

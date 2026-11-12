@@ -30,7 +30,7 @@ respeta lo que ya existe sin repetir la lista de reglas en cada prompt.
 
 | Parámetro | Valores | Si no lo dices |
 |---|---|---|
-| Descripción o prompt | Texto libre, o el número de un prompt de `docs/v1/prompts/` (`10.4`) | Obligatorio |
+| Descripción o prompt | Texto libre, o el número de un prompt de `docs/prompts/` (`10.4`) | Obligatorio |
 | `para:` | `profesor`, `alumno`, `ambos`: qué app cambia | Lo deduce |
 | `destino:` | `todos` (el canal), `selección` (los marcados en Alumnos), `un alumno` (su ficha), `ninguno` | Lo deduce o te pregunta |
 | `so:` | `windows`, `linux`, `macos` (separados por coma) | `windows` |
@@ -46,7 +46,7 @@ Además decide, y te lo muestra antes de diseñar:
 - qué permisos necesita;
 - qué versión sugiere.
 
-Si el pedido es un prompt de `docs/v1/prompts/` (10.4 en adelante, 11 a 16), su sección «Encaje
+Si el pedido es un prompt de `docs/prompts/` (10.4 en adelante, 11 a 16), su sección «Encaje
 con lo implementado» ya trae esas decisiones; el comando las sigue salvo que digas otra cosa.
 
 ### Ejemplos
@@ -56,7 +56,7 @@ Desde un prompt del backlog. El prompt es la especificación; lo que agregues ma
 ```
 /funcionalidad-nueva 10.4
 /funcionalidad-nueva 10.8 temporizador compartido, pero que el profesor pueda pausarlo
-/funcionalidad-nueva docs/v1/prompts/10.12-encuestas-en-vivo.md solo preguntas de opción múltiple
+/funcionalidad-nueva docs/prompts/10.12-encuestas-en-vivo.md solo preguntas de opción múltiple
 ```
 
 Con una descripción libre:
@@ -164,6 +164,6 @@ Mejoras de la app del alumno (respetan sus reglas: no quitar el foco, bandas que
 - **Si quieres cambiar el diseño antes de aprobarlo,** responde con lo que cambiarías. No hace
   falta volver a llamar el comando.
 - **Si algo exige cambiar el protocolo o la seguridad fuera de lo permitido,** Claude no lo
-  implementa: lo anota en `docs/v1/ux/PROPUESTAS.md` para que lo decidas aparte.
+  implementa: lo anota en `docs/ux/PROPUESTAS.md` para que lo decidas aparte.
 - **Si la sesión se alarga,** pide «actualiza `docs/progreso.md`» y sigue en una sesión nueva con
   «Lee docs/progreso.md y continúa donde quedamos».

@@ -21,7 +21,7 @@ type Delivery struct {
 	Failed       int    `json:"failed"`
 	NoCapability int    `json:"noCapability"` // connected agents lacking the capability
 	// SimSent and SimAcked count the simulated students apart: they never
-	// add to Sent or Acked (docs/v1/ux/profesor, aula simulada).
+	// add to Sent or Acked (docs/ux/historial/consola-analisis.md, aula simulada).
 	SimSent  int `json:"simSent"`
 	SimAcked int `json:"simAcked"`
 	// Pending lists the sessions (real or simulated) that have not

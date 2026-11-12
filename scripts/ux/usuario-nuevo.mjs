@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { abrir, raiz, sleep } from "./arnes.mjs";
 
-const manual = fs.readFileSync(path.join(raiz, "docs", "v1", "administracion", "primeros-pasos.md"), "utf8");
+const manual = fs.readFileSync(path.join(raiz, "docs", "administracion", "primeros-pasos.md"), "utf8");
 const { foto, cerrar } = await abrir();
 const fallas = [];
 const pasos = [];

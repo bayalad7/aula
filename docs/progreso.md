@@ -12,7 +12,7 @@ en VM; 10.6 manos y mensajes del alumno implementada, con la vista
 «Participación»; falta la prueba en VM; 10.5 captura de pantalla de un alumno implementada, falta la
 prueba en VM; 10.4 control remoto implementado, falta la prueba en VM; etapa 19 cerrada).
 
-La columna «Etapa» es el número del prompt en `docs/v1/prompts/`. Entre paréntesis, el número con
+La columna «Etapa» es el número del prompt en `docs/prompts/`. Entre paréntesis, el número con
 el que se trabajó antes; las notas de abajo lo conservan.
 
 | Etapa | Descripción | Estado |
@@ -49,9 +49,9 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 15 | Flota: despliegue, auto-actualización y diagnóstico | 🚧 El diagnóstico está casi todo hecho (`aula-cliente diagnostico`, comprobador de conexión, ficha del alumno); faltan la auto-actualización, la guía de despliegue y marcar a los desactualizados |
 | 16 | Comercialización y licenciamiento | ⏳ Pendiente |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 21 diagramas (el 21, proyectar a un alumno) |
-| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
-| 19 | Pulido de la app del alumno: UX/UI, transparencia y no intrusión | ✅ Cerrada el 05/11/2026 (`docs/v1/ux/alumno/RESULTADOS.md`). Falta de tu lado: los casos A-01 a A-08 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
-| 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
+| 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/ux/historial/consola-resultados.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
+| 19 | Pulido de la app del alumno: UX/UI, transparencia y no intrusión | ✅ Cerrada el 05/11/2026 (`docs/ux/historial/alumno-resultados.md`). Falta de tu lado: los casos A-01 a A-08 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
+| 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ✅ Hecha el 12/11/2026: `docs/v1` ya no existe; todo vive en `docs/` (ver `docs/ux/README.md`) |
 
 **Siguiente:**
 1. Probar en la ventana real los casos C-01 a C-73 y A-01 a A-22, el control remoto en VM
@@ -59,11 +59,12 @@ el que se trabajó antes; las notas de abajo lo conservan.
    SN-C), las manos y mensajes (§18: HM-A, HM-B y HM-C), el mensaje privado (§19: PM-A, PM-B y
    PM-C), el temporizador (§20: TM-A, TM-B y TM-C) y los archivos (§21: FP-A, FP-B y FP-C).
 2. La revisión 11.
-3. ~~Publicar `v0.6.0-rc.1`~~: publicado el 05/11/2026 (etapas 10.2, 10.3, 18, 19 y 10.4, instaladores
-   de Windows y checksums firmados). Las 0.x son borradores: al integrar todas las funciones se
-   borran y empieza la versión 1 oficial. Probar sus instaladores en las VMs (§14 a §16).
-4. **Interfaz (2026-11-06):** hay mapa de zonas (`docs/v1/ux/MAPA.md`, `scripts/ux/zonas.mjs`),
-   anotador (`node scripts/ux/anotar.mjs`, notas en `docs/v1/ux/notas/`, se trabajan con
+3. **Versiones (12/11/2026):** se borraron todas las prerelease y sus etiquetas (`v0.1.0-rc.1` a
+   `v0.6.0-rc.1`). La primera versión de desarrollo será **`v0.1.0`**, con todas las funciones. Las
+   etiquetas v0.4 a v0.15 de `docs/protocol.md` son nombres de funciones del periodo de borradores,
+   no releases. Al publicarla, probar sus instaladores en las VMs.
+4. **Interfaz (2026-11-06):** hay mapa de zonas (`docs/ux/MAPA.md`, `scripts/ux/zonas.mjs`),
+   anotador (`node scripts/ux/anotar.mjs`, notas en `docs/ux/notas/<versión>/`, se trabajan con
    `/notas-ux`) y reglas de ubicación en `CLAUDE.md`. Primer lote hecho (falta revisarlo en la
    ventana real): «Archivos» es un módulo propio del menú (Código volvió a ser solo código; página
    del manual `archivos.md`); las acciones sobre un alumno salen de un solo registro
@@ -73,6 +74,9 @@ el que se trabajó antes; las notas de abajo lo conservan.
 5. Cualquier función de 10.10 a 10.13 con `/funcionalidad-nueva <número>` (10.10 reutiliza
    el troceo común y la carpeta de trabajo `Documentos\Aula` de 10.9). Las que recogen
    respuestas (10.10, 10.12, 10.13) agregan su sección a la vista «Participación».
+6. Menor (traído de la entrega E11, eliminada en la limpieza del 12/11/2026): el comprobador de
+   conexión deja en el registro de la consola una línea `TLS handshake error … EOF` del servidor
+   HTTP por cada dirección que prueba. Es inofensiva; si molesta, se silencia en `transport`.
 
 ## Etapa 02: notas
 
@@ -727,7 +731,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 
 ## Etapa 17: diagramas iniciales — notas
 
-- **Hechos** en `docs/v1/diagramas/`, cada uno con front-matter, bloque Mermaid sin
+- **Hechos** en `docs/diagramas/`, cada uno con front-matter, bloque Mermaid sin
   `htmlLabels`, «Lo que no es obvio» y «Fuentes en el código»:
   - 01 contexto, 02 componentes (dependencias reales de `go list`), 03 descubrimiento por canal,
     04 autenticación y fijado de certificado, 05 ciclo de sesión, 06 emisión de código,
@@ -753,7 +757,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
     `flowchart`/`stateDiagram-v2`, colores de la paleta en `sequenceDiagram` y sin `;` en sus
     mensajes (GitHub los corta);
   - que existan las rutas citadas en «Fuentes en el código»;
-  - que todo `{{diagrama:NN-nombre}}` de `docs/` (salvo `docs/v1/prompts/` y el código) exista;
+  - que todo `{{diagrama:NN-nombre}}` de `docs/` (salvo `docs/prompts/` y el código) exista;
   - `TestValidateRejects` prueba con 25 diagramas rotos que el validador falla. A mano: borrar el
     front-matter del 04 hace fallar `go test ./docs`.
 - **Verificado:** los 15 bloques renderizan con `@mermaid-js/mermaid-cli` 11 (instalado solo en
@@ -767,14 +771,14 @@ el que se trabajó antes; las notas de abajo lo conservan.
 
 ## Etapa 18: pulido de la consola — notas
 
-- **Fase 1, análisis** (`docs/v1/ux/profesor/ANALISIS-CONSOLA.md`, commit `b27c408`):
+- **Fase 1, análisis** (`docs/ux/historial/consola-analisis.md`, commit `b27c408`):
   - 26 capturas del frontend real en Chromium headless, con un doble de los bindings;
   - revisión WCAG con axe-core;
   - hallazgos priorizados;
   - decisiones del usuario: Alumnos como inicio, acciones sobre la selección en paneles
     laterales, conservar el historial al cambiar de nombre o canal con confirmación,
     «Reenviar a los que faltan» y Aula simulada en la navegación principal.
-- **Fase 2, sistema de diseño** (`docs/v1/ux/profesor/FASE2-SISTEMA-DISENO.md`):
+- **Fase 2, sistema de diseño** (`docs/ux/historial/consola-sistema-diseno.md`):
   - tokens, componentes e iconos en `apps/teacher/frontend/dist/sistema/` (todavía no los usa
     la consola);
   - catálogo y prototipo de 3 pantallas en `apps/teacher/frontend/dev/`, fuera del binario,
@@ -783,7 +787,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
   - 12 capturas sin violaciones de axe.
 - **Fase 2 aprobada** (commits `63b337b`, `97912f7` y `b194ade`), con las decisiones de la
   ronda 2 en `FASE2-SISTEMA-DISENO.md`.
-- **Aula simulada, Fase 6.1** (`docs/v1/ux/profesor/ENTREGA-AULA-SIMULADA.md`):
+- **Aula simulada, Fase 6.1** (`d3152a7:docs/v1/ux/profesor/ENTREGA-AULA-SIMULADA.md`):
   - `internal/simclass`: alumnos simulados en proceso, con el protocolo real por un puerto de
     `127.0.0.1` sin anuncio, y sus fallas (lento, no acusa, desconectado);
   - la consola los separa por el registro al que llegan: se cuentan aparte y nunca reciben
@@ -792,7 +796,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
   - botón mínimo en la consola actual;
   - reglas de privacidad 32–35 y diagrama 10.
 - **Aula simulada aprobada** (commits `085e9f9`, `28b617d`, `87cc9fa` y `51f4b11`).
-- **E3, la consola con la navegación nueva** (`docs/v1/ux/profesor/ENTREGA-E3.md`):
+- **E3, la consola con la navegación nueva** (`d3152a7:docs/v1/ux/profesor/ENTREGA-E3.md`):
   - frontend reescrito sobre el sistema de diseño: Alumnos con selección y paneles, Código con
     quién falta y reenviar, Aula simulada, Ayuda, «¿Falta un alumno?» y Ajustes;
   - textos en `textos.es-MX.js` (probado);
@@ -808,23 +812,23 @@ el que se trabajó antes; las notas de abajo lo conservan.
   `TestBindingsReturnCodedErrors` (21 fallos típicos) y `TestPortInUseIsCoded`.
 - **Pendiente de E2:** los códigos de error del protocolo que mandan los alumnos (hoy solo
   afectan a la energía, que muestra «no se pudo»).
-- **E7, el manual en la consola** (`docs/v1/ux/profesor/ENTREGA-E7.md`, commits `1c99c1d`,
+- **E7, el manual en la consola** (`d3152a7:docs/v1/ux/profesor/ENTREGA-E7.md`, commits `1c99c1d`,
   `f0b7260` y `8e5cc21`):
-  - Markdown en `docs/v1/administracion/` (única fuente), embebido por el paquete `docs`;
+  - Markdown en `docs/administracion/` (única fuente), embebido por el paquete `docs`;
   - `internal/manual` lo lee sin HTML, lo valida, lo busca y saca el asistente «¿Falta un
     alumno?» del diagrama 12;
   - Ayuda con índice, búsqueda y enlaces; «?» por pantalla; cada error enlaza a su sección;
   - pruebas: una página por pantalla, enlaces y secciones válidos, el árbol del diagrama 12 y
     el enlace de cada código de error;
   - falta la prueba en la ventana real (C-21 a C-25).
-- **Pendientes de las Fases 3 y 4** (`docs/v1/ux/profesor/ENTREGA-FASES-3-4.md`,
+- **Pendientes de las Fases 3 y 4** (`d3152a7:docs/v1/ux/profesor/ENTREGA-FASES-3-4.md`,
   aprobados):
   - los errores del protocolo que mandan los alumnos llegan a la consola: «No pudo: …» en el
     alumno y en «Quién falta», con texto y enlace al manual, y «Reenviar» los reintenta;
   - ficha de cada alumno, columna Sistema, «i» de información en los campos técnicos y
     vencimiento del certificado en Ajustes;
   - el arnés web pasa al repo (`scripts/ux/`): recorrido con axe-core y capturas del manual;
-  - propuestas que cambiarían el protocolo en `docs/v1/ux/PROPUESTAS.md`;
+  - propuestas que cambiarían el protocolo en `docs/ux/PROPUESTAS.md`;
   - falta la prueba en la ventana real (C-26 a C-30).
 - **Salvaguardas para las funciones nuevas** (commits `a4e42c6`, `c6bb241` y `32881a8`):
   - «Definición de terminado» en `CLAUDE.md`;
@@ -840,7 +844,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 
 ## Etapa 18: plan de cierre
 
-Lo que falta para cerrar el prompt 18 (`docs/v1/prompts/18-pulido-consola-ux-manual-simulador.md`):
+Lo que falta para cerrar el prompt 18 (`docs/prompts/18-pulido-consola-ux-manual-simulador.md`):
 las Fases 5, 6.3 y 7, y el paquete `internal/ui`, que `CLAUDE.md` ya describe pero que todavía no
 existe. Cada paso es una entrega: capturas del arnés, resumen, aprobación del usuario y commit en
 `develop`. Se sigue en orden. Para empezar una sesión nueva: «Lee docs/progreso.md y continúa con
@@ -849,7 +853,7 @@ el plan de cierre de la etapa 18».
 Estado al escribir este plan (04/11/2026):
 - `develop` va 27 commits por delante de `origin/develop` (último push: `5af6107`), así que el job
   `ux` del CI nunca ha corrido en GitHub.
-- No existen `internal/ui/`, `CHANGELOG.md`, `scripts/docs/` ni `docs/v1/ux/profesor/despues/`.
+- No existen `internal/ui/`, `CHANGELOG.md`, `scripts/docs/` ni `d3152a7:docs/v1/ux/profesor/despues/`.
 - La evaluación de los diagramas ya está hecha y aprobada (`ANALISIS-CONSOLA.md` §9): SVG
   pre-renderizados claro y oscuro con mermaid-cli y, si falta uno, el texto Mermaid. Pesan unos
   270 KB comprimidos, frente a un ejecutable de 19,6 MB. La paleta oscura de los diagramas ya está
@@ -901,9 +905,9 @@ Plan original:
 
 ### Paso 2 — E8: los diagramas dibujados en la consola (Fase 5) — ✅ hecho y aprobado (`5d8f59a`)
 
-Hecho el 04/11/2026 (`docs/v1/ux/profesor/ENTREGA-E8.md`):
+Hecho el 04/11/2026 (`d3152a7:docs/v1/ux/profesor/ENTREGA-E8.md`):
 - `scripts/docs/generar-diagramas.{mjs,sh,ps1}`: SVG claro y oscuro de los 16 diagramas en
-  `docs/v1/diagramas/generados/`, versionados, con su manifiesto. Usa Segoe UI (se niega sin ella)
+  `docs/diagramas/generados/`, versionados, con su manifiesto. Usa Segoe UI (se niega sin ella)
   y semilla fija, así que regenerar da los mismos bytes.
 - `TestDiagramsAreDrawn` y `TestDrawingsAreSanitized` (`docs/dibujos_test.go`).
 - `internal/manual`: SVG como `data:` solo si el hash coincide, explicación, pantallas y
@@ -917,7 +921,7 @@ Plan original:
 
 - **Pipeline** `scripts/docs/generar-diagramas.{sh,ps1}`, con su propio `package.json` y
   mermaid-cli 11.17.1 fijo. Por cada diagrama:
-  - un SVG claro y uno oscuro, con el tema según los tokens, en `docs/v1/diagramas/generados/`;
+  - un SVG claro y uno oscuro, con el tema según los tokens, en `docs/diagramas/generados/`;
   - su texto alternativo;
   - una entrada en `manifiesto.json`: id, metadatos, hash del bloque Mermaid y rutas;
   - limpieza con lista blanca: sin `script`, `on*`, `foreignObject` ni URLs externas.
@@ -949,8 +953,8 @@ Plan original:
 
 ### Paso 3 — E11: comprobador de conexión (Fase 6.3) — ✅ hecho (espera aprobación)
 
-Diseño aprobado el 04/11/2026 (`docs/v1/ux/profesor/DISENO-E11.md`); hecho el mismo día
-(`docs/v1/ux/profesor/ENTREGA-E11.md`):
+Diseño aprobado el 04/11/2026 (`docs/ux/historial/consola-diseno-e11.md`); hecho el mismo día
+(`d3152a7:docs/v1/ux/profesor/ENTREGA-E11.md`):
 - `internal/connectcheck`: anuncio, puerto, conexión segura con `Agent.Probe` (cierra antes de
   `hello`) y red y firewall. `Outcomes` lista los resultados de cada paso y la prueba de textos
   exige uno por cada.
@@ -992,7 +996,7 @@ Plan original:
 
 ### Paso 4 — Lo que queda de las Fases 3, 4 y 6 — ✅ hecho (espera aprobación)
 
-Hecho el 04/11/2026 (`docs/v1/ux/profesor/ENTREGA-P4.md`):
+Hecho el 04/11/2026 (`d3152a7:docs/v1/ux/profesor/ENTREGA-P4.md`):
 - Atajos: tabla en Tareas frecuentes. Al cerrar un panel lateral, el foco vuelve al botón que lo
   abrió (antes se perdía).
 - Formularios: ayudantes `errorEnCampo`, `limpiarCampo` y `ocupado` en `main.js`.
@@ -1018,7 +1022,7 @@ Plan original:
 
 ### Paso 5 — E10: verificación y cierre (Fase 7) — ✅ hecho (espera aprobación)
 
-Hecho el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`):
+Hecho el 04/11/2026 (`docs/ux/historial/consola-resultados.md`):
 - `scripts/ux/teclado.mjs` (en el CI): Tab por las 5 vistas, foco visible, sin trampas, y Esc en
   paneles y diálogos con el foco de vuelta. Comprobé que falla si se quita el contorno de foco.
 - `scripts/ux/despues.mjs`: las 26 capturas de `despues/`, con los mismos estados que `antes/`.
@@ -1047,8 +1051,8 @@ Plan original:
 
 - **Teclado:** `scripts/ux/teclado.mjs` recorre cada vista con Tab, comprueba el foco visible, que
   Esc cierra y que no hay trampas de foco. Va al CI.
-- **Capturas «después»** en `docs/v1/ux/profesor/despues/`: las mismas pantallas que `antes/`.
-- **`docs/v1/ux/profesor/RESULTADOS.md`:**
+- **Capturas «después»** en `d3152a7:docs/v1/ux/profesor/despues/`: las mismas pantallas que `antes/`.
+- **`docs/ux/historial/consola-resultados.md`:**
   - antes y después por pantalla;
   - pasos y clics de los flujos a–d, antes frente a después;
   - cada hallazgo de `ANALISIS-CONSOLA.md` §4, resuelto o pendiente;
@@ -1069,8 +1073,8 @@ Plan original:
 ### Después del cierre
 
 - Prompt 19 (app del alumno), que ya usará `internal/ui`.
-- Prompt 20 (auditoría y limpieza de `docs/v1/ux/`), después de publicar el release.
-- Las propuestas de `docs/v1/ux/PROPUESTAS.md` se deciden aparte.
+- ~~Prompt 20 (auditoría y limpieza de `docs/v1/ux/`)~~: hecho el 12/11/2026 (`docs/ux/README.md`).
+- Las propuestas de `docs/ux/PROPUESTAS.md` se deciden aparte.
 
 ### Problemas conocidos
 
@@ -1081,7 +1085,7 @@ Plan original:
 
 ### Decisiones (tomadas el 04/11/2026)
 
-- **E8:** los SVG generados se versionan en `docs/v1/diagramas/generados/`, para que `go build`
+- **E8:** los SVG generados se versionan en `docs/diagramas/generados/`, para que `go build`
   no necesite Node.
 - **E11:** la lógica va en un paquete nuevo, `internal/connectcheck` (se agrega a `CLAUDE.md`).
 - **E10:** Claude hace la prueba del usuario nuevo en el arnés; el usuario la repite en una VM
@@ -1090,11 +1094,11 @@ Plan original:
 
 ## Etapa 19: pulido de la app del alumno — notas
 
-Prompt `docs/v1/prompts/19-pulido-app-alumno-ux.md`, en 7 entregas con aprobación y commit cada una:
+Prompt `docs/prompts/19-pulido-app-alumno-ux.md`, en 7 entregas con aprobación y commit cada una:
 
 | Entrega | Qué | Commit |
 |---|---|---|
-| A | Análisis: arnés del alumno (`dobles-alumno.js`, `recorrido-alumno.mjs`), `tools/medir-alumno`, `docs/v1/ux/alumno/ANALISIS.md` | `6611a49` |
+| A | Análisis: arnés del alumno (`dobles-alumno.js`, `recorrido-alumno.mjs`), `tools/medir-alumno`, `docs/ux/historial/alumno-analisis.md` | `6611a49` |
 | B | Sistema de diseño (`internal/ui`), `textos.es-MX.js`, Go manda estados y no frases | `ccfc067` |
 | C | Lista de código: lo nuevo arriba, sin saltos, Ctrl+Mayús+C, `pruebas-alumno.mjs` | `2626f30` |
 | D | Avisar sin foco, modo compacto, cerrar al área de notificación (`platform.AppWindow`, `platform.Tray`) | `42cabe4` |
@@ -1106,7 +1110,7 @@ Decisiones (04/11/2026):
 - código y avisos sin quitar el foco; energía, restricciones y transmisión sí traen la ventana;
 - pausa y control solo diseñados;
 - modo compacto en la ventana, y cerrar al área de notificación;
-- `docs/v1/ux/alumno/`, con las propuestas en el mismo `PROPUESTAS.md`, separadas por app.
+- `d3152a7:docs/v1/ux/alumno/`, con las propuestas en el mismo `PROPUESTAS.md`, separadas por app.
 
 En la entrega D, «mostrar sin activar» se interpretó así: una ventana minimizada se queda
 minimizada y parpadea, porque restaurarla la pondría encima del editor. Es una línea en

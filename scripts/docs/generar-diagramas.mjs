@@ -1,4 +1,4 @@
-// Genera los diagramas de docs/v1/diagramas como SVG para la consola: una
+// Genera los diagramas de docs/diagramas como SVG para la consola: una
 // variante clara y una oscura por diagrama, limpias, y un manifiesto con el
 // hash de cada bloque Mermaid. Los SVG se versionan: `go build` no necesita
 // Node. Si cambias un bloque `mermaid` y no los regeneras, `go test ./docs`
@@ -13,7 +13,7 @@ import { renderMermaid } from "@mermaid-js/mermaid-cli";
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const raiz = path.resolve(aqui, "..", "..");
-const dirDiagramas = path.join(raiz, "docs", "v1", "diagramas");
+const dirDiagramas = path.join(raiz, "docs", "diagramas");
 const dirSalida = path.join(dirDiagramas, "generados");
 const version = JSON.parse(fs.readFileSync(path.join(aqui, "node_modules", "@mermaid-js", "mermaid-cli", "package.json"), "utf8")).version;
 
@@ -51,7 +51,7 @@ const temas = {
 };
 
 // Paleta oscura propia (FASE2-SISTEMA-DISENO.md): los `.md` traen los colores
-// claros canónicos (docs/v1/diagramas/README.md) y aquí se cambian al dibujar.
+// claros canónicos (docs/diagramas/README.md) y aquí se cambian al dibujar.
 const paletaOscura = [
   ["fill:#dbeafe,stroke:#1d4ed8,color:#111827", "fill:#172f52,stroke:#8db4ff,color:#e5edff"],
   ["fill:#dcfce7,stroke:#15803d,color:#111827", "fill:#123d27,stroke:#6fd697,color:#e3f7ea"],

@@ -1,13 +1,17 @@
 ---
-description: Trabaja las notas de interfaz que el usuario dejó con el anotador (docs/v1/ux/notas)
+description: Trabaja las notas de interfaz que el usuario dejó con el anotador (docs/ux/notas)
 argument-hint: [números de nota, p. ej. 3 5-8] [todas]
 ---
 
 # /notas-ux
 
 El usuario señaló cosas de la interfaz con el anotador (`node scripts/ux/anotar.mjs`) y escribió
-qué quiere. Cada nota está en `docs/v1/ux/notas/NNN.json` con dos capturas
-(`NNN-elemento.webp`, `NNN-pantalla.webp`) y el índice en `docs/v1/ux/notas/LEEME.md`.
+qué quiere. Las notas van con el versionado: una carpeta por versión, la en curso es la de
+`docs/ux/notas/VERSION` (p. ej. `docs/ux/notas/v0.1.0/`). Cada nota está en
+`docs/ux/notas/<versión>/NNN.json` (la numeración empieza en 001 en cada versión) con dos capturas
+locales que no se suben (`NNN-elemento.webp`, `NNN-pantalla.webp`) y el índice de la versión en
+`docs/ux/notas/<versión>/LEEME.md`; `docs/ux/notas/LEEME.md` resume todas las versiones. Una nota
+de una versión ya publicada no se reabre: lo que falte se anota de nuevo en la versión en curso.
 
 Lo que pidió: **$ARGUMENTS** (sin argumentos: todas las `pendiente`).
 
@@ -17,7 +21,7 @@ Lo que pidió: **$ARGUMENTS** (sin argumentos: todas las `pendiente`).
   `NNN-elemento` y `NNN-pantalla`, y si `tema` es `ambos`, también `NNN-elemento-oscuro` y
   `NNN-pantalla-oscuro`. Un cambio de una nota `ambos` se revisa en los dos temas.
 - Cada nota trae: `app`, `escena` y `ruta` (cómo reproducirla en el arnés), `zona` (nombres de
-  `docs/v1/ux/MAPA.md` / `scripts/ux/zonas.mjs`), `elemento` (texto visible, clave de
+  `docs/ux/MAPA.md` / `scripts/ux/zonas.mjs`), `elemento` (texto visible, clave de
   `textos.es-MX.js` en `claveTexto` y un selector), `tipo` (mover, texto, estilo, agregar, quitar,
   error, idea) y `texto`.
 - Ubica el código: la clave de texto lleva a `textos.es-MX.js` y de ahí a `index.html`/`main.js`;

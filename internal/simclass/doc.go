@@ -1,5 +1,5 @@
 // Package simclass runs simulated students inside the console process, so a
-// teacher can try Aula end to end without a lab (docs/v1/ux/profesor,
+// teacher can try Aula end to end without a lab (docs/ux/historial/consola-analisis.md,
 // Fase 6). Each student is a real session.Agent speaking the real protocol
 // over TLS to a loopback listener of the console that is never announced over
 // mDNS: nothing here adds protocol messages or reaches real students.

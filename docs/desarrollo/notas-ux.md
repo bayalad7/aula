@@ -3,13 +3,19 @@
 Para pedir un cambio en la interfaz no hace falta describir dónde está algo: lo **señalas**. El
 anotador abre la consola o la app del alumno con datos de demostración; haces clic en lo que
 quieres cambiar y escribes qué quieres. Cada nota se guarda con el nombre de la zona y dos
-capturas, y Claude la trabaja con `/notas-ux`.
+capturas, y Claude la trabaja con `/notas-ux`. Las capturas se quedan en tu equipo: al
+repositorio solo suben `NNN.json` y los índices `LEEME.md`.
+
+Las notas van con el versionado: se guardan en una carpeta por versión, la que dice
+`docs/ux/notas/VERSION` (hoy `v0.1.0`), y la numeración vuelve a 001 en cada versión. Al publicar
+una versión, `VERSION` pasa a la siguiente (`docs/desarrollo/publicar.md`) y sus notas quedan
+cerradas en su carpeta.
 
 | Pieza | Dónde | Para qué |
 |---|---|---|
 | Anotador | `node scripts/ux/anotar.mjs` | Señalar y escribir las notas |
-| Mapa de la interfaz | [`docs/v1/ux/MAPA.md`](../v1/ux/MAPA.md) | Los nombres de cada zona («Ficha del alumno», «Barra de acciones»…) |
-| Notas | `docs/v1/ux/notas/` (índice en `LEEME.md`) | Lo que pediste, con su estado |
+| Mapa de la interfaz | [`docs/ux/MAPA.md`](../ux/MAPA.md) | Los nombres de cada zona («Ficha del alumno», «Barra de acciones»…) |
+| Notas | `docs/ux/notas/<versión>/` (índice en su `LEEME.md`; todas las versiones en `docs/ux/notas/LEEME.md`) | Lo que pediste, con su estado |
 | Comando | `/notas-ux` en Claude Code | Que Claude las revise, te proponga el cambio y lo aplique |
 
 ## 1. Abrir el anotador
@@ -112,8 +118,8 @@ trabaja con `/funcionalidad-mejora` o `/funcionalidad-nueva`.
 
 ## 5. Estado de las notas
 
-`docs/v1/ux/notas/LEEME.md` es el índice: número, estado, dónde, tipo, qué pediste, escena y
-enlaces a las capturas. Los estados:
+`docs/ux/notas/<versión>/LEEME.md` es el índice de cada versión: número, estado, dónde, tipo, qué
+pediste, escena y enlaces a las capturas. `docs/ux/notas/LEEME.md` cuenta las de cada versión. Los estados:
 
 | Estado | Significa |
 |---|---|
@@ -128,7 +134,7 @@ vea Claude, usa «Notas › Borrar» en el anotador. Tras editar un JSON a mano,
 
 ## El mapa de la interfaz
 
-[`docs/v1/ux/MAPA.md`](../v1/ux/MAPA.md) muestra cada pantalla con sus zonas numeradas y su nombre.
+[`docs/ux/MAPA.md`](../ux/MAPA.md) muestra cada pantalla con sus zonas numeradas y su nombre.
 Úsalo para hablar de la interfaz también sin el anotador («en la Barra de acciones, después de
 Captura…»). Los nombres salen de `scripts/ux/zonas.mjs`; cuando una función agrega o mueve una
 zona, se actualiza ahí y se regenera el mapa con `node scripts/ux/mapa.mjs`.

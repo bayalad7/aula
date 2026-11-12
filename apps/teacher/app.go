@@ -249,7 +249,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	}
 	a.mu.Lock()
 	// The history and the deliveries are the teacher's, not the channel's:
-	// they survive a change of channel or name (docs/v1/ux/profesor, C2).
+	// they survive a change of channel or name (docs/ux/historial/consola-analisis.md, C2).
 	a.class, a.info, a.startErr = class, info, ""
 	a.mu.Unlock()
 	a.power.Reset() // orders of another class are not followed

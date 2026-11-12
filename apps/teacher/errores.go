@@ -113,7 +113,7 @@ var errorCodes = []string{
 	codePresentUnsupported, codePresentFailed,
 }
 
-// errorHelp is the section of the manual (docs/v1/administracion) that each
+// errorHelp is the section of the manual (docs/administracion) that each
 // error links to. TestErrorCodesLinkToTheManual checks every code has one and
 // that it exists.
 var errorHelp = map[string]string{

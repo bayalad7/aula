@@ -9,7 +9,7 @@ import (
 	"github.com/bayalad7/aula/internal/simclass"
 )
 
-// --- Aula simulada (docs/v1/ux/profesor, Fase 6) ------------------------------------------
+// --- Aula simulada (docs/ux/historial/consola-analisis.md, Fase 6) ------------------------------------------
 //
 // Simulated students run inside this process and connect to a loopback
 // listener of the open class (simulationHost): they speak the real protocol,

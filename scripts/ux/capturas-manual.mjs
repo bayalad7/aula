@@ -1,10 +1,10 @@
-// Regenera las capturas del manual (docs/v1/administracion/img/) con el
+// Regenera las capturas del manual (docs/administracion/img/) con el
 // arnés web y datos de demostración, para que nunca queden viejas a mano.
 //   node capturas-manual.mjs [--solo=participacion]   (solo las que contienen alguna palabra)
 import path from "node:path";
 import { abrir, click, raiz, seq, sleep, soloCapturas } from "./arnes.mjs";
 
-const img = path.join(raiz, "docs", "v1", "administracion", "img");
+const img = path.join(raiz, "docs", "administracion", "img");
 const fila = (host) => `#alumnos-filas tr[data-clave="r:${host}"]`;
 const { foto, cerrar } = await abrir();
 

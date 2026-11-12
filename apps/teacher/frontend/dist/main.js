@@ -3046,7 +3046,7 @@
   }).then((si) => { if (si) api.LowerAllHands().catch(fallo); }));
 
 
-  // --- Manual (docs/v1/administracion) --------------------------------------------------------
+  // --- Manual (docs/administracion) --------------------------------------------------------
   // Las páginas llegan como datos (bloques e incisos), no como HTML: aquí se
   // arman con elementos y nodos de texto.
   let manual = null;

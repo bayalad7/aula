@@ -11,7 +11,7 @@ import (
 	"github.com/bayalad7/aula/internal/protocol"
 )
 
-// --- Manual (docs/v1/administracion, embedded from the docs package) ------------------
+// --- Manual (docs/administracion, embedded from the docs package) ------------------
 
 // diagnosticDiagram is the flowchart «¿Falta un alumno?» is built from.
 const diagnosticDiagram = "12-diagnostico-conexion"

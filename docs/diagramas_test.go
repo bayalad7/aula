@@ -15,8 +15,8 @@ import (
 
 // Paths relative to this package (docs/).
 const (
-	diagramsDir  = "v1/diagramas"
-	promptsDir   = "v1/prompts"
+	diagramsDir  = "diagramas"
+	promptsDir   = "prompts"
 	repoRoot     = ".."
 	consoleIndex = "../apps/teacher/frontend/dist/index.html"
 )
@@ -542,7 +542,7 @@ func TestDiagrams(t *testing.T) {
 }
 
 // TestDiagramIncludes checks that every {{diagrama:NN-nombre}} of the manual
-// names an existing diagram. The prompts of docs/v1/prompts describe the
+// names an existing diagram. The prompts of docs/prompts describe the
 // syntax and are skipped.
 func TestDiagramIncludes(t *testing.T) {
 	ids := map[string]bool{}

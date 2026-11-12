@@ -37,3 +37,7 @@ scripts/ux/salida/
 scripts/ux/salida-teclado/
 scripts/ux/salida-usuario/
 scripts/ux/salida-alumno/
+
+# Capturas de las notas de interfaz: se quedan en el equipo donde se anotó (docs/ux/README.md).
+# Al repositorio solo suben NNN.json, los LEEME.md y VERSION.
+docs/ux/notas/**/*.webp

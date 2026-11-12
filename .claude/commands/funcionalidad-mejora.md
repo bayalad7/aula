@@ -13,7 +13,7 @@ Lo que pidió el usuario: **$ARGUMENTS**
 ## 0. Entiende el pedido
 
 Lee `CLAUDE.md` (sobre todo «Definición de terminado») y `docs/progreso.md`. Si el pedido
-nombra un prompt de `docs/v1/prompts/` («12.2») o su ruta, léelo: es la especificación (hoy,
+nombra un prompt de `docs/prompts/` («12.2») o su ruta, léelo: es la especificación (hoy,
 deseado, diseño y pruebas), con su «Encaje con lo implementado» si lo trae. Lo que diga el
 usuario en este comando manda sobre el prompt.
 
@@ -40,15 +40,15 @@ Muestra la ficha al usuario.
 Antes de cambiar nada, haz el inventario:
 - el código (`internal/*`, `apps/*`, bindings) y sus pruebas;
 - los textos (`textos.es-MX.js`) y los errores (`errores.go`, `agenterrors.go`);
-- el manual (`docs/v1/administracion/`, busca la función y sus capturas);
-- los diagramas (`docs/v1/diagramas/`, sus `pantallas` y «Fuentes en el código»);
+- el manual (`docs/administracion/`, busca la función y sus capturas);
+- los diagramas (`docs/diagramas/`, sus `pantallas` y «Fuentes en el código»);
 - `docs/protocol.md`, `docs/eventos-ui.md` y `docs/privacidad.md`;
 - el arnés de la consola (`scripts/ux/dobles.js`, `recorrido.mjs`) y el del alumno
   (`dobles-alumno.js`, `recorrido-alumno.mjs`, `pruebas-alumno.mjs`);
 - la app del alumno (`apps/student`, su `textos.es-MX.js`, `window.go` si toca la ventana) y el
   ayudante del servicio (`internal/agentsvc`) si la función pasa por él;
-- el prompt de la función en `docs/v1/prompts/` (su «Encaje con lo implementado») y su nota de
-  entrega en `docs/v1/ux/`;
+- el prompt de la función en `docs/prompts/` (su «Encaje con lo implementado») y su nota de
+  entrega en `docs/ux/historial/` (sin capturas versionadas);
 - los casos de `docs/desarrollo/probar-consola-local.md` (C-xx y A-xx).
 
 Lo que diga algo distinto después del cambio también se actualiza.
@@ -62,9 +62,9 @@ Detente y espera la aprobación si el cambio:
 - es de tipo `cambio`.
 
 Muestra el antes y el después: un boceto en texto o una captura del arnés, nombrando las zonas
-como en `docs/v1/ux/MAPA.md`. Si mueve algo de lugar, aplica «Ubicación y vocabulario» de
+como en `docs/ux/MAPA.md`. Si mueve algo de lugar, aplica «Ubicación y vocabulario» de
 `CLAUDE.md` y ofrece 2–3 opciones con tu recomendación. Si exige cambiar el
-modelo de seguridad, no lo hagas: anótalo en `docs/v1/ux/PROPUESTAS.md`.
+modelo de seguridad, no lo hagas: anótalo en `docs/ux/PROPUESTAS.md`.
 
 Una `corrección` o una `mejora` pequeña y local no necesita esta pausa: dilo y sigue.
 

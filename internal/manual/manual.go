@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// Diagram is a diagram of docs/v1/diagramas, as the manual includes it: its
+// Diagram is a diagram of docs/diagramas, as the manual includes it: its
 // metadata, the «Lo que no es obvio» prose, and the SVGs drawn beforehand
 // (diagrams.go). Without them the console shows the Mermaid text.
 type Diagram struct {

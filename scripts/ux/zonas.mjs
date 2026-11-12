@@ -1,5 +1,5 @@
 // Vocabulario de la interfaz: el nombre de cada zona de las dos apps y cómo encontrarla. Es la
-// única fuente de los nombres que usan el mapa (mapa.mjs → docs/v1/ux/MAPA.md), el anotador
+// única fuente de los nombres que usan el mapa (mapa.mjs → docs/ux/MAPA.md), el anotador
 // (anotar.mjs) y las conversaciones sobre la interfaz: «en la Ficha del alumno, en Qué puede
 // hacer su equipo». Si una zona cambia de lugar o de selector, se cambia aquí.
 //

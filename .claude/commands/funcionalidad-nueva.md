@@ -6,7 +6,7 @@ argument-hint: <descripción o prompt (ej. 10.4)> [para: profesor|alumno|ambos] 
 # /funcionalidad-nueva
 
 Agrega a Aula la función que pide el usuario. Es la plantilla
-`docs/v1/prompts/10-plantilla-nueva-funcion.md` convertida en proceso: si cambias una, cambia la
+`docs/prompts/10-plantilla-nueva-funcion.md` convertida en proceso: si cambias una, cambia la
 otra.
 
 Lo que pidió el usuario: **$ARGUMENTS**
@@ -15,12 +15,12 @@ Lo que pidió el usuario: **$ARGUMENTS**
 
 Lee `CLAUDE.md` (sobre todo «Definición de terminado»), `docs/protocol.md`,
 `docs/privacidad.md`, `docs/progreso.md` y `docs/eventos-ui.md`. Si el pedido nombra un prompt
-(«10.4», «control remoto») o una ruta de `docs/v1/prompts/`, léelo: es la especificación, y su
+(«10.4», «control remoto») o una ruta de `docs/prompts/`, léelo: es la especificación, y su
 sección **«Encaje con lo implementado»** dice dónde va en cada app, qué componentes usa y qué
 diagramas toca. Lo que diga el usuario en este comando manda sobre el prompt.
 
-Lee también los diagramas que nombre ese encaje (`docs/v1/diagramas/`) y, para ver cómo se ven
-hoy las apps, las capturas de `docs/v1/ux/profesor/despues/` y `docs/v1/ux/alumno/despues/`.
+Lee también los diagramas que nombre ese encaje (`docs/diagramas/`) y, para ver cómo se ven
+hoy las apps, las capturas del arnés (`node scripts/ux/recorrido.mjs` y `recorrido-alumno.mjs`).
 Copia sus patrones; no inventes otros.
 
 Arma esta ficha con lo que dice el pedido y lo que deduces del código y la documentación.
@@ -50,7 +50,7 @@ Muestra la ficha completa al usuario antes de diseñar.
   y en qué SO se declara. Van en `docs/protocol.md` antes que el código.
 - **Privacidad:** si observa o controla, el aviso visible en el equipo del alumno, la regla en
   `docs/privacidad.md` y si pide consentimiento.
-- **Ubicación (decisión del usuario, no tuya):** con los nombres de `docs/v1/ux/MAPA.md`,
+- **Ubicación (decisión del usuario, no tuya):** con los nombres de `docs/ux/MAPA.md`,
   propone **2–3 ubicaciones** posibles, cada una con su boceto en texto (ASCII), y di cuál
   recomiendas y por qué. Pregúntalo con AskUserQuestion usando `preview` para los bocetos. Aplica
   las reglas de «Ubicación y vocabulario» de `CLAUDE.md`:
@@ -75,7 +75,7 @@ Muestra la ficha completa al usuario antes de diseñar.
 - **Riesgos y lo que queda fuera.**
 
 Espera la aprobación. Si una parte exige cambiar el modelo de seguridad, no la diseñes: anótala
-en `docs/v1/ux/PROPUESTAS.md`.
+en `docs/ux/PROPUESTAS.md`.
 
 ## 2. Implementación (cuando apruebe)
 
@@ -113,15 +113,16 @@ Como mínimo:
 - **Revisión de ubicación:** la función quedó donde se aprobó; las acciones sobre un alumno
   están en la Ficha **y** en la Pantalla grande; las zonas nuevas están en `scripts/ux/zonas.mjs`
   y el mapa regenerado (`node scripts/ux/mapa.mjs`).
-- La sección del manual en `docs/v1/administracion/` y el diagrama en `docs/v1/diagramas/`, si
+- La sección del manual en `docs/administracion/` y el diagrama en `docs/diagramas/`, si
   aplica.
 - Los casos manuales en `docs/desarrollo/probar-consola-local.md` (C-xx consola, A-xx alumno),
   y en VM si toca el SO. Lo nativo se prueba a ojo: nunca con clics ni teclas sintéticas en el
   escritorio del usuario.
 - `gofmt -l .` sin salida, `go vet ./...`,
   `go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...` y `go test -race ./...`.
-- `docs/progreso.md` y una nota de entrega con las capturas en `docs/v1/ux/profesor/` o
-  `docs/v1/ux/alumno/`, según dónde cambió.
+- `docs/progreso.md` y, si la entrega tomó decisiones de interfaz que valga conservar, una sola
+  página en `docs/ux/historial/` con el análisis, los resultados y las decisiones, **sin
+  capturas versionadas** (las del arnés quedan en `scripts/ux/salida*` y en el CI).
 
 Al terminar, muestra un resumen, las capturas y lo que falta probar a mano, y espera la
 aprobación. **No hagas commit ni push hasta que el usuario lo pida**; en `develop`, agrupado por

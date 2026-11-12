@@ -12,7 +12,7 @@ import (
 const regenerate = "Diagramas desactualizados: ejecuta scripts/docs/generar-diagramas"
 
 // Every diagram has its light and dark SVG drawn from its current Mermaid
-// block (docs/v1/diagramas/generados, by scripts/docs/generar-diagramas).
+// block (docs/diagramas/generados, by scripts/docs/generar-diagramas).
 func TestDiagramsAreDrawn(t *testing.T) {
 	m, err := manual.Load(Files(), ManualDir, DiagramsDir)
 	if err != nil {

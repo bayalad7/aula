@@ -1,6 +1,6 @@
-# Regenera los SVG de docs/v1/diagramas/generados (claro y oscuro) y su
+# Regenera los SVG de docs/diagramas/generados (claro y oscuro) y su
 # manifiesto. Requiere Node 18+ y la letra Segoe UI. Ver
-# docs/v1/diagramas/README.md.
+# docs/diagramas/README.md.
 $ErrorActionPreference = 'Stop'
 Push-Location $PSScriptRoot
 try {

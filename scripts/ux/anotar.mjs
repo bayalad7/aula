@@ -1,7 +1,8 @@
 // Anotador de interfaz: abre la consola o la app del alumno, con datos de demostración, en una
 // ventana de Chromium que manejas tú. Cada clic deja seleccionado lo que tocaste, con su cadena de
 // zonas (zonas.mjs); N abre la nota y A señala sin que el clic llegue a la app. La nota se guarda en
-// docs/v1/ux/notas/ con la zona, la escena, el elemento y dos capturas. Después: /notas-ux.
+// docs/ux/notas/<versión>/ (la de docs/ux/notas/VERSION, la versión en curso) con la zona, la
+// escena, el elemento y dos capturas; la numeración empieza en 001 en cada versión. Después: /notas-ux.
 // Guía: docs/desarrollo/notas-ux.md.
 //   node anotar.mjs [profesor|alumno] [escena]
 import fs from "node:fs";
@@ -16,8 +17,12 @@ import { escenas, rutas, zonas } from "./zonas.mjs";
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const prueba = process.argv.includes("--prueba");
 const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+// Las notas van con el versionado x.y.z: una carpeta por versión, la que dice VERSION.
 // En --prueba (CI y verificación): sin ventana y en una carpeta temporal.
-const dirNotas = prueba ? fs.mkdtempSync(path.join(os.tmpdir(), "aula-notas-")) : path.join(raiz, "docs", "v1", "ux", "notas");
+const raizNotas = prueba ? fs.mkdtempSync(path.join(os.tmpdir(), "aula-notas-")) : path.join(raiz, "docs", "ux", "notas");
+const version = fs.readFileSync(path.join(raiz, "docs", "ux", "notas", "VERSION"), "utf8").trim();
+if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new Error("docs/ux/notas/VERSION debe decir vX.Y.Z, dice: " + version);
+const dirNotas = path.join(raizNotas, version);
 const ui = path.join(raiz, "internal", "ui");
 const apps = {
   profesor: { dist: path.join(raiz, "apps", "teacher", "frontend", "dist"), dobles: fs.readFileSync(path.join(aqui, "dobles.js"), "utf8") },
@@ -34,25 +39,56 @@ const leerNotas = () => fs.readdirSync(dirNotas).filter((f) => /^\d+\.json$/.tes
   .map((f) => JSON.parse(fs.readFileSync(path.join(dirNotas, f), "utf8")));
 const tres = (n) => String(n).padStart(3, "0");
 
+// El índice de todas las versiones (docs/ux/notas/LEEME.md): cuántas notas tiene cada una.
+function escribirIndiceVersiones() {
+  const versiones = fs.readdirSync(raizNotas).filter((d) => /^v\d+\.\d+\.\d+$/.test(d))
+    .sort((a, b) => a.slice(1).split(".").map(Number).reduce((r, x, i) => r || x - b.slice(1).split(".").map(Number)[i], 0));
+  const fila = (v) => {
+    const ns = fs.readdirSync(path.join(raizNotas, v)).filter((f) => /^\d+\.json$/.test(f))
+      .map((f) => JSON.parse(fs.readFileSync(path.join(raizNotas, v, f), "utf8")));
+    const cuenta = (e) => ns.filter((n) => n.estado === e).length;
+    return `| [${v}](${v}/LEEME.md)${v === version ? " (en curso)" : ""} | ${ns.length} | ${cuenta("pendiente") + cuenta("en curso")} | ${cuenta("hecha")} | ${cuenta("descartada")} |`;
+  };
+  fs.writeFileSync(path.join(raizNotas, "LEEME.md"), `# Notas de interfaz
+
+Las escribe el anotador (\`node scripts/ux/anotar.mjs\`) y se trabajan con \`/notas-ux\`. Van con el
+versionado: una carpeta por versión (\`vX.Y.Z/\`), con la numeración desde 001 en cada una. La
+versión en curso es la de \`VERSION\`; al publicarla, \`VERSION\` pasa a la siguiente y sus notas
+quedan cerradas en su carpeta.
+
+Al repositorio solo suben \`NNN.json\` y los índices. Las capturas (\`*.webp\`) se quedan en el
+equipo donde se anotó (\`.gitignore\`).
+
+| Versión | Notas | Pendientes o en curso | Hechas | Descartadas |
+|---|---|---|---|---|
+${versiones.map(fila).join("\n")}
+`);
+}
+
 function escribirIndice() {
   const notas = leerNotas();
   const fila = (n) => `| ${n.n} | ${n.estado}${n.respuesta ? " — " + n.respuesta.replace(/\|/g, "/") : ""} | ${n.zona.cadena}${n.elemento && n.elemento.texto ? " · «" + n.elemento.texto.replace(/\|/g, "/") + "»" : ""} | ${n.tipo} | ${n.texto.replace(/\r?\n/g, " ").replace(/\|/g, "/")} | ${n.escena} · ${n.tema || "claro"} | [elemento](${tres(n.n)}-elemento.webp) · [pantalla](${tres(n.n)}-pantalla.webp)` +
     (n.tema === "ambos" ? ` · oscuro: [elemento](${tres(n.n)}-elemento-oscuro.webp) · [pantalla](${tres(n.n)}-pantalla-oscuro.webp)` : "") + " |";
-  fs.writeFileSync(path.join(dirNotas, "LEEME.md"), `# Notas de interfaz
+  fs.writeFileSync(path.join(dirNotas, "LEEME.md"), `# Notas de interfaz · ${version}
 
 Las escribe el anotador (\`node scripts/ux/anotar.mjs\`): cada una dice dónde (con los nombres de
-\`docs/v1/ux/MAPA.md\`), qué tipo de cambio y qué quieres, con una captura del elemento y de la
+\`docs/ux/MAPA.md\`), qué tipo de cambio y qué quieres, con una captura del elemento y de la
 pantalla (con el tema «ambos», también en oscuro). Este índice se regenera solo; el detalle está en \`NNN.json\`. Estado: \`pendiente\`,
 \`en curso\`, \`hecha\` o \`descartada\` (lo actualiza Claude al trabajarlas).
+
+Al repositorio solo suben \`NNN.json\` y este índice. Las capturas (\`*.webp\`) se quedan en el equipo
+donde se anotó (\`.gitignore\`): los enlaces de «Capturas» abren ahí. Todas las versiones:
+[../LEEME.md](../LEEME.md).
 
 | # | Estado | Dónde | Tipo | Qué quieres | Escena · tema | Capturas |
 |---|---|---|---|---|---|---|
 ${notas.map(fila).join("\n")}
 `);
+  escribirIndiceVersiones();
 }
 
 // --indice: solo regenera LEEME.md (después de cambiar el estado de una nota a mano).
-if (process.argv.includes("--indice")) { escribirIndice(); console.log("Índice regenerado: " + leerNotas().length + " notas"); process.exit(0); }
+if (process.argv.includes("--indice")) { escribirIndice(); console.log(`Índice regenerado: ${version}, ${leerNotas().length} notas`); process.exit(0); }
 
 console.log("Exportando el manual de la consola…");
 const manual = exportarManual();
@@ -169,7 +205,7 @@ await p.exposeFunction("__anotadorGuardar", async (nota) => {
     await capturar("-oscuro");
     await tema("light");
   }
-  const registro = { n, fecha: new Date().toISOString(), estado: "pendiente", app: estado.app, escena: estado.escena,
+  const registro = { n, version, fecha: new Date().toISOString(), estado: "pendiente", app: estado.app, escena: estado.escena,
     ruta: nota.ruta, tema: estado.tema, // «ambos»: hay capturas -oscuro también
     vista: nota.vista, zona: nota.zona, elemento: nota.elemento, tipo: nota.tipo, texto: nota.texto };
   fs.writeFileSync(base + ".json", JSON.stringify(registro, null, 2) + "\n");
@@ -185,7 +221,7 @@ Anotador abierto (${origen}). En la barra de abajo a la izquierda:
   · elige app, escena, vista y tema;
   · «Anotar» o la tecla A, señala algo y escribe tu nota (Ctrl+Enter guarda);
   · «Nota de la pantalla» para algo general; H esconde la barra.
-Las notas quedan en docs/v1/ux/notas/ (índice en LEEME.md). Cierra la ventana para terminar.`);
+Las notas quedan en docs/ux/notas/ (índice en LEEME.md). Cierra la ventana para terminar.`);
 nav.on("disconnected", () => { srv.close(); process.exit(0); });
 
 // --prueba: anota un elemento de cada app como lo haría una persona (tecla A, mouse, texto,
@@ -282,6 +318,10 @@ async function autoprueba() {
   ok(notas[0] && notas[0].zona.id === "fila-alumno" && notas[0].tipo === "mover" && notas[0].texto.startsWith("Prueba"), "nota 1: " + JSON.stringify(notas[0]));
   ok(notas[1] && notas[1].zona.id === "tarjeta-archivo" && notas[1].app === "alumno" && notas[1].escena === "archivos", "nota 2: " + JSON.stringify(notas[1]));
   ok(fs.readFileSync(path.join(dirNotas, "LEEME.md"), "utf8").includes("| 2 | pendiente | Alumno › Archivos recibidos"), "índice LEEME.md");
+  ok(path.basename(dirNotas) === version && JSON.parse(fs.readFileSync(path.join(dirNotas, "001.json"), "utf8")).version === version,
+    "la nota no quedó en la carpeta de su versión");
+  ok(fs.readFileSync(path.join(raizNotas, "LEEME.md"), "utf8").includes(`| [${version}](${version}/LEEME.md) (en curso) | 4 |`),
+    "el índice de versiones no cuenta las notas");
   // Abierta como en otro navegador (sin lo que inyecta la ventana): dice qué pasa, no queda en blanco.
   const ajena = await (await nav.createBrowserContext()).newPage();
   await ajena.goto(origen + "/profesor/", { waitUntil: "networkidle0" });
@@ -290,6 +330,6 @@ async function autoprueba() {
   console.log(fallas.length ? "✗ anotador:\n  " + fallas.join("\n  ") : "✓ anotador: 4 notas (señalando, navegando con nivel elegido y con un diálogo abierto), capturas e índice");
   await nav.close();
   if (process.env.ANOTADOR_CONSERVAR) console.log("Notas de prueba en " + dirNotas);
-  else fs.rmSync(dirNotas, { recursive: true, force: true });
+  else fs.rmSync(raizNotas, { recursive: true, force: true });
   process.exit(fallas.length ? 1 : 0);
 }

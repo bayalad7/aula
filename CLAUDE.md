@@ -57,8 +57,8 @@ Dos aplicaciones, mismo monorepo:
   - `internal/simclass`: el aula simulada: alumnos simulados dentro de la consola, con el
     protocolo real por un puerto de `127.0.0.1` que no se anuncia, y sus fallas (desconectado,
     lento, no acusa). Siempre marcados y contados aparte de los reales.
-  - `internal/manual`: el manual de la consola: lee el Markdown de `docs/v1/administracion` y los
-    diagramas de `docs/v1/diagramas` a bloques sin HTML (sanitizado por construcción), lo valida,
+  - `internal/manual`: el manual de la consola: lee el Markdown de `docs/administracion` y los
+    diagramas de `docs/diagramas` a bloques sin HTML (sanitizado por construcción), lo valida,
     busca y genera el asistente «¿Falta un alumno?» del diagrama 12. El paquete `docs` los embebe
     (`docs.Files()`): `docs/` es la única fuente.
   - `internal/participation`: lo que responden los alumnos en vivo (vista «Participación»): la
@@ -134,7 +134,7 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
   aparece en la ficha del alumno, «Qué puede hacer su equipo» (prueba). Un código de error nuevo
   lleva texto `errorAlumno.*` y sección del manual en `agentErrorHelp` (prueba).
 - **Ubicación y vocabulario de la interfaz** (se aprueba aparte del diseño técnico):
-  - Las zonas se nombran como en `docs/v1/ux/MAPA.md` (fuente: `scripts/ux/zonas.mjs`). Una zona
+  - Las zonas se nombran como en `docs/ux/MAPA.md` (fuente: `scripts/ux/zonas.mjs`). Una zona
     nueva se agrega a `zonas.mjs` y se regenera el mapa con `node scripts/ux/mapa.mjs`.
   - Una función con **su propio material de trabajo** (archivos, encuestas, recolecciones,
     plantillas…) es un **módulo propio del menú**; no se mete dentro de otro módulo.
@@ -148,7 +148,8 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
   - Antes de implementar, el diseño muestra **2–3 bocetos de ubicación** con los nombres del mapa
     y una recomendación; el usuario elige. Ninguna ubicación se da por hecha.
   - Las notas del usuario sobre la interfaz llegan por el anotador (`node scripts/ux/anotar.mjs`,
-    en `docs/v1/ux/notas/`) y se trabajan con `/notas-ux`.
+    en `docs/ux/notas/<versión>/`, una carpeta por versión: la de `docs/ux/notas/VERSION`) y se
+    trabajan con `/notas-ux`.
 - **Consola, dentro de la navegación actual:**
   - Lo que se aplica a alumnos va sobre la selección de Alumnos, con un panel de la barra de
     acciones, o en la Pantalla grande si es para uno. Nada de pantallas a pantalla completa nuevas.
@@ -185,9 +186,9 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
   equipo (energía, restricciones, transmisión, control remoto…) nunca les llega (prueba).
 - **Privacidad:** regla y aviso visible en `docs/privacidad.md` si observa o controla al alumno.
 - **Manual y diagramas:**
-  - Sección en `docs/v1/administracion/`: en la página de su pantalla o en Tareas frecuentes; una
+  - Sección en `docs/administracion/`: en la página de su pantalla o en Tareas frecuentes; una
     pantalla nueva lleva su página con `pantallas` (prueba).
-  - Si cambia un flujo, su diagrama en `docs/v1/diagramas/` con front-matter, y sus SVG
+  - Si cambia un flujo, su diagrama en `docs/diagramas/` con front-matter, y sus SVG
     regenerados con `scripts/docs/generar-diagramas` (prueba).
 - **Arnés web:**
   - Bindings y eventos en `docs/eventos-ui.md` y en `scripts/ux/dobles.js` (consola) o
@@ -196,7 +197,13 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
     `scripts/ux/recorrido-alumno.mjs` (alumno), sin errores ni violaciones serias (CI). Lo que
     cambie el comportamiento del alumno, también en `scripts/ux/pruebas-alumno.mjs` (CI).
   - Si cambia una pantalla del manual, `node scripts/ux/capturas-manual.mjs`.
-  - Las capturas (arnés, mapa, notas, manual y entregas) se guardan en **WebP**, no PNG.
+  - Las capturas (arnés, mapa, notas y manual) se guardan en **WebP**, no PNG.
+  - **Al repositorio solo suben las capturas que enlaza un documento vigente:** el manual
+    (`docs/administracion/img/`) y el mapa (`docs/ux/mapa/`). Las del arnés quedan en
+    `scripts/ux/salida*` y en los artefactos del CI; las de las notas, en el equipo donde se
+    anotó (`docs/ux/notas/**/*.webp` está ignorado; suben `NNN.json`, los `LEEME.md` y `VERSION`). Una entrega no
+    versiona capturas ni crea carpetas propias: deja una sola página en `docs/ux/historial/` con
+    el análisis, los resultados y las decisiones (`docs/ux/README.md`).
 - **Cierre:** casos manuales en `docs/desarrollo/probar-consola-local.md` (C-xx de la consola,
   A-xx del alumno) y `docs/progreso.md`; lo nativo que el arnés no ve (ventana, icono, SO) queda
   como caso manual, sin clics sintéticos en el escritorio del usuario.

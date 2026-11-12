@@ -1,13 +1,13 @@
 // Mapa de la interfaz: una captura por pantalla con sus zonas numeradas y, debajo, el nombre de
 // cada zona. Los nombres salen de zonas.mjs, los mismos que muestra el anotador. Escribe
-// docs/v1/ux/MAPA.md y las imágenes en docs/v1/ux/mapa/ (WebP).
+// docs/ux/MAPA.md y las imágenes en docs/ux/mapa/ (WebP).
 //   node mapa.mjs [--solo=encuesta]   (vuelve a capturar solo esas imágenes; MAPA.md, siempre completo)
 import fs from "node:fs";
 import path from "node:path";
 import { abrir, click, cuadros, raiz, seq, sleep, soloCapturas } from "./arnes.mjs";
 import { zonas } from "./zonas.mjs";
 
-const dir = path.join(raiz, "docs", "v1", "ux", "mapa");
+const dir = path.join(raiz, "docs", "ux", "mapa");
 fs.mkdirSync(dir, { recursive: true });
 const fila = (host) => `#alumnos-filas tr[data-clave="r:${host}"]`;
 const miniaturas = seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB3-PC12", "LAB3-PC15"]));
@@ -133,5 +133,5 @@ for (const app of ["profesor", "alumno"]) {
   for (const z of zonas[app]) md.push(`| \`${z.id}\` | ${ruta(z)} | ${z.que} |`);
   md.push("");
 }
-fs.writeFileSync(path.join(raiz, "docs", "v1", "ux", "MAPA.md"), md.join("\n"));
+fs.writeFileSync(path.join(raiz, "docs", "ux", "MAPA.md"), md.join("\n"));
 console.log("MAPA.md escrito");

@@ -1,7 +1,7 @@
 package session
 
 // Cause classifies why an agent is not connected, the same set of answers
-// as the "¿Falta un alumno?" diagram (docs/v1/diagramas/12): the agent
+// as the "¿Falta un alumno?" diagram (docs/diagramas/12): the agent
 // reports it with its diagnostic text, and the console's connection checker
 // (internal/connectcheck) gives the same cause for the same failure.
 type Cause string

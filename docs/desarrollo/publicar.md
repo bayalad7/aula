@@ -20,6 +20,10 @@ git tag -a v0.1.0-rc.1 -m "Aula 0.1.0-rc.1"
 git push origin v0.1.0-rc.1
 ```
 
+Al publicar una estable, las notas de interfaz de esa versión quedan cerradas: cambia
+`docs/ux/notas/VERSION` a la siguiente (por ejemplo, de `v0.1.0` a `v0.2.0`) y regenera los
+índices con `node scripts/ux/anotar.mjs --indice` (`docs/desarrollo/notas-ux.md`).
+
 ## 2. Qué hace el workflow
 
 1. Deriva la versión del tag (`${GITHUB_REF_NAME#v}`) y la valida (`X.Y.Z` o `X.Y.Z-pre`).

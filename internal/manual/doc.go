@@ -1,5 +1,5 @@
-// Package manual turns the user manual (docs/v1/administracion/*.md) and the
-// diagrams (docs/v1/diagramas/*.md) into data the console draws, so docs/
+// Package manual turns the user manual (docs/administracion/*.md) and the
+// diagrams (docs/diagramas/*.md) into data the console draws, so docs/
 // stays the only source of both.
 //
 // Pages are written in a small subset of Markdown (headings, paragraphs,

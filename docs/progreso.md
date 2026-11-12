@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-12 (12.2 transmisión a una selección y modos ventana y pantalla
+Última actualización: 2026-11-12 (10.14 terminar la clase implementada, falta la prueba en VM;
+12.2 transmisión a una selección y modos ventana y pantalla
 completa implementada, falta la prueba en VM y en la ventana real; 12.1 proyectar la pantalla de
 un alumno implementada, falta la prueba en VM; 10.12 encuestas en vivo implementadas, falta la prueba en VM;
 10.11 abrir página o app implementada, falta la prueba en VM;
@@ -40,7 +41,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.11 | Enviar una URL o abrir una app | ✅ Implementado y probado en CI con dobles; panel «Abrir» de la barra, la acción en la ficha y la Pantalla grande, y Ajustes › Apps permitidas (falta la prueba en VM, `docs/prueba-vms.md` §23, y los casos C-79 a C-83 y A-26 y A-27) |
 | 10.12 | Encuestas en vivo | ✅ Implementado y probado en CI con dobles y alumnos simulados; panel «Encuesta» de la barra, franja y sección «Encuestas» de Participación (falta la prueba en VM, `docs/prueba-vms.md` §24, y los casos C-84 a C-88 y A-28 a A-30) |
 | 10.13 | Identidad del alumno (cuenta, nombre, grado, grupo), materias, asistencia y bitácora | ⏳ Pendiente (prompt ampliado el 12/11/2026) |
-| 10.14 | Terminar la clase | ⏳ Pendiente (prompt del 12/11/2026) |
+| 10.14 | Terminar la clase | ✅ Implementado y probado en CI con dobles y alumnos simulados; «Terminar la clase» bajo el Selector de clase con su diálogo, `class.end` (§5.25), reglas 83–86, diagrama 22. Sin 10.13: la asistencia y la identidad quedan para cuando exista (falta la prueba en VM, `docs/prueba-vms.md` §28, y los casos C-114 a C-118 y A-48 a A-50) |
 | 10.15 | Nombres de los equipos y mapa del aula | ⏳ Pendiente (prompt del 12/11/2026) |
 | 10.16 | Grupos guardados y equipos de trabajo | ⏳ Pendiente (prompt del 12/11/2026) |
 | 10.17 | Entregar código desde la app del alumno (`code.collect`) | ⏳ Pendiente (prompt del 12/11/2026) |
@@ -85,8 +86,10 @@ el que se trabajó antes; las notas de abajo lo conservan.
    capturas del arnés, del mapa, de las notas y del manual son WebP (manual: de 463 KB a 288 KB).
 5. Funciones para `v0.1.0` (prompts del 12/11/2026, lista en `docs/prompts/00-LEEME.md`), con
    `/funcionalidad-nueva <número>` y en este orden: ~~10.21 (pantalla en blanco)~~ (hecha el
-   12/11/2026, sin commit) → 10.13
-   (identidad, asistencia y bitácora) → 10.14 (terminar la clase) → 10.15 (nombres y mapa) →
+   12/11/2026) → 10.13
+   (identidad, asistencia y bitácora; al hacerla, agregar a «Terminar la clase» exportar la
+   asistencia y olvidar la identidad) → ~~10.14 (terminar la clase)~~ (hecha el 12/11/2026, sin
+   commit) → 10.15 (nombres y mapa) →
    10.17 (entregar código); 10.16 si hay tiempo. Después: 15 (auto-actualización) y 11 (revisión).
    10.18 a 10.25 quedan para después de `v0.1.0` (10.20 con `/funcionalidad-mejora`).
 6. Menor (traído de la entrega E11, eliminada en la limpieza del 12/11/2026): el comprobador de

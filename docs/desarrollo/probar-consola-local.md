@@ -238,6 +238,23 @@ revisa a ojo en el equipo del alumno (nunca con clics sintéticos en tu escritor
 | A-46 | Desconecta la red del alumno con la pausa puesta | En unos 15 s la pausa y la banda se quitan solas; al volver la red, Aula se reconecta y no hay pausa |
 | A-47 | Repite A-42 y A-46 con el agente como servicio; luego, con la pausa puesta, termina el proceso del ayudante en el Administrador de tareas | Lo mismo: la pausa la muestra el ayudante en tu sesión. Al terminar el ayudante, la pausa desaparece con él y el servicio lo vuelve a abrir sin pausa. `aula-agente.log` dice «screen paused» con `message_len`, **nunca** el mensaje |
 
+### Terminar la clase (10.14)
+
+Con dos alumnos reales con Windows (uno como servicio), el aula simulada abierta con dos alumnos y,
+si puedes, un tercer equipo con una versión anterior de Aula. La tarjeta del alumno y sus bandas se
+revisan a ojo en su equipo (nunca con clics sintéticos en tu escritorio).
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-114 | Emite código, pausa las pantallas, pon restricciones de apps, inicia un temporizador, lanza una encuesta y programa un apagado de 10 min. Pulsa **Terminar la clase** en el menú | El diálogo lista «Sigue activo»: 2 pantallas en pausa, apps bloqueadas, temporizador, encuesta y «Apagado programado en N equipos: se conserva»; «También se vacía» con el historial; **Cancelar el apagado programado** apagado. A 900×600 y en oscuro se lee completo |
+| C-115 | **Terminar la clase** sin marcar nada | Los pasos con ✓ (pausa, restricciones, temporizador, encuesta) y «Apagado programado conservado». La tabla: los reales y los simulados «Limpio»; el de versión anterior «Limpio en parte». Desaparecen las franjas de pausa, temporizador y encuesta; la cuenta del apagado sigue. Código › historial y «Últimos envíos» vacíos, Participación vacía |
+| C-116 | Con una recolección abierta, vuelve a terminar marcando **Recoger «…» antes de terminar** y **Cancelar el apagado programado** | Primero llega lo recogido (Archivos › Recolecciones), luego «Trabajo recogido» y «Apagado programado cancelado»; la cuenta regresiva desaparece en los alumnos |
+| C-117 | Desconecta la red de un alumno y pulsa **Terminar la clase**; reconecta su red | Su fila dice «Desconectado: lo recibe al volver»; al volver pasa a «Limpio» sin hacer nada. No hereda restricciones ni pausa |
+| C-118 | Pon el fallo «No acusa» a un simulado y termina; quítale el fallo y pulsa **Reintentar al que falta** | A los 10 s «Sin acuse»; tras reintentar, «Limpio». Pulsar **Terminar la clase** dos veces seguidas no da error |
+| A-48 | Con código, un aviso, una encuesta, el temporizador, la mano levantada y restricciones, termina la clase con tu editor al frente | La ventana de Aula **no** se adelanta ni quita el foco; el icono del área de notificación se marca. Al abrirla: la banda de restricciones ya no está, la lista está vacía (Estado vacío) y arriba la tarjeta «La clase terminó · a las HH:MM» con «Nuevo» y lo que se quitó; «Tus archivos en Documentos › Aula siguen ahí». Los archivos recibidos siguen en la carpeta |
+| A-49 | **Entendido** en la tarjeta; termina otra vez y luego emite código | La tarjeta se cierra; la segunda vez dice «Tu ventana ya estaba vacía»; al llegar código se va sola |
+| A-50 | Repite A-48 con el agente como servicio | Lo mismo; `aula-agente.log` dice «class ended» con cuántas cosas se quitaron, **nunca** el código ni los avisos |
+
 ### Notas de interfaz 014–016 (2026-11-12)
 
 | # | Pasos | Esperado |

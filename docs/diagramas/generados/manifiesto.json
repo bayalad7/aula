@@ -349,6 +349,23 @@
       "alt": "Proyectar la pantalla de un alumno: Cómo llega la pantalla de un alumno a sus compañeros a través de la consola, qué aviso ve el alumno y cómo termina",
       "claro": "generados/21-proyectar-alumno.claro.svg",
       "oscuro": "generados/21-proyectar-alumno.oscuro.svg"
+    },
+    {
+      "id": "22-terminar-clase",
+      "titulo": "Terminar la clase",
+      "descripcion": "En qué orden la consola detiene lo activo y limpia la ventana de cada alumno, qué acusa cada uno y qué pasa con quien falta",
+      "audiencia": [
+        "profesor",
+        "alumno",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "alumnos"
+      ],
+      "hash": "sha256:ee6c5a0c53338478310e4747ca85ba479e641010eca74fcef72d8059c160f142",
+      "alt": "Terminar la clase: En qué orden la consola detiene lo activo y limpia la ventana de cada alumno, qué acusa cada uno y qué pasa con quien falta",
+      "claro": "generados/22-terminar-clase.claro.svg",
+      "oscuro": "generados/22-terminar-clase.oscuro.svg"
     }
   ]
 }

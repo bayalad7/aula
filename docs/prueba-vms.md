@@ -1314,3 +1314,19 @@ debe ver y nunca deja a nadie bloqueado (`docs/protocol.md` §5.9–5.11, `docs/
 | **PA-F** Reanudar | Pausa otra vez y **Reanudar todo** (o Ctrl+Mayús+P). | Se quita en las dos VMs y la franja desaparece. |
 
 **Para aceptar** bastan PA-A, PA-B y PA-D en ✅.
+
+## 28. Terminar la clase (10.14)
+
+Comprueba que un solo botón deja el laboratorio limpio, que el siguiente inicio de sesión no hereda
+nada y que no se pierde trabajo (`docs/protocol.md` §5.25, `docs/privacidad.md` reglas 83–86). Con
+dos VMs Windows: la VM 1 con el agente **como servicio**, la VM 2 en modo ventana, y la consola en el
+equipo del profesor.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **TC-A** Todo se detiene (**aceptación**) | En las dos VMs: restricciones de apps y web, temporizador, encuesta, pausa y código. Envía un archivo. **Terminar la clase**. | En las dos VMs se quitan la pausa, la banda de restricciones, el temporizador y la encuesta; la lista queda vacía con «La clase terminó». El archivo sigue en `Documentos\Aula`. La consola dice «Limpio» en las dos. |
+| **TC-B** Sin herencia (**aceptación**) | Cierra la sesión del alumno en la VM 1 e inicia otra; en la VM 2, cierra Aula y vuelve a abrirla. | Ninguna tiene restricciones (prueba abrir un sitio filtrado y una app bloqueada), pausa ni temporizador. |
+| **TC-C** Desconectado (**aceptación**) | Pon restricciones, desconecta la red de la VM 2, **Terminar la clase** y reconéctala. | La consola la marca «Desconectado: lo recibe al volver» y luego «Limpio»; al volver no tiene restricciones ni código. |
+| **TC-D** Energía | Programa un apagado de 10 min y termina sin marcar «Cancelar el apagado programado»; repite marcándolo. | La primera vez la cuenta sigue; la segunda, desaparece. |
+
+**Para aceptar** bastan TC-A, TC-B y TC-C en ✅.

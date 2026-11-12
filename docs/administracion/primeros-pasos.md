@@ -49,3 +49,9 @@ pantalla, por ejemplo «7 de 8». Si falta alguien, abre **Quién falta** y, si 
 **Reenviar a los que faltan**. Más en [Código](codigo#últimos-envíos).
 
 ![La pantalla Código, con el editor y los últimos envíos](img/codigo.webp)
+
+## Al terminar la hora
+
+Pulsa **Terminar la clase**, debajo de la tarjeta «Clase abierta · canal»: detiene lo que dejaste
+activo y limpia la ventana de cada alumno, sin borrar archivos. Más en
+[Tareas frecuentes](tareas-frecuentes#terminar-la-clase).

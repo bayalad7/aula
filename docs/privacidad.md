@@ -660,6 +660,37 @@ agente no captura: lo hace su ayudante, en la sesión del alumno y con sus derec
 En Linux con Wayland la captura pasa por el portal de escritorio, que pide al alumno aprobar en
 cada sesión; en macOS, el permiso «Grabación de pantalla». Linux y macOS no lo declaran todavía.
 
+## Terminar la clase (sin publicar, todos los sistemas)
+
+Al acabar la hora, el profesor pulsa «Terminar la clase» (bajo el Selector de clase del menú de
+la consola): se detiene lo que sigue activo y la ventana de cada alumno queda como recién abierta
+(`docs/protocol.md` §5.25). No observa ni controla: solo deshace.
+
+83. **El alumno sabe qué se quitó y cuándo.** La ventana muestra una tarjeta en la lista, sin
+    quitar el foco (`notify`, nunca `raise`):
+
+    > **La clase terminó** · 10:52
+    > Tu profesor terminó la clase: ya no hay restricciones, se quitó el temporizador y se
+    > vaciaron el código y los avisos. Tus archivos en Documentos\Aula siguen ahí.
+
+    Dice solo lo que había (restricciones, pausa, control, transmisión, temporizador, encuestas,
+    código, avisos, archivos, recolecciones, la mano y los mensajes sin enviar). Cada banda de
+    transparencia desaparece con lo que la causaba, como siempre; la tarjeta no es una banda y el
+    alumno la cierra con «Entendido» (o se va sola cuando llega código nuevo).
+84. **Nunca borra ni lee archivos.** Terminar la clase no borra, mueve, abre ni lee nada del
+    alumno: lo que está en `Documentos\Aula` (archivos recibidos y recolecciones) se queda; solo
+    se quitan las tarjetas de la ventana. En la consola tampoco se borra nada en disco (capturas
+    guardadas, recolecciones, plantillas); se vacía lo que estaba en memoria. Borrar archivos al
+    terminar queda como propuesta (`docs/ux/PROPUESTAS.md`). Si el profesor marca «Recoger el
+    trabajo antes de terminar», aplica el aviso de la regla 61.
+85. **La energía no se cancela sola.** Un apagado o reinicio programado sigue su cuenta regresiva
+    (reglas 26–31): el profesor pudo programarlo a propósito. Solo se cancela si lo marca en el
+    diálogo («Cancelar el apagado programado»), apagado por omisión.
+86. **Registros y simulados.** Los registros llevan `end_id`, el estado, el motivo, el equipo y
+    cuántas cosas se quitaron; nunca el código, los avisos ni los nombres de los archivos. Los
+    alumnos simulados declaran `class.end` y limpian su ventana simulada: no cambia ningún equipo
+    (regla 34 no aplica). Un equipo desconectado al terminar recibe el fin de clase al volver.
+
 ## Pendiente para etapas futuras
 
 - Linux y macOS (incluida la recepción de la transmisión, las restricciones, el control remoto

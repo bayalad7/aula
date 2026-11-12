@@ -60,6 +60,15 @@ retiraron; esta es la primera.
 - **Recolecciones:** recoger el trabajo de cada alumno de una carpeta acordada.
 - **Abrir** una página o una app permitida en el equipo del alumno.
 
+### Al terminar la hora
+
+- **Terminar la clase**, bajo la tarjeta de la clase en el menú: detiene en un paso lo que quedó
+  activo (transmisión, proyección, control, pausa, restricciones, temporizador, encuesta) y deja la
+  ventana de cada alumno como recién abierta, con la tarjeta «La clase terminó». Opcionalmente
+  recoge el trabajo antes y cancela un apagado programado (por omisión se conserva). Muestra el
+  resultado por alumno con «Reintentar a los que faltan»; quien estaba desconectado lo recibe al
+  volver. No borra ningún archivo.
+
 ### Control del equipo (Windows)
 
 - **Restricciones** de la clase: bloquear apps y filtrar sitios web, siempre reversibles.

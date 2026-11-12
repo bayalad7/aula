@@ -1,6 +1,6 @@
 ---
 titulo: "Tareas frecuentes"
-resumen: "Mostrar tu pantalla o la de un alumno, mandar avisos, pausar las pantallas, dar tiempo a un ejercicio, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla y cambiar de canal."
+resumen: "Mostrar tu pantalla o la de un alumno, mandar avisos, pausar las pantallas, dar tiempo a un ejercicio, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla, cambiar de canal y terminar la clase."
 grupo: "Tareas frecuentes"
 orden: 60
 pantallas: []
@@ -294,6 +294,41 @@ pulsa **Guardar**. Los equipos que no lo permiten se omiten y se nombran.
 - **Cuándo no se puede:** con su sesión bloqueada o un aviso de administrador en pantalla
   («¿Quieres permitir que esta aplicación haga cambios?»), y en equipos sin Windows o con una
   versión de Aula anterior (su ficha dice «Tomar una captura de su pantalla: No»).
+
+## Terminar la clase
+
+Al acabar la hora, deja el laboratorio limpio para el siguiente grupo con un solo botón:
+
+1. Pulsa **Terminar la clase**, en el menú, debajo de la tarjeta «Clase abierta · canal».
+2. Revisa la lista **Sigue activo**: transmisión, proyección, control remoto, pantallas en pausa,
+   restricciones, temporizador, encuesta abierta y apagado programado.
+3. Si quieres, marca:
+   - **Recoger «actividad» antes de terminar**: recoge tu última recolección de quien falte y
+     espera hasta un minuto (los alumnos ven el aviso de siempre).
+   - **Cancelar el apagado programado**: un apagado o reinicio pendiente **no** se cancela si no
+     lo marcas, por si programaste el apagado de fin de día a propósito.
+4. Pulsa **Terminar la clase**.
+
+Aula detiene cada cosa con su botón de siempre y después pide a cada equipo que deje su ventana
+como recién abierta: sin código, avisos, tarjetas de archivos ni encuestas, con la mano bajada.
+El alumno ve una tarjeta **«La clase terminó»** con la hora y lo que se quitó. **No se borra
+ningún archivo**: lo que está en `Documentos\Aula` del alumno, y tus capturas, recolecciones y
+plantillas, se quedan.
+
+El diálogo muestra después qué se hizo y el resultado por alumno:
+
+- **Limpio**: su ventana quedó vacía.
+- **Limpio en parte (versión anterior)**: su Aula es más vieja; solo se le quitó el código.
+- **Sin acuse** o **Desconectado: lo recibe al volver**: en cuanto ese equipo se vuelva a conectar,
+  recibe el fin de clase sin que hagas nada.
+- **No se pudieron quitar las restricciones**: pulsa **Reintentar a los que faltan**. Si sigue
+  fallando, se quitan solas al apagar el equipo o cerrar la sesión.
+
+Tu consola queda **sin clase**: se vacían el historial de código, «Últimos envíos», las manos,
+los mensajes, las encuestas y los envíos de archivos. Sigues en el mismo canal, lista para el
+siguiente grupo. Pulsar **Terminar la clase** dos veces seguidas no rompe nada.
+
+{{diagrama:22-terminar-clase}}
 
 ## Cambiar de canal o de nombre
 

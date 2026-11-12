@@ -548,3 +548,41 @@ func TestWorkFolderReaderProxy(t *testing.T) {
 		t.Fatalf("too large = %v", err)
 	}
 }
+
+func TestPauseProxy(t *testing.T) {
+	cur := &Current{}
+	if err := (Pause{Helper: cur}).Show(platform.PauseText{Title: "x"}); !errors.Is(err, ErrNoHelper) {
+		t.Fatalf("show without helper = %v", err)
+	}
+	if err := (Pause{Helper: cur}).Hide(); err != nil {
+		t.Fatalf("hide without helper = %v", err)
+	}
+	if err := (Pause{Helper: cur}).Yield(true); err != nil {
+		t.Fatalf("yield without helper = %v", err)
+	}
+	var mu sync.Mutex
+	var calls []string
+	service, _ := linkPair(t, nil, func(_ context.Context, name string, data json.RawMessage) (any, error) {
+		mu.Lock()
+		calls = append(calls, name+" "+string(data))
+		mu.Unlock()
+		return nil, nil
+	}, nil)
+	cur.Set(service)
+	p := Pause{Helper: cur}
+	if err := p.Show(platform.PauseText{Title: "Tu profesor pausó esta computadora", Message: "Miren"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.Yield(true); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.Hide(); err != nil {
+		t.Fatal(err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	want := []string{`pause.show {"Title":"Tu profesor pausó esta computadora","Message":"Miren","Detail":"","Note":""}`, `pause.yield true`, `pause.hide null`}
+	if strings.Join(calls, "|") != strings.Join(want, "|") {
+		t.Fatalf("calls %q", calls)
+	}
+}

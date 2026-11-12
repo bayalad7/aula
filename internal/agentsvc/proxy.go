@@ -59,6 +59,8 @@ type Ready struct {
 	// Present: monitor capture, an H.264 encoder and windows that can be
 	// excluded from the capture, for student.present.* (§5.24).
 	Present bool `json:"present"`
+	// Pause: the pause window on every monitor, for screen.freeze (§5.9).
+	Pause bool `json:"pause"`
 }
 
 // Binding is a call of the window (View, Copy…) forwarded to the agent.

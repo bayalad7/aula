@@ -109,7 +109,8 @@
   // pantalla vista. No queda encima de las demás ni toma el foco.
   let compacto = false;
   // Lo que el alumno aún no ve: código y archivos «Nuevo» y avisos abiertos.
-  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + archivosNuevos() + recoNuevas() + encuestasNuevas() + avisos.length;
+  const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + archivosNuevos() + recoNuevas() + encuestasNuevas() + avisos.length
+    + ($("tarea-nuevo").hidden ? 0 : 1);
   function pintarCompacto() {
     const v = { canal: status.channel, profesor: status.teacher };
     $("compacto").dataset.estado = status.state;
@@ -146,7 +147,7 @@
   // El estado vacío se va con el primer código o el primer archivo.
   let nCodigos = 0;
   let nRecolecciones = 0;
-  function pintarListaVacia() { empty.hidden = nCodigos + nArchivos + nRecolecciones + nEncuestas > 0; }
+  function pintarListaVacia() { empty.hidden = nCodigos + nArchivos + nRecolecciones + nEncuestas > 0 || !$("tarea").hidden; }
 
   // Identificadores de Monaco/protocolo → gramática de Prism.
   const aliases = {
@@ -841,9 +842,36 @@
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = String(s % 60).padStart(2, "0");
     return h ? h + ":" + String(m).padStart(2, "0") + ":" + r : m + ":" + r;
   };
+  // La tarjeta con lo que hay que hacer (nota de interfaz 18): solo si el profesor escribió una
+  // descripción. «Nuevo» cuando llega un temporizador distinto, no al abrir la ventana ni al
+  // reenviarse el mismo al reconectar.
+  let tareaId = "";
+  let tareaPrimeraVez = true;
+  function pintarTarea(v) {
+    const d = v.state !== "none" ? v.description || "" : "";
+    $("tarea").hidden = !d;
+    if (d) {
+      $("tarea-titulo").textContent = T("tarea.titulo", { nombre: v.label || T("temporizador.sinNombre") });
+      $("tarea-texto").textContent = d;
+      if (v.timerId !== tareaId) $("tarea-nuevo").hidden = tareaPrimeraVez;
+    } else {
+      $("tarea-nuevo").hidden = true;
+    }
+    tareaId = d ? v.timerId : "";
+    tareaPrimeraVez = false;
+    pintarListaVacia();
+    title();
+    pintarCompacto();
+  }
+  $("tarea-nuevo").textContent = T("codigo.nuevo");
+  const tareaVista = () => { if (!$("tarea-nuevo").hidden) { $("tarea-nuevo").hidden = true; title(); pintarCompacto(); } };
+  $("tarea").addEventListener("focusin", tareaVista);
+  $("tarea").addEventListener("pointerdown", tareaVista);
+
   function renderTemporizador(v) {
     temporizador = v;
     temporizadorEn = performance.now();
+    pintarTarea(v);
     clearInterval(tic);
     if (v.state === "running") tic = setInterval(pintarTemporizador, 1000);
     pintarTemporizador();
@@ -856,6 +884,7 @@
     const falta = Math.max(0, v.remainingMs - (performance.now() - temporizadorEn));
     const termino = v.state === "ended" || (v.state === "running" && falta <= 0);
     const texto = termino ? T("temporizador.termino", { nombre }) : T("temporizador.cuenta", { nombre, tiempo: hmmss(falta) });
+    $("tarea-tiempo").textContent = termino ? T("tarea.termino") : hmmss(falta);
     for (const [caja, linea] of [["temporizador", "temporizador-texto"], ["compacto-temporizador", "compacto-temporizador-texto"]]) {
       $(caja).hidden = v.state === "none";
       $(linea).textContent = texto;

@@ -100,6 +100,9 @@ await f("61-temporizador-termino", "temporizador-final", { pasos: finTemporizado
 await f("62-temporizador-oscuro", "temporizador", { oscuro: true });
 await f("63-temporizador-angosta", "temporizador", { w: 480, h: 360 });
 await f("64-compacto-temporizador", "temporizador", { w: 380, h: 80, pasos: click("#compactar") });
+// Nota de interfaz 18: la tarjeta con lo que hay que hacer.
+await f("64b-temporizador-tarea", "temporizador-tarea");
+await f("64c-temporizador-tarea-oscuro-angosta", "temporizador-tarea", { oscuro: true, w: 480, h: 360 });
 
 // Archivos del profesor (prompt 10.9): tarjetas en la lista, renombrado, fallo, oscuro, angosta y compacto.
 await f("65-archivos-recibidos", "archivos");

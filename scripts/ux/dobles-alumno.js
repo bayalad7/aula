@@ -110,6 +110,9 @@
   // El temporizador del profesor (classtimer.View, prompt 10.8). Escenas: temporizador
   // (4:32), temporizador-final (0:42, último minuto) y temporizador-fin (terminó).
   const timer = { temporizador: { state: "running", timerId: "t-1", label: "Ejercicio 1", remainingMs: 272000, justEnded: false },
+    // Nota de interfaz 18: con lo que hay que hacer, en su tarjeta.
+    "temporizador-tarea": { state: "running", timerId: "t-1", label: "Ejercicio 1", remainingMs: 272000, justEnded: false,
+      description: "Resuelve los ejercicios 3 a 5 de la hoja.\nGuarda tu archivo como ejercicio1.py en Documentos\\Aula." },
     "temporizador-final": { state: "running", timerId: "t-1", label: "Ejercicio 1", remainingMs: 42000, justEnded: false },
     "temporizador-fin": { state: "ended", timerId: "t-1", label: "Ejercicio 1", remainingMs: 0, justEnded: false },
   }[scene] || { state: "none", timerId: "", label: "", remainingMs: 0, justEnded: false };

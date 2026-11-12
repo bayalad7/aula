@@ -100,3 +100,48 @@ func waitFor(t *testing.T, what string, cond func() bool) {
 		time.Sleep(20 * time.Millisecond)
 	}
 }
+
+// TestTimerDescription: a new timer with what to do (nota de interfaz 18)
+// reaches the window, notifies once without raising, and its resend after a
+// reconnection does not notify again. The description is never logged.
+func TestTimerDescription(t *testing.T) {
+	got := &heard{}
+	c := startLiveConsoleWith(t, got.onMessage)
+	cfg := Config{Channel: "1", ConsolePublicKey: c.key, Direct: c.addr}
+	pub, _ := cfg.Validate()
+	a, rec := newTestApp(nil)
+	logs := &bytes.Buffer{}
+	a.log = slog.New(slog.NewTextHandler(logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	a.cfg, a.pub = cfg, pub
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	a.start(ctx)
+	defer a.stop()
+	s := c.waitAgent(t, "agent", func(s session.Session) bool { return s.Can(protocol.CapTimer) })
+	waitConnected(t, a)
+
+	start := protocol.TimerStart{TimerID: protocol.NewID(), Label: "Ejercicio 2", DurationS: 600, RemainingMS: 600_000,
+		Description: "Resuelve el problema confidencial 3."}
+	for i := 0; i < 2; i++ { // the second is the resend of the same timer
+		id, err := c.console.Send(ctx, s.ID, start)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got.wait(t, "running", func(e protocol.Envelope) bool {
+			p, ok := e.Payload.(protocol.TimerAck)
+			return ok && p.RefID == id && p.Status == protocol.TimerRunning
+		})
+	}
+	if v := a.View().Timer; v.Description != start.Description {
+		t.Fatalf("view = %+v", v)
+	}
+	rec.mu.Lock()
+	notified, raised := rec.notified, rec.raised
+	rec.mu.Unlock()
+	if notified != 1 || raised != 0 {
+		t.Fatalf("notified %d, raised %d: once, without raising", notified, raised)
+	}
+	if strings.Contains(logs.String(), "confidencial") {
+		t.Errorf("the description is in the log:\n%s", logs.String())
+	}
+}

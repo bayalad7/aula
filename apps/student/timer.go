@@ -24,8 +24,14 @@ func (a *App) handleTimer(ctx context.Context, cl *transport.Client, env protoco
 	var acks []protocol.TimerAck
 	switch p := env.Payload.(type) {
 	case protocol.TimerStart:
+		prev := a.countdown.View().TimerID
 		acks = a.countdown.Start(env.ID, p)
 		a.log.Info("timer started", "timer", p.TimerID, "duration_s", p.DurationS, "remaining_ms", p.RemainingMS)
+		// A new timer with what to do: its card says «Nuevo» (nota de interfaz 18). Never
+		// raise; a resend of the same timer does not tell again.
+		if p.Description != "" && p.TimerID != prev {
+			defer a.notify()
+		}
 	case protocol.TimerExtend:
 		ack, ok := a.countdown.Extend(env.ID, p)
 		if !ok {

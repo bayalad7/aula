@@ -189,6 +189,8 @@ window.AulaTextos = Object.freeze({
   "aviso.personal": "Mensaje para ti",
   "aviso.tuMensaje": "Tú escribiste: «{texto}»",
   "temporizador.sinNombre": "Tiempo",
+  "tarea.titulo": "Qué hacer: {nombre}",
+  "tarea.termino": "terminó",
   "temporizador.cuenta": "{nombre} · {tiempo}",
   "temporizador.termino": "{nombre} · terminó",
   "temporizador.finTitulo": "Se acabó el tiempo",

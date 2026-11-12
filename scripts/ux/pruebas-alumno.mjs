@@ -480,6 +480,31 @@ await caso("temporizador", "un-codigo", async (p) => {
   ok(await p.evaluate(() => document.getElementById("temporizador").hidden && document.getElementById("temporizador-fin").hidden),
     "al detenerlo quedó la insignia o el aviso");
 });
+// Nota de interfaz 18: lo que hay que hacer llega en una tarjeta arriba de la lista, con «Nuevo» y
+// sin quitar el foco; el mismo temporizador otra vez (al reconectar) no vuelve a marcarla; al
+// quitarse el temporizador, la tarjeta se va.
+await caso("temporizador-tarea", "un-codigo", async (p) => {
+  await p.focus("#snippets > li .copy");
+  const v = { state: "running", timerId: "t-2", label: "Ejercicio 2", remainingMs: 300000, justEnded: false,
+    description: "Resuelve 3 a 5.\nGuarda tu archivo." };
+  await emitir(p, "aula:timer", v);
+  await sleep(100);
+  const r = await p.evaluate(() => ({ tarjeta: !document.getElementById("tarea").hidden,
+    titulo: document.getElementById("tarea-titulo").textContent, texto: document.getElementById("tarea-texto").textContent,
+    nuevo: !document.getElementById("tarea-nuevo").hidden, foco: document.activeElement.classList.contains("copy"),
+    lineas: getComputedStyle(document.getElementById("tarea-texto")).whiteSpace }));
+  ok(r.tarjeta && r.titulo === "Qué hacer: Ejercicio 2" && r.texto === "Resuelve 3 a 5.\nGuarda tu archivo.", "tarjeta: " + JSON.stringify(r));
+  ok(r.nuevo, "la tarjeta no dice «Nuevo»");
+  ok(r.foco, "la tarjeta le quitó el foco al alumno");
+  ok(r.lineas === "pre-line", "no respeta los saltos de línea");
+  await p.click("#tarea");
+  await emitir(p, "aula:timer", v); // el reenvío al reconectar
+  await sleep(100);
+  ok(await p.evaluate(() => document.getElementById("tarea-nuevo").hidden), "el reenvío volvió a marcarla «Nuevo»");
+  await emitir(p, "aula:timer", { state: "none", timerId: "", label: "", remainingMs: 0, justEnded: false });
+  await sleep(100);
+  ok(await p.evaluate(() => document.getElementById("tarea").hidden), "la tarjeta sigue sin temporizador");
+});
 await caso("temporizador-compacto", "temporizador", async (p) => {
   await p.click("#compactar");
   await emitir(p, "aula:timer", { state: "ended", timerId: "t-1", label: "Ejercicio 1", remainingMs: 0, justEnded: true });

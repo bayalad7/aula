@@ -246,10 +246,10 @@ func (h *helper) event(ctx context.Context, app *App, name string, data json.Raw
 		app.raise()
 	case agentsvc.EventNotify:
 		app.notify()
-	case agentsvc.EventMaximize:
-		var on bool
-		if json.Unmarshal(data, &on) == nil {
-			app.maximize(on)
+	case agentsvc.EventHold:
+		var h agentsvc.HoldArgs
+		if json.Unmarshal(data, &h) == nil {
+			app.hold(h.On, protocol.BroadcastMode(h.Mode))
 		}
 	case agentsvc.EventOnTop:
 		var on bool

@@ -149,6 +149,9 @@ func TestTextsAreComplete(t *testing.T) {
 	for _, c := range []string{ControlActive, ControlPaused} {
 		need("banda.control."+c, "events.go (Status.Control)")
 	}
+	for _, m := range []protocol.BroadcastMode{protocol.BroadcastWindow, protocol.BroadcastFullscreen} {
+		need("banda.modo."+string(m), "events.go (BroadcastView.Mode)")
+	}
 
 	for key, where := range used {
 		if !defined[key] {

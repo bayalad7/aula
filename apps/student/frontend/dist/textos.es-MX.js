@@ -238,6 +238,8 @@ window.AulaTextos = Object.freeze({
   "banda.control.paused": "{profesor} (canal {canal}) está controlando tu equipo. Su control está en pausa mientras usas tu mouse o tu teclado.",
   "banda.vista": "Tu pantalla la está viendo {profesor} (canal {canal})",
   "banda.recibiendo": "Estás viendo la pantalla de {profesor} (canal {canal})",
+  "banda.modo.window": "· Se queda encima hasta que termine; puedes moverla y cambiarle el tamaño.",
+  "banda.modo.fullscreen": "· Pantalla completa hasta que termine. Si se corta la conexión, se quita sola.",
   "banda.recibiendoAlumno": "Estás viendo la pantalla de {equipo} (canal {canal})",
   "banda.conectandoAlumno": "Conectando con la pantalla de {equipo}…",
   "banda.mostrando": "Tu pantalla se está mostrando a la clase",

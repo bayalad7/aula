@@ -1069,6 +1069,13 @@
       : bcSource ? T("banda.recibiendoAlumno", { equipo: bcSource, canal: b.channel })
       : T("banda.recibiendo", { profesor: b.teacher, canal: b.channel });
     wait.textContent = bcSource ? T("banda.conectandoAlumno", { equipo: bcSource }) : T("banda.conectando");
+    // En una ventana o en pantalla completa (regla 12) la ventana no se cierra ni se encoge hasta
+    // que termine; la franja lo dice. Sin modo (una consola anterior) es la vista de siempre.
+    const modo = b.active ? b.mode || "" : "";
+    bcSection.dataset.modo = modo;
+    const BM = "banda.modo."; // + BroadcastView.Mode (window, fullscreen)
+    $("bc-modo").textContent = modo ? T(BM + modo) : "";
+    $("compactar").hidden = !!modo;
     title();
     if (b.active) salirDeCompacto();
     if (!b.active) closeConnection();

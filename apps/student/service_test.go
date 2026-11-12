@@ -41,6 +41,13 @@ func startLiveConsole(t *testing.T) liveConsole {
 // errors) to onMessage.
 func startLiveConsoleWith(t *testing.T, onMessage func(context.Context, *transport.Conn, protocol.Envelope)) liveConsole {
 	t.Helper()
+	return startLiveConsoleOpts(t, onMessage, transport.Options{})
+}
+
+// startLiveConsoleOpts is startLiveConsoleWith with the server's timings in
+// opts (TLS and Logger are filled in).
+func startLiveConsoleOpts(t *testing.T, onMessage func(context.Context, *transport.Conn, protocol.Envelope), opts transport.Options) liveConsole {
+	t.Helper()
 	dir := t.TempDir()
 	id, err := security.CreateIdentity(dir, false)
 	if err != nil {
@@ -56,7 +63,8 @@ func startLiveConsoleWith(t *testing.T, onMessage func(context.Context, *transpo
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	reg := session.NewRegistry(0)
-	srv := transport.NewServer(transport.Options{TLS: security.ServerTLS(cert), Logger: quiet})
+	opts.TLS, opts.Logger = security.ServerTLS(cert), quiet
+	srv := transport.NewServer(opts)
 	console := &session.Console{Channel: "1", Registry: reg, Identity: id, CertSHA256: cert.SHA256, Logger: quiet, OnMessage: onMessage}
 	var wg sync.WaitGroup
 	wg.Add(2)

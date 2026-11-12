@@ -588,11 +588,29 @@ await caso("banda-energia", "energia-cuenta", async (p) => {
   await emitir(p, "aula:power", { notice: null, teacher: "", channel: "" });
   ok(await p.evaluate(() => document.getElementById("power").hidden), "la banda sigue sin orden");
 });
-await caso("banda-transmision", "transmision", async (p) => {
-  await bandaPermanente(p, "#broadcast .franja");
-  await emitir(p, "aula:broadcast", { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "" });
-  ok(await p.evaluate(() => document.getElementById("broadcast").hidden), "la vista sigue al terminar la transmisión");
-});
+// Transmisión del profesor (regla 12): en los dos modos la franja se ve y no se cierra, dice el
+// modo, y la página no tiene control para encoger ni cerrar la vista (el modo compacto se oculta;
+// minimizar y cerrar los quita la ventana nativa). Al terminar, todo vuelve.
+for (const [escena, modo] of [["transmision", "window"], ["transmision-completa", "fullscreen"]]) {
+  await caso("banda-transmision-" + modo, escena, async (p) => {
+    await bandaPermanente(p, "#broadcast .franja");
+    const v = await p.evaluate(() => ({
+      modo: document.getElementById("broadcast").dataset.modo,
+      nota: document.getElementById("bc-modo").textContent,
+      compactar: document.getElementById("compactar").hidden,
+      cerrar: [...document.querySelectorAll("#broadcast button, #broadcast [role=button]")]
+        .filter((b) => /cerrar|minimi|salir|ocultar/i.test((b.textContent || "") + (b.getAttribute("aria-label") || "") + (b.title || ""))).length,
+    }));
+    ok(v.modo === modo, "modo de la vista: " + v.modo);
+    ok(v.nota.length > 0, "la franja no dice el modo");
+    ok(v.compactar, "se puede encoger la ventana durante la transmisión");
+    ok(v.cerrar === 0, "hay un control para cerrar o minimizar la vista");
+    await emitir(p, "aula:broadcast", { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "" });
+    const fin = await p.evaluate(() => ({ vista: document.getElementById("broadcast").hidden, compactar: document.getElementById("compactar").hidden }));
+    ok(fin.vista, "la vista sigue al terminar la transmisión");
+    ok(!fin.compactar, "el modo compacto no vuelve al terminar la transmisión");
+  });
+}
 // Control remoto (reglas 37-41): la banda no se cierra ni corta el control; al soltar se va,
 // y el aviso de fin aparece en la esquina sin quitarle el foco al alumno.
 await caso("banda-control", "control", async (p) => {

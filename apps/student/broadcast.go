@@ -58,17 +58,17 @@ func (a *App) onBroadcastView(v broadcast.View) error {
 	a.mu.Unlock()
 	a.setStatus(st)
 	a.emit(EventBroadcast, a.broadcastView(v, st))
-	if v.Active {
-		a.raise()
-	}
-	a.maximize(v.Active)
-	a.log.Info("broadcast view", "active", v.Active, "broadcast", v.BroadcastID)
+	// Brings the window forward and holds it in the mode; when the broadcast
+	// ends, for whatever reason (stop, the connection closed, the console
+	// stopped answering), it goes back as it was (rules 10 and 12).
+	a.hold(v.Active, v.Mode)
+	a.log.Info("broadcast view", "active", v.Active, "broadcast", v.BroadcastID, "mode", v.Mode)
 	return nil
 }
 
 func (a *App) broadcastView(v broadcast.View, st Status) BroadcastView {
 	return BroadcastView{Active: v.Active, BroadcastID: v.BroadcastID, Width: v.Width, Height: v.Height,
-		FPS: v.FPS, Teacher: st.Teacher, Channel: st.Channel, Source: v.Source}
+		FPS: v.FPS, Teacher: st.Teacher, Channel: st.Channel, Source: v.Source, Mode: string(v.Mode)}
 }
 
 func (a *App) onBroadcastSignal(s broadcast.Signal) { a.emit(EventSignal, s) }

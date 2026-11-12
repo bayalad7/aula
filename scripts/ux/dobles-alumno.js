@@ -74,9 +74,11 @@
     web: { policyId: "p-web", mode: "deny", items: ["youtube.com", "tiktok.com", "instagram.com", "facebook.com", "x.com"], total: 11 },
   } : { apps: null, web: null };
 
-  const broadcast = scene === "transmision" || scene === "transmision-alumno"
+  // «transmision»: en una ventana; «transmision-completa»: en pantalla completa (regla 12).
+  const broadcast = scene === "transmision" || scene === "transmision-completa" || scene === "transmision-alumno"
     ? { active: true, broadcastId: "b-1", width: 1920, height: 1080, fps: 15, teacher, channel,
-      source: scene === "transmision-alumno" ? "LAB3-PC07" : "" }
+      source: scene === "transmision-alumno" ? "LAB3-PC07" : "",
+      mode: scene === "transmision-completa" ? "fullscreen" : scene === "transmision" ? "window" : "" }
     : { active: false, broadcastId: "", width: 0, height: 0, fps: 0, teacher: "", channel: "", source: "" };
 
   // Tu pantalla mostrada a la clase (broadcast.PresentView, prompt 12.1): la decide el

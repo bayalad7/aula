@@ -114,6 +114,9 @@ type BroadcastView struct {
 	// Source is the classmate whose screen this is; "" for the teacher's
 	// (§5.24).
 	Source string `json:"source,omitempty"`
+	// Mode is "window" or "fullscreen" (v0.15): the window cannot be closed,
+	// nor minimized, until the broadcast ends; "" is v0.4's maximized window.
+	Mode string `json:"mode,omitempty"`
 }
 
 // Board is the list of snippets, oldest first.

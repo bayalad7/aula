@@ -51,6 +51,7 @@ await f("33-otra-clave-detalles", "otra-clave", { pasos: click("#estado-detalles
 // Transparencia y control del profesor
 await f("14-pantalla-vista", "pantalla-vista");
 await f("15-transmision", "transmision");
+await f("15b-transmision-completa", "transmision-completa");
 await f("16-restricciones", "restricciones");
 await f("17-restricciones-detalles", "restricciones", { pasos: click("#restr-toggle") });
 await f("18-app-cerrada", "restricciones", { pasos: emitir("aula:app-closed", { app: "steam" }) });

@@ -21,6 +21,7 @@ import (
 	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/broadcast"
 	"github.com/bayalad7/aula/internal/platform"
+	"github.com/bayalad7/aula/internal/protocol"
 )
 
 // singleInstanceID keeps one agent per user session: opening the app again
@@ -118,8 +119,8 @@ func main() {
 }
 
 // runWindow runs the Wails window of app (the standalone agent or the
-// helper). onStartup runs once the window exists; raise and maximize are
-// wired here for both.
+// helper). onStartup runs once the window exists; raise and hold are wired
+// here for both, until the page is loaded (attachWindow).
 func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func()) error {
 	files, err := frontend()
 	if err != nil {
@@ -144,13 +145,12 @@ func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func())
 			Assets: files,
 		},
 		OnStartup: func(ctx context.Context) {
-			app.raise = func() { raiseWindow(ctx) } // until the page is loaded (attachWindow)
-			app.maximize = func(on bool) {
+			app.raise = func() { raiseWindow(ctx, nil) } // until the page is loaded (attachWindow)
+			app.hold = func(on bool, mode protocol.BroadcastMode) {
 				if on {
-					runtime.WindowMaximise(ctx)
-				} else {
-					runtime.WindowUnmaximise(ctx)
+					raiseWindow(ctx, nil)
 				}
+				holdWithWails(wailsShell{ctx}, on, mode)
 			}
 			app.onTop = func(on bool) { runtime.WindowSetAlwaysOnTop(ctx, on) }
 			onStartup(ctx)
@@ -164,7 +164,7 @@ func runWindow(app *App, onStartup func(ctx context.Context), onShutdown func())
 			if win == nil {
 				return false
 			}
-			return win.beforeClose(ctx)
+			return win.beforeClose()
 		},
 		OnShutdown: func(context.Context) {
 			if win != nil {

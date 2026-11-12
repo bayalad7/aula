@@ -72,9 +72,16 @@ type App struct {
 	// nil until it exists.
 	compactHook func(on bool) error
 	trayText    func(text string)
-	quitWindow  func()        // before runtime.Quit: let the window close (window.go)
-	maximize    func(on bool) // maximize (broadcast) or restore the window
-	onTop       func(on bool) // keep the window above the others (power notice)
+	quitWindow  func() // before runtime.Quit: let the window close (window.go)
+	// hold brings the window forward and keeps it up while the teacher
+	// broadcasts (rule 12), in mode ("" is v0.4's maximized window); with on
+	// false it puts the window back as it was (window.go).
+	hold  func(on bool, mode protocol.BroadcastMode)
+	onTop func(on bool) // keep the window above the others (power notice)
+
+	// connOpts are the connection's timings; zero is §3.4's (tests shorten
+	// them).
+	connOpts transport.Options
 
 	// The frontend reports whether it can play the broadcast; start waits up
 	// to mediaWait for it (0: do not wait) before declaring the capability.
@@ -133,7 +140,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a := &App{
 		cfg: cfg, pub: pub, cfgErr: cfgErr, hello: hello,
 		board: codedist.NewBoard(0), desk: participation.NewDesk(), countdown: classtimer.NewCountdown(nil), ballot: poll.NewBallot(nil), clip: clip, clipEr: clipErr, log: log,
-		emit: func(string, any) {}, raise: func() {}, notify: func() {}, maximize: func(bool) {}, onTop: func(bool) {},
+		emit: func(string, any) {}, raise: func() {}, notify: func() {}, hold: func(bool, protocol.BroadcastMode) {}, onTop: func(bool) {},
 		mediaReady: make(chan struct{}), restart: make(chan struct{}, 1),
 	}
 	a.recv = &codedist.Receiver{Board: a.board, OnBoard: a.onBoard, OnNotice: a.onNotice}
@@ -235,6 +242,7 @@ func (a *App) runAgent(ctx context.Context) (stop func()) {
 		OnState:          a.onState,
 		OnDiagnostic:     a.onDiagnostic,
 		OnCause:          a.onCause,
+		Conn:             a.connOpts,
 		Logger:           a.log,
 	}
 	actx, cancel := context.WithCancel(ctx)

@@ -75,15 +75,7 @@ body[data-panel] .col-sistema { display: none; }
 .ficha dt { color: var(--c-texto-suave); }
 .ficha dd { margin: 0; overflow-wrap: anywhere; }
 /* Qué puede hacer su equipo: grilla de 5 iconos; verde con ✓ si puede, gris con ✗ si no. */
-#ficha-puede { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--e-2); }
-.capacidad { position: relative; display: grid; place-items: center; height: 2.75rem; border: 1px solid var(--c-borde);
-  border-radius: var(--r-md); background: var(--c-superficie-2); color: var(--c-texto-suave); }
-.capacidad > .icono:first-child { width: 1.4rem; height: 1.4rem; }
-.capacidad--si { border-color: var(--c-conectado-solido); background: var(--c-conectado-fondo); color: var(--c-conectado); }
-.capacidad__marca { position: absolute; right: 3px; bottom: 3px; width: 0.8rem; height: 0.8rem; }
-/* En las orillas, el tooltip se alinea al borde para no salirse de la ficha. */
-#ficha-puede > :nth-child(5n + 1)[data-tip]:hover::after { left: 0; transform: none; }
-#ficha-puede > :nth-child(5n)[data-tip]:hover::after { left: auto; right: 0; transform: none; }
+/* La grilla (.capacidades, .capacidad) es del sistema de diseño; la usa también la app del alumno. */
 .desglose dd.pila-mini { display: grid; }
 .celda-principal .equipo { white-space: nowrap; }
 
@@ -141,8 +133,6 @@ a.insignia:hover { text-decoration: underline; }
 .archivos-elegidos:empty { display: none; }
 .archivo-elegido { align-items: center; gap: var(--e-2); padding: var(--e-1) var(--e-2); border: 1px solid var(--c-borde); border-radius: var(--r-md); }
 .archivo-elegido .nombre { min-width: 0; overflow-wrap: anywhere; }
-.archivos-destino { align-items: center; gap: var(--e-1); flex-wrap: nowrap; }
-.archivos-destino input { flex: 1; min-width: 0; }
 .archivos-nueva-plantilla { align-items: flex-end; }
 .archivos-nueva-plantilla[hidden] { display: none; }
 
@@ -152,7 +142,7 @@ a.insignia:hover { text-decoration: underline; }
 .fila-app { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 2fr) auto; gap: var(--e-1); align-items: center; }
 .fila-app input { min-width: 0; }
 .fila-app__ruta { font-size: var(--t-sm); }
-@media (max-width: 720px) { .fila-app { grid-template-columns: 1fr auto; } .fila-app__ruta { grid-column: 1 / -1; grid-row: 2; } }
+@media (max-width: 720px) { .fila-app { grid-template-columns: 1fr auto; } .fila-app__ruta, .fila-app .entrada:has(.fila-app__ruta) { grid-column: 1 / -1; grid-row: 2; } }
 .abrir-editar { justify-self: start; }
 /* Encuestas (prompt 10.12): las opciones del panel en una línea (número, texto, quitar) y las
    anteriores plegables en Participación. */
@@ -168,3 +158,15 @@ a.insignia:hover { text-decoration: underline; }
 .pg-video video { display: block; width: 100%; max-height: 70vh; object-fit: contain; }
 .pg-video__espera { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--c-video-texto); }
 .pg-video__espera[hidden] { display: none; }
+
+/* Notas de interfaz (2026-11-11). */
+/* 1: la fila y la tarjeta del alumno de la ficha abierta, distintas de la selección. */
+.tabla tbody tr[data-ficha="true"] td:first-child { box-shadow: inset 4px 0 0 var(--c-acento); }
+.tabla tbody tr[data-ficha="true"] td { background: var(--c-superficie-2); }
+.alumno[data-ficha="true"] { outline: 3px solid var(--c-acento); outline-offset: 2px; }
+.dialogo--form .privado-texto { min-height: 6rem; }
+/* 3 y 9: los títulos de las tablas, centrados. */
+.tabla thead th { text-align: center; }
+/* 6: los conteos de la cabecera de Alumnos, de la altura de los botones de al lado. */
+#alumnos-resumen { align-items: center; }
+#alumnos-resumen .insignia { min-height: var(--alto-control); padding: 0 var(--e-3); border-radius: var(--r-md); }

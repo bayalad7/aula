@@ -39,26 +39,28 @@ await f("12-panel-restricciones-activas", "lab-restr-activa", { pasos: click('[d
 await f("13-panel-aviso-error", "lab", { pasos: seq(click('[data-panel="aviso"]'), click("#aviso-enviar")) });
 await f("14-transmitiendo", "lab-transmitiendo");
 await f("15-energia-pendiente", "lab-energia-pendiente");
-// Control remoto (docs/protocol.md §5.16): la ficha, la vista en vivo, la franja, la pausa y el fin.
-const tomar = seq(click(`${fila("LAB3-PC07")} .ficha`), click("#ficha-tomar"), async () => { await sleep(400); });
-await f("54-ficha-tomar-control", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+// Control remoto (docs/protocol.md §5.16): desde la Pantalla grande (las acciones sobre un alumno ya
+// no están en la ficha, nota de interfaz 5), la vista en vivo, la franja, la pausa y el fin.
+const grande = seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB3-PC12"]), click(".alumno__pantalla:not([disabled])"), cuadros(["LAB3-PC07"]));
+const grandeDe = (host) => seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB3-PC12"]),
+  click(`#alumnos-cuadricula [data-clave="r:${host}"] .alumno__pantalla`), cuadros([host]));
+const tomar = seq(grande, click("#pg-tomar"), async () => { await sleep(400); });
+await f("54-ficha-alumno", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
 await f("55-control-vista", "lab", { pasos: tomar });
 await f("56-control-franja", "lab-control");
 await f("57-control-pausa", "lab-control-pausa", { pasos: seq(click("#f-control-ver"), async () => { await sleep(300); }) });
 await f("58-control-oscuro-900x600", "lab-control", { oscuro: true, w: 900, h: 600, pasos: seq(click("#f-control-ver"), async () => { await sleep(300); }) });
 await f("59-control-terminado", "lab", { pasos: seq(tomar, click("#pg-soltar"), async () => { await sleep(400); }) });
-const grande = seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB3-PC12"]), click(".alumno__pantalla:not([disabled])"), cuadros(["LAB3-PC07"]));
 await f("60-miniatura-grande-tomar-control", "lab", { pasos: grande });
 await f("61-miniatura-grande-controlando", "lab", { pasos: seq(grande, click("#pg-tomar"), async () => { await sleep(400); }) });
 
-// Captura de la pantalla de un alumno (docs/protocol.md §5.17): la ficha, la vista previa, guardada,
-// fallida, en lote, durante el control y la carpeta en Ajustes › Acerca de.
+// Captura de la pantalla de un alumno (docs/protocol.md §5.17): desde la Pantalla grande, la vista
+// previa, guardada, fallida, en lote, durante el control y la carpeta en Ajustes › Acerca de.
 const espera = async () => { await sleep(400); };
-const capturar = seq(click(`${fila("LAB3-PC07")} .ficha`), click("#ficha-capturar"), espera);
-await f("62-ficha-tomar-captura", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+const capturar = seq(grande, click("#pg-capturar"), espera);
 await f("63-captura-vista-previa", "lab", { pasos: capturar });
 await f("64-captura-guardada", "lab", { pasos: seq(capturar, click("#cap-guardar"), espera) });
-await f("65-captura-fallida", "lab-captura-falla", { pasos: seq(click(`${fila("LAB3-PC12")} .ficha`), click("#ficha-capturar"), espera) });
+await f("65-captura-fallida", "lab-captura-falla", { pasos: seq(grandeDe("LAB3-PC12"), click("#pg-capturar"), espera) });
 await f("66-captura-tamano-real", "lab", { pasos: seq(capturar, click("#cap-marco"), espera) });
 await f("67-captura-lote", "lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12")), click(fila("lab-ubuntu-02")),
   click('[data-panel="captura"]'), click("#lote-tomar"), espera) });
@@ -101,9 +103,10 @@ await f("91-participacion-temporizador", "lab-temporizador", { ruta: "participac
 await f("92-temporizador-oscuro-900x600", "lab-temporizador", { oscuro: true, w: 900, h: 600, pasos: seq(click('[data-panel="temporizador"]')) });
 await f("93-temporizador-reemplaza", "lab-temporizador", { pasos: click('[data-panel="temporizador"]') });
 await f("79-participacion-ficha", "lab-participacion", { pasos: click(`${fila("LAB3-PC12")} .ficha`) });
-// Mensaje privado a un alumno (prompt 10.7): la ficha, escribiendo, el acuse y oscuro a 900×600.
-const privado = seq(click(`${fila("LAB3-PC07")} .ficha`), click("#privado-abrir"),
-  async (p) => { await p.type("#privado-texto", "Revisa la línea 12: falta un dos puntos"); });
+// Mensaje privado a un alumno (prompt 10.7): su diálogo desde la Pantalla grande (nota de interfaz 7),
+// escribiendo, el acuse y oscuro a 900×600.
+const privado = seq(grande, click("#pg-privado-abrir"),
+  async (p) => { await p.type("#pg-privado-texto", "Revisa la línea 12: falta un dos puntos"); });
 await f("81-privado-escribiendo", "lab", { pasos: privado });
 await f("82-privado-enviado", "lab", { pasos: seq(privado, async (p) => { await p.keyboard.press("Enter"); await sleep(400); }) });
 await f("83-privado-ultimos-envios", "lab", { pasos: seq(privado, async (p) => {
@@ -113,7 +116,7 @@ await f("83-privado-ultimos-envios", "lab", { pasos: seq(privado, async (p) => {
   await sleep(300);
 }) });
 await f("84-privado-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: privado });
-// Durante el control remoto: el campo arriba de su pantalla; lo escrito no le llega.
+// Durante el control remoto: el diálogo sobre su pantalla; lo escrito no le llega.
 const privadoControl = seq(tomar, click("#pg-privado-abrir"), async (p) => { await p.type("#pg-privado-texto", "Fíjate en la línea 12"); });
 // Lo que se escribe en el mensaje no le llega al alumno: ninguna tecla sale por SendRemoteInput
 // (si saliera, se registra como error de la página y el recorrido falla).
@@ -246,7 +249,7 @@ await f("119-panel-abrir-enviado", "lab", { pasos: seq(panelAbrir, escribirUrl("
   async () => { await sleep(400); }) });
 await f("120-panel-abrir-url-invalida", "lab", { pasos: seq(panelAbrir, escribirUrl("file:///C:/Windows"), click("#abrir-enviar"),
   async () => { await sleep(300); }) });
-await f("121-ficha-abrir", "lab", { pasos: seq(click(`${fila("LAB3-PC07")} .ficha`), click("#abrir1-abrir"), click("#abrir1-tipo-app")) });
+await f("121-dialogo-abrir-app", "lab", { pasos: seq(grande, click("#pg-abrir1-abrir"), click("#pg-abrir1-tipo-app")) });
 await f("122-pantalla-grande-abrir", "lab", { pasos: seq(grande, click("#pg-abrir1-abrir")) });
 await f("123-ajustes-apps-permitidas", "datos", { h: 800, pasos: ajustes("apps") });
 await f("124-ajustes-apps-error", "datos", { h: 800, pasos: seq(ajustes("apps"), click("#aj-apps-agregar"), async (p) => {
@@ -285,7 +288,7 @@ await f("136-panel-encuesta-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 6
 // la Pantalla grande, la franja mientras conecta y mientras dura, la vista en grande, un fallo del
 // equipo y la confirmación cuando ya transmites tu pantalla.
 const fichaPc07 = click(`${fila("LAB3-PC07")} .ficha`);
-await f("137-ficha-proyectar", "lab", { pasos: fichaPc07 });
+await f("137-ficha-marcada", "lab", { pasos: fichaPc07 });
 await f("138-proyectar-conectando", "lab-proyectar-conectando", { pasos: fichaPc07 });
 await f("139-proyectando-franja", "lab-proyectando", { pasos: fichaPc07 });
 await f("140-proyectando-ver", "lab-proyectando", { pasos: seq(click("#f-proyectando-ver"), async () => { await sleep(300); }) });
@@ -294,7 +297,7 @@ await f("141-proyectar-fallo", "lab-proyectando", { pasos: async (p) => {
     receivers: 0, eligible: 0, ended: "failed", reason: "capture_unavailable" }));
   await sleep(300);
 } });
-await f("142-proyectar-reemplaza-transmision", "lab-transmitiendo", { pasos: seq(fichaPc07, click("#ficha-proyectar"), async () => { await sleep(200); }) });
+await f("142-proyectar-reemplaza-transmision", "lab-transmitiendo", { pasos: seq(grande, click("#pg-proyectar"), async () => { await sleep(200); }) });
 await f("143-proyectando-oscuro-900x600", "lab-proyectando", { oscuro: true, w: 900, h: 600, pasos: seq(click("#f-proyectando-ver"), async () => { await sleep(300); }) });
 await f("144-pantalla-grande-proyectar", "lab", { pasos: grande });
 
@@ -304,6 +307,19 @@ await f("38-codigo-900x600", "datos", { w: 900, h: 600, ruta: "codigo" });
 await f("39-alumnos-oscuro", "lab", { oscuro: true, pasos: click(fila("LAB3-PC07")) });
 await f("40-codigo-oscuro", "datos", { oscuro: true, ruta: "codigo" });
 await f("41-ficha-alumno-oscuro", "lab-errores", { oscuro: true, pasos: click(`${fila("lab-ubuntu-02")} .ficha`) });
+
+// Notas de interfaz 001–011 y los iconos en botones y campos (2026-11-11).
+await f("145-alumnos-cabecera-y-tabla", "lab");
+await f("146-barra-tooltip", "lab", { w: 900, h: 600, pasos: async (p) => { await p.hover('[data-panel="temporizador"]'); await sleep(200); } });
+await f("147-dialogo-privado", "lab", { pasos: seq(grande, click("#pg-privado-abrir")) });
+await f("148-dialogo-abrir-pagina", "lab", { pasos: seq(grande, click("#pg-abrir1-abrir")) });
+await f("149-codigo-pie-envio", "lab", { ruta: "codigo" });
+await f("150-historial-titulos", "lab", { ruta: "codigo", pasos: async (p) => { await p.evaluate(() => document.getElementById("h-historial").scrollIntoView()); } });
+await f("151-archivos-enviar", "lab", { ruta: "archivos" });
+await f("152-archivos-enviar-oscuro-900x600", "lab", { ruta: "archivos", oscuro: true, w: 900, h: 600 });
+await f("153-panel-aviso-iconos", "lab", { pasos: click('[data-panel="aviso"]') });
+await f("154-panel-energia-iconos", "lab", { pasos: click('[data-panel="energia"]') });
+await f("155-dialogo-privado-oscuro", "lab", { oscuro: true, pasos: seq(grande, click("#pg-privado-abrir")) });
 
 await cerrar();
 let graves = 0;

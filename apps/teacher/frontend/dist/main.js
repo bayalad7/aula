@@ -29,7 +29,9 @@
 
   function aplicarTextos(root) {
     for (const e of $$("[data-t]", root)) e.textContent = T(e.dataset.t);
-    for (const [attr, name] of [["tAriaLabel", "aria-label"], ["tTitle", "title"], ["tPlaceholder", "placeholder"], ["tEtiqueta", "data-etiqueta"]]) {
+    for (const [attr, name] of [["tAriaLabel", "aria-label"], ["tTitle", "title"], ["tPlaceholder", "placeholder"], ["tEtiqueta", "data-etiqueta"],
+      // El tooltip del sistema de diseño: la barra de acciones, cuando solo se ven iconos.
+      ["tTip", "data-tip"], ["tTip", "aria-label"]]) {
       const sel = "[data-" + attr.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()) + "]";
       for (const e of $$(sel, root)) e.setAttribute(name, T(e.dataset[attr]));
     }
@@ -300,7 +302,7 @@
         else $(id).removeAttribute("aria-invalid");
       }
       $("arranque-recientes").replaceChildren(...s.recentChannels.slice(0, 6).map((c) => {
-        const b = boton(T("canal.reciente", { canal: c }), "btn--sm");
+        const b = boton(T("canal.reciente", { canal: c }), "btn--sm", "red");
         b.addEventListener("click", () => { $("arranque-canal").value = c; });
         return b;
       }));
@@ -409,6 +411,7 @@
       const marcado = seleccion.has(clave(s));
       tr.dataset.clave = clave(s);
       tr.dataset.seleccionado = String(marcado);
+      tr.dataset.ficha = String(panel === "alumno" && clave(s) === fichaClave);
       const m = tr.querySelector(".marca");
       m.checked = marcado;
       m.setAttribute("aria-label", T("alumnos.seleccionar", { equipo: s.hostname }));
@@ -452,6 +455,14 @@
   function abrirFicha(k) {
     fichaClave = k;
     abrirPanel("alumno");
+    marcarFicha();
+  }
+  // La fila (y la tarjeta) del alumno de la ficha abierta llevan su marca, distinta de la
+  // selección (nota de interfaz 1): ancla la tabla con el panel de la derecha.
+  function marcarFicha() {
+    for (const e of $$("#alumnos-filas [data-clave], #alumnos-cuadricula [data-clave]")) {
+      e.dataset.ficha = String(panel === "alumno" && e.dataset.clave === fichaClave);
+    }
   }
   function pintarFicha() {
     const s = alumnos.students.find((x) => clave(x) === fichaClave);
@@ -459,7 +470,7 @@
       cerrarPanel();
       return;
     }
-    $("h-panel-alumno").textContent = s.hostname;
+    $("h-panel-alumno").textContent = s.hostname + (s.username ? " · " + s.username : "");
     const filas = [
       ["ficha.usuario", s.username || T("alumnos.sinSesion")],
       ["ficha.estado", estadoDe(s)],
@@ -492,7 +503,6 @@
       li.append(icono(ic), icono(si ? "hecho" : "cerrar", "capacidad__marca"), el("span", "solo-lector", texto));
       return li;
     }));
-    accionesFicha(s); // Tomar control, Mensaje privado, Tomar captura (ACCIONES_ALUMNO)
     const e = s.lastError;
     $("ficha-error").hidden = !e;
     if (e) {
@@ -505,75 +515,69 @@
     }
   }
 
-  // --- Mensaje privado a un alumno (prompt 10.7) -----------------------------------------
-  // Solo a ese alumno (msg.show personal), desde la ficha o desde la pantalla en grande, también
-  // durante el control remoto. El acuse sale de aula:deliveries; la etiqueta del envío no lleva el
-  // texto (privacidad, regla 53). Un mismo formulario sirve a los dos lugares (prefijo de sus ids).
   // --- Acciones sobre un alumno ------------------------------------------------------------
-  // Se definen una vez y salen en todos los lugares donde se ve a un alumno: la Ficha del alumno
-  // y la Pantalla grande (CLAUDE.md, «Ubicación y vocabulario»). Una acción nueva se agrega aquí,
-  // con su botón en cada lugar (ids estables para el arnés), su condición y lo que hace.
-  // `hacer` nulo: el botón lo maneja otro (el formulario del mensaje privado).
+  // Viven en la Pantalla grande (nota de interfaz 5: la ficha solo informa). Una acción nueva se
+  // agrega aquí, con su botón (id estable para el arnés), su condición y lo que hace; su nota
+  // sale como tooltip. `hacer` nulo: el botón lo maneja otro (los diálogos de mensaje privado y
+  // de abrir).
   const controlandoA = (s) => control.live && control.sessionID === s.id;
   const proyectandoA = (s) => proy.active && proy.sessionId === s.id;
   const ACCIONES_ALUMNO = [
-    { id: "control", icono: "control", primario: true, ids: { ficha: "ficha-tomar", grande: "pg-tomar" }, nota: "control.fichaNota",
-      texto: (s, donde) => T(donde === "ficha" && controlandoA(s) ? "control.verPantalla" : "control.tomar"),
-      // Solo reales y conectados cuyo equipo lo permite; en la Pantalla grande, no mientras ya se controla.
-      visible: (s, donde) => !s.simulated && s.state === "connected" && s.canRemote && !(donde === "grande" && enControl),
+    { id: "control", icono: "control", primario: true, boton: "pg-tomar", nota: "control.fichaNota",
+      texto: () => T("control.tomar"),
+      // Solo reales y conectados cuyo equipo lo permite; no mientras ya se controla.
+      visible: (s) => !s.simulated && s.state === "connected" && s.canRemote && !enControl,
       hacer: (s, b) => (controlandoA(s) ? abrirControl() : tomarControl(s, b)) },
-    { id: "privado", icono: "sobre", ids: { ficha: "privado-abrir", grande: "pg-privado-abrir" }, controla: { ficha: "privado", grande: "pg-privado" },
+    { id: "privado", icono: "sobre", boton: "pg-privado-abrir", dialogo: "dlg-privado",
       texto: () => T("privado.boton"),
-      visible: (s, donde) => (donde === "ficha" ? privadoFicha : privadoGrande).pintar(s), hacer: null },
-    { id: "captura", icono: "captura", ids: { ficha: "ficha-capturar", grande: "pg-capturar" }, nota: "captura.fichaNota",
+      visible: (s) => privadoGrande.pintar(s), hacer: null },
+    { id: "captura", icono: "captura", boton: "pg-capturar", nota: "captura.fichaNota",
       texto: () => T("captura.tomar"),
       // Reales y simulados, también mientras se le controla.
       visible: (s) => s.state === "connected" && s.canSnapshot,
       hacer: (s, b) => tomarCaptura(s, b) },
-    // Proyectar su pantalla a la clase (prompt 12.1): solo reales, y se le pregunta primero
+    // Proyectar su pantalla a la clase (prompt 12.1): solo reales; lo decide el profesor
     // (privacidad, regla 75). Mientras dura, el mismo botón la detiene.
-    { id: "proyectar", icono: "transmitir", ids: { ficha: "ficha-proyectar", grande: "pg-proyectar" }, nota: "proyectar.fichaNota",
+    { id: "proyectar", icono: "transmitir", boton: "pg-proyectar", nota: "proyectar.fichaNota",
       texto: (s) => T(proyectandoA(s) ? "proyectar.detener" : "proyectar.boton"),
       visible: (s) => !s.simulated && s.state === "connected" && s.canPresent,
       hacer: (s, b) => (proyectandoA(s) ? detenerProyeccion() : proyectar(s, b)) },
     // Abrir página o app (prompt 10.11): solo reales; cambia el equipo (privacidad, regla 70).
-    { id: "abrir", icono: "externo", ids: { ficha: "abrir1-abrir", grande: "pg-abrir1-abrir" }, controla: { ficha: "abrir1", grande: "pg-abrir1" },
-      nota: "abrir.fichaNota", texto: () => T("abrir.boton"),
-      visible: (s, donde) => (donde === "ficha" ? abrir1Ficha : abrir1Grande).pintar(s), hacer: null },
+    { id: "abrir", icono: "externo", boton: "pg-abrir1-abrir", dialogo: "dlg-abrir", nota: "abrir.fichaNota",
+      texto: () => T("abrir.boton"),
+      visible: (s) => abrir1Grande.pintar(s), hacer: null },
   ];
-  // Arma los botones de un lugar una sola vez y devuelve cómo pintarlos para un alumno.
-  function montarAcciones(donde, contenedor, alumnoActual) {
+  // Arma los botones una sola vez y devuelve cómo pintarlos para un alumno.
+  function montarAcciones(contenedor, alumnoActual) {
     const piezas = ACCIONES_ALUMNO.map((a) => {
-      const b = el("button", "btn" + (a.primario ? " btn--primario" : "") + (donde === "grande" ? " btn--sm" : ""));
+      const b = el("button", "btn btn--sm" + (a.primario ? " btn--primario" : ""));
       b.type = "button";
-      b.id = a.ids[donde];
-      if (a.controla) { b.setAttribute("aria-expanded", "false"); b.setAttribute("aria-controls", a.controla[donde]); }
+      b.id = a.boton;
+      if (a.dialogo) { b.setAttribute("aria-haspopup", "dialog"); b.setAttribute("aria-controls", a.dialogo); }
+      if (a.nota) b.dataset.tip = T(a.nota);
       const texto = el("span");
       b.append(icono(a.icono), texto);
       if (a.hacer) b.addEventListener("click", () => { const s = alumnoActual(); if (s) a.hacer(s, b); });
-      // En la ficha, cada acción lleva su nota debajo; en la Pantalla grande, solo el botón.
-      let caja = b;
-      if (donde === "ficha") {
-        caja = el("div", "pila-mini");
-        caja.append(b);
-        if (a.nota) caja.append(el("span", "pequeno suave", T(a.nota)));
-      }
-      contenedor.append(caja);
-      return { a, caja, texto };
+      contenedor.append(b);
+      return { a, b, texto };
     });
     return (s) => {
-      for (const { a, caja, texto } of piezas) {
-        caja.hidden = !(s && a.visible(s, donde));
-        if (s) texto.textContent = a.texto(s, donde);
+      for (const { a, b, texto } of piezas) {
+        b.hidden = !(s && a.visible(s));
+        if (s) texto.textContent = a.texto(s);
       }
     };
   }
-  const accionesFicha = montarAcciones("ficha", $("ficha-acciones"), () => alumnos.students.find((x) => clave(x) === fichaClave));
-  const accionesGrande = montarAcciones("grande", $("pg-acciones"), () => alumnoPorSesion(enControl ? control.sessionID : enGrande));
+  const accionesGrande = montarAcciones($("pg-acciones"), () => alumnoPorSesion(enControl ? control.sessionID : enGrande));
 
-  function formPrivado(pre, alumno, alAbrir) {
+  // --- Mensaje privado a un alumno (prompt 10.7) -----------------------------------------
+  // Solo a ese alumno (msg.show personal), desde la Pantalla grande, también durante el control
+  // remoto, en su propio diálogo (nota de interfaz 7). El acuse sale de aula:deliveries y se ve
+  // debajo de su pantalla; la etiqueta del envío no lleva el texto (privacidad, regla 53).
+  function formPrivado(pre, alumno, alAbrir, dialogo) {
     const $p = (s) => $(pre + s);
-    const form = $(pre), texto = $p("-texto"), error = $p("-error"), abrir = $p("-abrir");
+    const form = $(pre), texto = $p("-texto"), error = $p("-error");
+    const abrir = () => $p("-abrir");
     let estado = { clave: "", envio: "" }; // a quién y el último envío, para su acuse
     const acuse = () => {
       const d = estado.envio && envios.find((x) => x.id === estado.envio);
@@ -585,10 +589,9 @@
         : d.acked + d.simAcked > 0 ? T("privado.visto", { equipo: s.hostname }) : T("privado.enviando", { equipo: s.hostname });
     };
     const cerrar = (foco) => {
-      form.hidden = true;
-      abrir.setAttribute("aria-expanded", "false");
       limpiarCampo(texto, error);
-      if (foco) abrir.focus();
+      if (dialogo.open) dialogo.close();
+      if (foco && abrir()) abrir().focus();
     };
     const pintar = (s) => {
       if (estado.clave !== clave(s)) {
@@ -597,21 +600,26 @@
         texto.value = "";
       }
       $p("-etiqueta").textContent = T("privado.etiqueta", { equipo: s.hostname });
+      $("dlg-privado-titulo").textContent = T("privado.titulo", { equipo: s.hostname });
+      conectar();
       acuse();
       return s.state === "connected" && s.canNotice;
     };
-    abrir.addEventListener("click", () => {
-      if (!form.hidden) { cerrar(true); return; }
-      if (alAbrir) alAbrir();
-      form.hidden = false;
-      abrir.setAttribute("aria-expanded", "true");
-      texto.focus();
-    });
+    // El botón de ACCIONES_ALUMNO se crea antes que este formulario: se conecta al pintarlo.
+    const conectar = () => {
+      const b = abrir();
+      if (!b || b.dataset.listo) return;
+      b.dataset.listo = "1";
+      b.addEventListener("click", () => {
+        if (alAbrir) alAbrir();
+        dialogo.showModal();
+        texto.focus();
+      });
+    };
     $p("-cancelar").addEventListener("click", () => cerrar(true));
     texto.addEventListener("input", () => limpiarCampo(texto, error));
     texto.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
-      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cerrar(true); }
     });
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -634,25 +642,25 @@
         else fallo(err);
       }).finally(() => ocupado(b, false));
     });
-    return { pintar, acuse, cerrar, abierto: () => !form.hidden };
+    dialogo.addEventListener("close", () => limpiarCampo(texto, error));
+    return { pintar, acuse, cerrar, abierto: () => dialogo.open };
   }
-  const privadoFicha = formPrivado("privado", () => alumnos.students.find((x) => clave(x) === fichaClave));
-  // En la pantalla en grande: si se controla al alumno, primero se suelta lo presionado; lo que
-  // se escribe en el campo no le llega (su teclado solo sale con el foco en la imagen).
+  // Si se controla al alumno, primero se suelta lo presionado; lo que se escribe en el campo no
+  // le llega (su teclado solo sale con el foco en la imagen).
   const privadoGrande = formPrivado("pg-privado", () => alumnoPorSesion(enControl ? control.sessionID : enGrande),
-    () => { if (enControl) soltarTeclas(); });
-  function pintarAcusePrivado() { privadoFicha.acuse(); privadoGrande.acuse(); }
+    () => { if (enControl) soltarTeclas(); }, $("dlg-privado"));
+  function pintarAcusePrivado() { privadoGrande.acuse(); }
 
   // --- Abrir página o app (docs/protocol.md §5.22; privacidad, reglas 66–70) ----------------
-  // Un mismo formulario en tres lugares: el panel de la barra (la selección), la ficha y la
-  // Pantalla grande (un alumno, que lo abren con su botón de ACCIONES_ALUMNO). Solo alumnos
+  // Un mismo formulario en dos lugares: el panel de la barra (la selección) y el diálogo de un
+  // alumno, que se abre con su botón de ACCIONES_ALUMNO en la Pantalla grande (nota 8). Solo alumnos
   // reales: los simulados nunca lo reciben. La lista de apps es la de Ajustes › Apps permitidas.
   const MOTIVO_ABRIR = "abrir.motivo."; // + razón de open.ack en camelCase
   const ACUSE_ABRIR = "abrir.acuse."; // + estado del equipo (openapp.Target.Status)
   const FUENTE_APPS = "ajustes.appsFuente."; // + de dónde es la lista (AllowedApps.Source)
   let appsPermitidas = []; // [{id, name, path}]
   let ordenesAbrir = []; // las últimas, de aula:opens
-  function formAbrir(pre, cont, objetivo, uno) {
+  function formAbrir(pre, cont, objetivo, uno, dialogo, acuseCont) {
     const id = (s) => pre + s;
     const form = el("form", "pila-mini");
     form.id = pre;
@@ -662,9 +670,9 @@
     const grupo = el("div", "segmentado");
     grupo.setAttribute("role", "group");
     grupo.setAttribute("aria-label", T("abrir.tipo"));
-    const segmento = (texto) => { const x = el("button"); x.type = "button"; x.append(el("span", "", texto)); return x; };
-    const bPagina = segmento(T("abrir.pagina"));
-    const bApp = segmento(T("abrir.app"));
+    const segmento = (texto, ic) => { const x = el("button"); x.type = "button"; x.append(icono(ic), el("span", "", texto)); return x; };
+    const bPagina = segmento(T("abrir.pagina"), "externo");
+    const bApp = segmento(T("abrir.app"), "app");
     bPagina.id = id("-tipo-pagina");
     bApp.id = id("-tipo-app");
     grupo.append(bPagina, bApp);
@@ -673,6 +681,7 @@
     const url = el("input");
     Object.assign(url, { type: "url", id: id("-url"), autocomplete: "off", spellcheck: false, maxLength: 2048, placeholder: T("abrir.urlEjemplo") });
     url.inputMode = "url";
+    url.dataset.icono = "externo";
     const error = el("span", "campo__error");
     error.id = id("-error");
     error.hidden = true;
@@ -685,11 +694,12 @@
     const etApp = el("label", "campo__etiqueta", T("abrir.appEtiqueta"));
     const sel = el("select");
     sel.id = id("-app");
+    sel.dataset.icono = "app";
     etApp.htmlFor = sel.id;
     const ayudaApp = el("span", "campo__ayuda", T("abrir.appAyuda"));
     const sinApps = el("span", "campo__ayuda", T("abrir.sinApps"));
     sinApps.id = id("-sin-apps");
-    const editar = boton(T("abrir.editarLista"), "btn--fantasma btn--sm abrir-editar");
+    const editar = boton(T("abrir.editarLista"), "btn--fantasma btn--sm abrir-editar", "editar");
     editar.id = id("-editar");
     editar.addEventListener("click", () => abrirAjustes("apps"));
     campoApp.append(etApp, sel, ayudaApp, sinApps, editar);
@@ -704,28 +714,25 @@
     };
     const [filtrada, filtradaTexto] = linea("advertencia", "-filtrada", "advertencia");
     const [sinSoporte, sinSoporteTexto] = linea("info", "-sin-soporte");
-    const enviar = el("button", "btn btn--primario" + (uno ? " btn--sm" : ""));
+    const enviar = el("button", "btn btn--primario");
     enviar.type = "submit";
     enviar.id = id("-enviar");
     enviar.append(icono("externo"), el("span", "", T("abrir.abrir")));
-    const botones = el("div", "grupo-botones");
-    botones.append(enviar);
+    const botones = el("div", "grupo-botones" + (uno ? " grupo-botones--fin dialogo__pie-botones" : ""));
     let cancelar = null;
     if (uno) {
-      cancelar = boton(T("comun.cancelar"), "btn--fantasma btn--sm");
+      cancelar = boton(T("comun.cancelar"), "", "cerrar");
       cancelar.id = id("-cancelar");
       botones.append(cancelar);
     }
+    botones.append(enviar);
     form.append(grupo, campoUrl, campoApp, filtrada, sinSoporte, el("p", "pequeno suave", T("abrir.transparencia")), botones);
     const acuse = el("p", "pequeno");
     acuse.id = id("-acuse");
     acuse.setAttribute("role", "status");
     acuse.hidden = true;
     cont.append(form);
-    if (uno) {
-      form.hidden = true;
-      cont.append(acuse);
-    }
+    if (uno) acuseCont.append(acuse);
 
     const pintarApps = () => {
       const antes = sel.value;
@@ -784,16 +791,13 @@
     const abridor = () => $(id("-abrir"));
     const cerrar = (foco) => {
       if (!uno) return;
-      form.hidden = true;
-      const b = abridor();
-      if (b) b.setAttribute("aria-expanded", "false");
       limpiarCampo(url, error);
+      if (dialogo.open) dialogo.close();
+      const b = abridor();
       if (foco && b) b.focus();
     };
     if (cancelar) cancelar.addEventListener("click", () => cerrar(true));
-    form.addEventListener("keydown", (e) => {
-      if (uno && e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cerrar(true); }
-    });
+    if (dialogo) dialogo.addEventListener("close", () => limpiarCampo(url, error));
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const hosts = objetivo().hosts;
@@ -819,16 +823,14 @@
         else fallo(err);
       }).finally(() => { ocupado(enviar, false); pintar(); });
     });
-    // Un alumno: el botón de ACCIONES_ALUMNO muestra u oculta el formulario.
+    // Un alumno: el botón de ACCIONES_ALUMNO abre el diálogo.
     const conectarAbridor = () => {
       const b = abridor();
       if (!b || b.dataset.abrirListo) return;
       b.dataset.abrirListo = "1";
       b.addEventListener("click", () => {
-        if (!form.hidden) { cerrar(true); return; }
-        if (pre === "pg-abrir1" && enControl) soltarTeclas();
-        form.hidden = false;
-        b.setAttribute("aria-expanded", "true");
+        if (enControl) soltarTeclas();
+        dialogo.showModal();
         pintar();
         (tipo === "pagina" ? url : sel).focus();
       });
@@ -844,7 +846,8 @@
           url.value = "";
         }
         pintarAcuse();
-        if (!form.hidden) pintar();
+        $("dlg-abrir-titulo").textContent = T("abrir.tituloUno", { equipo: s.hostname });
+        if (dialogo.open) pintar();
         return !s.simulated && s.state === "connected" && (s.canOpenUrl || s.canOpenApp);
       },
       refrescar: () => { pintar(); pintarAcuse(); },
@@ -859,8 +862,8 @@
     const s = buscar();
     return { alumnos: s ? [s] : [], simulados: false, hosts: s ? [s.hostname] : ["-"] };
   };
-  const abrir1Ficha = formAbrir("abrir1", $("ficha-abrir"), unAlumno(() => alumnos.students.find((x) => clave(x) === fichaClave)), true);
-  const abrir1Grande = formAbrir("pg-abrir1", $("pg-abrir"), unAlumno(() => alumnoPorSesion(enControl ? control.sessionID : enGrande)), true);
+  const abrir1Grande = formAbrir("pg-abrir1", $("pg-abrir"), unAlumno(() => alumnoPorSesion(enControl ? control.sessionID : enGrande)), true,
+    $("dlg-abrir"), $("pg-abrir-acuse"));
   function pintarOrdenesAbrir(lista) {
     ordenesAbrir = lista || [];
     $("abrir-ultimas").hidden = ordenesAbrir.length === 0;
@@ -880,13 +883,11 @@
       }
       return li;
     }));
-    abrir1Ficha.refrescar();
     abrir1Grande.refrescar();
   }
   function cargarAppsPermitidas(c) {
     appsPermitidas = (c && c.apps) || [];
     abrirPanelForm.refrescar();
-    abrir1Ficha.refrescar();
     abrir1Grande.refrescar();
   }
 
@@ -1125,8 +1126,6 @@
   // Con el foco en la imagen, Esc es del alumno: no cierra el diálogo.
   $("pantalla-grande").addEventListener("cancel", (e) => {
     if (enControl && document.activeElement === imgControl) e.preventDefault();
-    // Con el mensaje privado abierto, Esc lo cierra a él, no la vista.
-    if (privadoGrande.abierto() && document.activeElement === $("pg-privado-texto")) e.preventDefault();
   });
   function alCuadroControl(t) {
     if (enControl && t.sessionId === control.sessionID) $("pg-imagen").src = "data:image/jpeg;base64," + t.jpeg;
@@ -1512,6 +1511,7 @@
     $("h-panel-" + id).focus();
   }
   function cerrarPanel() {
+    setTimeout(marcarFicha);
     const dentro = document.activeElement && document.activeElement.closest(".panel-lateral");
     panel = "";
     delete document.body.dataset.panel;
@@ -1561,6 +1561,7 @@
     const b = $("pantalla-empezar");
     b.textContent = s.active ? T("transmitir.detener") : T("transmitir.empezar");
     b.className = "btn " + (s.active ? "btn--peligro" : "btn--primario");
+    b.dataset.icono = s.active ? "detener" : "transmitir";
     b.disabled = !s.available || (!s.active && $("pantalla-monitor").options.length === 0);
     $("pantalla-monitor").disabled = s.active;
   }
@@ -1723,7 +1724,7 @@
     $("restr-sin-soporte-texto").textContent = T("restr.nadiePuede");
     $("restr-aplicar").disabled = !puede;
     $("restr-plantillas").replaceChildren(...PLANTILLAS[tipoRestr].map(([k, m, items]) => {
-      const b = boton(T(k), "btn--sm");
+      const b = boton(T(k), "btn--sm", "lista");
       b.addEventListener("click", () => { $("restr-modo").value = m; $("restr-lista").value = items.join("\n"); });
       return b;
     }));
@@ -2067,7 +2068,7 @@
     if (p.open && p.unsupported.length) out.push(el("p", "pequeno suave", T("encuesta.noPueden", { lista: p.unsupported.join(", ") })));
     const botones = el("div", "grupo-botones");
     if (p.open) {
-      const b = boton(T("encuesta.cerrar"), "btn--sm");
+      const b = boton(T("encuesta.cerrar"), "btn--sm", "detener");
       b.addEventListener("click", cerrarEncuesta);
       botones.append(b);
     }
@@ -2102,6 +2103,7 @@
     const input = Object.assign(el("input"), { type: "text", maxLength: 80, autocomplete: "off", value: valor || "" });
     input.setAttribute("aria-label", T("encuesta.opcionN", { n }));
     input.className = "control";
+    input.dataset.icono = "lista";
     input.addEventListener("input", () => limpiarCampo(input, $("encuesta-opciones-error")));
     const quitar = el("button", "btn btn--fantasma btn--icono btn--sm");
     quitar.type = "button";
@@ -3065,6 +3067,7 @@
     const botones = opciones.map(([k, texto]) => {
       const b = el("button", "btn btn--sm", texto);
       b.type = "button";
+      b.dataset.icono = "filtro";
       b.addEventListener("click", () => { publico = k; filtrar(); });
       return [k, b];
     });
@@ -3324,7 +3327,7 @@
           li.setAttribute("aria-current", "step");
           const g = el("div", "grupo-botones");
           n.answers.forEach((r, k) => {
-            const b = boton(r.label, "btn--sm");
+            const b = boton(r.label, "btn--sm", "flecha-der");
             b.addEventListener("click", () => { camino[i] = k; pintarArbol(); });
             g.append(b);
           });
@@ -3463,9 +3466,11 @@
     li.dataset.id = a.id || "";
     const nombre = Object.assign(el("input"), { type: "text", value: a.name || "", maxLength: 60, autocomplete: "off" });
     nombre.className = "control fila-app__nombre";
+    nombre.dataset.icono = "app";
     nombre.setAttribute("aria-label", T("ajustes.appsNombre"));
     const ruta = Object.assign(el("input"), { type: "text", value: a.path || "", maxLength: 260, autocomplete: "off", spellcheck: false });
     ruta.className = "control fila-app__ruta mono";
+    ruta.dataset.icono = "carpeta";
     ruta.setAttribute("aria-label", T("ajustes.appsRuta"));
     ruta.title = T("ajustes.appsRutaAyuda");
     const quitar = el("button", "btn btn--fantasma btn--icono btn--sm");
@@ -3523,7 +3528,7 @@
     $("cc-canal").removeAttribute("aria-invalid");
     $("cc-recientes").replaceChildren(el("span", "suave pequeno", T("canal.recientes")), ...setup.recentChannels
       .filter((c) => c !== clase.channel).slice(0, 5).map((c) => {
-        const b = boton(T("canal.reciente", { canal: c }), "btn--sm");
+        const b = boton(T("canal.reciente", { canal: c }), "btn--sm", "red");
         b.addEventListener("click", () => { $("cc-canal").value = c; actualizarCanal(); });
         return b;
       }));
@@ -3616,6 +3621,9 @@
   rt.EventsOn(ev.CLASS, (v) => (v.active ? mostrarConsola(v) : mostrarArranque()));
 
   // --- Arranque de la interfaz ---------------------------------------------------------------
+  // Los iconos de referencia de botones y campos (data-icono, sistema/iconos.js): también los de
+  // lo que se agregue después.
+  window.AulaIconos.vigilar(document.body);
   aplicarTextos(document);
   for (const tpl of $$("template")) aplicarTextos(tpl.content);
   aplicarTema(tema);

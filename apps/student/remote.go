@@ -38,6 +38,7 @@ func (a *App) onControl(s remote.State) {
 	st := a.status
 	a.mu.Unlock()
 	a.setStatus(st)
+	a.updateYield() // the control notice stays in front of a pause
 	if began {
 		a.raise()
 	}

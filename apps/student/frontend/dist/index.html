@@ -39,8 +39,8 @@
   <!-- Bandas de transparencia: no se pueden cerrar; desaparecen cuando el profesor termina
        (docs/privacidad.md, reglas 6, 12, 20-22 y 26-28). -->
   <!-- Orden fijo: lo urgente primero (energía), después lo que el profesor hace con esta
-       pantalla (control remoto, y pantalla vista o en pausa cuando exista: diseñada en
-       apps/teacher/frontend/dev/prototipo/alumno-pausa.html) y al final las restricciones. La
+       pantalla (control remoto, en pausa, pantalla vista, mostrada a la clase) y al final las
+       restricciones. La
        transmisión del profesor lleva su banda sobre el video. Ninguna banda tiene botón para cerrarse: cada
        una desaparece sola cuando el profesor termina (prompt 19, entrega F). -->
   <div id="bandas" class="bandas">
@@ -55,6 +55,12 @@
     <p id="banda-control" class="franja franja--control" role="status" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg>
       <span id="banda-control-texto" class="franja__texto"></span>
+    </p>
+    <!-- Pantalla en pausa (reglas 9-10): después del control y antes de la pantalla vista. La
+         ventana de pausa nativa cubre los monitores; esta banda queda al volver a la ventana. -->
+    <p id="banda-pausa" class="franja franja--pausa" role="status" hidden>
+      <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pausa"/></svg>
+      <span id="banda-pausa-texto" class="franja__texto"></span>
     </p>
     <p id="banda-vista" class="franja franja--vista" role="status" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg>
@@ -90,6 +96,7 @@
     <span id="compacto-nuevos" class="insignia insignia--info" hidden></span>
     <span id="compacto-temporizador" class="insignia insignia--info temporizador" role="timer" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span id="compacto-temporizador-texto" class="cuenta"></span></span>
     <span id="compacto-control" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#control"/></svg><span data-t="compacto.control"></span></span>
+    <span id="compacto-pausa" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#pausa"/></svg><span data-t="compacto.pausa"></span></span>
     <span id="compacto-vista" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#ojo"/></svg><span data-t="compacto.vista"></span></span>
     <span id="compacto-mostrando" class="insignia insignia--bloque compacto-vista" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg><span data-t="compacto.mostrando"></span></span>
     <button type="button" id="compacto-mano" class="btn btn--sm btn--icono mano-boton" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg></button>

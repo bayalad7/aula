@@ -83,6 +83,11 @@ func main() {
 	} else {
 		log.Info("remote control not available", "err", err)
 	}
+	if o, err := newPauseOverlay(); err == nil {
+		app.enableFreeze(o)
+	} else {
+		log.Info("pausing this screen not available", "err", err)
+	}
 	if wf, err := platform.NewWorkFolder(); err == nil {
 		app.enableFiles(wf)
 	} else {

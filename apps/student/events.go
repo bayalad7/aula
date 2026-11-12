@@ -98,6 +98,9 @@ type Status struct {
 	Control string `json:"control"`
 	// Presenting is set while this screen is shown to the class (rules 75-82).
 	Presenting bool `json:"presenting"`
+	// Paused is set while the teacher paused this screen (rules 9-10): the
+	// pause window covers every monitor and the band says who paused it.
+	Paused bool `json:"paused"`
 }
 
 // BroadcastView is the broadcast of the teacher's screen as the window shows

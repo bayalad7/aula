@@ -36,6 +36,7 @@ type helper struct {
 	read      platform.WorkFolderReader // nil without a work folder (file.collect)
 	launch    platform.Launcher         // nil when the OS cannot open pages or apps (open.*)
 	publish   *broadcast.LocalPublisher // nil when this session cannot be shown to the class (§5.24)
+	pause     platform.PauseOverlay     // nil when the OS has no pause window (§5.9)
 	link      *agentsvc.Link            // to the service: present.* events
 	log       *slog.Logger
 
@@ -74,6 +75,9 @@ func runHelper(channel string, log *slog.Logger) int {
 	if l, err := platform.NewLauncher(); err == nil {
 		h.launch = l
 	}
+	if o, err := newPauseOverlay(); err == nil {
+		h.pause = o
+	}
 	if dc, err := platform.NewDisplayCapture(); err == nil && h.capture != nil {
 		// The window and the badge are this process's: they leave the capture.
 		h.publish = &broadcast.LocalPublisher{Capture: dc, NewEncoder: platform.NewH264Encoder,
@@ -98,7 +102,7 @@ func runHelper(channel string, log *slog.Logger) int {
 		once.Do(func() {
 			r := agentsvc.Ready{Capture: h.capture != nil, Clipboard: clipErr == nil, Broadcast: webrtc && h264,
 				Input: h.input != nil, Files: h.work != nil && h.read != nil, Open: h.launch != nil,
-				Present: h.publish.Available()}
+				Present: h.publish.Available(), Pause: h.pause != nil}
 			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input, "files", r.Files, "open", r.Open)
 			_ = link.Notify(agentsvc.EventReady, r)
 		})
@@ -113,6 +117,7 @@ func runHelper(channel string, log *slog.Logger) int {
 		go func() {
 			_ = link.Run(ctx)
 			log.Info("helper channel closed")
+			h.hidePause() // nobody stays paused without the service (rule 10)
 			if app.quitWindow != nil {
 				app.quitWindow()
 			}
@@ -124,6 +129,7 @@ func runHelper(channel string, log *slog.Logger) int {
 			h.input.releaseAll() // nothing stays pressed if the service goes away
 		}
 		h.closePresentation() // the windows can be captured again
+		h.hidePause()
 		if h.indicator != nil {
 			_ = h.indicator.Hide()
 		}
@@ -220,6 +226,8 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 		return h.openCall(name, data)
 	case agentsvc.CallPresentOpen, agentsvc.CallPresentAnswer, agentsvc.CallPresentCandidate, agentsvc.CallPresentClose:
 		return h.presentCall(name, data)
+	case agentsvc.CallPauseShow, agentsvc.CallPauseYield, agentsvc.CallPauseHide:
+		return h.pauseCall(name, data)
 	case agentsvc.CallPower:
 		var a agentsvc.PowerArgs
 		if err := json.Unmarshal(data, &a); err != nil {
@@ -485,5 +493,39 @@ func (h *helper) closeLocked() {
 			h.log.Warn("presentation close", "err", err)
 		}
 		h.pub = nil
+	}
+}
+
+// pauseCall shows, moves or removes the pause window for the service.
+func (h *helper) pauseCall(name string, data json.RawMessage) (any, error) {
+	if h.pause == nil {
+		if name == agentsvc.CallPauseShow {
+			return nil, platform.ErrNotSupported
+		}
+		return nil, nil
+	}
+	switch name {
+	case agentsvc.CallPauseShow:
+		var t platform.PauseText
+		if err := json.Unmarshal(data, &t); err != nil {
+			return nil, err
+		}
+		return nil, h.pause.Show(t)
+	case agentsvc.CallPauseYield:
+		var on bool
+		if err := json.Unmarshal(data, &on); err != nil {
+			return nil, err
+		}
+		return nil, h.pause.Yield(on)
+	}
+	return nil, h.pause.Hide()
+}
+
+// hidePause removes the pause window, if any.
+func (h *helper) hidePause() {
+	if h.pause != nil {
+		if err := h.pause.Hide(); err != nil {
+			h.log.Warn("pause window: hide", "err", err)
+		}
 	}
 }

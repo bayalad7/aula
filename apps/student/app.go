@@ -46,6 +46,7 @@ type App struct {
 	board     *codedist.Board
 	recv      *codedist.Receiver
 	screen    *screen.Streamer        // screen thumbnails; inert until enableScreen
+	freeze    *screen.Freezer         // the pause window (§5.9); inert until enableFreeze
 	power     *power.Countdown        // power.*; inert until enablePower
 	viewer    *broadcast.Viewer       // the teacher's screen; declared after ReportMedia
 	present   *broadcast.Presenter    // this screen shown to the class (§5.24); inert until enablePresent
@@ -121,6 +122,7 @@ type App struct {
 	restrict   policy.State      // class restrictions in force (rules 20-21)
 	watching   bool              // this screen shows the teacher's broadcast (rule 12)
 	presenting bool              // this screen is shown to the class (rules 75-82)
+	paused     bool              // the teacher paused this screen (rules 9-10)
 	powerV     PowerView         // power notice in force (rules 26-28)
 	ctrl       remote.State      // remote control in force (rules 36-41)
 	cl         *transport.Client // the connection with the console; nil while not connected
@@ -145,6 +147,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	}
 	a.recv = &codedist.Receiver{Board: a.board, OnBoard: a.onBoard, OnNotice: a.onNotice}
 	a.screen = &screen.Streamer{Logger: log, OnViewed: a.onViewed}
+	a.freeze = &screen.Freezer{Who: a.pauseWho, OnPaused: a.onPaused, Logger: log}
 	a.viewer = &broadcast.Viewer{Logger: log, OnView: a.onBroadcastView, OnSignal: a.onBroadcastSignal}
 	a.badge = &broadcast.IndicatorMux{}
 	a.present = &broadcast.Presenter{OnView: a.onPresent, Logger: log}
@@ -319,6 +322,7 @@ func (a *App) stop() {
 	}
 	a.control.Stop()
 	a.screen.Stop()
+	a.freeze.Stop() // nobody stays paused when the agent ends (rule 10)
 	a.viewer.Stop()
 	a.present.Stop()
 	a.snap.Wait() // its connection is closed: it drops the image
@@ -389,6 +393,7 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 		// no broadcast view, and no restrictions.
 		a.control.Stop() // first: it releases the keys and gives the stream back
 		a.screen.Stop()
+		a.freeze.Stop() // nobody stays paused without the class (rule 10)
 		a.viewer.Stop()
 		a.present.Stop()  // the band and the badge go; nothing is captured any more
 		a.files.Reset()   // a file half received is dropped, never written
@@ -486,6 +491,9 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		reply, ok = a.control.Handle(ctx, send, env)
 	}
 	if !ok {
+		reply, ok = a.freeze.Handle(ctx, env)
+	}
+	if !ok {
 		reply, ok = a.screen.Handle(ctx, send, env)
 	}
 	if !ok {
@@ -538,6 +546,7 @@ func (a *App) setStatus(s Status) {
 	s.Presenting = a.presenting && s.State == StateConnected
 	s.Restricted = a.restrict.Active() && s.State == StateConnected
 	s.Control = controlState(a.ctrl, s.State)
+	s.Paused = pausedState(a.paused, s.State)
 	a.status = s
 	a.mu.Unlock()
 	a.emit(EventStatus, s)

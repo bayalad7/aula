@@ -13,6 +13,7 @@ window.AulaTextos = Object.freeze({
   "titulo.disconnected": "Aula — sin conexión (canal {canal}); reintentando",
   "titulo.unconfigured": "Aula — sin configurar",
   "titulo.control": "Aula — {profesor} controla este equipo (canal {canal})",
+  "titulo.pausa": "Aula — {profesor} pausó esta computadora (canal {canal})",
   "titulo.vista": "Aula — tu pantalla está siendo vista por {profesor} (canal {canal})",
   "titulo.recibiendo": "Aula — viendo la pantalla de {profesor} (canal {canal})",
   "titulo.recibiendoAlumno": "Aula — viendo la pantalla de {equipo} (canal {canal})",
@@ -32,6 +33,7 @@ window.AulaTextos = Object.freeze({
   "compacto.nuevos.varios": "{n} nuevos",
   "compacto.vista": "Pantalla vista",
   "compacto.control": "Controlado",
+  "compacto.pausa": "En pausa",
   "compacto.mostrando": "Mostrando a la clase",
 
   // Tira de identidad
@@ -238,6 +240,7 @@ window.AulaTextos = Object.freeze({
   // Bandas de transparencia
   "banda.control.active": "{profesor} (canal {canal}) está controlando tu equipo: el mouse y el teclado se mueven solos mientras te ayuda.",
   "banda.control.paused": "{profesor} (canal {canal}) está controlando tu equipo. Su control está en pausa mientras usas tu mouse o tu teclado.",
+  "banda.pausa": "{profesor} (canal {canal}) pausó esta computadora. Tu trabajo sigue abierto; vuelve cuando lo reanude.",
   "banda.vista": "Tu pantalla la está viendo {profesor} (canal {canal})",
   "banda.recibiendo": "Estás viendo la pantalla de {profesor} (canal {canal})",
   "banda.modo.window": "· Se queda encima hasta que termine; puedes moverla y cambiarle el tamaño.",

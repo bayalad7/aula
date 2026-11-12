@@ -62,6 +62,7 @@ func (a *App) onBroadcastView(v broadcast.View) error {
 	// ends, for whatever reason (stop, the connection closed, the console
 	// stopped answering), it goes back as it was (rules 10 and 12).
 	a.hold(v.Active, v.Mode)
+	a.updateYield() // the broadcast stays in front of a pause
 	a.log.Info("broadcast view", "active", v.Active, "broadcast", v.BroadcastID, "mode", v.Mode)
 	return nil
 }

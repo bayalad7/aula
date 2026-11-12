@@ -52,7 +52,8 @@
   const TI = "titulo."; // + estado, o pendiente.<acción>
   function title() {
     const v = { canal: status.channel, profesor: status.teacher };
-    let t = status.control ? T("titulo.control", v) : status.presenting ? T("titulo.mostrando", v)
+    let t = status.control ? T("titulo.control", v) : status.paused ? T("titulo.pausa", v)
+      : status.presenting ? T("titulo.mostrando", v)
       : status.viewed ? T("titulo.vista", v)
       : status.watching ? (bcSource ? T("titulo.recibiendoAlumno", { equipo: bcSource, canal: status.channel }) : T("titulo.recibiendo", v))
       : T(TI + status.state, v);
@@ -70,12 +71,17 @@
 
   function renderStatus(s) {
     const antes = status.control || "";
+    const antesPausa = !!status.paused;
     status = s;
     const v = { canal: s.channel, profesor: s.teacher };
     $("estado").dataset.estado = s.state;
     $("estado-texto").textContent = T(ES + s.state, v);
     $("estado-detalles").hidden = !s.detail;
     $("estado-detalle").textContent = s.detail || "";
+    // Pantalla en pausa (reglas 9-10): quién la pausó; se va sola cuando la reanuda o se pierde la clase.
+    $("banda-pausa").hidden = !s.paused;
+    $("banda-pausa-texto").textContent = s.paused ? T("banda.pausa", v) : "";
+    if (s.paused && !antesPausa) salirDeCompacto(); // actúa sobre el equipo: sale del modo compacto
     $("banda-vista").hidden = !s.viewed;
     $("banda-vista-texto").textContent = s.viewed ? T("banda.vista", v) : "";
     // Control remoto (reglas 37-41): la banda dice quién y, en pausa, por qué.
@@ -120,6 +126,7 @@
     $("compacto-nuevos").textContent = n ? P("compacto.nuevos", n) : "";
     $("compacto").dataset.nuevo = String(n > 0);
     $("compacto-control").hidden = !status.control;
+    $("compacto-pausa").hidden = !status.paused;
     // El control implica la pantalla vista: una insignia basta. Mostrarla a la clase lleva la suya.
     $("compacto-mostrando").hidden = !status.presenting;
     $("compacto-vista").hidden = !status.viewed || !!status.control || !!status.presenting;

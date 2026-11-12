@@ -40,6 +40,7 @@ func (a *App) onPower(n *power.Notice) {
 	a.emit(EventPower, v)
 	shown := n != nil && n.State != power.NoticeFailed
 	a.onTop(shown)
+	a.updateYield() // the countdown stays in front of a pause
 	if n != nil {
 		a.raise()
 	}

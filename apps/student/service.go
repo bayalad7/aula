@@ -285,6 +285,8 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	app.present.Publisher = sa.pub
 	app.snap.Capture = agentsvc.Capture{Helper: sa.helper} // the helper captures; the service cannot
 	app.control.Input = agentsvc.Input{Helper: sa.helper}
+	// The helper shows the pause window in the student's session (§5.9).
+	app.freeze.Overlay = agentsvc.Pause{Helper: sa.helper}
 	// The helper writes: the files belong to the student, never to SYSTEM.
 	app.files.Writer = agentsvc.WorkFolder{Helper: sa.helper}
 	app.work = agentsvc.WorkFolder{Helper: sa.helper}
@@ -358,6 +360,10 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	if sa.ready.Open {
 		// The helper opens as the student, never as SYSTEM (rule 69).
 		h.Capabilities = append(h.Capabilities, sa.app.opener.Capabilities()...)
+	}
+	if sa.ready.Pause {
+		// The helper covers the student's monitors and shows the band (rule 9).
+		h.Capabilities = append(h.Capabilities, protocol.CapScreenFreeze)
 	}
 	if sa.ready.Capture && sa.ready.Input {
 		// The input goes into the session, with the screen and its notice.

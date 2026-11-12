@@ -384,6 +384,17 @@ await f("181-miniaturas-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, 
 await f("182-seleccion-cabecera", "lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12"))) });
 await f("183-seleccion-cabecera-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: async (p) => { await p.hover("#seleccion-texto"); await sleep(200); } });
 
+// Terminar la clase (prompt 10.14): el botón bajo el Selector de clase, su diálogo con lo activo y lo
+// opcional, el resultado por alumno (limpio, en parte, sin acuse, con error, desconectado) y la
+// clase sin nada activo.
+const terminar = seq(click("#nav-terminar"), async () => { await sleep(200); });
+const terminarYa = seq(terminar, click("#te-recoger-opcion"), click("#te-terminar"), async () => { await sleep(400); });
+await f("184-terminar-dialogo", "lab-terminar", { pasos: terminar });
+await f("185-terminar-resultado", "lab-terminar", { pasos: terminarYa });
+await f("186-terminar-oscuro-900x600", "lab-terminar", { oscuro: true, w: 900, h: 600, pasos: terminar });
+await f("187-terminar-resultado-oscuro-900x600", "lab-terminar", { oscuro: true, w: 900, h: 600, pasos: terminarYa });
+await f("188-terminar-nada-activo", "datos", { pasos: terminar });
+
 await cerrar();
 let graves = 0;
 for (const [nombre, r] of Object.entries(informe)) {

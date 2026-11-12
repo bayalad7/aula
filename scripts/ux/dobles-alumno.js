@@ -218,12 +218,17 @@
     const r = typeof v === "function" ? v(...args) : v;
     return r instanceof Error ? new Promise((_, no) => setTimeout(() => no(r.message), 5)) : ok(r);
   };
+  // Terminar la clase (prompt 10.14): en fin-clase, la ventana vacía con la tarjeta «La clase terminó».
+  let classEnd = scene === "fin-clase" ? { endId: "fin-1", at: Date.now() - 60000, removed: { control: false, present: false,
+    broadcast: false, pause: false, restrictions: true, timer: true, hand: true, polls: 1, snippets: 3, notices: 1, files: 1,
+    collections: 0, opened: 0, messages: 0 } } : null;
   window.go = { main: { App: {
-    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened, polls: copiaPolls(), present,
+    View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened, polls: copiaPolls(), present, classEnd,
       capabilities: ["code.view", "msg.show", "hand", "msg.student", "timer", "poll", "file.push", "file.collect", "screen.broadcast",
-        "screen.present.view", "screen.thumb", "screen.snapshot", "screen.present", "remote", "power", "open.url", "open.app"] })),
+        "screen.present.view", "screen.thumb", "screen.snapshot", "screen.present", "remote", "power", "open.url", "open.app", "class.end"] })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
+    DismissClassEnd: call("DismissClassEnd", () => { classEnd = null; return null; }),
     ReportMedia: call("ReportMedia"),
     BroadcastAnswer: call("BroadcastAnswer"),
     BroadcastCandidate: call("BroadcastCandidate"),

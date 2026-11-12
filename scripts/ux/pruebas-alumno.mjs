@@ -514,6 +514,40 @@ await caso("temporizador-compacto", "temporizador", async (p) => {
   ok(v[0] && v[1] && v[2] === "Ejercicio 1 · terminó", "compacto: " + v.join());
 }, { w: 380, h: 80 });
 
+// Terminar la clase (prompt 10.14; regla 83): se vacía la lista, se va la banda de restricciones con
+// lo que la causaba, y llega una tarjeta (no una banda) con la hora y lo que se quitó, «Nuevo» y sin
+// quitar el foco. «Entendido» la cierra (DismissClassEnd) y código nuevo también.
+await caso("fin-de-clase", "restricciones", async (p) => {
+  await emitir(p, "aula:board", { snippets: [fragmento("a", 1, "Uno")] });
+  await p.focus("#snippets > li .copy");
+  await emitir(p, "aula:board", { snippets: [] });
+  await emitir(p, "aula:restrictions", { apps: null, web: null });
+  await emitir(p, "aula:class-end", { endId: "fin-1", at: Date.now(), removed: { control: false, present: false, broadcast: false,
+    pause: false, restrictions: true, timer: false, hand: true, polls: 0, snippets: 1, notices: 0, files: 2, collections: 0, opened: 0, messages: 0 } });
+  await sleep(150);
+  const r = await p.evaluate(() => ({ tarjeta: !document.getElementById("fin-clase").hidden,
+    nuevo: !document.getElementById("fin-clase-nuevo").hidden, texto: document.getElementById("fin-clase-texto").textContent,
+    banda: !document.getElementById("restrictions").hidden, vacio: !document.getElementById("empty").hidden,
+    enBandas: !!document.querySelector("#bandas #fin-clase"), foco: document.activeElement === document.body || document.activeElement.id !== "fin-clase",
+    titulo: document.title }));
+  ok(r.tarjeta && r.nuevo, "tarjeta: " + JSON.stringify(r));
+  ok(r.texto.includes("ya no hay restricciones") && r.texto.includes("Documentos"), "texto: " + r.texto);
+  ok(!r.banda, "la banda de restricciones siguió");
+  ok(r.vacio, "la ventana no volvió a su estado vacío");
+  ok(!r.enBandas, "la tarjeta es una banda");
+  ok(r.foco, "la tarjeta le quitó el foco al alumno");
+  ok(r.titulo.startsWith("(1)") || /1/.test(r.titulo), "no cuenta como «sin ver»: " + r.titulo);
+  await p.click("#fin-clase-ok");
+  await sleep(100);
+  const fin = await p.evaluate(() => ({ oculta: document.getElementById("fin-clase").hidden,
+    llamada: window.__calls.some(([n]) => n === "DismissClassEnd") }));
+  ok(fin.oculta && fin.llamada, "Entendido: " + JSON.stringify(fin));
+  await emitir(p, "aula:class-end", { endId: "fin-2", at: Date.now(), removed: {} });
+  await emitir(p, "aula:class-end", null); // llegó código nuevo
+  await sleep(100);
+  ok(await p.evaluate(() => document.getElementById("fin-clase").hidden), "la tarjeta siguió con código nuevo");
+});
+
 // Encuestas (prompt 10.12): la tarjeta llega arriba con «Nuevo» sin quitar el foco (notify, nunca un
 // diálogo), no es banda, se responde con el teclado (flechas y Enter) y cuenta como «sin ver».
 const encuestaNueva = { arrived: "pl-9", cards: [{ pollId: "pl-9", kind: "choice", question: "¿Qué imprime print(3 // 2)?",

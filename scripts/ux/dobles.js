@@ -27,10 +27,10 @@
     canCollect: s.capabilities.includes("file.collect"),
     canOpenUrl: s.capabilities.includes("open.url"), canOpenApp: s.capabilities.includes("open.app"),
     canPresent: s.capabilities.includes("screen.present"), canPresentView: s.capabilities.includes("screen.present.view"),
-    canPause: s.capabilities.includes("screen.freeze"),
+    canPause: s.capabilities.includes("screen.freeze"), canClassEnd: s.capabilities.includes("class.end"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "screen.present", "screen.present.view", "screen.freeze"];
+    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "screen.present", "screen.present.view", "screen.freeze", "class.end"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -56,7 +56,7 @@
     student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL }),
   ];
   const simStudents = [1, 2].map((i) => student({ hostname: "Simulado " + i, username: "Alumno de prueba", osVersion: "simulado",
-    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "file.push", "file.collect", "poll"], simulated: true,
+    agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "file.push", "file.collect", "poll", "class.end"], simulated: true,
     lastCodeAck: i === 1 ? "sn-3" : "", ackedAt: i === 1 ? "10:42:09" : "" }));
   let list = scene === "simulada-sola" ? simStudents.slice() : scene === "simulada" ? [...sims.slice(0, 1), ...simStudents] : scene === "vacia" || scene.startsWith("setup") ? [] : scene.startsWith("lab") ? lab : [...sims,
     student({ hostname: "SIM-03", username: "simulado", osVersion: "simulado", agentVersion: "0.1.0-sim",
@@ -201,6 +201,13 @@
     : { sessionID: "", hostname: "", controlID: "", status: "", viewing: false };
   // Lo que el agente contesta solo: active y una imagen al tomar, ended al soltar.
   const despues = (fn) => setTimeout(fn, 60);
+  // Terminar la clase: la última classend.View.
+  let fin = null;
+  const cuentaFin = () => {
+    const falta = (s) => ["waiting", "noack", "away", "failed"].includes(s.state);
+    fin.missing = fin.students.filter(falta).length;
+    fin.clean = fin.students.length - fin.missing;
+  };
   const cuadroControl = () => window.__emit("aula:remote-frame", { sessionId: remote.sessionID, seq: 1, width: 320, height: 180,
     jpeg: window.__thumb("main.py - Visual Studio Code", 210), detail: true, at: new Date().toISOString() });
   // Capturas (apps/teacher/snapshot.go, snapshot.Snapshot): llegan «ready» poco después de
@@ -419,6 +426,56 @@
       return { sent: resumenPausas().paused, unsupported: [], presenting: [], failed: [] };
     }),
     Pauses: call("Pauses", () => resumenPausas()),
+    // Terminar la clase (apps/teacher/classend.go): en lab-terminar hay de todo activo; el
+    // resultado llega poco después, con un equipo que no acusa y uno que no pudo quitar sus
+    // restricciones. LAB3-PC15 no tiene class.end (versión anterior) y LAB3-PC03 está desconectado.
+    ClassEndPreview: call("ClassEndPreview", () => {
+      const rico = scene === "lab-terminar";
+      const con = list.filter((s) => s.state === "connected");
+      return { broadcast: rico, present: "", control: "", paused: resumenPausas().paused + (rico ? 2 : 0),
+        apps: list.some((s) => s.appsActive), web: list.some((s) => s.webActive), timer: rico || !!timer.active,
+        poll: rico || !!polls.current, power: rico ? 2 : list.filter((s) => s.power).length,
+        hands: part.hands.length, messages: part.messages.length, snippets: history.length,
+        students: con.filter((s) => !s.simulated).length, simulated: con.filter((s) => s.simulated).length,
+        old: con.filter((s) => !s.capabilities.includes("class.end")).length,
+        disconnected: list.filter((s) => s.state !== "connected").length,
+        collection: rico ? { id: "rc-1", activity: "Ejercicio 4", missing: 2 } : recoList.length ? { id: recoList[0].id, activity: recoList[0].activity, missing: 2 } : null,
+        running: !!(fin && fin.running) };
+    }),
+    FinishClass: call("FinishClass", (req) => {
+      if (fin && fin.running) return new Error("aula:endBusy: ya se está terminando la clase");
+      const at = new Date().toISOString();
+      const rico = scene === "lab-terminar";
+      fin = { endId: "fin-1", at, running: true, steps: [], clean: 0, missing: 0,
+        students: list.map((s) => ({ hostname: s.hostname, sessionId: s.id, simulated: !!s.simulated, at,
+          state: s.state !== "connected" ? "away" : s.capabilities.includes("class.end") ? "waiting" : "partial" })) };
+      cuentaFin();
+      despues(() => {
+        const pasos = [];
+        if (req.collect) pasos.push({ kind: "collect", status: "done", count: 2 });
+        if (rico) pasos.push({ kind: "broadcast", status: "done", count: 3 }, { kind: "pause", status: "done", count: 2 },
+          { kind: "restrictions", status: "done", count: 2 }, { kind: "timer", status: "done", count: 1 },
+          { kind: "poll", status: "done", count: 1 }, { kind: "power", status: req.cancelPower ? "done" : "kept", count: 2 });
+        fin.steps = pasos;
+        for (const s of fin.students) {
+          if (s.state !== "waiting") continue;
+          if (rico && s.hostname === "lab-ubuntu-02") s.state = "noack";
+          else if (rico && s.hostname === "LAB3-PC12") Object.assign(s, { state: "failed", reason: "restrictions" });
+          else s.state = "clean";
+        }
+        fin.running = false;
+        cuentaFin();
+        window.__emit("aula:class-end", JSON.parse(JSON.stringify(fin)));
+      });
+      return JSON.parse(JSON.stringify(fin));
+    }),
+    RetryClassEnd: call("RetryClassEnd", () => {
+      if (!fin) return new Error("aula:endBusy: todavía no terminaste la clase");
+      for (const s of fin.students) if (s.state === "noack" || s.state === "failed") { s.state = "clean"; delete s.reason; }
+      cuentaFin();
+      return JSON.parse(JSON.stringify(fin));
+    }),
+    ClassEnd: call("ClassEnd", () => (fin ? JSON.parse(JSON.stringify(fin)) : { endId: "", at: "0001-01-01T00:00:00Z", running: false, steps: [], students: [], clean: 0, missing: 0 })),
     AllowedApps: call("AllowedApps", () => allowed),
     DefaultAllowedApps: call("DefaultAllowedApps", () => appsEjemplo.slice()),
     SaveAllowedApps: call("SaveAllowedApps", (apps) => {

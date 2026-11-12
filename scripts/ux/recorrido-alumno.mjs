@@ -169,6 +169,12 @@ await f("92-banda-pausa", "pausa");
 await f("93-compacto-en-pausa", "pausa", { w: 380, h: 80, pasos: click("#compactar") });
 await f("94-banda-pausa-oscuro", "todo", { oscuro: true });
 
+// Terminar la clase (prompt 10.14; regla 83): la ventana como recién abierta con la tarjeta «La clase
+// terminó», la hora y lo que se quitó; en oscuro y en el modo compacto (cuenta como «Nuevo»).
+await f("95-fin-de-clase", "fin-clase");
+await f("96-fin-de-clase-oscuro", "fin-clase", { oscuro: true });
+await f("97-compacto-fin-de-clase", "fin-clase", { w: 380, h: 80, pasos: click("#compactar") });
+
 // Tema y tamaño
 await f("22-oscuro-varios-codigos", "varios-codigos", { oscuro: true });
 await f("23-oscuro-aviso-y-restricciones", "restricciones", { oscuro: true, pasos: emitir("aula:notices",

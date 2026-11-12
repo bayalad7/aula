@@ -383,8 +383,16 @@ window.AulaTextos = Object.freeze({
 
   // Selección y destinos
   "seleccion.ninguno": "Sin selección: las acciones van a todos los conectados",
-  "seleccion.alumnos.uno": "{n} alumno seleccionado",
-  "seleccion.alumnos.varios": "{n} alumnos seleccionados",
+  "seleccion.todosCorto": "Todos ({n})",
+  "seleccion.corto.uno": "{n} seleccionado",
+  "seleccion.corto.varios": "{n} seleccionados",
+  "seleccion.ayudaSeleccion": "Las acciones de la barra de abajo van solo a los seleccionados.",
+  "alumnos.tamano": "Tamaño",
+  "alumnos.tamano.pequeno": "Pequeño",
+  "alumnos.tamano.mediano": "Mediano",
+  "alumnos.tamano.grande": "Grande",
+  "alumnos.tamano.extra": "Extra grande",
+  "alumnos.tamano.ajustar": "Ajustar a la pantalla",
   "destino.todos": "Todos los conectados ({n})",
   "destino.seleccion.uno": "{n} alumno seleccionado",
   "destino.seleccion.varios": "{n} alumnos seleccionados",

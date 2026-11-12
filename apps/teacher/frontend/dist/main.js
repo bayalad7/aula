@@ -314,6 +314,15 @@
       if (campo) $(campo).focus();
     });
   }
+  // Un canal es un número del 1 al 16000: los campos de canal solo admiten dígitos (nota de interfaz
+  // v0.1.0 003). Lo que no es dígito se quita al escribir o pegar; el rango lo revisa el envío.
+  function soloDigitos(campo) {
+    campo.addEventListener("input", () => {
+      const limpio = campo.value.replace(/\D+/g, "").slice(0, 5);
+      if (limpio !== campo.value) campo.value = limpio;
+    });
+  }
+  for (const id of ["arranque-canal", "cc-canal"]) soloDigitos($(id));
   for (const id of ["arranque-canal", "arranque-nombre"]) $(id).addEventListener("input", () => limpiarCampo($(id)));
   $("arranque-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -409,6 +418,7 @@
     $("alumnos-vacio-titulo").textContent = T("alumnos.vacioTitulo", { canal: clase.channel });
     $("alumnos-lista").hidden = vacio || modo !== "lista";
     $("alumnos-miniaturas").hidden = vacio || modo !== "miniaturas";
+    $("tamano-miniaturas").hidden = vacio || modo !== "miniaturas";
 
     const tplFila = $("t-fila-alumno").content.firstElementChild;
     const filas = [];
@@ -951,7 +961,47 @@
     const vivos = new Set(alumnos.students.map(clave));
     for (const k of [...tarjetas.keys()]) if (!vivos.has(k)) tarjetas.delete(k);
     $("alumnos-cuadricula").replaceChildren(...items);
+    ajustarMiniaturas();
   }
+
+  // Tamaño de las miniaturas (nota de interfaz v0.1.0 004). Pequeño a Extra grande fijan el ancho
+  // mínimo de cada una; «Ajustar» elige las columnas para que todos quepan sin desplazar. Se
+  // recuerda en esta consola, como el tema.
+  const ANCHO_MINIATURA = { pequeno: "9rem", mediano: "13.5rem", grande: "19rem", extra: "26rem" };
+  let tamanoMiniaturas = "mediano";
+  try { tamanoMiniaturas = localStorage.getItem("aula-miniaturas") || "mediano"; } catch { /* sin almacenamiento */ }
+  if (!(tamanoMiniaturas in ANCHO_MINIATURA) && tamanoMiniaturas !== "ajustar") tamanoMiniaturas = "mediano";
+  $("tamano-miniaturas-select").value = tamanoMiniaturas;
+  $("tamano-miniaturas-select").addEventListener("change", (e) => {
+    tamanoMiniaturas = e.target.value;
+    try { localStorage.setItem("aula-miniaturas", tamanoMiniaturas); } catch { /* sin almacenamiento */ }
+    ajustarMiniaturas();
+  });
+  function ajustarMiniaturas() {
+    const ul = $("alumnos-cuadricula");
+    if (tamanoMiniaturas !== "ajustar") {
+      ul.style.removeProperty("grid-template-columns");
+      ul.style.setProperty("--ancho-miniatura", ANCHO_MINIATURA[tamanoMiniaturas]);
+      return;
+    }
+    ul.style.removeProperty("--ancho-miniatura");
+    const n = ul.querySelectorAll(".alumno").length;
+    if (!n || ul.closest("[hidden]")) return;
+    // Lo que queda de alto en la vista, sin la barra de acciones; cada tarjeta mide su pantalla 16:9
+    // más el marco, el pie del monitor y el nombre (~70 px).
+    const ancho = ul.clientWidth;
+    const barra = document.querySelector(".barra-acciones");
+    const alto = Math.max(160, window.innerHeight - ul.getBoundingClientRect().top - (barra ? barra.offsetHeight : 0) - 16);
+    const hueco = parseFloat(getComputedStyle(ul).columnGap) || 12;
+    let cols = n;
+    for (let c = 1; c <= n; c++) {
+      const w = (ancho - hueco * (c - 1)) / c;
+      const filas = Math.ceil(n / c);
+      if (filas * (w * 9 / 16 + 70) + hueco * (filas - 1) <= alto) { cols = c; break; }
+    }
+    ul.style.gridTemplateColumns = "repeat(" + cols + ", minmax(0, 1fr))";
+  }
+  window.addEventListener("resize", () => { if (modo === "miniaturas" && tamanoMiniaturas === "ajustar") ajustarMiniaturas(); });
 
   function alumnoPorSesion(id) { return alumnos.students.find((s) => s.id === id); }
   let enGrande = "";
@@ -1448,7 +1498,12 @@
 
   function pintarSeleccion() {
     const n = seleccion.size;
-    $("seleccion-texto").textContent = n === 0 ? T("seleccion.ninguno") : P("seleccion.alumnos", n);
+    // En la cabecera, corto; la explicación va en el tooltip y para el lector de pantalla.
+    const ayudaSel = n === 0 ? T("seleccion.ninguno") : T("seleccion.ayudaSeleccion");
+    $("seleccion-corto").textContent = n === 0 ? T("seleccion.todosCorto", { n: conectados().length }) : P("seleccion.corto", n);
+    $("seleccion-ayuda").textContent = " · " + ayudaSel;
+    $("seleccion-texto").dataset.tip = ayudaSel;
+    $("seleccion-icono").setAttribute("href", "sistema/iconos.svg#" + (n === 0 ? "alumnos" : "filtro"));
     const todos = $("alumnos-todos");
     todos.checked = n > 0 && n === alumnos.students.length;
     todos.indeterminate = n > 0 && n < alumnos.students.length;

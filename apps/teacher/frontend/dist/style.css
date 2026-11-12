@@ -36,7 +36,7 @@
 .desglose dd { margin: 0 0 var(--e-2); }
 
 /* --- Miniaturas: la pantalla es un botón para verla en grande ---------------------------- */
-.alumno__pantalla { width: 100%; padding: 0; border: 0; font: inherit; cursor: zoom-in; }
+.alumno__pantalla { width: 100%; padding: 0; font: inherit; cursor: zoom-in; } /* el borde es el marco del monitor (internal/ui) */
 .alumno__pantalla:disabled { cursor: default; }
 .alumno__pantalla img:not([src]) { display: none; }
 .alumno__pantalla-texto:empty { display: none; }
@@ -169,4 +169,5 @@ a.insignia:hover { text-decoration: underline; }
 .tabla thead th { text-align: center; }
 /* 6: los conteos de la cabecera de Alumnos, de la altura de los botones de al lado. */
 #alumnos-resumen { align-items: center; }
-#alumnos-resumen .insignia { min-height: var(--alto-control); padding: 0 var(--e-3); border-radius: var(--r-md); }
+/* Los contadores y la selección (nota de interfaz v0.1.0 006) miden lo mismo que los controles. */
+#alumnos-resumen .insignia, #seleccion-texto { min-height: var(--alto-control); padding: 0 var(--e-3); border-radius: var(--r-md); }

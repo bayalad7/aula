@@ -29,7 +29,7 @@
           <details class="detalles"><summary data-t="comun.verDetalles"></summary><pre id="arranque-error-detalle"></pre></details></div>
       </div>
       <label class="campo"><span class="campo__etiqueta" data-t="arranque.canal"></span>
-        <input id="arranque-canal" class="mono" inputmode="numeric" autocomplete="off" aria-describedby="arranque-canal-ayuda" data-icono="red">
+        <input id="arranque-canal" class="mono" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="off" aria-describedby="arranque-canal-ayuda" data-icono="red">
         <span class="campo__ayuda" id="arranque-canal-ayuda" data-t="arranque.canalAyuda"></span>
       </label>
       <div id="arranque-recientes" class="grupo-botones"></div>
@@ -134,10 +134,21 @@
             <header class="vista__cabecera">
               <h1 id="h-alumnos" data-t="alumnos.titulo"></h1>
               <div class="resumen" id="alumnos-resumen" aria-live="polite"></div>
+              <!-- A quién van las acciones (nota de interfaz v0.1.0 006): antes en la barra de acciones. -->
+              <span class="insignia insignia--info" id="seleccion-texto" aria-live="polite"><svg class="icono" aria-hidden="true"><use id="seleccion-icono" href="sistema/iconos.svg#alumnos"/></svg><span id="seleccion-corto"></span><span class="solo-lector" id="seleccion-ayuda"></span></span>
               <div class="segmentado" role="group" data-t-aria-label="alumnos.modo">
                 <button type="button" data-modo="lista"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#lista"/></svg><span data-t="alumnos.lista"></span></button>
                 <button type="button" data-modo="miniaturas"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#miniaturas"/></svg><span data-t="alumnos.miniaturas"></span></button>
               </div>
+              <!-- Tamaño de las miniaturas (nota de interfaz v0.1.0 004): solo en Miniaturas; se recuerda. -->
+              <label class="tamano-miniaturas" id="tamano-miniaturas" hidden><span data-t="alumnos.tamano"></span>
+                <select id="tamano-miniaturas-select" class="control" data-icono="miniaturas">
+                  <option value="pequeno" data-t="alumnos.tamano.pequeno"></option>
+                  <option value="mediano" data-t="alumnos.tamano.mediano"></option>
+                  <option value="grande" data-t="alumnos.tamano.grande"></option>
+                  <option value="extra" data-t="alumnos.tamano.extra"></option>
+                  <option value="ajustar" data-t="alumnos.tamano.ajustar"></option>
+                </select></label>
               <button type="button" class="btn" id="seleccionar-todos" data-t-title="alumnos.ctrlA"><svg class="icono" aria-hidden="true"><use id="seleccionar-todos-icono" href="sistema/iconos.svg#hecho"/></svg><span class="btn__texto" id="seleccionar-todos-texto"></span></button>
               <a class="btn btn--fantasma" href="#falta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#persona-buscar"/></svg><span data-t="falta.titulo"></span></a>
               <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
@@ -170,7 +181,6 @@
             </div>
             <div class="barra-acciones" role="toolbar" data-t-aria-label="alumnos.barraEtiqueta">
               <div class="barra-acciones__dentro">
-                <span class="barra-acciones__seleccion" id="seleccion-texto" aria-live="polite"></span>
                 <button type="button" class="btn" data-panel="pantalla" aria-expanded="false" data-t-tip="panel.pantalla"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg><span class="btn__texto" data-t="panel.pantalla"></span></button>
                 <button type="button" class="btn" data-panel="aviso" aria-expanded="false" data-t-tip="panel.aviso"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#aviso"/></svg><span class="btn__texto" data-t="panel.aviso"></span></button>
                 <button type="button" class="btn" data-panel="pausa" aria-expanded="false" data-t-tip="panel.pausaTip"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pausa"/></svg><span class="btn__texto" data-t="panel.pausa"></span></button>
@@ -882,7 +892,7 @@
         <h2 id="cc-titulo" data-t="canal.titulo"></h2>
         <div class="con-info"><label class="campo__etiqueta" for="cc-canal" data-t="canal.nuevo"></label><button type="button" class="info-boton" data-info="canal" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></div>
         <div class="campo">
-          <input id="cc-canal" class="mono" inputmode="numeric" autocomplete="off" aria-describedby="cc-ayuda cc-error" data-icono="red">
+          <input id="cc-canal" class="mono" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="off" aria-describedby="cc-ayuda cc-error" data-icono="red">
           <span class="campo__error" id="cc-error" hidden></span>
           <span class="campo__ayuda" id="cc-ayuda" data-t="arranque.canalAyuda"></span></div>
         <div class="grupo-botones" id="cc-recientes"></div>
@@ -1148,7 +1158,7 @@
   <template id="t-tarjeta-alumno">
     <li class="alumno">
       <input class="alumno__marca marca" type="checkbox">
-      <button type="button" class="alumno__pantalla"><img alt=""><span class="alumno__pantalla-texto"></span></button>
+      <div class="alumno__monitor"><button type="button" class="alumno__pantalla"><img alt=""><span class="alumno__pantalla-texto"></span></button></div>
       <div class="alumno__pie"><span class="alumno__nombre"></span><span class="estado"></span></div>
       <div class="alumno__sub"></div>
     </li>

@@ -35,6 +35,10 @@ const (
 	TypeScreenThumbStart Type = "screen.thumb.start"
 	TypeScreenThumbFrame Type = "screen.thumb.frame"
 	TypeScreenThumbStop  Type = "screen.thumb.stop"
+
+	TypeScreenFreeze    Type = "screen.freeze"
+	TypeScreenUnfreeze  Type = "screen.unfreeze"
+	TypeScreenFreezeAck Type = "screen.freeze.ack"
 	// Broadcast of the teacher's screen (docs/protocol.md §5.12).
 	TypeScreenBroadcastStart  Type = "screen.broadcast.start"
 	TypeScreenBroadcastOffer  Type = "screen.broadcast.offer"
@@ -270,6 +274,10 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeScreenThumbStart: decodeAs[ScreenThumbStart],
 	TypeScreenThumbFrame: decodeAs[ScreenThumbFrame],
 	TypeScreenThumbStop:  decodeAs[ScreenThumbStop],
+
+	TypeScreenFreeze:    decodeAs[ScreenFreeze],
+	TypeScreenUnfreeze:  decodeAs[ScreenUnfreeze],
+	TypeScreenFreezeAck: decodeAs[ScreenFreezeAck],
 
 	TypeScreenBroadcastStart:  decodeAs[ScreenBroadcastStart],
 	TypeScreenBroadcastOffer:  decodeAs[ScreenBroadcastOffer],

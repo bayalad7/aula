@@ -301,7 +301,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `msg.show` | `msg.show` | v0 |
 | `screen.thumb` | `screen.thumb.start`, `screen.thumb.stop` | v0.3 (Windows) |
 | `screen.snapshot` | `screen.snapshot.request` | v0.7 (§5.17). Windows, con la misma condición que `screen.thumb` (captura y distintivo); también los alumnos simulados. Linux y macOS no la declaran. |
-| `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Documentada, **pendiente** (§5.9) |
+| `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Sin publicar (§5.9–5.11). Windows, en modo ventana y como servicio con su ayudante (la pausa se muestra en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
 | `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). Linux y macOS no la declaran. |
 | `app.block` | `app.block.set`, `app.block.clear` | v0.4 (§5.13). Windows, solo con el agente como servicio y su ayudante (D-016). |
 | `web.filter` | `web.filter.set`, `web.filter.clear` | v0.4 (§5.14). Windows, solo con el agente como servicio y su ayudante. |
@@ -347,6 +347,9 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `screen.thumb.start` | P → A | `screen.thumb` | `interval_ms`, `quality`, `max_width` | `screen.thumb.frame` periódicos o `error` |
 | `screen.thumb.frame` | A → P | — | `ref_id`, `seq`, `width`, `height`, `jpeg` | — |
 | `screen.thumb.stop` | P → A | `screen.thumb` | `{}` | — |
+| `screen.freeze` | P → A | `screen.freeze` | `message`? | `screen.freeze.ack` (`frozen: true`) o `error` |
+| `screen.unfreeze` | P → A | `screen.freeze` | `{}` | `screen.freeze.ack` (`frozen: false`) |
+| `screen.freeze.ack` | A → P | — | `ref_id`, `frozen` | — |
 | `screen.broadcast.start` | P → A | `screen.broadcast` | `broadcast_id`, `width`, `height`, `fps` (opcionales `source`, `mode`) | — (sigue `screen.broadcast.offer`) o `error` |
 | `screen.broadcast.offer` | P → A | `screen.broadcast` | `broadcast_id`, `attempt`, `sdp` | `screen.broadcast.answer` o `error` |
 | `screen.broadcast.answer` | A → P | — | `ref_id`, `broadcast_id`, `attempt`, `sdp` | — |
@@ -509,13 +512,14 @@ al cerrar la vista. Guardar una captura es otro mensaje y una acción explícita
 Payload `{}`. El agente deja de capturar y quita el indicador. Es idempotente y no tiene
 respuesta: la prueba de que se detuvo es que no llegan más cuadros.
 
-### 5.9 `screen.freeze` (P → A) — pendiente
+### 5.9 `screen.freeze` (P → A)
 
-> **Documentado, no implementado** (D-013). Los agentes actuales no declaran `screen.freeze` y
-> responden `unknown_type`. §5.9–5.11 describen el diseño previsto.
+> Implementado (Windows, sin publicar), aprobado el 2026-11-12 (prompt 10.21). Decisión técnica en
+> D-013; implementación en `internal/screen` (`Freezer` del agente, `Pauses` de la consola).
 
-Pone la **pantalla en blanco**: el agente cubre todos los monitores con una ventana siempre
-encima, que tapa lo que hay en pantalla, recibe los clics y explica por qué.
+Pone la **pantalla en blanco** («Pausar pantallas»): el agente cubre todos los monitores con su
+ventana de pausa, siempre encima, que tapa lo que hay en pantalla, recibe los clics y explica
+por qué.
 
 ```json
 { "message": "Atención al pizarrón, por favor." }
@@ -523,31 +527,52 @@ encima, que tapa lo que hay en pantalla, recibe los clics y explica por qué.
 
 | Campo | Tipo | Regla |
 |---|---|---|
-| `message` | string | **Opcional**, 0–300 caracteres, texto plano. Se muestra debajo del texto fijo. |
+| `message` | string | **Opcional**, 0–300 caracteres, texto plano. Se muestra debajo del texto fijo. Nunca se registra. |
 
-El texto fijo es "Tu profesor pausó esta computadora" y el nombre de la clase y el canal; así el
-alumno siempre sabe quién la bloqueó. Un `screen.freeze` sobre una pantalla ya en blanco solo
-cambia el mensaje.
+El texto fijo es «Tu profesor pausó esta computadora», con el profesor y el canal, que el
+alumno siempre sabe quién la pausó (`docs/privacidad.md`, regla 9). Un `screen.freeze` sobre
+una pantalla ya en pausa **solo cambia el mensaje**, sin cerrar la ventana. Responde
+`screen.freeze.ack` con `frozen: true`; si no pudo mostrar la ventana, `error` `internal` con
+ese `ref_id` y la pantalla queda como estaba.
 
-- **Al cerrarse la conexión, el agente quita la pantalla en blanco** por sí mismo: si la consola
-  se cierra o se cae la red, el alumno no queda bloqueado.
+Reglas del agente:
+
+- **Una ventana por monitor**, con su DPI; si cambian los monitores, se vuelven a cubrir.
+- **Vuelve a quedar encima cada medio segundo.** Toma el foco al aparecer y cuando el alumno
+  hace clic en ella; no lo pide en cada vuelta (las reglas de Windows contra el robo de foco lo
+  impedirían a medias, y pelearía con la cuenta regresiva de energía).
 - **No intercepta el teclado** (D-013): el alumno podría cambiar de ventana con Alt+Tab y
-  escribir a ciegas, aunque la pantalla en blanco vuelve a quedar encima cada medio segundo.
-  Cerrar Aula Cliente (por ejemplo, desde el Administrador de tareas) la quita, como cualquier
-  cierre del agente, y la consola lo ve como desconexión.
+  escribir a ciegas. Cerrar Aula Cliente (por ejemplo, desde el Administrador de tareas) la
+  quita, como cualquier cierre del agente, y la consola lo ve como desconexión.
+- **Cede el paso a lo que el alumno debe ver.** Mientras el equipo recibe una transmisión
+  (§5.12, también la pantalla de un compañero, §5.24), hay una cuenta regresiva de energía
+  (§5.15) o un control remoto (§5.16), la pausa queda justo **debajo** de la ventana de Aula en
+  vez de encima de todo; al terminar, vuelve a cubrir todo.
+- **Al cerrarse la conexión, el agente quita la pausa** por sí mismo: si la consola se cierra o
+  se cae la red, el alumno no queda bloqueado. Como servicio, el ayudante la quita también si se
+  pierde el canal local con el servicio.
 
-### 5.10 `screen.unfreeze` (P → A) — pendiente
+Reglas de la consola:
 
-Payload `{}`. Quita la pantalla en blanco. Es idempotente.
+- No lo envía a un equipo que se está proyectando a la clase (§5.24): su pantalla es la que ven
+  los demás.
+- Antes de `remote.start` a un equipo en pausa, envía `screen.unfreeze` (el profesor quiere ver
+  y usar la pantalla real).
+- Una sesión que se reconecta empieza sin pausa; la consola no la reenvía sola.
 
-### 5.11 `screen.freeze.ack` (A → P) — pendiente
+### 5.10 `screen.unfreeze` (P → A)
+
+Payload `{}`. Quita la pantalla en blanco. Es idempotente: siempre responde `screen.freeze.ack`
+con `frozen: false`.
+
+### 5.11 `screen.freeze.ack` (A → P)
 
 ```json
 { "ref_id": "<id del screen.freeze o screen.unfreeze>", "frozen": true }
 ```
 
 Confirma el estado en que quedó la pantalla: `true` tras `screen.freeze` y `false` tras
-`screen.unfreeze`.
+`screen.unfreeze`. La consola cuenta como «sin acusar» a quien no respondió en 5 s.
 
 ### 5.12 Transmisión de la pantalla del profesor (`screen.broadcast.*`)
 
@@ -1939,7 +1964,6 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 
 | Tipo | Descripción |
 |---|---|
-| `screen.freeze` / `screen.unfreeze` / `screen.freeze.ack` | Pantalla en blanco: documentada en §5.9–5.11, pendiente de implementar. |
 | `code.collect` | Recolectar el código que el alumno entrega desde el overlay. |
 
 ---
@@ -1980,7 +2004,7 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `poll.vote` por agente | ráfaga 3 y 1 por s | `error` `invalid_message`; se descarta |
 | `poll.results.voters` / `recipients` | 0–10 000 | `error` `invalid_message` |
 | Encuestas guardadas en la consola | 20 por clase | Se descarta la cerrada más vieja |
-| `screen.freeze.message` (pendiente) | 300 caracteres | `error` `invalid_message` |
+| `screen.freeze.message` | 0–300 caracteres | `error` `invalid_message` |
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
 | `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
 | `screen.broadcast.*.attempt` | 1–1000 | `error` `invalid_message` |

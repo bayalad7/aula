@@ -50,12 +50,15 @@ const (
 	// CapScreenPresentView shows a classmate's screen with its name (§5.24):
 	// declared with screen.broadcast by agents that know the source field.
 	CapScreenPresentView Capability = "screen.present.view"
+	// CapScreenFreeze pauses the screen with the pause window on every
+	// monitor (§5.9–5.11). Windows, in window mode or as a service with its
+	// helper; never the simulated students.
+	CapScreenFreeze Capability = "screen.freeze"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
 const (
-	CapScreenFreeze Capability = "screen.freeze" // documented, pending (§6)
-	CapCodeCollect  Capability = "code.collect"
+	CapCodeCollect Capability = "code.collect"
 )
 
 // requiredCapability lists the capability an agent must declare before the
@@ -67,6 +70,9 @@ var requiredCapability = map[Type]Capability{
 
 	TypeScreenThumbStart: CapScreenThumb,
 	TypeScreenThumbStop:  CapScreenThumb,
+
+	TypeScreenFreeze:   CapScreenFreeze,
+	TypeScreenUnfreeze: CapScreenFreeze,
 
 	TypeScreenBroadcastStart: CapScreenBroadcast,
 	TypeScreenBroadcastOffer: CapScreenBroadcast,

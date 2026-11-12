@@ -47,6 +47,10 @@ func samplePayloads() []Payload {
 		ScreenThumbStart{IntervalMS: 1000, Quality: 50, MaxWidth: 320},
 		ScreenThumbFrame{RefID: testRefID, Seq: 1, Width: 320, Height: 180, JPEG: []byte{0xff, 0xd8, 0xff, 0xd9}},
 		ScreenThumbStop{},
+		ScreenFreeze{Message: "Atención al pizarrón, por favor."},
+		ScreenFreeze{},
+		ScreenUnfreeze{},
+		ScreenFreezeAck{RefID: testRefID, Frozen: true},
 		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1920, Height: 1080, FPS: 15},
 		ScreenBroadcastOffer{BroadcastID: testRefID, Attempt: 1, SDP: testSDP},
 		ScreenBroadcastAnswer{RefID: testSnippetID, BroadcastID: testRefID, Attempt: 1, SDP: testSDP},
@@ -567,6 +571,7 @@ func TestRequiredCapability(t *testing.T) {
 	}
 	for typ, want := range map[Type]Capability{
 		TypeScreenThumbStart: CapScreenThumb, TypeScreenThumbStop: CapScreenThumb,
+		TypeScreenFreeze: CapScreenFreeze, TypeScreenUnfreeze: CapScreenFreeze,
 		TypeScreenBroadcastStart: CapScreenBroadcast, TypeScreenBroadcastOffer: CapScreenBroadcast,
 		TypeScreenBroadcastICE: CapScreenBroadcast, TypeScreenBroadcastStop: CapScreenBroadcast,
 		TypeAppBlockSet: CapAppBlock, TypeAppBlockClear: CapAppBlock,
@@ -585,7 +590,7 @@ func TestRequiredCapability(t *testing.T) {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote, TypeStudentPresentAck, TypeStudentPresentAnswer} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote, TypeStudentPresentAck, TypeStudentPresentAnswer, TypeScreenFreezeAck} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}

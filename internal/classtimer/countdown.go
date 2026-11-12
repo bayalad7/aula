@@ -26,9 +26,11 @@ const (
 
 // View is the countdown for the window: states, never sentences.
 type View struct {
-	State       State  `json:"state"`
-	TimerID     string `json:"timerId"`
-	Label       string `json:"label"`
+	State   State  `json:"state"`
+	TimerID string `json:"timerId"`
+	Label   string `json:"label"`
+	// Description is what to do, for the window's card; "" for none.
+	Description string `json:"description,omitempty"`
 	RemainingMS int64  `json:"remainingMs"`
 	// JustEnded is set only in the view that announces the end, so the window
 	// shows the notice once.
@@ -41,12 +43,13 @@ type Countdown struct {
 	mu  sync.Mutex
 	now func() time.Time
 
-	id      string
-	label   string
-	end     time.Time // monotonic
-	refID   string    // the last start or extend, for the ended ack
-	ended   bool
-	endedAt time.Time
+	id          string
+	label       string
+	description string
+	end         time.Time // monotonic
+	refID       string    // the last start or extend, for the ended ack
+	ended       bool
+	endedAt     time.Time
 
 	orphan   bool // a new session started: the console has not confirmed it yet
 	orphanAt time.Time
@@ -70,7 +73,7 @@ func (c *Countdown) Start(refID string, p protocol.TimerStart) []protocol.TimerA
 		acks = append(acks, protocol.TimerAck{RefID: c.refID, TimerID: c.id, Status: protocol.TimerStopped})
 	}
 	now := c.now()
-	c.id, c.label, c.refID = p.TimerID, p.Label, refID
+	c.id, c.label, c.description, c.refID = p.TimerID, p.Label, p.Description, refID
 	c.end = now.Add(time.Duration(p.RemainingMS) * time.Millisecond)
 	c.ended, c.orphan = false, false
 	return append(acks, c.ack(refID, protocol.TimerRunning, now))
@@ -177,9 +180,9 @@ func (c *Countdown) View() View {
 	case c.id == "":
 		return View{State: StateNone}
 	case c.ended:
-		return View{State: StateEnded, TimerID: c.id, Label: c.label}
+		return View{State: StateEnded, TimerID: c.id, Label: c.label, Description: c.description}
 	}
-	return View{State: StateRunning, TimerID: c.id, Label: c.label, RemainingMS: c.remaining(c.now())}
+	return View{State: StateRunning, TimerID: c.id, Label: c.label, Description: c.description, RemainingMS: c.remaining(c.now())}
 }
 
 func (c *Countdown) ack(refID string, st protocol.TimerStatus, now time.Time) protocol.TimerAck {

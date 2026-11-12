@@ -164,7 +164,7 @@ func TestClassStartPlanAndAck(t *testing.T) {
 	clk := newClock()
 	c := NewClass(clk.Now)
 	a, b, old := student("s1", "LAB-01"), student("s2", "LAB-02"), student("s3", "LAB-03", protocol.CapCodeView)
-	id, err := c.Start("  Ejercicio 1 ", 300, nil)
+	id, err := c.Start("  Ejercicio 1 ", "", 300, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +208,7 @@ func TestClassExtendStopAndEnd(t *testing.T) {
 	if err := c.Extend(60); !errors.Is(err, ErrNotRunning) {
 		t.Fatalf("extend without timer = %v", err)
 	}
-	id, _ := c.Start("", 60, nil)
+	id, _ := c.Start("", "", 60, nil)
 	c.Plan([]session.Session{a})
 	clk.Add(60 * time.Second)
 	if s := c.Snapshot([]session.Session{a}, nil); !s.Ended || s.RemainingMS != 0 {
@@ -264,14 +264,20 @@ func TestClassExtendStopAndEnd(t *testing.T) {
 func TestClassLimits(t *testing.T) {
 	c := NewClass(newClock().Now)
 	for _, d := range []int{0, protocol.MinTimerDurationS - 1, protocol.MaxTimerDurationS + 1} {
-		if _, err := c.Start("x", d, nil); !errors.Is(err, ErrInvalid) {
+		if _, err := c.Start("x", "", d, nil); !errors.Is(err, ErrInvalid) {
 			t.Errorf("duration %d: %v", d, err)
 		}
 	}
-	if _, err := c.Start(strings.Repeat("ñ", protocol.MaxTimerLabel+1), 60, nil); !errors.Is(err, ErrInvalid) {
+	if _, err := c.Start(strings.Repeat("ñ", protocol.MaxTimerLabel+1), "", 60, nil); !errors.Is(err, ErrInvalid) {
 		t.Errorf("long label: %v", err)
 	}
-	c.Start("x", protocol.MaxTimerDurationS-120, nil)
+	if _, err := c.Start("x", strings.Repeat("ñ", protocol.MaxTimerDescription+1), 60, nil); !errors.Is(err, ErrInvalid) {
+		t.Errorf("long description: %v", err)
+	}
+	if _, err := c.Start("x", strings.Repeat("ñ", protocol.MaxTimerDescription), 60, nil); err != nil {
+		t.Errorf("description of %d characters refused: %v", protocol.MaxTimerDescription, err)
+	}
+	c.Start("x", "", protocol.MaxTimerDurationS-120, nil)
 	if err := c.Extend(protocol.MinTimerExtendS - 1); !errors.Is(err, ErrInvalid) {
 		t.Errorf("short extension: %v", err)
 	}
@@ -290,7 +296,7 @@ func TestClassSelectionReconnectAndReplace(t *testing.T) {
 	clk := newClock()
 	c := NewClass(clk.Now)
 	a, b := student("s1", "LAB-01"), student("s2", "LAB-02")
-	first, _ := c.Start("Ejercicio 1", 600, []string{"lab-01"})
+	first, _ := c.Start("Ejercicio 1", "", 600, []string{"lab-01"})
 	if cmds := c.Plan([]session.Session{a, b}); len(cmds) != 1 || cmds[0].SessionID != "s1" {
 		t.Fatalf("selection plan = %+v", cmds)
 	}
@@ -311,7 +317,7 @@ func TestClassSelectionReconnectAndReplace(t *testing.T) {
 		t.Fatal("a failed send was not retried")
 	}
 	// A new timer for everyone replaces it.
-	second, _ := c.Start("Ejercicio 2", 120, nil)
+	second, _ := c.Start("Ejercicio 2", "", 120, nil)
 	cmds = c.Plan([]session.Session{a2, b})
 	if len(cmds) != 2 {
 		t.Fatalf("replace plan = %+v", cmds)
@@ -336,7 +342,7 @@ func TestClassSelectionReconnectAndReplace(t *testing.T) {
 func TestClockSkewDoesNotMatter(t *testing.T) {
 	console := newClock()
 	cls := NewClass(console.Now)
-	cls.Start("Ejercicio 1", 60, nil)
+	cls.Start("Ejercicio 1", "", 60, nil)
 	cmds := cls.Plan([]session.Session{student("s1", "A"), student("s2", "B")})
 	fast, slow := newClock(), newClock()
 	fast.Add(7 * time.Minute)
@@ -348,5 +354,43 @@ func TestClockSkewDoesNotMatter(t *testing.T) {
 	slow.Add(15 * time.Second)
 	if ra, rb := ca.View().RemainingMS, cb.View().RemainingMS; ra != 45_000 || rb != 45_000 {
 		t.Fatalf("remaining %d and %d, want 45000 both", ra, rb)
+	}
+}
+
+// TestDescriptionTravels: what to do (nota de interfaz 18) goes in
+// timer.start, also in the resend to a student who reconnects, reaches the
+// window's view, and a start without one leaves it empty (an old console).
+func TestDescriptionTravels(t *testing.T) {
+	clk := newClock()
+	c := NewClass(clk.Now)
+	a := student("s1", "LAB-01")
+	id, err := c.Start("Ejercicio 1", "  Resuelve 3 a 5.\nEntrega en Aula.  ", 300, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmds := c.Plan([]session.Session{a})
+	p := cmds[0].Payload.(protocol.TimerStart)
+	if p.Description != "Resuelve 3 a 5.\nEntrega en Aula." {
+		t.Fatalf("description %q", p.Description)
+	}
+	if s := c.Snapshot([]session.Session{a}, nil); s.Description != p.Description {
+		t.Fatalf("snapshot description %q", s.Description)
+	}
+	// a reconnects as s1b: the resend carries it too.
+	cmds = c.Plan([]session.Session{student("s1b", "LAB-01")})
+	if len(cmds) != 1 || cmds[0].Payload.(protocol.TimerStart).Description != p.Description {
+		t.Fatalf("resend = %+v", cmds)
+	}
+
+	cd := NewCountdown(newClock().Now)
+	cd.Start(refA, p)
+	if v := cd.View(); v.TimerID != id || v.Description != p.Description {
+		t.Fatalf("view = %+v", v)
+	}
+	p.Description = ""
+	p.TimerID = tid2
+	cd.Start(refA, p)
+	if v := cd.View(); v.Description != "" {
+		t.Fatalf("a start without description kept the old one: %+v", v)
 	}
 }

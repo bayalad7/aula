@@ -48,6 +48,7 @@ type Snapshot struct {
 	Active      bool     `json:"active"`
 	TimerID     string   `json:"timerId"`
 	Label       string   `json:"label"`
+	Description string   `json:"description"`
 	DurationS   int      `json:"durationS"`
 	RemainingMS int64    `json:"remainingMs"`
 	Ended       bool     `json:"ended"`
@@ -72,13 +73,14 @@ type Class struct {
 	mu  sync.Mutex
 	now func() time.Time
 
-	id        string
-	label     string
-	durationS int
-	end       time.Time // monotonic
-	version   int       // increases with every extension
-	lastAddS  int
-	hosts     map[string]bool // nil: the whole channel
+	id          string
+	label       string
+	description string
+	durationS   int
+	end         time.Time // monotonic
+	version     int       // increases with every extension
+	lastAddS    int
+	hosts       map[string]bool // nil: the whole channel
 
 	sent map[string]*sentState // by session ID
 }
@@ -91,20 +93,24 @@ func NewClass(now func() time.Time) *Class {
 	return &Class{now: now, sent: map[string]*sentState{}}
 }
 
-// Start replaces the timer in force by a new one of durationS seconds, for
-// hosts (hostnames, without case) or the whole channel when hosts is empty.
-// Plan then says what to send.
-func (c *Class) Start(label string, durationS int, hosts []string) (string, error) {
+// Start replaces the timer in force by a new one of durationS seconds, with
+// what to do in description (may be empty), for hosts (hostnames, without
+// case) or the whole channel when hosts is empty. Plan then says what to send.
+func (c *Class) Start(label, description string, durationS int, hosts []string) (string, error) {
 	label = strings.TrimSpace(label)
 	if utf8.RuneCountInString(label) > protocol.MaxTimerLabel {
 		return "", fmt.Errorf("%w: label over %d characters", ErrInvalid, protocol.MaxTimerLabel)
+	}
+	description = strings.TrimSpace(description)
+	if utf8.RuneCountInString(description) > protocol.MaxTimerDescription {
+		return "", fmt.Errorf("%w: description over %d characters", ErrInvalid, protocol.MaxTimerDescription)
 	}
 	if durationS < protocol.MinTimerDurationS || durationS > protocol.MaxTimerDurationS {
 		return "", fmt.Errorf("%w: duration %d s", ErrInvalid, durationS)
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.id, c.label, c.durationS, c.version, c.lastAddS = protocol.NewID(), label, durationS, 0, 0
+	c.id, c.label, c.description, c.durationS, c.version, c.lastAddS = protocol.NewID(), label, description, durationS, 0, 0
 	c.end = c.now().Add(time.Duration(durationS) * time.Second)
 	c.hosts = nil
 	for _, h := range hosts {
@@ -202,7 +208,8 @@ func (c *Class) Plan(sessions []session.Session) []Command {
 		case left >= time.Millisecond:
 			// New, reconnected, or it had a replaced timer: the agent acks
 			// stopped for the old one when the new one arrives.
-			cmds = append(cmds, Command{s.ID, protocol.TimerStart{TimerID: c.id, Label: c.label, DurationS: c.durationS, RemainingMS: left.Milliseconds()}})
+			cmds = append(cmds, Command{s.ID, protocol.TimerStart{TimerID: c.id, Label: c.label, DurationS: c.durationS, RemainingMS: left.Milliseconds(),
+				Description: c.description}})
 			c.sent[s.ID] = &sentState{timerID: c.id, version: c.version, status: ReceiverSent}
 		}
 	}
@@ -258,7 +265,7 @@ func (c *Class) Snapshot(real, sims []session.Session) Snapshot {
 		return out
 	}
 	left := max(c.end.Sub(c.now()), 0)
-	out.Active, out.TimerID, out.Label, out.DurationS = true, c.id, c.label, c.durationS
+	out.Active, out.TimerID, out.Label, out.Description, out.DurationS = true, c.id, c.label, c.description, c.durationS
 	out.RemainingMS, out.Ended, out.All = left.Milliseconds(), left == 0, c.hosts == nil
 	out.MaxExtendS = int(max(time.Duration(protocol.MaxTimerRemaining)*time.Millisecond-left, 0) / time.Second)
 	for h := range c.hosts {

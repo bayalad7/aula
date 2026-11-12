@@ -17,7 +17,7 @@ capturas, y Claude la trabaja con `/notas-ux`.
 Requisitos: Node 22 o más nuevo y Go, y una vez `npm ci` en `scripts/ux` (los mismos del arnés web).
 
 ```powershell
-cd scripts\ux
+cd scripts\ux || cd C:\aula\scripts\ux
 node anotar.mjs              # la consola del profesor
 node anotar.mjs alumno       # la app del alumno
 node anotar.mjs profesor lab-archivos   # la consola, en una escena concreta
@@ -155,7 +155,7 @@ menú, los avisos).
 |---|---|
 | «Cannot find package 'puppeteer'» | `npm ci` en `scripts/ux` |
 | Tarda mucho en abrir | La primera vez exporta el manual con Go (unos 30 s) |
-| Abrí `http://127.0.0.1:…/profesor/` en mi navegador y sale en blanco o con un aviso | Esa dirección es interna: la app solo funciona en la ventana de Chromium que abre `anotar.mjs`, que le agrega los datos de demostración y la barra. Búscala en la barra de tareas |
+| Abrí `http://127.0.0.1:…/profesor/` - `http://127.0.0.1:58738/profesor/?escena=lab&tema=ambos` - `http://127.0.0.1:61011/alumno/?escena=conectado&tema=ambos` en mi navegador y sale en blanco o con un aviso | Esa dirección es interna: la app solo funciona en la ventana de Chromium que abre `anotar.mjs`, que le agrega los datos de demostración y la barra. Búscala en la barra de tareas |
 | No se abre ninguna ventana | Mira los mensajes de la terminal: si dice «Anotador abierto», la ventana existe (puede estar detrás de otras); si hay un error, `npm ci` en `scripts/ux` y vuelve a intentar |
 | La etiqueta dice «(zona sin nombre)» | Esa parte no está en el mapa todavía; anota igual y dilo en el texto |
 | Lo que quieres comentar no sale en ninguna escena | Usa «Nota de la pantalla» y descríbelo; Claude puede agregar la escena |

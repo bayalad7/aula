@@ -48,6 +48,10 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.19 | Encender equipos (Wake-on-LAN) | ⏳ Pendiente, después de `v0.1.0` |
 | 10.20 | Cuestionario con puntaje (mejora de 10.12) | ⏳ Pendiente, después de `v0.1.0` |
 | 10.21 | Pantalla en blanco (la parte pendiente de 09) | ⏳ Pendiente (prompt del 12/11/2026; protocolo §5.9–5.11 ya documentado) |
+| 10.22 | Semáforo del alumno | ⏳ Pendiente, después de `v0.1.0` |
+| 10.23 | Rebobinar la clase (código paso a paso) | ⏳ Pendiente, después de `v0.1.0` |
+| 10.24 | Transmitir el editor como texto en vivo | ⏳ Pendiente, después de `v0.1.0` |
+| 10.25 | Salud del laboratorio | ⏳ Pendiente, después de `v0.1.0` |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.1.0`) |
 | 12 (09.2) | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 12.1 | Proyectar la pantalla de un alumno a la clase | ✅ Implementado y probado en CI con dobles y de punta a punta con pion por loopback; «Proyectar a la clase» en la ficha y la Pantalla grande, con su franja (falta la prueba en VM, `docs/prueba-vms.md` §25, y los casos C-89 a C-94 y A-31 a A-34) |
@@ -83,7 +87,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
    `/funcionalidad-nueva <número>` y en este orden: 10.21 (pantalla en blanco) → 10.13
    (identidad, asistencia y bitácora) → 10.14 (terminar la clase) → 10.15 (nombres y mapa) →
    10.17 (entregar código); 10.16 si hay tiempo. Después: 15 (auto-actualización) y 11 (revisión).
-   10.18 a 10.20 quedan para después de `v0.1.0` (10.20 con `/funcionalidad-mejora`).
+   10.18 a 10.25 quedan para después de `v0.1.0` (10.20 con `/funcionalidad-mejora`).
 6. Menor (traído de la entrega E11, eliminada en la limpieza del 12/11/2026): el comprobador de
    conexión deja en el registro de la consola una línea `TLS handshake error … EOF` del servidor
    HTTP por cada dirección que prueba. Es inofensiva; si molesta, se silencia en `transport`.

@@ -70,7 +70,7 @@ Espera mi aprobación.
 ## Backlog sugerido (orden recomendado)
 
 Estado: hechos el 1 (prompt 12), el 4 (10.1), el 5 (10.2) y el 6 (10.3), y 10.4 a 10.12, 12.1 y
-12.2. Lo que falta tiene su prompt en `docs/prompts/10.13` a `10.21` (lista en `00-LEEME.md`),
+12.2. Lo que falta tiene su prompt en `docs/prompts/10.13` a `10.25` (lista en `00-LEEME.md`),
 `13` y `14`.
 
 **Fase 2**

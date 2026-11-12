@@ -21,6 +21,9 @@ type View struct {
 	Width       int    `json:"width"`
 	Height      int    `json:"height"`
 	FPS         int    `json:"fps"`
+	// Source is the hostname of the classmate whose screen this is; "" for
+	// the teacher's (docs/protocol.md §5.24).
+	Source string `json:"source,omitempty"`
 }
 
 // Signal kinds handed to the frontend.
@@ -86,7 +89,7 @@ func (v *Viewer) Capabilities() []protocol.Capability {
 	if !v.Supported || v.OnView == nil || v.OnSignal == nil {
 		return nil
 	}
-	return []protocol.Capability{protocol.CapScreenBroadcast}
+	return []protocol.Capability{protocol.CapScreenBroadcast, protocol.CapScreenPresentView}
 }
 
 // Handle processes the screen.broadcast.* messages from the console and
@@ -125,6 +128,9 @@ func (v *Viewer) start(ctx context.Context, send Sender, envID string, p protoco
 		v.end("replaced")
 	}
 	view := View{Active: true, BroadcastID: p.BroadcastID, Width: p.Width, Height: p.Height, FPS: p.FPS}
+	if p.Source != nil {
+		view.Source = p.Source.Hostname
+	}
 	if err := v.OnView(view); err != nil {
 		v.log().Warn("broadcast view not shown", "err", err)
 		return protocol.NewError(envID, protocol.CodeInternal, "no se pudo mostrar la transmisión")

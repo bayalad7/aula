@@ -3,6 +3,7 @@ package broadcast
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"log/slog"
@@ -142,7 +143,7 @@ func (s *Source) tick(ctx context.Context, fps int, frame time.Duration) error {
 func (s *Source) Prepare(ctx context.Context) error {
 	img, err := s.Capture.Grab(ctx, s.Display)
 	if err != nil {
-		return fmt.Errorf("broadcast capture: %w", err)
+		return fmt.Errorf("broadcast capture: %w: %w", errCapture, err)
 	}
 	return s.ensureEncoder(s.fit(img), s.fps())
 }
@@ -162,11 +163,24 @@ func (s *Source) ensureEncoder(img *image.RGBA, fps int) error {
 	enc, err := s.NewEncoder(platform.VideoEncoderConfig{Width: w, Height: h, FPS: fps,
 		BitrateKbps: kbps, KeyframeEvery: fps * KeyframeEverySecs})
 	if err != nil {
-		return fmt.Errorf("broadcast encoder: %w", err)
+		return fmt.Errorf("broadcast encoder: %w: %w", errEncoder, err)
 	}
 	s.encoder, s.encW, s.encH = enc, w, h
 	s.log().Info("broadcast encoding", "width", w, "height", h, "fps", fps, "kbps", kbps)
 	return nil
+}
+
+// Errors of Prepare, to tell a missing capture from a missing encoder.
+var (
+	errCapture = errors.New("capture failed")
+	errEncoder = errors.New("encoder unavailable")
+)
+
+func (s *Source) maxWidth() int {
+	if s.MaxWidth <= 0 {
+		return DefaultMaxWidth
+	}
+	return s.MaxWidth
 }
 
 func (s *Source) fps() int {

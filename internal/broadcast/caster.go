@@ -81,6 +81,13 @@ type Caster struct {
 	OnStatus func(Status)
 	// OnKeyframe is called when a receiver asks for a keyframe or connects.
 	OnKeyframe func()
+	// Eligible says which sessions receive; nil means every connected one
+	// with screen.broadcast. A presentation leaves its source out and needs
+	// screen.present.view (docs/protocol.md §5.24).
+	Eligible func(session.Session) bool
+	// Uncounted is a session that receives but is not counted in Status:
+	// the console's own view of a presentation.
+	Uncounted string
 	// Backoff gives the wait before attempt n+1 after n failures in a row;
 	// nil means 1, 2, 4… 30 s.
 	Backoff         func(failures int) time.Duration
@@ -148,7 +155,7 @@ func (c *Caster) Sync(sessions []session.Session) {
 	c.post(func() {
 		live := map[string]bool{}
 		for _, s := range sessions {
-			if s.State != session.StateConnected || !s.Can(protocol.CapScreenBroadcast) {
+			if !c.eligible(s) {
 				continue
 			}
 			live[s.ID] = true
@@ -431,8 +438,12 @@ func (c *Caster) status() Status {
 	if c.stopped {
 		return Status{}
 	}
-	s := Status{Active: true, BroadcastID: c.BroadcastID, Eligible: len(c.peers)}
-	for _, r := range c.peers {
+	s := Status{Active: true, BroadcastID: c.BroadcastID}
+	for id, r := range c.peers {
+		if id == c.Uncounted {
+			continue
+		}
+		s.Eligible++
 		if r.state == PeerConnected {
 			s.Receivers++
 		}
@@ -449,6 +460,13 @@ func (c *Caster) report() {
 			c.OnStatus(s)
 		}
 	}
+}
+
+func (c *Caster) eligible(s session.Session) bool {
+	if s.State != session.StateConnected || !s.Can(protocol.CapScreenBroadcast) {
+		return false
+	}
+	return c.Eligible == nil || c.Eligible(s)
 }
 
 func (c *Caster) backoff(failures int) time.Duration {

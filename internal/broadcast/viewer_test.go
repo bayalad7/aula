@@ -79,7 +79,8 @@ func TestViewerShowsTheNoticeBeforeTheOffer(t *testing.T) {
 	h := &viewerHarness{}
 	v := newViewer(h)
 	ctx := t.Context()
-	if got := v.Capabilities(); len(got) != 1 || got[0] != protocol.CapScreenBroadcast {
+	// It also shows a classmate's screen with its name (§5.24).
+	if got := v.Capabilities(); len(got) != 2 || got[0] != protocol.CapScreenBroadcast || got[1] != protocol.CapScreenPresentView {
 		t.Fatalf("capabilities %v", got)
 	}
 	start := protocol.ScreenBroadcastStart{BroadcastID: testID, Width: 1920, Height: 1080, FPS: 15}

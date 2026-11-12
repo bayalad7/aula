@@ -27,9 +27,17 @@ const (
 	EventEmit          = "emit"         // a Wails event for the window
 	EventRaise         = "raise"        // bring the window forward
 	EventNotify        = "notify"       // something arrived: tell without taking the focus
-	EventMaximize      = "maximize"     // maximize (true) or restore (false)
+	EventHold          = "hold"         // the teacher's broadcast holds the window up, or lets it go: HoldArgs
 	EventOnTop         = "ontop"        // keep the window above the others (true) or not
 )
+
+// HoldArgs is EventHold: On holds the window in Mode ("window",
+// "fullscreen", or "" for v0.4's maximized window); !On puts it back as it
+// was (docs/privacidad.md rule 12).
+type HoldArgs struct {
+	On   bool   `json:"on"`
+	Mode string `json:"mode,omitempty"`
+}
 
 // Helper → service.
 const (

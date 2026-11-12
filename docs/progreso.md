@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-11 (10.12 encuestas en vivo implementadas, falta la prueba en VM;
+Última actualización: 2026-11-11 (12.1 proyectar la pantalla de un alumno implementada, falta la
+prueba en VM; 10.12 encuestas en vivo implementadas, falta la prueba en VM;
 10.11 abrir página o app implementada, falta la prueba en VM;
 10.10 recolecciones implementadas, falta la prueba en VM;
 10.9 enviar archivos y plantillas implementado, falta la prueba en
@@ -40,13 +41,13 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.13 | Asistencia y bitácora | ⏳ Pendiente |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.4.0-rc.1`) |
 | 12 (09.2) | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
-| 12.1 | Proyectar la pantalla de un alumno a la clase | ⏳ Pendiente |
+| 12.1 | Proyectar la pantalla de un alumno a la clase | ✅ Implementado y probado en CI con dobles y de punta a punta con pion por loopback; «Proyectar a la clase» en la ficha y la Pantalla grande, con su franja (falta la prueba en VM, `docs/prueba-vms.md` §25, y los casos C-89 a C-94 y A-31 a A-34) |
 | 12.2 | Mejora de la transmisión: a una selección; modos ventana y pantalla completa | ⏳ Pendiente (`/funcionalidad-mejora 12.2`) |
 | 13 | Portabilidad Linux/macOS y empaquetado | ⏳ Pendiente |
 | 14 | Sandbox para ejecutar entregas | ⏳ Pendiente (después de 10.10) |
 | 15 | Flota: despliegue, auto-actualización y diagnóstico | 🚧 El diagnóstico está casi todo hecho (`aula-cliente diagnostico`, comprobador de conexión, ficha del alumno); faltan la auto-actualización, la guía de despliegue y marcar a los desactualizados |
 | 16 | Comercialización y licenciamiento | ⏳ Pendiente |
-| 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 16 diagramas, con el 10 del aula simulada |
+| 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 21 diagramas (el 21, proyectar a un alumno) |
 | 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/v1/ux/profesor/RESULTADOS.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
 | 19 | Pulido de la app del alumno: UX/UI, transparencia y no intrusión | ✅ Cerrada el 05/11/2026 (`docs/v1/ux/alumno/RESULTADOS.md`). Falta de tu lado: los casos A-01 a A-08 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
 | 20 | Auditoría y limpieza de los artefactos de `docs/v1/ux/` | ⏳ Pendiente (después de publicar el release) |
@@ -1143,6 +1144,62 @@ Para que cada función pendiente respete lo implementado:
   - el 12 como mejora;
   - una base común más el encaje por prompt.
 
+
+## Etapa 12.1: proyectar la pantalla de un alumno — notas
+
+- **Diseño aprobado** (2026-11-11): «Proyectar a la clase» en la Ficha del alumno y en la Pantalla
+  grande, franja global «Proyectando LAB3-PC07 · N de M viendo» con **Ver** y **Detener**. La
+  consola **ve el video en vivo** en la Pantalla grande. Reemplaza a la transmisión del profesor (y
+  al revés) **con confirmación**.
+- **Cambio del mismo día (`/funcionalidad-mejora`):** **sin consentimiento**. El primer diseño
+  pedía permiso (tarjeta «¿Permites…?», 30 s) y dejaba al alumno retirarse («Dejar de mostrar»);
+  el usuario decidió que, como el control remoto, lo decide y lo termina el profesor. Ahora la
+  ventana del alumno pasa al frente (`raise`) con la banda sin botones y el distintivo antes del
+  primer cuadro; no hay bindings de la ventana para detenerla (`TestNoBindingEndsAPresentation`).
+  El protocolo quedó con `accepted`, `ended` y `failed` (sin `asking`, `declined`, `timeout` ni
+  `withdrawn`) y la consola corta si no hay acuse en 15 s (`failed`, `no_answer`).
+- **Cambios respecto al prompt** (aprobados): el video **no va de alumno a alumno**: la consola lo
+  recibe y lo reenvía (el SFU de D-014; los alumnos solo se conectan al profesor). La fuente tiene
+  sus mensajes (`student.present.*`) y los receptores usan `screen.broadcast.*` con `source`; «detener»
+  son dos mensajes. El flujo invertido es el **diagrama 21** nuevo (el validador exige un bloque
+  Mermaid por diagrama); el 14 lo enlaza. Decisión en D-020.
+- **Protocolo** (§5.24): `student.present.start` (`max_width` 640–1920, `fps` 1–15, `max_kbps`
+  800–2500), `.ack` (`accepted` con tamaño, `ended`, `failed` con
+  `capture_unavailable`/`encoder_unavailable`/`busy`), `.offer` (recvonly), `.answer`
+  (sendonly), `.ice` y `.stop`. `screen.broadcast.start` gana `source` opcional. Capacidades
+  `screen.present` (Windows, captura + H.264 + exclusión de la ventana; en servicio, con el
+  ayudante) y `screen.present.view` (con `screen.broadcast`). Nunca los simulados.
+- **`internal/broadcast`:** `Media` en modo relay (`TrackLocalStaticRTP`, `WriteRTP`,
+  `NewSourcePeer` que reenvía y pide PLI), `Projector` (consola: tramo de la fuente con
+  reintentos, el `Caster` para los receptores con `Eligible` y `Uncounted`, la vista propia de la
+  consola), `Presenter` (agente: banda y distintivo antes de capturar, acuses, ofertas, uno a la vez), `LocalPublisher`
+  (`Source` + pion `sendonly`, ICE completo, solo host) e `IndicatorMux` (el distintivo compartido
+  con las miniaturas). `internal/agentsvc`: `Publisher` y las llamadas `present.*` (el ayudante
+  captura, codifica y conecta). `internal/ui`: `receptor-video.js`, el receptor de las dos apps.
+- **Consola:** acción en `ACCIONES_ALUMNO`, franja `#f-proyectando`, Pantalla grande con `<video>`,
+  toasts de cómo terminó, confirmaciones, «Mostrar su pantalla a la clase» y «Ver la pantalla de un
+  compañero» en la ficha. Bindings `StartPresent`, `StopPresent`, `PresentState`,
+  `OpenPresentView`, `ClosePresentView`, `PresentView*`; eventos `aula:present`,
+  `aula:present-view`, `aula:present-signal`; errores `presentUnsupported`, `presentFailed`.
+- **Alumno:** ventana al frente con la banda `#banda-mostrando` (sin botones) después de la de
+  pantalla vista, insignia en el compacto, título, y la vista de la transmisión con el nombre del
+  compañero. Sin bindings nuevos; evento `aula:present`.
+- **Documentación:** reglas 75–82 y el orden de las bandas (regla 1); manual (Tareas frecuentes ›
+  «Proyectar la pantalla de un alumno», Solución de problemas › «No se puede proyectar a un
+  alumno», la ficha en Alumnos); diagramas 21 (nuevo), 14 y 09; `docs/eventos-ui.md`; zonas y
+  mapa; casos C-89 a C-94 y A-31 a A-34; `docs/prueba-vms.md` §25.
+- **Pruebas:** protocolo (ida y vuelta, límites, ejemplos); `Presenter` (banda y distintivo antes de
+  capturar, sin preguntar, uno a la vez, fallos, sin publisher); `Projector` con dobles de
+  PeerConnection (señalización fuente → receptores, solo con `screen.present.view` y nunca la
+  fuente, reintento solo de la fuente, quién llega después, stop en todos, cada forma de terminar,
+  uno a la vez, la vista de la consola, sin acuse en 15 s); **de punta a punta con pion** por loopback (fuente real →
+  relay → dos receptores reales, distintivo y exclusión, stop limpia todo); proxy del ayudante;
+  app del alumno (raise, banda, distintivo compartido, fin al desconectarse); bindings de la
+  consola (reemplazo con la transmisión, «No», fin de clase); simulados; arnés (capturas 137–144
+  de la consola y 84–88 del alumno, 34–35 rehechas; casos `mostrando-banda`,
+  `mostrando-sale-de-compacto`, `mostrando-compacto`, `viendo-companero` y el orden de las bandas).
+- **Falta de tu lado:** la prueba en VM (§25, con las cifras de CPU y red de la fuente) y los casos
+  manuales.
 
 ## Etapa 10.12: encuestas en vivo — notas
 

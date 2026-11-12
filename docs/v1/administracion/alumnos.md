@@ -46,6 +46,11 @@ Con **Abrir página o app** le abres una página en su navegador o una app permi
 [Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos)). No sale para los
 alumnos simulados.
 
+Con **Proyectar a la clase** sus compañeros ven su pantalla en grande; el alumno lo ve en la suya y
+solo tú la detienes (ver
+[Tareas frecuentes](tareas-frecuentes#proyectar-la-pantalla-de-un-alumno)). Mientras dura, el mismo
+botón dice **Detener**. No sale para los alumnos simulados.
+
 ![La ficha de un alumno con un problema reciente](img/ficha-alumno.webp)
 
 ## Seleccionar alumnos

@@ -1,6 +1,6 @@
 ---
 titulo: "Tareas frecuentes"
-resumen: "Mostrar tu pantalla, mandar avisos, dar tiempo a un ejercicio, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla y cambiar de canal."
+resumen: "Mostrar tu pantalla o la de un alumno, mandar avisos, dar tiempo a un ejercicio, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla y cambiar de canal."
 grupo: "Tareas frecuentes"
 orden: 60
 pantallas: []
@@ -21,6 +21,42 @@ recuerda que estás transmitiendo; la ventana de Aula no aparece en la transmisi
 pulsa **Detener** en la franja. Por ahora, solo equipos con Windows pueden recibirla.
 
 {{diagrama:14-transmision-pantalla}}
+
+## Proyectar la pantalla de un alumno
+
+Para mostrar al grupo el trabajo de alguien: su pantalla se ve en grande en los equipos de sus
+compañeros, como cuando muestras la tuya.
+
+1. En [Alumnos](alumnos#la-ficha-de-un-alumno), abre la **ficha** del alumno (o su pantalla en
+   grande desde **Miniaturas**).
+2. Pulsa **Proyectar a la clase**.
+
+No se le pregunta al alumno: tú decides cuándo empieza y cuándo termina, como al tomar el control.
+La franja de arriba dice «Proyectando LAB3-PC07 · conectando…» y en segundos «Proyectando
+LAB3-PC07 · 3 de 12 viendo», con **Ver** y **Detener**:
+
+- **Ver** abre su pantalla en grande en tu consola: es lo mismo que ven sus compañeros. Cerrar esa
+  vista no detiene la proyección.
+- **Detener** (en la franja, en su ficha o en su pantalla en grande) la termina en todos los
+  equipos.
+
+- **El alumno siempre lo sabe:** su ventana de Aula pasa al frente con la banda «Tu pantalla se
+  está mostrando a la clase» antes de que se vea nada, y un aviso fijo arriba de su pantalla dice lo
+  mismo, aunque cierre la ventana. No puede cerrar la banda ni detener la proyección: solo tú.
+- **Lo privado no se ve:** la ventana de Aula del alumno no aparece en la proyección (un mensaje
+  privado o una encuesta suya no llegan a sus compañeros). Se ve su monitor principal.
+- **Uno a la vez,** y no junto con tu pantalla: si estás mostrando la tuya, Aula te pregunta si
+  quieres terminarla para proyectar la del alumno, y al revés.
+- **Termina sola** si el alumno se desconecta, si cambias de canal o si cierras la clase.
+- **Sus compañeros** ven «Estás viendo la pantalla de LAB3-PC07». Los equipos con una versión de
+  Aula anterior no la reciben; su ficha dice «Ver la pantalla de un compañero: no».
+
+Solo equipos con Windows y una versión de Aula que lo incluya (su ficha dice «Mostrar su pantalla a
+la clase: sí»); los alumnos simulados no se pueden proyectar ni la reciben. El video va del equipo
+del alumno a tu consola y de ahí a cada compañero, por la red del laboratorio; el equipo del alumno
+envía una sola copia.
+
+{{diagrama:21-proyectar-alumno}}
 
 ## Mandar un aviso
 

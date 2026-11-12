@@ -20,8 +20,8 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
 
    **Bandas de transparencia (prompt 19).** Lo que el profesor hace con este equipo se ve en
    bandas fijas arriba de la ventana, en este orden: energía; control remoto (reglas 36-41);
-   pantalla vista, o en pausa (cuando exista, reglas 9-10); restricciones. La transmisión lleva la suya sobre el
-   video. **Ninguna tiene botón para cerrarse ni se oculta con el teclado**: cada una desaparece
+   pantalla vista, o en pausa (cuando exista, reglas 9-10); tu pantalla mostrada a la clase
+   (reglas 75-82); restricciones. La transmisión lleva la suya sobre el video. **Ninguna tiene botón para cerrarse ni se oculta con el teclado**: cada una desaparece
    sola cuando el profesor termina. Lo prueban `scripts/ux/pruebas-alumno.mjs` y, del lado de Go,
    `TestNoBindingTurnsOffTransparency` (ninguna función de la ventana las desactiva).
 2. **Al cerrar la ventana, el agente no se detiene: sigue en segundo plano, a la vista.** Cerrar
@@ -556,6 +556,59 @@ del alumno.
     pregunta, las opciones ni el texto de una respuesta, y en una anónima tampoco qué eligió cada
     equipo. Exportar resultados será parte de la asistencia y bitácora (prompt 10.13), con su
     propia regla.
+
+## Proyectar la pantalla de un alumno a la clase (v0.14, Windows)
+
+Reglas para `student.present.*` (`docs/protocol.md` §5.24), aprobadas el 2026-11-11 (prompt
+12.1). El profesor elige a un alumno y su pantalla se ve en grande en los equipos de sus
+compañeros y en la consola. Expone a un alumno ante sus compañeros, no solo ante el profesor.
+**Sin consentimiento** (decisión del usuario, 2026-11-11): como en el control remoto (regla 36),
+el profesor tiene autoridad sobre los equipos del centro y decide cuándo empieza y cuándo
+termina. A cambio, el aviso va **antes** del primer cuadro y no se puede ocultar.
+
+75. **Sin consentimiento, con aviso inmediato.** No se le pregunta al alumno. Al llegar la orden, y
+    **antes** de capturar nada, la ventana de Aula pasa al frente (`raise`: es una acción del
+    profesor sobre el equipo), sale del modo compacto y muestra su banda (regla 76); el distintivo
+    nativo aparece al mismo tiempo. Si el aviso no se puede mostrar, el agente **no publica** y la
+    consola lo dice.
+76. **Banda permanente y aviso fijo.** Mientras dura, la ventana muestra la banda **«Tu pantalla
+    se está mostrando a la clase»**, en el orden de la regla 1 (después de la de pantalla vista),
+    **sin ningún botón** y sin ocultarse con el teclado; en el modo compacto, la insignia
+    «Mostrando a la clase». El distintivo nativo de la regla 6 (siempre encima, aunque la ventana
+    esté cerrada o minimizada) dice lo mismo. El título de la ventana y de la barra de tareas
+    cambia a «Aula — tu pantalla se está mostrando a la clase (canal X - profesor)».
+77. **Solo el profesor la termina.** El alumno no puede cortarla ni negarse (como la regla 39 del
+    control remoto): no hay botón ni binding de la ventana que la detenga
+    (`TestNoBindingEndsAPresentation`). Termina con «Detener» en la consola o por las causas de
+    la regla 81; al terminar, la banda y el distintivo desaparecen solos.
+78. **Lo privado no se proyecta.** Las ventanas del agente (la de Aula y su distintivo) **se
+    excluyen de la captura** (`WDA_EXCLUDEFROMCAPTURE`; en Windows anteriores a 10 2004 se ven
+    negras): un mensaje privado (regla 53), una encuesta nominal o la tarjeta de un archivo nunca
+    llegan a los compañeros. Si Windows no permite excluirlas, el agente **no publica**. No se
+    capturan audio, cámara ni micrófono; solo el **monitor principal**.
+79. **Uno a la vez, y nunca junto con la pantalla del profesor.** Una consola proyecta a un solo
+    alumno; empezar con otro termina el primero en todos los equipos antes de preguntarle al
+    segundo. Mostrar la pantalla del profesor (reglas 12–16) y proyectar a un alumno usan la misma
+    vista de los compañeros: empezar una termina la otra, y la consola lo confirma con el profesor.
+80. **Los compañeros saben de quién es.** Reciben la vista de la regla 12 con la franja **«Estás
+    viendo la pantalla de LAB3-PC07 (canal X)»**: el nombre del equipo, no el del usuario. Un
+    agente de una versión anterior, que diría «la pantalla del profesor», no la recibe. Recibir no
+    los expone (regla 13): su conexión es solo de recepción.
+81. **Termina en todos.** Con «Detener» en la consola, un fallo de la captura, al desconectarse el
+    alumno (no se reanuda sola), al cambiar de canal o al cerrar la clase. Entonces la banda, el
+    distintivo y la vista de los compañeros desaparecen. Si el agente pierde la conexión con la
+    consola, deja de capturar y quita la banda por su cuenta. La consola muestra mientras dura la
+    franja «Proyectando LAB3-PC07 · N de M viendo», con «Ver» y «Detener».
+82. **Sin grabación, nunca a simulados.** Ni el agente, ni la consola, ni los compañeros graban el
+    video ni escriben cuadros en disco; la consola reenvía los paquetes sin decodificarlos ni
+    guardarlos. Los registros llevan `present_id`, intentos, estados, el equipo fuente y tamaños;
+    nunca el SDP, los candidatos ni ningún cuadro. Los alumnos simulados no declaran
+    `screen.present` ni `screen.present.view` (regla 34): ni se proyectan ni la reciben.
+
+**Permisos del sistema operativo.** En Windows la captura no pide permiso; como servicio, el
+agente no captura: lo hace su ayudante, en la sesión del alumno y con sus derechos (regla 17).
+En Linux con Wayland la captura pasa por el portal de escritorio, que pide al alumno aprobar en
+cada sesión; en macOS, el permiso «Grabación de pantalla». Linux y macOS no lo declaran todavía.
 
 ## Pendiente para etapas futuras
 

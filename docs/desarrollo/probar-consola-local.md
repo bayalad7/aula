@@ -203,6 +203,20 @@ otra ventana o VM (`instaladores-locales.md`).
 | C-87 | Con un alumno real: una de **Sí o no** con **Ver quién respondió qué** marcada; responde en el alumno | En Participación aparece «Nominal», «Quién respondió qué: <equipo> · <usuario>: Sí» y «Aún no responden: …» con los que faltan. En una anónima de respuesta corta solo se ven los textos, sin equipo ni hora |
 | C-88 | Cierra el aula simulada con una encuesta abierta; luego cierra la clase | Las respuestas simuladas desaparecen de las barras; al cerrar la clase, la sección vuelve a «Aún no has lanzado una encuesta». En la ficha de un alumno, «Responder encuestas» aparece en «Qué puede hacer su equipo». A 900×600 y en oscuro el panel y la sección se leen completos |
 
+### Proyectar la pantalla de un alumno (12.1)
+
+Con dos alumnos reales (VM o la misma máquina con `-directo`, `instaladores-locales.md`), uno como
+fuente y otro como receptor, ambos con Windows. El aula simulada abierta sirve para C-93.
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-89 | Ficha de la fuente › **Proyectar a la clase** | No se le pregunta nada al alumno: la franja «Proyectando <equipo> · conectando…» y en segundos «Proyectando <equipo> · 1 de 1 viendo», con **Ver** y **Detener**. En la ficha y la Pantalla grande el botón dice **Detener** y su nota dice que solo tú la detienes |
+| C-90 | **Ver** en la franja; cierra la vista | La Pantalla grande «Proyectando <equipo>» con el video en vivo; cerrarla no detiene nada (la franja sigue) |
+| C-91 | Con tu pantalla transmitiéndose (**Mostrar mi pantalla**), **Proyectar a la clase** a un alumno; luego, con la proyección activa, **Mostrar mi pantalla** › **Empezar** | Pregunta «¿Dejar de mostrar tu pantalla?» (o «¿Dejar de proyectar a <equipo>?»); con **Volver** no cambia nada; al confirmar, una termina antes de que empiece la otra |
+| C-92 | **Detener** en la franja, en la ficha y en la Pantalla grande (una vez cada uno) | La proyección termina en todos sin aviso de error; la franja se va |
+| C-93 | Con el aula simulada abierta, abre la ficha de un alumno simulado | No aparece **Proyectar a la clase**; «Qué puede hacer su equipo» dice «Mostrar su pantalla a la clase: no» y «Ver la pantalla de un compañero: no». Al proyectar a un real, los simulados no reciben nada. A 900×600 y en oscuro la franja y la Pantalla grande se leen completas |
+| C-94 | Proyectando, desconecta la fuente (cierra su agente o su red); luego vuelve a proyectar y cierra la clase | «<equipo> se desconectó»; la vista del receptor se cierra. Al cerrar la clase, la franja se va y el receptor vuelve a su vista de código |
+
 ### Diagramas
 
 | # | Pasos | Esperado |
@@ -267,4 +281,8 @@ Con la consola local y el agente apuntando a ella (`aula-cliente -canal 1 -clave
 | A-25 | Cierra Aula al área de notificación y recoge otra vez | La ventana no aparece: solo se marca el icono; al abrirla están los avisos y la ronda nueva en la tarjeta. `aula-agente.log` dice «collection read/collected file acked» con tamaños, nunca nombres |
 | A-28 | Con tu editor al frente, lanza desde la consola una encuesta de opción múltiple | Arriba de la lista de Aula aparece la tarjeta «Encuesta» con «Nuevo», «Abierta», la pregunta y «Elige una opción. Anónima: tu profesor ve el total, no tu respuesta.»; el editor conserva el foco y el título dice «(1) Aula — …». No aparece ningún diálogo. En modo compacto, la tira dice «1 nuevo»; con la ventana cerrada solo se marca el icono |
 | A-29 | Elige una opción con el teclado (Tab hasta las opciones, flechas, Enter); luego otra y **Cambiar mi respuesta** | «Enviando tu respuesta…» y en seguida «Respuesta enviada: 1. Puedes cambiarla mientras siga abierta.»; en la consola cuenta una sola vez, con la última. Al cerrar la encuesta: «Encuesta cerrada. Respondiste: …» y las opciones quedan desactivadas |
+| A-31 | Con tu editor al frente y Aula compacta, proyecta este alumno desde la consola | Sin preguntar nada: Aula vuelve a su tamaño y al frente con la banda «Tu pantalla se está mostrando a la clase» (después de la de pantalla vista, **sin botones**) y el distintivo nativo arriba de la pantalla con el mismo texto, **antes** de que el receptor vea la imagen. El título dice «Aula — tu pantalla se está mostrando a la clase…» |
+| A-32 | Durante la proyección: Escape con la banda enfocada, cierra Aula al área de notificación, vuelve a compactarla | La banda no se cierra ni se oculta; con Aula cerrada el distintivo sigue; en compacto se ve «Mostrando a la clase». No hay forma de detenerla desde el alumno. En el receptor, «Estás viendo la pantalla de <equipo> (canal <n>)» con el video legible (texto de un editor a 100 %) |
+| A-33 | Con la proyección activa, manda desde la consola un **Mensaje privado** a la fuente y abre en ella una encuesta nominal | En la fuente se ven; en el receptor (y en la Pantalla grande de la consola) **no** aparece la ventana de Aula: solo lo que hay debajo. Mide en el Administrador de tareas de la fuente CPU y red de `aula-cliente` (o del ayudante): una sola subida de ≈ 1–3 Mbit/s, sin importar cuántos receptores haya |
+| A-34 | En la consola **Detener** | La banda y el distintivo se van en la fuente (sin quitarle el foco a tu editor) y la vista se cierra en el receptor. `aula-agente.log` dice «presentation started/ended» con `present` y tamaños, **nunca** el SDP ni candidatos. Con el agente como servicio: lo mismo, y en el Administrador de tareas la captura la hace el ayudante (usuario del alumno), no el servicio (SYSTEM) |
 | A-30 | La consola comparte los resultados; luego revisa `aula-agente.log` (o `aula-cliente.log`) | En la tarjeta: «Resultados de la clase» con una barra por opción, su número y porcentaje, la tuya marcada «(tu respuesta)» y «Respondieron n de m». El log dice «poll arrived», «poll answered», «poll closed» con `poll` y longitudes, **nunca** la pregunta, las opciones ni tu respuesta |

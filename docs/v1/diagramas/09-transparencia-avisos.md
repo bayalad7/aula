@@ -24,6 +24,7 @@ flowchart LR
         rmt["remote.start"]
         snap["screen.snapshot.request"]
         abrir["open.url · open.app"]
+        present["student.present.start"]
     end
 
     subgraph avisos["Lo que ve el alumno (antes de actuar)"]
@@ -36,6 +37,7 @@ flowchart LR
         control["La ventana pasa al frente con la banda<br/>«… está controlando tu equipo» y el<br/>aviso fijo dice que lo controlan<br/>reglas 36–41"]
         captura["Aviso fijo 5 s «Tu profesor está tomando<br/>una captura…» y después, sin quitar<br/>el foco, «Captura de pantalla» en la esquina<br/>regla 44"]
         abierto["Se abre la página o la app y, en la<br/>esquina, «… abrió X en tu navegador»;<br/>Aula no se trae al frente<br/>reglas 66–68"]
+        mostrando["La ventana pasa al frente con la banda<br/>y el aviso fijo «Tu pantalla se está<br/>mostrando a la clase», sin botones<br/>reglas 75–78"]
     end
 
     fin["Se quita con stop o clear,<br/>al cerrar la vista o la clase,<br/>o al caerse la conexión"]
@@ -53,6 +55,8 @@ flowchart LR
     captura --> puntual
     abrir --> abierto
     abierto --> puntual
+    present --> mostrando
+    mostrando --> fin
     visto --> fin
     franja --> fin
     restr --> fin
@@ -63,8 +67,8 @@ flowchart LR
     classDef aula fill:#dcfce7,stroke:#15803d,color:#111827
     classDef datos fill:#ffedd5,stroke:#c2410c,color:#111827
     classDef seguridad fill:#fee2e2,stroke:#b91c1c,color:#111827
-    class conexion,share,thumb,bcast,pol,pwr,rmt,snap,abrir seguridad
-    class distintivo,frente,visto,franja,restr,energia,control,captura,abierto aula
+    class conexion,share,thumb,bcast,pol,pwr,rmt,snap,abrir,present seguridad
+    class distintivo,frente,visto,franja,restr,energia,control,captura,abierto,mostrando aula
     class fin,sigue,puntual externo
 ```
 
@@ -78,6 +82,9 @@ flowchart LR
 - **La captura es el único aviso que no es una banda**: no sigue activa, así que va como aviso en
   la esquina (`notify`, nunca `raise`). Si el profesor ya ve o controla la pantalla, el aviso fijo
   conserva su texto; el de la esquina aparece igual.
+- **Mostrar la pantalla a la clase no pide permiso**, como el control remoto (regla 75): la decide
+  y la termina el profesor. La ventana pasa al frente con la banda y el aviso fijo antes del primer
+  cuadro, y la ventana de Aula no sale en lo que ven los compañeros (diagrama 21).
 - **Abrir una página o una app actúa sobre el equipo, pero no trae Aula al frente**: el navegador
   o la app ya toman el foco, y la ventana de Aula los taparía. El aviso va en la esquina
   (`notify`) **después** de abrir, porque solo entonces se sabe qué se abrió; si no se pudo, no
@@ -98,9 +105,10 @@ flowchart LR
 
 ## Fuentes en el código
 
-- `docs/privacidad.md` reglas 1–31 y 36–49
+- `docs/privacidad.md` reglas 1–31, 36–49 y 75–82
 - `apps/student/app.go` (`setStatus`, `onViewed`, `onBoard`, `onNotice`, `setRestrictions`,
   `appClosed`), `apps/student/events.go`, `apps/student/power.go`, `apps/student/broadcast.go`
 - `internal/screen/streamer.go`, `internal/broadcast/viewer.go`, `internal/policy/manager.go`,
   `internal/power/countdown.go`, `internal/remote/agent.go`, `apps/student/remote.go`,
-  `internal/snapshot/agent.go`, `apps/student/snapshot.go`
+  `internal/snapshot/agent.go`, `apps/student/snapshot.go`, `internal/broadcast/presenter.go`,
+  `apps/student/present.go`

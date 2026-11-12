@@ -74,6 +74,11 @@ sequenceDiagram
   reenvía `start` y `offer`.
 - Una transmisión a la vez por consola; no se graba en ningún extremo. Solo Windows declara
   `screen.broadcast`, y solo si el WebView2 tiene `RTCPeerConnection` y H.264.
+- **La misma vista lleva la pantalla de un alumno** (prompt 12.1): con la fuente invertida, la
+  consola recibe el video del alumno y lo reenvía por este mismo flujo, con `source` en
+  `screen.broadcast.start` para que la franja diga «Estás viendo la pantalla de LAB3-PC07». El
+  aviso al alumno y el tramo de la fuente están en el diagrama 21. Transmitir y proyectar no van juntos:
+  empezar uno termina el otro.
 
 ## Fuentes en el código
 
@@ -82,4 +87,5 @@ sequenceDiagram
 - `internal/broadcast/viewer.go`
 - `internal/platform/broadcast.go`, `internal/platform/h264_windows.go`
 - `apps/teacher/broadcast.go`, `apps/student/broadcast.go`
-- `docs/protocol.md` §5.12, `docs/privacidad.md` reglas 12–16, `docs/decisiones.md` D-014
+- `docs/protocol.md` §5.12 y §5.24, `docs/privacidad.md` reglas 12–16 y 80,
+  `docs/decisiones.md` D-014

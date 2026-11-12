@@ -83,6 +83,21 @@ franja «Este equipo no tiene la clave del centro», pide que la instalen en tu 
 - Si no se pudo ocultar la ventana de Aula de la transmisión, Aula no transmite, para que tus
   alumnos no vean la lista de la clase. Vuelve a intentarlo.
 
+## No se puede proyectar a un alumno
+
+- **El botón no aparece en su ficha:** su equipo no tiene Windows o tiene una versión de Aula
+  anterior (la ficha dice «Mostrar su pantalla a la clase: no»), o es un alumno simulado.
+- **«No pudo mostrar su pantalla»:** su sesión estaba bloqueada, su Windows no permite ocultar la
+  ventana de Aula de la captura, o le falta el codificador de video (en ediciones N, el «Media
+  Feature Pack»). Revisa su equipo y vuelve a intentarlo.
+- **«No se pudo empezar a proyectar»:** otro programa usa el puerto de video de Aula (el del
+  servidor más uno, 47831 por omisión). Cierra la otra consola o el programa y vuelve a intentarlo.
+- **Sus compañeros dicen «Conectando…» sin imagen:** el firewall del equipo del alumno bloquea la
+  salida UDP hacia tu consola, o la red no deja pasar el puerto de video. Con
+  [Comprobar la conexión](#comprobar-la-conexión) revisa el camino de ese alumno.
+- **«Su equipo no contestó»:** Aula no responde en su equipo (o la red se cortó). Revisa que esté
+  conectado en Alumnos y vuelve a intentarlo.
+
 ## El portapapeles no funciona
 
 Si «Pegar del portapapeles» dice que no hay texto copiado, copia el código con Ctrl+C y vuelve a

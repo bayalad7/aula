@@ -37,8 +37,12 @@ Dos aplicaciones, mismo monorepo:
     y de la consola, sobre las interfaces de `platform`.
   - `internal/broadcast`: transmisión de la pantalla del profesor (WebRTC con pion): captura y
     codificación por `platform`, una conexión por alumno y la señalización `screen.broadcast.*`.
+    También proyectar la pantalla de un alumno (`student.present.*`): el aviso y la publicación
+    del agente fuente (`Presenter`, `LocalPublisher`) y el relevo de la consola (`Projector`), que
+    reenvía su video a los demás alumnos con la misma señalización.
   - `internal/agentsvc`: el agente como servicio: supervisor del ayudante en la sesión del alumno,
-    canal local servicio ↔ ayudante y *proxies* de portapapeles, captura y distintivo.
+    canal local servicio ↔ ayudante y *proxies* de portapapeles, captura, distintivo y publicación
+    de la pantalla del alumno.
   - `internal/policy`: restricciones de la clase (bloqueo de apps y filtro web por DNS local),
     su diario para deshacerlas siempre, y la parte de la consola (quién tiene qué).
   - `internal/power`: apagar, reiniciar y cerrar sesión (`power.*`): la cuenta regresiva del

@@ -701,3 +701,48 @@ la transparencia (`docs/privacidad.md` reglas 36–43) es criterio de aceptació
   no toca el SO; la inyección está detrás de `platform.InputInjector`.
 
 Versión: función nueva compatible → sube `y`.
+
+## D-020: Proyectar la pantalla de un alumno, con la consola como relevo
+
+**Fecha:** 2026-11-11 · **Estado:** aprobada para v0.14 (Windows; prompt 12.1).
+
+**Contexto.** El profesor quiere mostrar al grupo el trabajo de un alumno: su pantalla en grande en
+los equipos de sus compañeros y en la consola (`student.present.*`, `docs/protocol.md` §5.24). Es
+la transmisión de la etapa 12 con la fuente invertida, y expone a un alumno ante sus compañeros
+(`docs/privacidad.md` reglas 75–82).
+
+**Decisiones.**
+- **El video pasa por la consola, no de alumno a alumno.** La fuente publica una sola conexión
+  WebRTC hacia la consola (pion en el agente, ICE completo, solo candidatos host) y la consola
+  reenvía los paquetes RTP sin decodificarlos a cada compañero con la `Media` y el `Caster` de la
+  etapa 12 (un `TrackLocalStaticRTP`). Es el SFU en el proceso del profesor de D-014: la fuente
+  sube una vez (≈ 2,5 Mbit/s) haya los receptores que haya, nadie abre puertos de entrada en un
+  equipo de alumno y se cumple que los alumnos se conectan al profesor, nunca entre sí. Los PLI de
+  los receptores se reenvían a la fuente, como mucho uno por segundo.
+- **Mensajes propios para la fuente; `screen.broadcast.*` para los receptores.** La fuente envía
+  medios y pide permiso: reutilizar `screen.broadcast.*` haría que un agente aceptara enviar en
+  mensajes que le garantizan solo recibir (regla 13). Los receptores reciben con el flujo de §5.12
+  más `source`, y solo si declaran `screen.present.view` (un agente anterior diría «la pantalla del
+  profesor»).
+- **Sin consentimiento** (decisión del usuario, 2026-11-11, que reemplazó un primer diseño con
+  tarjeta «¿Permites…?» y «Dejar de mostrar»): como el control remoto (D-019), el profesor decide
+  cuándo empieza y cuándo termina. A cambio, la ventana pasa al frente (`raise`) con la banda y el
+  distintivo (compartido con las miniaturas por `IndicatorMux`, gana el de la proyección) **antes**
+  de la captura; la banda no tiene botones y ningún binding de la ventana la detiene.
+- **La ventana de Aula se excluye de la captura en la fuente** (`platform.ExcludeFromCapture`, la
+  misma de la consola en la etapa 12): un mensaje privado no llega a los compañeros. Sin exclusión
+  no se publica.
+- **Uno a la vez, y excluyente con la transmisión del profesor**: comparten el puerto UDP y la vista
+  de los receptores; la consola confirma antes de reemplazar una por otra.
+- **La consola ve la proyección como un receptor más** (`ConsoleViewID`, no contado en «N viendo»)
+  con el mismo receptor JS del alumno, que pasa a `internal/ui` (`sistema/receptor-video.js`).
+- **En modo servicio, todo el lado de medios corre en el ayudante** (`agentsvc.Publisher`:
+  `present.open`, `present.answer`, `present.candidate`, `present.close` y sus eventos): el video no
+  cruza el canal local y nada se captura como SYSTEM.
+
+**Riesgos.** pion suma unos MB al binario del alumno. La subida de la consola crece con los
+receptores, como en la etapa 12. El tramo de la fuente necesita que el firewall del alumno permita
+salida UDP hacia `ws_port + 1` (Windows la permite por omisión; las respuestas vuelven por la misma
+asociación) y que la consola la reciba (su regla por programa de la etapa 12 ya lo cubre).
+
+Versión: función nueva compatible → sube `y`.

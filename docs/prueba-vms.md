@@ -1260,3 +1260,22 @@ simulada cerrada para ver solo los reales.
 | **EN-E** Registros | Revisa `C:\ProgramData\Aula\alumno\logs\aula-agente.log` (VM 1), `aula-cliente.log` (VM 2) y el log de la consola. | Dicen «poll opened/arrived/answered/closed» con `poll`, el tipo y longitudes, **nunca** la pregunta, las opciones ni las respuestas. |
 
 **Para aceptar** bastan EN-A, EN-B y EN-C en ✅.
+
+## 25. Proyectar la pantalla de un alumno (12.1)
+
+Comprueba que la pantalla de un alumno llega legible a otros dos, que su aviso aparece antes de
+capturar y no se puede ocultar ni detener desde el alumno, y cuánto le cuesta al equipo fuente
+(`docs/protocol.md` §5.24, `docs/privacidad.md` reglas 75–82). Con tres VMs Windows: la VM 1
+(fuente, agente **como servicio**), la VM 2 y la VM 3 (receptoras, una en modo ventana), y la
+consola en el equipo del profesor; el aula simulada cerrada.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **PR-A** Aviso y proyección a dos (**aceptación**) | Con el Bloc de notas al frente en la VM 1, ficha de la VM 1 › **Proyectar a la clase**. Abre en la VM 1 un editor con código a 100 % de zoom. | Sin preguntar nada, la ventana de Aula de la VM 1 pasa al frente con la banda «Tu pantalla se está mostrando a la clase» y el distintivo nativo, **antes** de que las VM 2 y 3 vean la imagen. En las VM 2 y 3: «Estás viendo la pantalla de <VM 1> (canal 1)» y el código **se lee** sin acercarse; la franja de la consola dice «2 de 2 viendo» y **Ver** muestra lo mismo. |
+| **PR-B** Aviso permanente que el alumno no detiene (**aceptación**) | Durante la proyección, en la VM 1: cierra Aula al área de notificación, minimiza todo, pulsa Escape con la banda enfocada y abre un mensaje privado de la consola. | El distintivo nativo sigue arriba de la pantalla en todo momento; la banda no tiene botones y no hay forma de detener la proyección desde la VM 1. El mensaje privado y la ventana de Aula **no** se ven en las VM 2 y 3. |
+| **PR-C** Fin en todos (**aceptación**) | Pulsa **Detener** en la consola; proyecta otra vez y desconecta la red de la VM 1. | En los dos casos la banda y el distintivo se van en la VM 1 y la vista se cierra en las VM 2 y 3. La consola no dice nada en el primero y «se desconectó» en el segundo. |
+| **PR-D** Consumo de la fuente | Durante PR-A, en el Administrador de tareas de la VM 1 (pestañas Procesos y Rendimiento), anota la CPU del ayudante (`aula-cliente`, usuario del alumno) y el envío de red, con el editor quieto y desplazándote; repite con una sola VM receptora. | Envío de 1–3 Mbit/s **igual con una o con dos receptoras** (la fuente sube una sola copia); CPU moderada con la pantalla quieta (se codifica una vez por segundo) y mayor al desplazarte. El servicio (SYSTEM) no captura ni codifica. Anota las cifras aquí. |
+| **PR-E** Reconexión de un receptor | Con una proyección activa, desconecta la red de la VM 2 unos segundos. | La VM 2 muestra «Conectando con la pantalla de <VM 1>…» y vuelve a ver el video sola al reconectar, sin cortar la de la VM 3. |
+| **PR-F** Registros | Revisa `aula-agente.log` (VM 1) y el log de la consola. | Dicen «presentation started/ended» con `present`, intentos y tamaños; **nunca** el SDP, los candidatos ni ningún cuadro. Ningún extremo escribió imágenes ni video en disco. |
+
+**Para aceptar** bastan PR-A, PR-B y PR-C en ✅, con las cifras de PR-D anotadas.

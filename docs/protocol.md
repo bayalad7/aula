@@ -316,6 +316,8 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `open.url` | `open.url` | v0.12 (§5.22). Windows, en modo ventana y como servicio con su ayudante (abre en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
 | `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`. |
 | `poll` | `poll.open`, `poll.close`, `poll.results`, `poll.vote.ack`; y acepta `poll.vote` | v0.13 (§5.23). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
+| `screen.present` | `student.present.start`, `.offer`, `.ice`, `.stop` | v0.14 (§5.24). Windows, si hay captura de monitor, codificador H.264 y la ventana se puede excluir de la captura; en modo servicio, solo con el ayudante. Nunca los alumnos simulados. Linux y macOS no la declaran. |
+| `screen.present.view` | `screen.broadcast.*` con `source` (la pantalla de un compañero) | v0.14 (§5.24). La declara quien declara `screen.broadcast` y sabe mostrar de quién es la pantalla. Nunca los alumnos simulados. |
 
 `hand`, `msg.student` y `poll` habilitan mensajes que **inicia el agente**: la consola acepta
 `hand.*`, `msg.student` y `poll.vote` solo de un agente que declaró la capacidad (si no, responde
@@ -389,6 +391,12 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `poll.close` | P → A | `poll` | `poll_id` | `poll.ack` (`closed`) |
 | `poll.results` | P → A | `poll` | `poll_id`, `counts`, `voters`, `recipients` | `poll.ack` (`results`) |
 | `poll.ack` | A → P | — | `ref_id`, `poll_id`, `status` | — |
+| `student.present.start` | P → A | `screen.present` | `present_id`, `max_width`, `fps`, `max_kbps` | `student.present.ack` (`accepted` o `failed`) o `error` |
+| `student.present.ack` | A → P | — | `ref_id`, `present_id`, `status`, `width`?, `height`?, `reason`? | — |
+| `student.present.offer` | P → A | `screen.present` | `present_id`, `attempt`, `sdp` | `student.present.answer` o `error` |
+| `student.present.answer` | A → P | — | `ref_id`, `present_id`, `attempt`, `sdp` | — |
+| `student.present.ice` | A ↔ P | `screen.present` (P → A) | `present_id`, `attempt`, `candidate`, `sdp_mid`, `sdp_mline_index` | — |
+| `student.present.stop` | P → A | `screen.present` | `present_id` | `student.present.ack` (`ended`); con otro id se ignora |
 
 ### 5.1 `code.share` (P → A)
 
@@ -597,6 +605,7 @@ Avisa que empieza una transmisión. El agente **debe** mostrar la vista de trans
 | `broadcast_id` | string | UUID v4 que asigna la consola a la transmisión. |
 | `width`, `height` | entero | Tamaño del video, 1–4096. Informativo: el agente ajusta la vista. |
 | `fps` | entero | Cuadros por segundo previstos, 1–30. Informativo. |
+| `source` | objeto, opcional | Ausente: la pantalla es del profesor. `{"kind": "student", "hostname": "LAB3-PC07"}`: es la de un compañero (§5.24); la vista lo dice. Solo se envía a agentes con `screen.present.view`. `hostname`: 1–63 caracteres. |
 
 Sin respuesta propia: la sigue `screen.broadcast.offer`. Si el agente no puede mostrar la vista,
 responde `error` `internal` y no procesa la oferta.
@@ -1748,6 +1757,164 @@ Reglas del agente:
 - Si la consola responde `unknown_type` o `unsupported_capability` al voto (una consola
   anterior), la tarjeta dice que esa consola no recibe respuestas.
 
+### 5.24 Proyectar la pantalla de un alumno (`student.present.*`)
+
+> Aprobado el 2026-11-11 (prompt 12.1), para v0.14 (Windows). Implementación en
+> `internal/broadcast` (`Projector` en la consola, `Presenter` y `Publisher` en el agente); reglas
+> en `docs/privacidad.md` 75–82. En la consola, «Proyectar a la clase» en la ficha del alumno y en
+> la Pantalla grande, y su franja mientras dura. Cambio del 2026-11-11 (decisión del usuario): **sin
+> consentimiento**; lo decide y lo termina el profesor, como el control remoto (§5.16).
+
+El profesor elige a un alumno y su pantalla se ve en vivo en los equipos de los demás alumnos del
+canal y en la consola, para comentar su trabajo con el grupo. **No se le pregunta al alumno ni
+puede detenerla**: el profesor decide cuándo empieza y cuándo termina; el alumno lo sabe por su
+banda y su distintivo, que aparecen antes del primer cuadro.
+Reutiliza el transporte de §5.12 con la fuente invertida: el video lo **publica** el agente del
+alumno-fuente y lo **reenvía la consola**, que es el SFU de la clase (D-014).
+
+```
+Fuente (A, pion)                  Consola (P, pion, ICE-lite, un puerto UDP)         Receptores (A, WebView2)
+   |<-- student.present.start --------|   ventana al frente, banda y distintivo, y después la captura
+   |-- student.present.ack (accepted)>|
+   |<-- student.present.offer --------|   (recvonly)
+   |-- student.present.answer ------->|   (sendonly)
+   |<-> student.present.ice ---------->|
+   |== SRTP: video H.264 ============>|-- screen.broadcast.start (source) ---------------->|
+   |                                  |-- screen.broadcast.offer / answer / ice ---------->|
+   |                                  |== SRTP: los mismos paquetes RTP, reenviados ======>|
+   |<-- student.present.stop ---------|-- screen.broadcast.stop -------------------------->|
+   |-- student.present.ack (ended) -->|
+```
+
+**Por qué la consola reenvía y no hay conexiones entre alumnos.** Los alumnos se conectan al
+profesor, nunca al revés ni entre sí (CLAUDE.md): la fuente solo hace ICE de salida hacia el puerto
+UDP de la consola (`ws_port + 1`, el de §5.12, que ya tiene su regla de firewall), y no abre
+puertos de entrada. La fuente codifica **una vez** y sube un solo stream (≈ 2,5 Mbit/s) haya los
+receptores que haya; la consola copia los paquetes RTP a cada receptor sin decodificar ni volver
+a codificar, como en la transmisión del profesor.
+
+**Por qué mensajes propios para la fuente y `screen.broadcast.*` para los receptores.** El tramo de
+la fuente tiene otra dirección de medios (el agente **envía**), otro ciclo (su banda, su distintivo
+y la exclusión de la ventana de Aula) y otras validaciones. Compartir los nombres haría que un agente aceptara
+enviar medios en mensajes que hoy le garantizan solo recibir (regla 13). Para los receptores, en
+cambio, nada cambia salvo de quién es la pantalla: siguen con §5.12 y el campo nuevo `source` de
+`screen.broadcast.start`. Por eso «detener» son dos mensajes: `student.present.stop` a la fuente y
+`screen.broadcast.stop` a los receptores.
+
+Reglas generales:
+
+- **Uno a la vez.** Una consola proyecta a un solo alumno-fuente a la vez. Un `start` con otro
+  `present_id` reemplaza al anterior: el agente cierra el viejo (`ended`) antes de empezar el
+  nuevo. La proyección y la transmisión de la pantalla del profesor (§5.12) comparten el puerto
+  y la vista de los receptores: empezar una termina la otra (la consola lo confirma con el
+  profesor).
+- **Sin consentimiento, con aviso antes de capturar.** Al llegar `start`, el agente trae su ventana
+  al frente (sale del modo compacto) con la banda «Tu pantalla se está mostrando a la clase» y
+  muestra el distintivo nativo; **después** prepara la captura y el codificador y responde `ack`
+  `accepted` con el tamaño del video. Si no puede mostrar el aviso, capturar o codificar, responde
+  `failed` y no publica. El alumno no tiene cómo negarse ni cortarla (reglas 75 y 77). Si la consola
+  no recibe el `ack` en **15 s**, termina la proyección (`failed`, motivo `no_answer`).
+- **La consola ofrece y la fuente responde.** La oferta es `recvonly` con **una sola** `m=video`
+  H.264 (`profile-level-id=42e028`, `packetization-mode=1`). El agente rechaza (`error`
+  `invalid_message`) una oferta con audio, canal de datos, más de un video o que le pida recibir;
+  responde `sendonly`. Sin STUN ni TURN: solo candidatos `host`.
+- **Cuadros clave.** Un PLI o FIR de cualquier receptor (o de la consola) se reenvía por RTCP a la
+  fuente, como máximo uno por segundo; la fuente genera además uno cada 5 s.
+- **Medios** como §5.12: hasta `max_width` px de ancho, hasta `fps` cuadros/s, tope de
+  `max_kbps`; una pantalla que no cambia se codifica una vez por segundo. Monitor principal; sin
+  audio. La ventana de Aula del alumno **se excluye de la captura** (regla 78): si Windows no lo
+  permite, el agente responde `failed` `capture_unavailable` y no publica.
+- **Reintento de la fuente:** si su conexión WebRTC pasa a `failed`, o queda `disconnected` más de
+  5 s, la consola envía una oferta nueva con `attempt + 1`, con el retroceso de §5.12. Los
+  receptores conservan su conexión y ven «Conectando con la pantalla de LAB3-PC07…».
+- **Reintento de un receptor:** como §5.12.
+- **Fin.** La proyección termina con «Detener» en la consola, con `failed` o `ended` de la fuente,
+  al cerrarse la sesión WebSocket de la fuente (no se reanuda sola), al cambiar de canal y al
+  cerrar la clase. La consola envía `student.present.stop` a la
+  fuente y `screen.broadcast.stop` a los receptores. Si el agente pierde la conexión con la
+  consola, deja de publicar y quita la banda por su cuenta.
+- **Receptores:** los agentes conectados que declararon `screen.present.view`, menos la fuente.
+  Un agente que solo declara `screen.broadcast` (una versión anterior) no recibe la proyección: su
+  vista diría «la pantalla del profesor», y no lo es.
+- **Nunca a simulados:** no declaran `screen.present` ni `screen.present.view`.
+
+#### 5.24.1 `student.present.start` (P → A)
+
+```json
+{ "present_id": "c0a1…", "max_width": 1920, "fps": 15, "max_kbps": 2500 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `present_id` | string | UUID v4 que asigna la consola a la proyección. |
+| `max_width` | entero | Ancho máximo del video, 640–1920. |
+| `fps` | entero | Cuadros por segundo, 1–15. |
+| `max_kbps` | entero | Tope del codificador, 800–2500. |
+
+Respuesta: `student.present.ack` `accepted` (la banda y el distintivo ya están en pantalla y la
+captura lista) o `failed`.
+
+#### 5.24.2 `student.present.ack` (A → P)
+
+```json
+{ "ref_id": "<id del start>", "present_id": "c0a1…", "status": "accepted", "width": 1920, "height": 1080 }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `ref_id` | string | El `id` del `start` (o del `stop`) al que responde. |
+| `present_id` | string | La proyección. |
+| `status` | string | `accepted`, `ended` o `failed`. |
+| `width`, `height` | entero | Solo con `accepted`: el tamaño del video, 2–4096, pares. |
+| `reason` | string | Solo con `failed`: `capture_unavailable`, `encoder_unavailable` o `busy`. |
+
+`accepted` y `failed` llevan el `ref_id` del `start`; `ended`, el del `stop` (o del `start` que la
+reemplazó).
+
+#### 5.24.3 `student.present.offer` (P → A)
+
+```json
+{ "present_id": "c0a1…", "attempt": 1, "sdp": "v=0\r\n…" }
+```
+
+Como §5.12.2, con `present_id` y la oferta `recvonly`. Solo después de `accepted`; antes → `error`
+`invalid_message`. Un `attempt` mayor reemplaza la conexión anterior.
+
+#### 5.24.4 `student.present.answer` (A → P)
+
+```json
+{ "ref_id": "<id de la offer>", "present_id": "c0a1…", "attempt": 1, "sdp": "v=0\r\n…" }
+```
+
+Respuesta SDP `sendonly`, ≤ 64 KiB. Si el agente no puede crear la conexión, responde `error`
+`internal` con el `ref_id` de la oferta y la consola reintenta.
+
+#### 5.24.5 `student.present.ice` (A ↔ P)
+
+Como §5.12.4, con `present_id` en lugar de `broadcast_id`. La consola lo envía solo a agentes con
+`screen.present`. Como máximo 50 candidatos por intento y sentido.
+
+#### 5.24.6 `student.present.stop` (P → A)
+
+```json
+{ "present_id": "c0a1…" }
+```
+
+El agente cierra la conexión, deja de capturar, quita la tarjeta (si aún preguntaba), la banda y
+el distintivo, y responde `ack` `ended`. Idempotente; un `present_id` distinto del vigente se
+ignora.
+
+#### 5.24.7 Permisos del sistema operativo
+
+- **Windows:** la captura de pantalla no pide permiso. Como servicio, el agente no captura: la
+  captura, el codificador y la conexión WebRTC corren en su ayudante, en la sesión del alumno y
+  con sus derechos (`internal/agentsvc`, regla 17); el servicio solo pasa la señalización.
+- **Linux (Wayland):** la captura pasa por el portal `xdg-desktop-portal` (ScreenCast), que pide
+  al alumno aprobar **en cada sesión**; en X11 no hay permiso. Linux no declara `screen.present`
+  todavía.
+- **macOS:** pide el permiso «Grabación de pantalla» (Privacidad y seguridad). macOS no declara
+  `screen.present` todavía.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -1800,6 +1967,10 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
 | `screen.broadcast.ice.candidate` | 1024 caracteres; 50 por intento y sentido | `error` `invalid_message`; los que sobran se descartan. |
 | `screen.broadcast.*.attempt` | 1–1000 | `error` `invalid_message` |
+| `student.present.start` | `max_width` 640–1920, `fps` 1–15, `max_kbps` 800–2500 | `error` `invalid_message` |
+| `student.present.*.sdp` / `ice.candidate` / `attempt` | Como `screen.broadcast.*` | Como `screen.broadcast.*` |
+| `screen.broadcast.start.source.hostname` | 1–63 caracteres | `error` `invalid_message` |
+| Acuse de `student.present.start` | 15 s | La consola termina la proyección (`failed`, `no_answer`) |
 | `app.block.set.apps` | 1–100 nombres de ≤ 64 caracteres | `error` `invalid_message` |
 | `web.filter.set.domains` | 1–500 dominios de ≤ 253 caracteres | `error` `invalid_message` |
 | `power.action.delay_s` | 10–600 s (0 o ausente = 30 s) | `error` `invalid_message` |
@@ -1834,6 +2005,9 @@ emisor verifica el tamaño final de la envoltura.
 - De `screen.broadcast.*` se registran `broadcast_id`, `attempt`, tamaños y estados de la
   conexión WebRTC; **no** el SDP ni los candidatos (llevan direcciones de la LAN). El video de la
   transmisión no se graba en ningún extremo.
+- De `student.present.*` se registran `present_id`, `attempt`, `status`, `reason`, el equipo
+  fuente, tamaños y estados de las conexiones; **no** el SDP, los candidatos ni ningún cuadro. La
+  consola reenvía los paquetes sin decodificarlos ni guardarlos.
 - De `power.*` se registran `action`, `action_id`, `force`, `status`, los aplazamientos y el
   resultado; el agente lo registra **antes** de llamar al SO.
 - De `remote.*` se registran `control_id`, `status`, `reason` y la cantidad de eventos y de

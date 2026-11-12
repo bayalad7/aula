@@ -142,7 +142,7 @@
         "alumnos",
         "ayuda"
       ],
-      "hash": "sha256:c2059630245c892da262892219e1de2d90330be6cc52eb9a3fe6763388a4da7b",
+      "hash": "sha256:cdf1d4a7b1d40551acaf0b67d0ef4d55ece9d194931032099abd0f1937724871",
       "alt": "Transparencia: avisos e indicadores al alumno: Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, lo restringe o apaga su equipo",
       "claro": "generados/09-transparencia-avisos.claro.svg",
       "oscuro": "generados/09-transparencia-avisos.oscuro.svg"
@@ -331,6 +331,24 @@
       "alt": "Encuestas: Cómo llega una encuesta del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ven al compartir los resultados",
       "claro": "generados/20-encuestas.claro.svg",
       "oscuro": "generados/20-encuestas.oscuro.svg"
+    },
+    {
+      "id": "21-proyectar-alumno",
+      "titulo": "Proyectar la pantalla de un alumno",
+      "descripcion": "Cómo llega la pantalla de un alumno a sus compañeros a través de la consola, qué aviso ve el alumno y cómo termina",
+      "audiencia": [
+        "profesor",
+        "alumno",
+        "desarrollador",
+        "auditor"
+      ],
+      "pantallas": [
+        "alumnos"
+      ],
+      "hash": "sha256:a7be8d536aae814cb0017f7d56f6f8e3bb75d553b5d6233a91be55c2318b21c4",
+      "alt": "Proyectar la pantalla de un alumno: Cómo llega la pantalla de un alumno a sus compañeros a través de la consola, qué aviso ve el alumno y cómo termina",
+      "claro": "generados/21-proyectar-alumno.claro.svg",
+      "oscuro": "generados/21-proyectar-alumno.oscuro.svg"
     }
   ]
 }

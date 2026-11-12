@@ -18,15 +18,15 @@ flowchart LR
     subgraph svc["Servicio «Aula — agente del aula» (SYSTEM, sesión 0)"]
         agente["session.Agent<br/>conexión con la consola"]
         sup["agentsvc.Supervisor<br/>lanza, vigila y mueve al ayudante"]
-        proxies["Proxies Clipboard, Capture, Indicator,<br/>Input, WorkFolder, Opener y power.run"]
+        proxies["Proxies Clipboard, Capture, Indicator,<br/>Input, WorkFolder, Opener, Pause y power.run"]
         pol["policy.Manager y power.Countdown"]
     end
 
     pipe["Named pipe local<br/>platform.ListenLocal<br/>solo SYSTEM y el SID del alumno"]
 
     subgraph user["Sesión del alumno (sus permisos)"]
-        ayud["aula-cliente.exe --ayudante<br/>ventana, distintivo y avisos"]
-        so["Portapapeles, captura, entrada<br/>del control remoto, apagado sin force,<br/>Documentos\Aula del alumno,<br/>abrir una página o una app permitida"]
+        ayud["aula-cliente.exe --ayudante<br/>ventana, distintivo, avisos y pausa"]
+        so["Portapapeles, captura, entrada<br/>del control remoto, apagado sin force,<br/>Documentos\Aula del alumno,<br/>abrir una página o una app permitida,<br/>ventana de pausa en sus monitores"]
     end
 
     sesiones["platform.SessionManager<br/>sesión activa, Launch con el token del usuario"]
@@ -39,7 +39,7 @@ flowchart LR
     sup -- "comprueba PeerPID" --> pipe
     proxies <-- "Link: JSON por líneas<br/>calls, replies y events" --> pipe
     pipe <--> ayud
-    ayud -- "ready: capture, clipboard, broadcast, input, files, open" --> pipe
+    ayud -- "ready: capture, clipboard, broadcast, input, files, open, pause" --> pipe
     ayud --> so
 
     classDef externo fill:#dbeafe,stroke:#1d4ed8,color:#111827
@@ -83,6 +83,10 @@ flowchart LR
   (Documentos, `%LOCALAPPDATA%`) antes de llamar a `ShellExecuteW` o `CreateProcessW`, sin
   argumentos (`docs/privacidad.md` reglas 68–69). Sin ayudante con `open` en su `ready`, no se
   declara `open.*`.
+- **La pausa la muestra el ayudante** (`pause.show`, `pause.yield`, `pause.hide`): el servicio
+  no tiene escritorio. El ayudante la quita por sí mismo si pierde el canal local, y si el ayudante
+  muere sus ventanas se van con él: nadie queda en pausa (`docs/privacidad.md` regla 10). Sin
+  ayudante con `pause` en su `ready`, no se declara `screen.freeze`.
 - **Apagar sin `force` con alguien en sesión lo hace el ayudante** (`power.run`): desde SYSTEM,
   Windows lo rechaza con `ERROR_SHUTDOWN_USERS_LOGGED_ON` (diagrama 16).
 - Solo Windows; en los demás SO `NewSessionManager` y `ListenLocal` devuelven «no soportado».
@@ -95,4 +99,5 @@ flowchart LR
 - `apps/student/service.go`, `apps/student/helper.go`
 - `internal/platform/workfolder_windows.go`, `internal/filepush/receiver.go`
 - `internal/agentsvc/proxy_open.go`, `internal/openapp/session.go`, `internal/platform/launcher_windows.go`
+- `internal/agentsvc/proxy_pause.go`, `internal/platform/pause_windows.go`
 - `docs/privacidad.md` reglas 17–19, `docs/decisiones.md` D-016, 55

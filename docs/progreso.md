@@ -25,7 +25,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 07 | App profesor: lista, hotkey de captura, emisión | ✅ Completada (falta prueba en VMs) |
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ✅ **Hito 1 completado** (falta validación en laboratorio) |
 | 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
-| 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 Miniaturas hechas. La pantalla en blanco está documentada (protocolo §5.9, reglas 9-10) y diseñada (prototipo `alumno-pausa.html`); se implementa en **10.21** |
+| 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | ✅ Miniaturas hechas aquí; la pantalla en blanco se hizo en **10.21** (12/11/2026) |
 | 10 | Plantilla reutilizable para nuevas funciones | ✅ Completada (al día con las etapas 18 y 19) |
 | 10.1 (09.3) | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
@@ -47,7 +47,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.18 | Perfiles de clase («Iniciar clase») | ⏳ Pendiente, después de `v0.1.0` |
 | 10.19 | Encender equipos (Wake-on-LAN) | ⏳ Pendiente, después de `v0.1.0` |
 | 10.20 | Cuestionario con puntaje (mejora de 10.12) | ⏳ Pendiente, después de `v0.1.0` |
-| 10.21 | Pantalla en blanco (la parte pendiente de 09) | ⏳ Pendiente (prompt del 12/11/2026; protocolo §5.9–5.11 ya documentado) |
+| 10.21 | Pantalla en blanco («Pausar pantallas», la parte pendiente de 09) | ✅ Implementado y probado en CI con dobles; panel «Pausar» de la barra, la acción en la Pantalla grande, la franja y Ctrl+Mayús+P (falta la prueba en VM, `docs/prueba-vms.md` §27, y los casos C-108 a C-113 y A-42 a A-47) |
 | 10.22 | Semáforo del alumno | ⏳ Pendiente, después de `v0.1.0` |
 | 10.23 | Rebobinar la clase (código paso a paso) | ⏳ Pendiente, después de `v0.1.0` |
 | 10.24 | Transmitir el editor como texto en vivo | ⏳ Pendiente, después de `v0.1.0` |
@@ -84,7 +84,8 @@ el que se trabajó antes; las notas de abajo lo conservan.
    es una grilla de iconos con ✓/✗ y tooltip (componente `data-tip` en `internal/ui`); las
    capturas del arnés, del mapa, de las notas y del manual son WebP (manual: de 463 KB a 288 KB).
 5. Funciones para `v0.1.0` (prompts del 12/11/2026, lista en `docs/prompts/00-LEEME.md`), con
-   `/funcionalidad-nueva <número>` y en este orden: 10.21 (pantalla en blanco) → 10.13
+   `/funcionalidad-nueva <número>` y en este orden: ~~10.21 (pantalla en blanco)~~ (hecha el
+   12/11/2026, sin commit) → 10.13
    (identidad, asistencia y bitácora) → 10.14 (terminar la clase) → 10.15 (nombres y mapa) →
    10.17 (entregar código); 10.16 si hay tiempo. Después: 15 (auto-actualización) y 11 (revisión).
    10.18 a 10.25 quedan para después de `v0.1.0` (10.20 con `/funcionalidad-mejora`).
@@ -1193,6 +1194,44 @@ Para que cada función pendiente respete lo implementado:
   y «Nueva plantilla…» en su diálogo; 018 descripción del temporizador (`timer.start.description`,
   v0.15, opcional; tarjeta «Qué hacer» en el alumno, nunca en los registros); 019 rejilla de
   duraciones con «Otro…». Casos C-102 a C-107.
+
+## Etapa 10.21: pausar pantallas (pantalla en blanco, D-013) — notas
+
+Aprobado el 12/11/2026 (`/funcionalidad-nueva 10.21`). Ubicación elegida por el usuario: panel
+«Pausar pantallas» en la Barra de acciones, «Pausar pantalla» en Acciones sobre el alumno (Pantalla
+grande), Franja global «N pantallas en pausa» con «Cambiar mensaje» (diálogo) y «Reanudar todo», e
+insignia «En pausa» en la fila. Decisiones: tomar el control o proyectar a un alumno en pausa le
+quita la pausa primero; la transmisión, la cuenta de energía y el control remoto quedan encima de
+la pausa (`Yield`); el alumno proyectado no se pausa; atajo Ctrl+Mayús+P; la ventana pide el foco
+solo al aparecer y al recibir un clic (cambio a D-013).
+
+- **Hecho (sin commitear):**
+  - protocolo: `screen.freeze`, `screen.unfreeze`, `screen.freeze.ack` (§5.9–5.11) y la capacidad
+    `screen.freeze`, sin «pendiente»; fixtures válidos e inválidos (el de `unknown_type` pasó a
+    `code.collect`, el único reservado);
+  - `internal/platform`: `PauseOverlay` (`Show`, `Yield`, `Hide`), en Windows una ventana por
+    monitor con su DPI y el tema claro u oscuro del sistema, que vuelve encima cada 500 ms, ignora
+    Alt+F4 y se reconstruye si cambian los monitores; fallback «no soportado». `ui.Color` lee
+    `c-vista-solido` de `tokens.css` para la ventana nativa, e icono nuevo `reanudar`;
+  - `internal/screen`: `Freezer` (agente: ack, solo cambia el mensaje, quita la pausa al
+    desconectar y al cerrar, `Yield`) y `Pauses` (consola: enviado, en pausa, sin acusar a los 5 s,
+    fallido, olvida a quien se desconecta);
+  - `internal/agentsvc`: `pause.show`, `pause.yield`, `pause.hide` y `Ready.Pause`; el ayudante
+    quita la pausa si pierde el canal local;
+  - consola: `PauseScreens`, `ResumeScreens`, `ChangePauseMessage`, `Pauses`, evento
+    `aula:pauses`, `canPause`/`pause`/`pauseUnacked` por alumno, errores `noPauseTargets` e
+    `invalidPauseMessage`; `TakeControl` y `StartPresent` quitan la pausa antes;
+  - alumno: `Status.paused`, la banda en el orden fijo, la insignia del modo compacto y el título;
+  - pruebas: protocolo, `Freezer`/`Pauses` con dobles, proxy del ayudante, la app del alumno
+    (banda, desconexión, `Yield`, servicio), la consola (destinos, acuses, cambio de mensaje,
+    reanudar, desconexión, control, 20 alumnos en < 1 s) y los simulados (no pueden declararla);
+  - arnés: dobles, escenas `lab-pausa` y `pausa`, capturas 166–172 (consola) y 92–94 (alumno),
+    `pruebas-alumno.mjs` (banda, compacto, orden de bandas); mapa con «Consola · Pausar
+    pantallas»; manual (Tareas frecuentes «Pausar las pantallas», Alumnos y el atajo) y sus
+    capturas; diagramas 08, 09 y 13.
+- **Falta:** la prueba en VM (`docs/prueba-vms.md` §27: dos monitores, DPI distintos, transmitir
+  encima, cortar la red, como servicio) y los casos C-108 a C-113 y A-42 a A-47; los commits.
+- **Fuera:** bloquear el teclado (D-013) y registrar la pausa en la bitácora (llega con 10.13).
 
 ## Etapa 12.2: transmisión a una selección, y modos ventana y pantalla completa — notas
 

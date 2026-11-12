@@ -1,6 +1,6 @@
 ---
 titulo: "Tareas frecuentes"
-resumen: "Mostrar tu pantalla o la de un alumno, mandar avisos, dar tiempo a un ejercicio, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla y cambiar de canal."
+resumen: "Mostrar tu pantalla o la de un alumno, mandar avisos, pausar las pantallas, dar tiempo a un ejercicio, restringir aplicaciones y sitios, apagar equipos, tomar el control de un equipo, tomar una captura de su pantalla y cambiar de canal."
 grupo: "Tareas frecuentes"
 orden: 60
 pantallas: []
@@ -79,6 +79,42 @@ envía una sola copia.
 3. Pulsa **Enviar aviso**.
 
 En [Código › Últimos envíos](codigo#últimos-envíos) ves quién ya lo vio.
+
+## Pausar las pantallas
+
+Cuando necesitas que te pongan atención («ojos al frente»):
+
+1. Pulsa **Pausar** (o **Ctrl+Mayús+P** para pausar a todos sin abrir el panel).
+2. Si quieres, escribe un mensaje corto, como «Miren al pizarrón un momento» (hasta 300
+   caracteres).
+3. Pulsa **Pausar N pantallas**.
+
+Cada pantalla se cubre, en todos sus monitores, con un aviso que dice **«Tu profesor pausó esta
+computadora»**, tu nombre, el canal y tu mensaje. Los alumnos no pierden su trabajo: lo que tenían
+abierto sigue ahí. Mientras dure, una franja arriba de la consola dice cuántas pantallas están en
+pausa, cuántas no lo han confirmado aún y tu mensaje, con:
+
+- **Cambiar mensaje**: lo cambia en todas las pantallas en pausa, sin quitarla.
+- **Reanudar todo**: quita la pausa (también con **Ctrl+Mayús+P**).
+
+Para un solo alumno, abre su pantalla en grande y pulsa **Pausar pantalla** (o **Reanudar
+pantalla**). En la lista, su fila lleva la insignia **En pausa**.
+
+Algunas cosas que conviene saber:
+
+- **Si muestras tu pantalla** (o la de un alumno) a quienes están en pausa, la transmisión se ve
+  encima de la pausa; al terminar, la pausa vuelve a cubrir todo. Lo mismo pasa con la cuenta
+  regresiva de Energía y el aviso de control remoto: el alumno siempre los ve.
+- **Si tomas el control** de un alumno en pausa, o lo proyectas a la clase, Aula le quita la pausa
+  primero, porque necesitas ver su pantalla real.
+- **El alumno que se está mostrando a la clase no se pausa:** su pantalla es la que ven los demás.
+- **Si se pierde la conexión** (cierras la consola o se cae la red), la pausa se quita sola en cada
+  equipo: nadie se queda bloqueado. Si el alumno vuelve a conectarse, regresa sin pausa.
+- **No es un bloqueo total:** Aula no bloquea el teclado. Un alumno podría cambiar de ventana con
+  Alt+Tab y escribir sin ver, aunque la pausa vuelve a quedar encima cada medio segundo.
+- Por ahora solo se pausan equipos con Windows; los alumnos simulados nunca se pausan.
+
+{{diagrama:08-monitoreo-pantalla}}
 
 ## Dar tiempo a un ejercicio
 
@@ -274,6 +310,7 @@ Toda la consola se usa con el teclado: **Tab** y **Mayús+Tab** van de un contro
 |---|---|---|
 | **Ctrl+Alt+Mayús+C** | En cualquier programa | Carga en el editor de Código lo que copiaste. Si otro programa lo ocupa, [Ajustes](ajustes#acerca-de) lo dice. |
 | **Ctrl+A** | Alumnos, fuera de un campo de texto | Selecciona a todos los alumnos de la lista. |
+| **Ctrl+Mayús+P** | En toda la consola | Pausa las pantallas de todos o, si ya hay pausa, las reanuda (ver [Pausar las pantallas](#pausar-las-pantallas)). |
 | **Esc** | Paneles, ventanas y globos de información | Cierra lo que está abierto y vuelve al botón que lo abrió. |
 | **Tab** | Dentro del editor de código | Sangra el código. Para salir del editor, pulsa **Ctrl+M** y después **Tab**. |
 | **+ − 0** | Sobre un diagrama | Acercan, alejan y vuelven al tamaño original. |

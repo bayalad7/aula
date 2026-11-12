@@ -1,14 +1,15 @@
 ---
-titulo: "Monitoreo: miniaturas, pantalla y captura"
-descripcion: "Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura y cómo sabe cada alumno que lo están viendo"
+titulo: "Monitoreo: miniaturas, pantalla, captura y pausa"
+descripcion: "Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura, cómo las pausa y cómo sabe cada alumno qué pasa con su equipo"
 audiencia: [profesor, desarrollador]
 pantallas: [alumnos]
-secciones_manual: [privacidad, protocol]
+secciones_manual: [privacidad, protocol, administracion/tareas-frecuentes]
 ---
 
-# Monitoreo: miniaturas, pantalla y captura
+# Monitoreo: miniaturas, pantalla, captura y pausa
 
-¿Qué ocurre al abrir «Ver pantallas» o al tomar una captura, y qué garantiza que el alumno lo sepa?
+¿Qué ocurre al abrir «Ver pantallas», al tomar una captura o al pausar las pantallas, y qué garantiza
+que el alumno lo sepa?
 
 ```mermaid
 %%{init: {"htmlLabels": false}}%%
@@ -17,11 +18,14 @@ sequenceDiagram
     actor P as Profesor
     box rgb(220,252,231) Consola
         participant W as screen.Wall
+        participant Z as screen.Pauses
     end
     box rgb(220,252,231) Agente
         participant S as screen.Streamer
         participant I as Distintivo en pantalla
         participant K as Captura (platform)
+        participant F as screen.Freezer
+        participant V as Ventana de pausa (platform)
     end
 
     P->>W: Ver pantallas (Open y Plan)
@@ -61,6 +65,24 @@ sequenceDiagram
     else Descartar, cerrar la vista previa o la clase
         W->>W: la olvida: nada en disco
     end
+
+    Note over P,V: Pausar pantallas (§5.9–5.11)
+    P->>Z: Pausar (panel, Pantalla grande o Ctrl+Mayús+P)
+    Z->>F: screen.freeze {message?}<br/>solo reales con screen.freeze, nunca a quien se proyecta
+    F->>V: una ventana por monitor, encima de todo, con quién y por qué
+    F->>F: banda «… pausó esta computadora» y la ventana al frente (raise)
+    F-->>Z: screen.freeze.ack {frozen: true}
+    Z->>P: franja «N pantallas en pausa» e insignia «En pausa»
+    opt transmisión, cuenta de energía o control remoto
+        F->>V: Yield: queda debajo de la ventana de Aula
+    end
+    alt Reanudar, o tomar el control o proyectar a ese alumno
+        Z->>F: screen.unfreeze
+        F-->>Z: screen.freeze.ack {frozen: false}
+    else se cae la conexión o se cierra el agente
+        Note over F: Freezer.Stop: nadie queda en pausa
+    end
+    F->>V: quita las ventanas
 ```
 
 ## Lo que no es obvio
@@ -83,13 +105,25 @@ sequenceDiagram
 - Si la captura falla (sesión bloqueada, por ejemplo), el agente responde **una sola vez**
   `error internal` y sigue intentando; el distintivo sigue visible.
 - Hoy solo Windows declara `screen.thumb`; Linux y macOS devuelven «no soportado».
-- **Pantalla en blanco (`screen.freeze`) no está implementada**: está documentada como pendiente
-  (`docs/protocol.md` §5.9–5.11, D-013) y ningún agente declara su capacidad, por eso no aparece
-  aquí.
+- **La pausa no es un bloqueo total** (D-013): la ventana de pausa toma los clics y vuelve a quedar
+  encima cada medio segundo, pero no intercepta el teclado. Toma el foco al aparecer y cuando el
+  alumno le hace clic, no en cada vuelta.
+- **La pausa cede el paso** a lo que el alumno debe ver: la transmisión (del profesor o de un
+  compañero), la cuenta regresiva de energía y el aviso de control remoto quedan encima. Al
+  terminar, la pausa vuelve a cubrir todo.
+- **Nadie queda en pausa sin la clase**: al cerrarse la conexión el agente la quita, y con el
+  agente como servicio el ayudante la quita también si pierde el canal local (diagrama 13). La
+  consola olvida la pausa de quien se desconecta: al volver, entra sin pausa.
+- **Las miniaturas muestran la pausa**: es lo que ve el alumno. Por eso, antes de tomar el control
+  o de proyectar a un alumno en pausa, la consola le quita la pausa.
+- El mensaje de la pausa no se registra en ningún extremo; sí que hubo una pausa y su longitud.
 
 ## Fuentes en el código
 
-- `internal/screen/wall.go`, `internal/screen/streamer.go` (`Announce`)
+- `internal/screen/wall.go`, `internal/screen/streamer.go` (`Announce`), `internal/screen/freeze.go`
+  (`Freezer`), `internal/screen/pauses.go` (`Pauses`)
+- `internal/platform/pause.go`, `internal/platform/pause_windows.go`, `apps/teacher/pause.go`,
+  `apps/student/pause.go`
 - `internal/snapshot/agent.go` (`Taker`), `internal/snapshot/console.go` (`Store`),
   `internal/snapshot/files.go`, `internal/protocol/parts.go`
 - `internal/platform/screen.go`, `internal/platform/screen_windows.go`,
@@ -97,4 +131,4 @@ sequenceDiagram
 - `apps/teacher/app.go` (`OpenScreens`, `CloseScreens`, `ViewScreen`, `onFrame`),
   `apps/teacher/snapshot.go` (`TakeSnapshot`, `TakeSnapshots`, `SaveSnapshots`)
 - `apps/student/app.go` (`enableScreen`, `onViewed`), `apps/student/snapshot.go` (`onSnapshot`)
-- `docs/protocol.md` §5.6–5.8 y §5.17, `docs/privacidad.md` reglas 6–8 y 44–49
+- `docs/protocol.md` §5.6–5.11 y §5.17, `docs/privacidad.md` reglas 6–11 y 44–49

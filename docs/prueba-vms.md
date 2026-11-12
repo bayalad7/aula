@@ -1296,3 +1296,21 @@ VM 2 y 3 en modo ventana, y la consola en el equipo del profesor.
 | **TS-E** Detener deja todo como estaba | Antes de transmitir, deja Aula compacta en la VM 2 y cerrada al área de notificación en la VM 3 (selecciona todas); **Detener**. | La VM 2 vuelve a la tira compacta y la VM 3 vuelve a ocultarse. |
 
 **Para aceptar** bastan TS-A a TS-D en ✅.
+
+## 27. Pausar pantallas (10.21)
+
+Comprueba que la pausa cubre todos los monitores, dice quién y por qué, deja ver lo que el alumno
+debe ver y nunca deja a nadie bloqueado (`docs/protocol.md` §5.9–5.11, `docs/privacidad.md` reglas
+9–11). Con dos VMs Windows: la VM 1 con el agente **como servicio** y **dos monitores** (uno a
+100 % y otro a 150 %), la VM 2 en modo ventana, y la consola en el equipo del profesor.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **PA-A** Cubre y explica (**aceptación**) | Sin selección › **Pausar** › mensaje «Miren al pizarrón» › **Pausar 2 pantallas**. | En la VM 1, los dos monitores quedan cubiertos con el texto nítido en cada uno; en las dos VMs: «Tu profesor pausó esta computadora», el mensaje, «<profesor> · canal <n>…» y la hora. La consola dice «2 pantallas en pausa» y cada fila «En pausa». |
+| **PA-B** Cambiar el mensaje (**aceptación**) | **Cambiar mensaje** en la franja › «Ya casi terminamos». | Cambia en las dos VMs sin parpadear. |
+| **PA-C** Transmitir encima | **Mostrar mi pantalla** en pantalla completa; **Detener**. | La transmisión se ve encima de la pausa; al detener, la pausa vuelve a cubrir todo. |
+| **PA-D** Se quita sola (**aceptación**) | Desconecta la red de la VM 2; en otra prueba, cierra la consola a la fuerza. | En unos 15 s la pausa y la banda se quitan solas; al volver la red, la VM entra sin pausa. |
+| **PA-E** Como servicio | En la VM 1, termina el proceso del ayudante con la pausa puesta. | La pausa desaparece con el ayudante; el servicio lo vuelve a abrir sin pausa. `C:\ProgramData\Aula\alumno\logs\aula-agente.log` dice «screen paused» con `message_len`, nunca el mensaje. |
+| **PA-F** Reanudar | Pausa otra vez y **Reanudar todo** (o Ctrl+Mayús+P). | Se quita en las dos VMs y la franja desaparece. |
+
+**Para aceptar** bastan PA-A, PA-B y PA-D en ✅.

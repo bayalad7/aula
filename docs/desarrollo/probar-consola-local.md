@@ -217,6 +217,27 @@ fuente y otro como receptor, ambos con Windows. El aula simulada abierta sirve p
 | C-93 | Con el aula simulada abierta, abre la pantalla en grande y la ficha de un alumno simulado | En la pantalla en grande no aparece **Proyectar a la clase**; en la ficha, «Qué puede hacer su equipo» dice «Mostrar su pantalla a la clase: no» y «Ver la pantalla de un compañero: no». Al proyectar a un real, los simulados no reciben nada. A 900×600 y en oscuro la franja y la Pantalla grande se leen completas |
 | C-94 | Proyectando, desconecta la fuente (cierra su agente o su red); luego vuelve a proyectar y cierra la clase | «<equipo> se desconectó»; la vista del receptor se cierra. Al cerrar la clase, la franja se va y el receptor vuelve a su vista de código |
 
+### Pausar pantallas (10.21)
+
+Con dos alumnos reales con Windows (VM o `-directo`, `instaladores-locales.md`), uno de ellos con
+**dos monitores**, y el aula simulada abierta. La ventana de pausa es nativa: el arnés no la ve, se
+revisa a ojo en el equipo del alumno (nunca con clics sintéticos en tu escritorio).
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-108 | Sin selección, **Pausar** en la barra; escribe «Miren al pizarrón» y **Pausar N pantallas** | El botón cuenta solo los reales con Windows; el aviso dice «N pantallas en pausa». Arriba, la franja «N pantallas en pausa «Miren al pizarrón»» con **Cambiar mensaje** y **Reanudar todo**; en Notas, «En pausa» en cada uno. Los simulados no cambian |
+| C-109 | **Cambiar mensaje** en la franja, escribe otro y **Cambiar mensaje**; luego un mensaje de más de 300 caracteres pegado | En los alumnos cambia el texto **sin parpadear** (la ventana no se cierra); la franja muestra el nuevo. El largo no se puede escribir (300) y, si llega, el campo dice «El mensaje es muy largo» |
+| C-110 | Pantalla grande de un alumno en pausa › **Reanudar pantalla**; luego **Pausar pantalla**; luego **Tomar control** | Se quita y vuelve la pausa solo en ese alumno. **Tomar control** le quita la pausa primero: ves su pantalla real, no la pausa |
+| C-111 | Con un alumno proyectándose a la clase, **Pausar** sin selección | Al proyectado no se le pausa: el aviso dice «No se pausó a <equipo>: su pantalla se está mostrando a la clase». Los demás ven la proyección **encima** de su pausa; al **Detener**, la pausa vuelve a cubrir todo |
+| C-112 | **Ctrl+Mayús+P** desde Alumnos, desde Código (con el foco en el editor) y desde Participación; otra vez | La primera vez pausa a todos; la segunda, reanuda a todos. En Código no se abre la paleta del editor |
+| C-113 | Con pausa, cierra la red de un alumno 20 s y reconéctalo; luego cierra la consola con la pausa puesta | Su fila deja de decir «En pausa» y, al volver, entra sin pausa. Al cerrar la consola, la pausa se quita sola en todos (unos 15 s como mucho) |
+| A-42 | Con tu editor al frente y Aula compacta, pausa este alumno desde la consola (con mensaje) | **Cada monitor** queda cubierto con el color de la pausa: «Tu profesor pausó esta computadora», el mensaje entre comillas, «<profesor> · canal <n>. Tu trabajo sigue abierto…», «Si se pierde la conexión…» y la hora. Se ve igual en un monitor a 100 % y otro a 150 %. Aula sale del modo compacto con la banda «… pausó esta computadora» (debajo de la pausa) |
+| A-43 | Haz clic en la pausa, Alt+F4, Alt+Tab a tu editor y escribe; espera 1 s | Los clics no pasan; Alt+F4 no la cierra. Con Alt+Tab llegas al editor y escribes a ciegas (límite aceptado, D-013), y en menos de 1 s la pausa vuelve encima. El teclado nunca queda bloqueado |
+| A-44 | Con la pausa puesta: transmite tu pantalla en pantalla completa, detén; manda una orden de energía de 10 min y cancélala | La transmisión y la cuenta regresiva se ven **encima** de la pausa; al terminar, la pausa vuelve a cubrir todo |
+| A-45 | Cambia el tema de Windows a oscuro (Configuración › Personalización › Colores) con la pausa puesta | La pausa cambia a sus colores oscuros sin cerrarse |
+| A-46 | Desconecta la red del alumno con la pausa puesta | En unos 15 s la pausa y la banda se quitan solas; al volver la red, Aula se reconecta y no hay pausa |
+| A-47 | Repite A-42 y A-46 con el agente como servicio; luego, con la pausa puesta, termina el proceso del ayudante en el Administrador de tareas | Lo mismo: la pausa la muestra el ayudante en tu sesión. Al terminar el ayudante, la pausa desaparece con él y el servicio lo vuelve a abrir sin pausa. `aula-agente.log` dice «screen paused» con `message_len`, **nunca** el mensaje |
+
 ### Notas de interfaz 014–016 (2026-11-12)
 
 | # | Pasos | Esperado |

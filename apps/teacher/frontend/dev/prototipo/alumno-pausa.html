@@ -12,16 +12,18 @@
 </head>
 <body>
   <!-- Diseño de la pantalla en blanco (screen.freeze, protocolo §5.9; docs/privacidad.md reglas
-       9-10). Pendiente de implementar: este prototipo solo fija cómo se verá (prompt 19, F).
-       Cubre todos los monitores, dice por qué y quién, y no parece un cuelgue: el reloj avanza y
-       el texto explica que el trabajo sigue abierto. -->
+       9-11). Implementada en 10.21 como ventana nativa (platform.PauseOverlay, una por monitor,
+       con estos colores: c-vista-solido); este prototipo queda como referencia de cómo se ve.
+       Dice por qué y quién, y no parece un cuelgue: la hora avanza y el texto explica que el
+       trabajo sigue abierto. -->
   <main class="pantalla-pausa" aria-labelledby="pausa-titulo">
     <svg class="icono" aria-hidden="true"><use href="../../dist/sistema/iconos.svg#pausa"/></svg>
-    <h1 id="pausa-titulo" class="pantalla-pausa__titulo">Tu pantalla está en pausa</h1>
-    <p>Prof. Ayala (canal 1) pausó las pantallas de la clase. Tu trabajo sigue abierto y nada se
-      perdió: tu equipo vuelve en cuanto el profesor termine.</p>
+    <h1 id="pausa-titulo" class="pantalla-pausa__titulo">Tu profesor pausó esta computadora</h1>
     <p class="pantalla-pausa__mensaje">«Miren al pizarrón un momento.»</p>
+    <p>Prof. Ayala · canal 1. Tu trabajo sigue abierto y nada se perdió: tu equipo vuelve cuando el
+      profesor lo reanude.</p>
     <p>Si se pierde la conexión con la clase, la pausa se quita sola.</p>
+    <p><strong>10:42</strong></p>
   </main>
 </body>
 </html>

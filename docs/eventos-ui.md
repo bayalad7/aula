@@ -33,7 +33,7 @@ que no es parte de la página.
 
 | Evento | Datos | Cuándo |
 |---|---|---|
-| `aula:status` | `Status` | Cambia la conexión: buscando, conectado, desconectado, sin configurar. |
+| `aula:status` | `Status` | Cambia la conexión: buscando, conectado, desconectado, sin configurar; o lo que el profesor hace con este equipo (`viewed`, `watching`, `restricted`, `control`, `presenting`, `paused`). `paused` (prompt 10.21): el profesor pausó esta pantalla (`screen.freeze`); la ventana muestra la banda «… pausó esta computadora» y la insignia «En pausa» del modo compacto, y Go trae la ventana al frente con `raise` al empezar. La ventana de pausa es nativa y la ventana no tiene binding para quitarla. |
 | `aula:board` | `Board` | Llega `code.share` o `code.clear`. |
 | `aula:notices` | `Notices` | Llega `msg.show`, el profesor toma una captura de esta pantalla (aviso `kind: "snapshot"`, con `notify`, nunca `raise`) o el alumno cierra un aviso. |
 | `aula:broadcast` | `BroadcastView` | Empieza o termina la transmisión de la pantalla del profesor. Llega **antes** que la oferta: la vista y su franja se muestran primero. |
@@ -42,7 +42,7 @@ que no es parte de la página.
 | `aula:present` | `broadcast.PresentView` | Tu pantalla mostrada a la clase (§5.24): `{phase, presentId}`. `phase: "live"` (la banda, y `Status.presenting`; Go trae la ventana al frente con `raise` antes del primer cuadro) o `""` (nada). La ventana no tiene binding para detenerla: solo el profesor. |
 | `aula:restrictions` | `policy.State` | Empiezan, cambian o terminan las restricciones de la clase. Llega **antes** de aplicarlas. `{apps, web}`: cada uno `null` o `{policyId, mode, items (≤ 15), total}`. |
 | `aula:app-closed` | `AppClosed` | El agente cerró una app bloqueada: `{app: "steam.exe"}`, como mucho uno por app cada 30 s. |
-| `aula:compact` | `Compact` | Go sacó la ventana del modo compacto porque el profesor hizo algo que el alumno debe ver (energía, restricciones, transmisión): `{on: false}`. |
+| `aula:compact` | `Compact` | Go sacó la ventana del modo compacto porque el profesor hizo algo que el alumno debe ver (energía, restricciones, transmisión, pausa): `{on: false}`. |
 | `aula:power` | `PowerView` | Llega, se pospone, se ejecuta, falla o se anula una orden de energía (`power.*`). Llega **antes** de que la consola reciba el `power.ack`. `notice` es `null` cuando no hay aviso. |
 | `aula:participation` | `participation.DeskView` | La mano del alumno sube o baja (también si la baja el profesor: `hand.lower`), o uno de sus mensajes se envía, llega a la consola (`msg.student.ack`) o se rechaza (docs/protocol.md §5.18). Con `notify`, nunca `raise`. |
 | `aula:timer` | `classtimer.View` = `{state, timerId, label, description, remainingMs, justEnded}` (`description`: lo que hay que hacer, para la tarjeta `#tarea`; vacía, sin tarjeta) | El temporizador del profesor empieza, se extiende, se detiene, termina o se quita (docs/protocol.md §5.19). `state`: `none`, `running` o `ended`. La ventana cuenta los segundos por su cuenta desde `remainingMs` (lo que faltaba al emitirlo) con `performance.now()`, sin la hora del equipo, y arma el texto de la insignia de la tira y del modo compacto. `justEnded` viene solo en el evento del fin: la ventana muestra el aviso de la esquina una vez. Al terminar Go llama a `notify`, nunca a `raise`. |
@@ -218,7 +218,8 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 
 | Evento | Datos | Cuándo |
 |---|---|---|
-| `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código, responde a una orden de energía (`power`) o manda un error del protocolo (`lastError`). |
+| `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código, responde a una orden de energía (`power`) o a una pausa (`pause`: `sent`, `paused`, `resuming`, `failed` o `""`, y `pauseUnacked` si no la acusó en 5 s), o manda un error del protocolo (`lastError`). `canPause` y el contador `canPause`: equipos reales con `screen.freeze`. |
+| `aula:pauses` | `screen.PauseSummary` | Se pausan o se reanudan pantallas, cambia el mensaje, un agente acusa (`screen.freeze.ack`) o falla, se cumplen 5 s sin acuse, o un alumno en pausa se desconecta (docs/protocol.md §5.9). `{paused, unacked, failed, message}`: la franja «N pantallas en pausa» con «Cambiar mensaje» y «Reanudar todo». También en `View().pauses`. |
 | `aula:history` | `History` | Tras cada emisión o reemisión. |
 | `aula:deliveries` | `Deliveries` | Tras cada envío, cada acuse (`code.ack`, `msg.ack`) y cada error con que un alumno contesta a un envío (`rejected`). |
 | `aula:capture` | `Capture` | Al pulsar el atajo global o «Pegar». |
@@ -399,6 +400,11 @@ cada código tenga su enlace y que la sección exista.
 | `ClearAllRestrictions()` | `RestrictionsView` | **Quitar todas las restricciones.** Cerrar la clase o cambiar de canal también las quita. |
 | `PowerAction({action, hosts, delayS, force})` | `PowerResult` / error | **Energía → Apagar / Reiniciar / Cerrar sesión**, después de la confirmación explícita de la interfaz. `action` `shutdown`, `reboot` o `logoff`; `hosts` los marcados o vacío (todo el canal); `delayS` 10–600 (0 = 30 s); `force` sin cuenta regresiva. Solo a quien declaró `power`. `PowerResult` = `{sent, unsupported: [hostname], failed: [hostname]}`. No se reenvía a quien se reconecta. |
 | `PowerCancel(hosts)` | `PowerResult` | **Cancelar.** `power.cancel` a quien tiene una orden en cuenta regresiva (`sent`, `countdown`, `postponed`); `hosts` vacío: todo el canal. |
+| `PauseScreens({hosts, message})` | `PauseResult` / error | **Pausar** (panel, Pantalla grande o Ctrl+Mayús+P). `screen.freeze` a los reales con `screen.freeze`; `hosts` los marcados o vacío (todo el canal); `message` 0–300 caracteres (si no, `invalidPauseMessage`). Nunca a simulados ni al alumno que se proyecta. Sobre una pantalla en pausa solo cambia el mensaje. Si nadie puede, `noPauseTargets`. `PauseResult` = `{sent, unsupported: [hostname], presenting: [hostname], failed: [hostname]}`. |
+| `ResumeScreens(hosts)` | `PauseResult` | **Reanudar** (panel, Pantalla grande, franja o Ctrl+Mayús+P). `screen.unfreeze` a quien tiene una pausa; `hosts` vacío: todo el canal. |
+| `ChangePauseMessage(message)` | `PauseResult` / error | **Cambiar mensaje** (diálogo de la franja). `screen.freeze` con el mensaje nuevo a quien sigue en pausa. |
+| `Pauses()` | `screen.PauseSummary` | El resumen de la franja, como `aula:pauses`. |
+| — | — | `TakeControl` y `StartPresent` mandan antes `screen.unfreeze` a un alumno en pausa: el profesor necesita su pantalla real. |
 | `AllowedApps()` | `AllowedApps` | Ajustes › Apps permitidas y la lista de «Abrir página o app»: la del centro, la de esta consola o los ejemplos, en ese orden. |
 | `DefaultAllowedApps()` | `[openapp.App]` | **Restaurar ejemplos**: los ejemplos de Aula (Bloc de notas, Calculadora, Paint, VS Code, Thonny, Scratch 3), sin guardarlos. |
 | `SaveAllowedApps(apps)` | `AllowedApps` / error | **Guardar**: revisa cada `{id, name, path}` (nombre de 1 a 60 caracteres y distinto de los demás; ruta de un `.exe` que empiece con una unidad o con `%ProgramFiles%`, `%ProgramFiles(x86)%`, `%LOCALAPPDATA%` o `%SystemRoot%`, y que no sea una herramienta del sistema), da un `id` a las nuevas y la guarda donde la leyó `AllowedApps`. `allowedAppInvalid`, `allowedAppsNotSaved` (la del centro sin permisos de administrador). Emite `aula:allowed-apps`. |

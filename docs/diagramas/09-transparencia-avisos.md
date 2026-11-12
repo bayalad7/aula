@@ -1,6 +1,6 @@
 ---
 titulo: "Transparencia: avisos e indicadores al alumno"
-descripcion: "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, lo restringe o apaga su equipo"
+descripcion: "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, pausa su pantalla, lo restringe o apaga su equipo"
 audiencia: [profesor, alumno, desarrollador]
 pantallas: [alumnos, ayuda]
 secciones_manual: [administracion/como-funciona, privacidad]
@@ -25,6 +25,7 @@ flowchart LR
         snap["screen.snapshot.request"]
         abrir["open.url · open.app"]
         present["student.present.start"]
+        freeze["screen.freeze"]
     end
 
     subgraph avisos["Lo que ve el alumno (antes de actuar)"]
@@ -38,6 +39,7 @@ flowchart LR
         captura["Aviso fijo 5 s «Tu profesor está tomando<br/>una captura…» y después, sin quitar<br/>el foco, «Captura de pantalla» en la esquina<br/>regla 44"]
         abierto["Se abre la página o la app y, en la<br/>esquina, «… abrió X en tu navegador»;<br/>Aula no se trae al frente<br/>reglas 66–68"]
         mostrando["La ventana pasa al frente con la banda<br/>y el aviso fijo «Tu pantalla se está<br/>mostrando a la clase», sin botones<br/>reglas 75–78"]
+        pausa["Ventana de pausa en todos los monitores:<br/>«Tu profesor pausó esta computadora»,<br/>quién, el canal y su mensaje, y la banda<br/>«… pausó esta computadora»<br/>reglas 9–10"]
     end
 
     fin["Se quita con stop o clear,<br/>al cerrar la vista o la clase,<br/>o al caerse la conexión"]
@@ -56,6 +58,8 @@ flowchart LR
     abrir --> abierto
     abierto --> puntual
     present --> mostrando
+    freeze --> pausa
+    pausa --> fin
     mostrando --> fin
     visto --> fin
     franja --> fin
@@ -67,8 +71,8 @@ flowchart LR
     classDef aula fill:#dcfce7,stroke:#15803d,color:#111827
     classDef datos fill:#ffedd5,stroke:#c2410c,color:#111827
     classDef seguridad fill:#fee2e2,stroke:#b91c1c,color:#111827
-    class conexion,share,thumb,bcast,pol,pwr,rmt,snap,abrir,present seguridad
-    class distintivo,frente,visto,franja,restr,energia,control,captura,abierto,mostrando aula
+    class conexion,share,thumb,bcast,pol,pwr,rmt,snap,abrir,present,freeze seguridad
+    class distintivo,frente,visto,franja,restr,energia,control,captura,abierto,mostrando,pausa aula
     class fin,sigue,puntual externo
 ```
 
@@ -90,10 +94,14 @@ flowchart LR
   (`notify`) **después** de abrir, porque solo entonces se sabe qué se abrió; si no se pudo, no
   se abrió nada y no hay aviso. Nunca es un comando: solo URLs `http`/`https` y apps ya
   instaladas, sin argumentos (`openapp`, regla 68).
+- **La pausa tapa la pantalla pero cede el paso**: la transmisión, la cuenta regresiva de energía y
+  el aviso de control remoto quedan encima de la ventana de pausa, que vuelve a cubrir todo al
+  terminar. Su banda va en el orden fijo, después de la del control y antes de la de pantalla
+  vista; en el modo compacto, la insignia «En pausa».
 - **Toda orden viene de una consola autenticada** (rojo): nada de esto se procesa antes de
   `auth.ok` (diagrama 04).
 - **Al perderse la conexión el alumno no queda vigilado ni restringido**: miniaturas,
-  transmisión, control remoto y restricciones terminan solas. La única excepción es la cuenta regresiva de
+  transmisión, control remoto, pausa y restricciones terminan solas. La única excepción es la cuenta regresiva de
   apagado, porque la orden ya llegó de la consola legítima; el alumno aún puede posponerla.
 - **Con el agente como servicio** todos estos avisos los muestra el ayudante en la sesión del
   alumno; el servicio no tiene ventana ni puede capturar (reglas 17–18, diagrama 13).

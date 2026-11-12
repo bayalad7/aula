@@ -115,8 +115,8 @@
     },
     {
       "id": "08-monitoreo-pantalla",
-      "titulo": "Monitoreo: miniaturas, pantalla y captura",
-      "descripcion": "Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura y cómo sabe cada alumno que lo están viendo",
+      "titulo": "Monitoreo: miniaturas, pantalla, captura y pausa",
+      "descripcion": "Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura, cómo las pausa y cómo sabe cada alumno qué pasa con su equipo",
       "audiencia": [
         "profesor",
         "desarrollador"
@@ -124,15 +124,15 @@
       "pantallas": [
         "alumnos"
       ],
-      "hash": "sha256:d983ac3cbec3469d703928612defc4b6abe6acf0afd5f0bb1aa049a6c3a90754",
-      "alt": "Monitoreo: miniaturas, pantalla y captura: Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura y cómo sabe cada alumno que lo están viendo",
+      "hash": "sha256:cbdb2967b2c7732c85aec866de5028aaf260d9291d808156129fe92b732897e6",
+      "alt": "Monitoreo: miniaturas, pantalla, captura y pausa: Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura, cómo las pausa y cómo sabe cada alumno qué pasa con su equipo",
       "claro": "generados/08-monitoreo-pantalla.claro.svg",
       "oscuro": "generados/08-monitoreo-pantalla.oscuro.svg"
     },
     {
       "id": "09-transparencia-avisos",
       "titulo": "Transparencia: avisos e indicadores al alumno",
-      "descripcion": "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, lo restringe o apaga su equipo",
+      "descripcion": "Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, pausa su pantalla, lo restringe o apaga su equipo",
       "audiencia": [
         "profesor",
         "alumno",
@@ -142,8 +142,8 @@
         "alumnos",
         "ayuda"
       ],
-      "hash": "sha256:cdf1d4a7b1d40551acaf0b67d0ef4d55ece9d194931032099abd0f1937724871",
-      "alt": "Transparencia: avisos e indicadores al alumno: Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, lo restringe o apaga su equipo",
+      "hash": "sha256:f39ba9209f9b1fb9ae178fcae835791bffa9aeb3e3d1ac7aab11b63c2d430902",
+      "alt": "Transparencia: avisos e indicadores al alumno: Qué ve el alumno en su pantalla cada vez que el profesor lo mira, le toma una captura, le transmite, pausa su pantalla, lo restringe o apaga su equipo",
       "claro": "generados/09-transparencia-avisos.claro.svg",
       "oscuro": "generados/09-transparencia-avisos.oscuro.svg"
     },
@@ -207,7 +207,7 @@
       "pantallas": [
         "falta"
       ],
-      "hash": "sha256:be654e50f8180e874ea82934d5ce982afb92e3a7732629ff7693c7a6069d9811",
+      "hash": "sha256:8cb18aea6039dbc267c2f9b64fac7d8e10d5a79429fb3068eee9c90ca386a9a2",
       "alt": "El agente como servicio de Windows: Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
       "claro": "generados/13-agente-servicio.claro.svg",
       "oscuro": "generados/13-agente-servicio.oscuro.svg"

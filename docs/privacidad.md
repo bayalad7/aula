@@ -20,7 +20,7 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
 
    **Bandas de transparencia (prompt 19).** Lo que el profesor hace con este equipo se ve en
    bandas fijas arriba de la ventana, en este orden: energía; control remoto (reglas 36-41);
-   pantalla vista, o en pausa (cuando exista, reglas 9-10); tu pantalla mostrada a la clase
+   pantalla en pausa (reglas 9-10); pantalla vista (regla 6); tu pantalla mostrada a la clase
    (reglas 75-82); restricciones. La transmisión lleva la suya sobre el video. **Ninguna tiene botón para cerrarse ni se oculta con el teclado**: cada una desaparece
    sola cuando el profesor termina. Lo prueban `scripts/ux/pruebas-alumno.mjs` y, del lado de Go,
    `TestNoBindingTurnsOffTransparency` (ninguna función de la ventana las desactiva).
@@ -46,8 +46,9 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
 
 ## Monitoreo de pantalla (etapa 09, Windows)
 
-Reglas para `screen.thumb.*` (`docs/protocol.md` §5.6–5.8) y, cuando se implemente, para la
-pantalla en blanco (`screen.freeze`, §5.9–5.11, **pendiente**: reglas 9 y 10).
+Reglas para `screen.thumb.*` (`docs/protocol.md` §5.6–5.8) y para la pantalla en blanco
+(«Pausar pantallas», `screen.freeze`, §5.9–5.11: reglas 9 a 11, aprobadas el 2026-11-12 con el
+prompt 10.21).
 
 6. **Si la pantalla se ve, el alumno lo sabe.** Desde que llega `screen.thumb.start`, y
    **antes** de capturar el primer cuadro, el equipo muestra un **distintivo fijo, siempre
@@ -73,18 +74,38 @@ pantalla en blanco (`screen.freeze`, §5.9–5.11, **pendiente**: reglas 9 y 10)
 8. **Solo se transmite mientras el profesor mira.** La consola envía `screen.thumb.start` al
    abrir la vista de pantallas y `screen.thumb.stop` al cerrarla. Como máximo 2 cuadros por
    segundo y solo del monitor principal.
-9. **(Pendiente.) La pantalla en blanco explica por qué y quién.** Cubre todos los monitores con:
+9. **La pantalla en blanco explica por qué y quién.** No pide consentimiento: es una acción del
+   profesor sobre un equipo del centro, como la energía (regla 29). Al llegar `screen.freeze`, una
+   ventana nativa cubre **cada monitor** con:
 
    > **Tu profesor pausó esta computadora**
-   > *<mensaje del profesor, si lo hay>*
-   > Aula — clase de <profesor> (canal <X>). Se reanudará cuando el profesor lo indique.
+   > *«<mensaje del profesor, si lo hay>»*
+   > <profesor> · canal <X>. Tu trabajo sigue abierto y nada se perdió: tu equipo vuelve cuando
+   > el profesor lo reanude.
+   > Si se pierde la conexión con la clase, la pausa se quita sola.
+   > *<la hora, que avanza: no parece un cuelgue>*
 
-   Tapa todos los monitores y recibe los clics. Aula **no intercepta ni registra el teclado**.
-10. **(Pendiente.) Nadie queda bloqueado si se pierde la clase.** Si la conexión con la consola se cierra
+   Tapa todos los monitores, recibe los clics y vuelve a quedar encima cada medio segundo; toma el
+   foco al aparecer y cuando el alumno le hace clic. Aula **no intercepta ni registra el
+   teclado** (D-013): no es un bloqueo inviolable, y cerrar Aula la quita (la consola lo ve como
+   desconexión). Además, la ventana de Aula pasa al frente y sale del modo compacto (`raise`) con
+   la banda **«<profesor> (canal <X>) pausó esta computadora»**, sin botón para cerrarse, entre
+   la del control remoto y la de pantalla vista; en el modo compacto, la insignia «En pausa». La
+   barra de la ventana dice **"Aula — <profesor> pausó esta computadora (canal <X>)"**.
+
+   **Lo que el alumno debe ver va encima de la pausa:** la transmisión del profesor o de un
+   compañero (regla 12), la cuenta regresiva de energía (regla 26) y el aviso del control remoto
+   (regla 36). Mientras duran, la pausa queda debajo de la ventana de Aula y vuelve a cubrir todo
+   al terminar. La consola quita la pausa de un alumno antes de tomar su control o de mostrar su
+   pantalla a la clase, y no pausa al alumno que se está mostrando.
+10. **Nadie queda bloqueado si se pierde la clase.** Si la conexión con la consola se cierra
     (la consola se cierra, se cae la red), el agente quita la pantalla en blanco y el
-    distintivo de inmediato.
+    distintivo de inmediato. Como servicio, el ayudante también la quita si pierde el canal local
+    con el servicio, y sus ventanas se van con él si se cierra. Al volver a conectarse, el alumno
+    entra sin pausa: la consola no la reenvía sola.
 11. **Registros.** No se registran las imágenes ni el mensaje de la pantalla en blanco; sí el
-    tipo de mensaje, `seq`, tamaños y dimensiones.
+    tipo de mensaje, `seq`, tamaños y dimensiones, y que hubo una pausa (con la longitud del
+    mensaje, nunca su texto). Ningún extremo guarda una imagen de la pausa.
 
 ## Transmisión de la pantalla del profesor (v0.4, Windows)
 
@@ -262,7 +283,8 @@ Alumnos de prueba que la consola crea dentro de sí misma para probar Aula sin l
     «alumno simulado», y se guarda aparte (regla 46). Tampoco cambia un equipo levantar la mano
     o escribir al profesor (reglas 50–52): un simulado lo hace solo cuando el profesor lo pulsa
     en su fila, y llega a Participación marcado «Simulado».
-    Tampoco abrir una página o una app (regla 70): no les llega.
+    Tampoco abrir una página o una app (regla 70): no les llega. Ni pausar su pantalla (regla 9):
+    un simulado no declara `screen.freeze` y la consola no se lo envía.
     Recibir archivos tampoco: el simulado los acusa sin guardarlos (regla 59). Ni que se recoja
     su trabajo: entrega de memoria el último código que recibió, y la consola lo guarda aparte, en
     `… (simulado)` (regla 64).

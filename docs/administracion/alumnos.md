@@ -48,11 +48,13 @@ acciones (al pasar el mouse, cada una dice qué hace):
   [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno)).
 - **Proyectar a la clase**: sus compañeros ven su pantalla en grande (ver
   [Tareas frecuentes](tareas-frecuentes#proyectar-la-pantalla-de-un-alumno)).
+- **Pausar pantalla**: cubre su pantalla con un aviso hasta que pulses **Reanudar pantalla** (ver
+  [Tareas frecuentes](tareas-frecuentes#pausar-las-pantallas)).
 - **Abrir página o app**: se abre un diálogo para abrirle una página o una app permitida (ver
   [Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos)).
 
 Solo salen las que su equipo permite; los alumnos simulados no tienen Tomar control, Mensaje
-privado, Proyectar ni Abrir.
+privado, Proyectar, Pausar ni Abrir.
 
 ![La ficha de un alumno con un problema reciente](img/ficha-alumno.webp)
 
@@ -70,6 +72,7 @@ La barra de abajo abre un panel a la derecha, sin tapar la lista:
 |---|---|---|
 | Mostrar mi pantalla | Tus alumnos ven tu pantalla con tu nombre arriba, en una ventana encima de las suyas o en pantalla completa. | [Tareas frecuentes](tareas-frecuentes#mostrar-tu-pantalla) |
 | Aviso | Un mensaje que aparece en su pantalla. | [Tareas frecuentes](tareas-frecuentes#mandar-un-aviso) |
+| Pausar | Cubre sus pantallas con un aviso para que te pongan atención, hasta que las reanudes. | [Tareas frecuentes](tareas-frecuentes#pausar-las-pantallas) |
 | Restricciones | Bloquea aplicaciones o sitios web durante la clase. | [Tareas frecuentes](tareas-frecuentes#bloquear-aplicaciones-o-sitios) |
 | Energía | Apaga, reinicia o cierra la sesión de los equipos. | [Tareas frecuentes](tareas-frecuentes#apagar-o-reiniciar-los-equipos) |
 | Captura | Toma una foto de la pantalla de cada uno; guardas las que elijas. | [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno) |
@@ -82,5 +85,8 @@ La barra de abajo abre un panel a la derecha, sin tapar la lista:
   solo cuando se recupera.
 - **Sin sesión iniciada**: el equipo está encendido pero nadie inició sesión; solo puede recibir
   órdenes de energía.
+- **En pausa** (insignia en Notas): su pantalla está cubierta por la pausa. **Pausando…** o **Sin
+  acusar la pausa** dicen que su equipo aún no la confirma; **No se pudo pausar**, que su equipo no
+  pudo mostrarla.
 
 Si un alumno no aparece, abre [¿Falta un alumno?](pantalla:falta).

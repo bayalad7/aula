@@ -41,7 +41,7 @@ lleve `foreignObject`.
 | 05 | [Ciclo de sesión y heartbeat](05-ciclo-sesion.md) | `stateDiagram-v2` | desarrollador |
 | 06 | [Emisión y recepción de código](06-emision-codigo.md) | `sequenceDiagram` | profesor, desarrollador |
 | 07 | [Acuses y recolección de código/archivos](07-acuses-recoleccion.md) | `flowchart` | profesor, desarrollador, auditor |
-| 08 | [Monitoreo: miniaturas, pantalla y captura](08-monitoreo-pantalla.md) | `sequenceDiagram` | profesor, desarrollador |
+| 08 | [Monitoreo: miniaturas, pantalla, captura y pausa](08-monitoreo-pantalla.md) | `sequenceDiagram` | profesor, desarrollador |
 | 09 | [Transparencia: avisos e indicadores al alumno](09-transparencia-avisos.md) | `flowchart` | profesor, alumno, desarrollador |
 | 10 | [Aula simulada y simulación de fallas](10-aula-simulada.md) | `flowchart` | profesor, desarrollador |
 | 11 | [Modelo de datos local](11-modelo-datos.md) | `erDiagram` | desarrollador, auditor |

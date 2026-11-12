@@ -64,13 +64,17 @@ retiraron; esta es la primera.
 - **Restricciones** de la clase: bloquear apps y filtrar sitios web, siempre reversibles.
 - **Energía:** apagar, reiniciar o cerrar sesión con cuenta regresiva que el alumno ve y puede
   posponer.
+- **Pausar pantallas** («ojos al frente»): cubre las pantallas de todos, de los seleccionados o de
+  un alumno, en todos sus monitores, con un aviso que dice quién las pausó y un mensaje opcional;
+  **Reanudar todo** desde la franja o con **Ctrl+Mayús+P**. Tu transmisión, la cuenta de energía y
+  el control remoto se ven encima, y la pausa se quita sola si se pierde la conexión.
 
 ### App del alumno
 
 - No interrumpe: lo que llega se ve sin quitar el foco; el icono del área de notificación y el
   modo compacto.
-- **Transparencia:** bandas fijas y sin botón de cerrar cuando el profesor ve, controla, restringe
-  o transmite; el alumno sabe siempre quién y qué.
+- **Transparencia:** bandas fijas y sin botón de cerrar cuando el profesor ve, controla, pausa,
+  restringe o transmite; el alumno sabe siempre quién y qué.
 - **Qué puede hacer Aula en este equipo**, levantar la mano y escribir al profesor desde la tira.
 
 ### Consola

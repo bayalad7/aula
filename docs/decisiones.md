@@ -317,6 +317,16 @@ pantalla se está viendo.
   miniaturas, la vista en detalle y el indicador.
 - Linux y macOS devuelven "no soportado" y no declaran las capacidades `screen.thumb` ni
   `screen.freeze`. Versión **0.3.0** (función nueva compatible).
+- **Actualización (2026-11-12, prompt 10.21):** la pantalla en blanco vuelve al código como
+  «Pausar pantallas». Se mantiene la ventana nativa (`platform.PauseOverlay`), ahora **una por
+  monitor** con su DPI, y estos cambios aprobados: **pide el foco solo al aparecer y al recibir un
+  clic**, no cada medio segundo (las reglas de Windows contra el robo de foco lo impedían a medias
+  y peleaba con la cuenta regresiva de energía); **cede el paso** (`Yield`) a la transmisión, a la
+  cuenta de energía y al aviso del control remoto, quedando justo debajo de la ventana de Aula; la
+  consola **quita la pausa antes de tomar el control o de proyectar** a ese alumno y no pausa al
+  que se proyecta; atajo **Ctrl+Mayús+P** en la consola. Lógica en `internal/screen` (`Freezer`
+  del agente, `Pauses` de la consola); en modo servicio la muestra el ayudante (`pause.*`, D-016).
+  Colores de `c-vista-solido` (`ui.Color`), los mismos del prototipo. Nunca a alumnos simulados.
 
 ## D-014: Transmisión de la pantalla del profesor: un codificador repartido a N conexiones
 

@@ -132,7 +132,7 @@ func run(ctx context.Context, log *slog.Logger, channel string, port int, name, 
 	go func() { defer wg.Done(); _ = console.Run(ctx, srv.Events()) }()
 	go func() { defer wg.Done(); _ = announcer.Run(ctx) }()
 
-	if err := b.Start(monitor, reg.List(channel)); err != nil {
+	if err := b.Start(broadcast.Options{Display: monitor}, reg.List(channel)); err != nil {
 		return err
 	}
 	fmt.Printf("Consola %q en el canal %s: TCP %d, UDP %d. Ctrl+C para salir.\n", name, channel, port, port+1)

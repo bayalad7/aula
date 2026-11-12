@@ -58,6 +58,10 @@ type Status struct {
 	BroadcastID string `json:"broadcastId"`
 	Receivers   int    `json:"receivers"` // connections in PeerConnected
 	Eligible    int    `json:"eligible"`  // connected agents with screen.broadcast
+	// Mode is how the agents show it; "" is v0.4's maximized window.
+	Mode protocol.BroadcastMode `json:"mode"`
+	// Targeted is how many computers were selected; 0 means every one.
+	Targeted int `json:"targeted"`
 }
 
 // Timing of the retries (docs/protocol.md §5.12).
@@ -85,6 +89,9 @@ type Caster struct {
 	// with screen.broadcast. A presentation leaves its source out and needs
 	// screen.present.view (docs/protocol.md §5.24).
 	Eligible func(session.Session) bool
+	// Targeted is reported in Status: how many computers Eligible lets in
+	// (0 when every one receives).
+	Targeted int
 	// Uncounted is a session that receives but is not counted in Status:
 	// the console's own view of a presentation.
 	Uncounted string
@@ -438,7 +445,7 @@ func (c *Caster) status() Status {
 	if c.stopped {
 		return Status{}
 	}
-	s := Status{Active: true, BroadcastID: c.BroadcastID}
+	s := Status{Active: true, BroadcastID: c.BroadcastID, Mode: c.Start.Mode, Targeted: c.Targeted}
 	for id, r := range c.peers {
 		if id == c.Uncounted {
 			continue

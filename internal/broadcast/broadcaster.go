@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/bayalad7/aula/internal/platform"
@@ -49,10 +50,21 @@ func (b *Broadcaster) Displays() ([]platform.Display, error) {
 	return b.Capture.Displays()
 }
 
-// Start broadcasts monitor display to the given sessions and to those that
-// join later (Sync). It fails before sending anything if the monitor cannot
-// be captured or encoded, or the UDP port is busy.
-func (b *Broadcaster) Start(display int, sessions []session.Session) error {
+// Options of one broadcast of the teacher's screen (docs/protocol.md §5.12.1).
+type Options struct {
+	Display int                    // monitor index
+	Mode    protocol.BroadcastMode // how the agents show it
+	// Hostnames limits the broadcast to these computers, also when they
+	// reconnect; empty means every agent that can receive it, also those
+	// that join later.
+	Hostnames []string
+}
+
+// Start broadcasts monitor o.Display to the given sessions and to those that
+// join later (Sync), as o says. It fails before sending anything if the
+// monitor cannot be captured or encoded, or the UDP port is busy.
+func (b *Broadcaster) Start(o Options, sessions []session.Session) error {
+	display := o.Display
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.cur != nil {
@@ -84,8 +96,9 @@ func (b *Broadcaster) Start(display int, sessions []session.Session) error {
 	w, h := VideoSize(displays[display].Bounds, DefaultMaxWidth)
 	caster := NewCaster(Caster{
 		BroadcastID: protocol.NewID(),
-		Start:       protocol.ScreenBroadcastStart{Width: w, Height: h, FPS: src.fps()},
+		Start:       protocol.ScreenBroadcastStart{Width: w, Height: h, FPS: src.fps(), Mode: o.Mode},
 		NewPeer:     media.NewPeer, Send: b.Send, OnStatus: b.OnStatus, OnKeyframe: src.RequestKeyframe,
+		Eligible: forHostnames(o.Hostnames), Targeted: len(o.Hostnames),
 		Logger: b.Logger,
 	})
 	cur := &onAir{caster: caster, media: media, cancel: cancel, srcDone: make(chan struct{}), display: display}
@@ -99,9 +112,21 @@ func (b *Broadcaster) Start(display int, sessions []session.Session) error {
 	}()
 	b.cur = cur
 	b.log().Info("broadcast started", "broadcast", caster.BroadcastID, "display", display,
-		"width", w, "height", h, "udp_port", media.Port())
+		"width", w, "height", h, "udp_port", media.Port(), "mode", o.Mode, "targeted", len(o.Hostnames))
 	caster.Sync(sessions)
 	return nil
+}
+
+// forHostnames lets only the given computers receive; nil for every one.
+func forHostnames(hostnames []string) func(session.Session) bool {
+	if len(hostnames) == 0 {
+		return nil
+	}
+	set := make(map[string]bool, len(hostnames))
+	for _, h := range hostnames {
+		set[strings.ToLower(h)] = true
+	}
+	return func(s session.Session) bool { return set[strings.ToLower(s.Hostname)] }
 }
 
 // Sync follows the class: agents that join receive the broadcast, those that

@@ -238,11 +238,11 @@ func TestBroadcastEndToEnd(t *testing.T) {
 	a, c := join("a"), join("c")
 	class := []session.Session{agent("a", protocol.CapScreenBroadcast), agent("c", protocol.CapScreenBroadcast), agent("old")}
 
-	if err := b.Start(0, class); err != nil {
+	if err := b.Start(Options{}, class); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(b.Stop)
-	if err := b.Start(0, class); !errors.Is(err, ErrAlreadyBroadcasting) {
+	if err := b.Start(Options{}, class); !errors.Is(err, ErrAlreadyBroadcasting) {
 		t.Fatalf("second Start: %v", err)
 	}
 	waitFor(t, 30*time.Second, "both students receive video", func() bool {
@@ -276,7 +276,7 @@ func TestBroadcastEndToEnd(t *testing.T) {
 		t.Fatalf("status after stop %+v", s)
 	}
 	// A new broadcast can start right away.
-	if err := b.Start(0, nil); err != nil {
+	if err := b.Start(Options{}, nil); err != nil {
 		t.Fatalf("restart: %v", err)
 	}
 	b.Stop()
@@ -291,15 +291,89 @@ func TestBroadcastFailsBeforeSendingWithoutEncoder(t *testing.T) {
 		},
 		Send: func(context.Context, string, protocol.Payload) (string, error) { sent++; return "", nil },
 	}
-	err := b.Start(0, []session.Session{agent("a", protocol.CapScreenBroadcast)})
+	err := b.Start(Options{}, []session.Session{agent("a", protocol.CapScreenBroadcast)})
 	if !errors.Is(err, platform.ErrNotSupported) {
 		t.Fatalf("Start = %v", err)
 	}
 	if sent != 0 || b.Status().Active {
 		t.Fatalf("sent %d messages, status %+v", sent, b.Status())
 	}
-	if err := b.Start(3, nil); err == nil {
+	if err := b.Start(Options{Display: 3}, nil); err == nil {
 		t.Fatal("monitor 3 accepted")
+	}
+}
+
+// TestBroadcastModeAndTargets: the mode reaches every agent in
+// screen.broadcast.start, and a broadcast to the selected computers only goes
+// to them, also when one reconnects as a new session; a computer that was
+// not selected gets nothing when it joins (docs/protocol.md §5.12.1).
+func TestBroadcastModeAndTargets(t *testing.T) {
+	var mu sync.Mutex
+	starts := map[string]protocol.ScreenBroadcastStart{}
+	var keys atomic.Int64
+	b := &Broadcaster{
+		Capture: &fakeDisplays{},
+		NewEncoder: func(cfg platform.VideoEncoderConfig) (platform.VideoEncoder, error) {
+			return &fakeEncoder{cfg: cfg, keys: &keys}, nil
+		},
+		Send: func(_ context.Context, sessionID string, p protocol.Payload) (string, error) {
+			if st, ok := p.(protocol.ScreenBroadcastStart); ok {
+				mu.Lock()
+				starts[sessionID] = st
+				mu.Unlock()
+			}
+			return protocol.NewID(), nil
+		},
+		Media: MediaOptions{UDPPort: 0, Loopback: true},
+	}
+	host := func(id, hostname string) session.Session {
+		s := agent(id, protocol.CapScreenBroadcast)
+		s.Hostname = hostname
+		return s
+	}
+	got := func(id string) (protocol.ScreenBroadcastStart, bool) {
+		mu.Lock()
+		defer mu.Unlock()
+		st, ok := starts[id]
+		return st, ok
+	}
+	err := b.Start(Options{Mode: protocol.BroadcastFullscreen, Hostnames: []string{"LAB-PC01"}},
+		[]session.Session{host("a", "LAB-PC01"), host("b", "LAB-PC02")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(b.Stop)
+	waitFor(t, 5*time.Second, "start sent to the selected computer", func() bool { _, ok := got("a"); return ok })
+	if st, _ := got("a"); st.Mode != protocol.BroadcastFullscreen {
+		t.Fatalf("start %+v: mode not sent", st)
+	}
+	if s := b.Status(); s.Mode != protocol.BroadcastFullscreen || s.Targeted != 1 || s.Eligible != 1 {
+		t.Fatalf("status %+v", s)
+	}
+	// a reconnects as a2 (the hostname in another case still matches); c,
+	// not selected, joins.
+	b.Sync([]session.Session{host("a2", "lab-pc01"), host("b", "LAB-PC02"), host("c", "LAB-PC03")})
+	waitFor(t, 5*time.Second, "start sent again on reconnect", func() bool { _, ok := got("a2"); return ok })
+	for _, id := range []string{"b", "c"} {
+		if _, ok := got(id); ok {
+			t.Fatalf("%s was not selected and got the broadcast", id)
+		}
+	}
+	b.Stop()
+
+	// Without a mode, to everyone: as in v0.4.
+	mu.Lock()
+	clear(starts)
+	mu.Unlock()
+	if err := b.Start(Options{}, []session.Session{host("a", "LAB-PC01"), host("b", "LAB-PC02")}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, 5*time.Second, "start sent to everyone", func() bool { _, a := got("a"); _, b := got("b"); return a && b })
+	if st, _ := got("b"); st.Mode != "" {
+		t.Fatalf("mode %q without asking for one", st.Mode)
+	}
+	if s := b.Status(); s.Targeted != 0 || s.Eligible != 2 {
+		t.Fatalf("status %+v", s)
 	}
 }
 

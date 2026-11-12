@@ -24,6 +24,9 @@ type View struct {
 	// Source is the hostname of the classmate whose screen this is; "" for
 	// the teacher's (docs/protocol.md §5.24).
 	Source string `json:"source,omitempty"`
+	// Mode is how the window shows it (docs/privacidad.md rule 12); "" is
+	// v0.4's maximized window, from a console that does not send one.
+	Mode protocol.BroadcastMode `json:"mode,omitempty"`
 }
 
 // Signal kinds handed to the frontend.
@@ -127,7 +130,7 @@ func (v *Viewer) start(ctx context.Context, send Sender, envID string, p protoco
 	if v.cur != nil {
 		v.end("replaced")
 	}
-	view := View{Active: true, BroadcastID: p.BroadcastID, Width: p.Width, Height: p.Height, FPS: p.FPS}
+	view := View{Active: true, BroadcastID: p.BroadcastID, Width: p.Width, Height: p.Height, FPS: p.FPS, Mode: p.Mode}
 	if p.Source != nil {
 		view.Source = p.Source.Hostname
 	}
@@ -136,7 +139,7 @@ func (v *Viewer) start(ctx context.Context, send Sender, envID string, p protoco
 		return protocol.NewError(envID, protocol.CodeInternal, "no se pudo mostrar la transmisión")
 	}
 	v.cur, v.send, v.ctx = &watching{view: view}, send, ctx
-	v.log().Info("broadcast started", "broadcast", p.BroadcastID, "width", p.Width, "height", p.Height)
+	v.log().Info("broadcast started", "broadcast", p.BroadcastID, "width", p.Width, "height", p.Height, "mode", p.Mode)
 	return nil
 }
 

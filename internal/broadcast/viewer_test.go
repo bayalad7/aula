@@ -226,3 +226,24 @@ func TestViewerViewErrorRefusesTheBroadcast(t *testing.T) {
 		t.Fatal("broadcast active without a view")
 	}
 }
+
+// TestViewerMode: the mode of screen.broadcast.start reaches the window; a
+// console that sends none gets v0.4's view (""), and the view ends with the
+// session (docs/protocol.md §5.12.1).
+func TestViewerMode(t *testing.T) {
+	for _, mode := range []protocol.BroadcastMode{"", protocol.BroadcastWindow, protocol.BroadcastFullscreen} {
+		h := &viewerHarness{}
+		v := newViewer(h)
+		start := protocol.ScreenBroadcastStart{BroadcastID: testID, Width: 1280, Height: 720, FPS: 15, Mode: mode}
+		if reply, _ := v.Handle(context.Background(), h.send, env(start)); reply != nil {
+			t.Fatalf("mode %q: start refused: %+v", mode, reply)
+		}
+		if got := v.Current(); !got.Active || got.Mode != mode {
+			t.Fatalf("mode %q: view %+v", mode, got)
+		}
+		v.Stop() // the connection closed
+		if last := h.views[len(h.views)-1]; last.Active {
+			t.Fatalf("mode %q: view still on after the session ended", mode)
+		}
+	}
+}

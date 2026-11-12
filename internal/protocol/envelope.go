@@ -90,6 +90,13 @@ const (
 	TypePollClose   Type = "poll.close"
 	TypePollResults Type = "poll.results"
 	TypePollAck     Type = "poll.ack"
+	// Showing a student's screen to the class (docs/protocol.md §5.24).
+	TypeStudentPresentStart  Type = "student.present.start"
+	TypeStudentPresentAck    Type = "student.present.ack"
+	TypeStudentPresentOffer  Type = "student.present.offer"
+	TypeStudentPresentAnswer Type = "student.present.answer"
+	TypeStudentPresentICE    Type = "student.present.ice"
+	TypeStudentPresentStop   Type = "student.present.stop"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -318,6 +325,13 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypePollClose:   decodeAs[PollClose],
 	TypePollResults: decodeAs[PollResults],
 	TypePollAck:     decodeAs[PollAck],
+
+	TypeStudentPresentStart:  decodeAs[StudentPresentStart],
+	TypeStudentPresentAck:    decodeAs[StudentPresentAck],
+	TypeStudentPresentOffer:  decodeAs[StudentPresentOffer],
+	TypeStudentPresentAnswer: decodeAs[StudentPresentAnswer],
+	TypeStudentPresentICE:    decodeAs[StudentPresentICE],
+	TypeStudentPresentStop:   decodeAs[StudentPresentStop],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

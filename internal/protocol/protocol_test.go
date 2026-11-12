@@ -135,6 +135,15 @@ func samplePayloads() []Payload {
 		PollResults{PollID: testRefID, Counts: []int{0, 0}, Voters: 0, Recipients: 0},
 		PollAck{RefID: testSnippetID, PollID: testRefID, Status: PollAckShown},
 		PollAck{RefID: testSnippetID, PollID: testRefID, Status: PollAckResults},
+		StudentPresentStart{PresentID: testRefID, MaxWidth: 1920, FPS: 15, MaxKbps: 2500},
+		StudentPresentAck{RefID: testSnippetID, PresentID: testRefID, Status: PresentAccepted, Width: 1920, Height: 1080},
+		StudentPresentAck{RefID: testSnippetID, PresentID: testRefID, Status: PresentFailed, Reason: PresentCaptureUnavailable},
+		StudentPresentOffer{PresentID: testRefID, Attempt: 1, SDP: "v=0\r\n"},
+		StudentPresentAnswer{RefID: testSnippetID, PresentID: testRefID, Attempt: 1, SDP: "v=0\r\n"},
+		StudentPresentICE{PresentID: testRefID, Attempt: 1, Candidate: "candidate:1 1 udp 1 192.168.1.5 50000 typ host", SDPMid: "0"},
+		StudentPresentStop{PresentID: testRefID},
+		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15,
+			Source: &BroadcastSource{Kind: BroadcastSourceStudent, Hostname: "LAB3-PC07"}},
 	}
 }
 
@@ -565,12 +574,14 @@ func TestRequiredCapability(t *testing.T) {
 		TypeTimerStart: CapTimer, TypeTimerExtend: CapTimer, TypeTimerStop: CapTimer,
 		TypeOpenURL: CapOpenURL, TypeOpenApp: CapOpenApp,
 		TypePollOpen: CapPoll, TypePollVoteAck: CapPoll, TypePollClose: CapPoll, TypePollResults: CapPoll,
+		TypeStudentPresentStart: CapScreenPresent, TypeStudentPresentOffer: CapScreenPresent,
+		TypeStudentPresentICE: CapScreenPresent, TypeStudentPresentStop: CapScreenPresent,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote, TypeStudentPresentAck, TypeStudentPresentAnswer} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}
@@ -911,6 +922,57 @@ func TestPollVoteValidFor(t *testing.T) {
 		}
 		if err := c.vote.ValidFor(c.kind, o); (err == nil) != c.ok {
 			t.Errorf("%+v for %s: %v, want ok=%v", c.vote, c.kind, err, c.ok)
+		}
+	}
+}
+
+func TestStudentPresentLimits(t *testing.T) {
+	for _, p := range []Payload{
+		StudentPresentStart{PresentID: "x", MaxWidth: 1920, FPS: 15, MaxKbps: 2500},
+		StudentPresentStart{PresentID: testRefID, MaxWidth: MinPresentWidth - 1, FPS: 15, MaxKbps: 2500},
+		StudentPresentStart{PresentID: testRefID, MaxWidth: MaxPresentWidth + 1, FPS: 15, MaxKbps: 2500},
+		StudentPresentStart{PresentID: testRefID, MaxWidth: 1920, FPS: MaxPresentFPS + 1, MaxKbps: 2500},
+		StudentPresentStart{PresentID: testRefID, MaxWidth: 1920, FPS: 15, MaxKbps: MinPresentKbps - 1},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: "paused"},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: PresentAccepted},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: PresentAccepted, Width: 1921, Height: 1080},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: PresentEnded, Width: 2, Height: 2},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: "asking"},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: "declined"},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: PresentFailed},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: PresentEnded, Reason: PresentBusy},
+		StudentPresentOffer{PresentID: testRefID, Attempt: 0, SDP: "v=0"},
+		StudentPresentOffer{PresentID: testRefID, Attempt: 1, SDP: "hola"},
+		StudentPresentAnswer{RefID: "x", PresentID: testRefID, Attempt: 1, SDP: "v=0"},
+		StudentPresentICE{PresentID: testRefID, Attempt: 1, Candidate: "a=candidate:1"},
+		StudentPresentICE{PresentID: testRefID, Attempt: 1, SDPMLineIndex: MaxSDPMLineIndex + 1},
+		StudentPresentStop{PresentID: ""},
+		ScreenBroadcastStart{BroadcastID: testRefID, Width: 2, Height: 2, FPS: 1, Source: &BroadcastSource{Kind: "teacher", Hostname: "PC"}},
+		ScreenBroadcastStart{BroadcastID: testRefID, Width: 2, Height: 2, FPS: 1, Source: &BroadcastSource{Kind: BroadcastSourceStudent, Hostname: " "}},
+		ScreenBroadcastStart{BroadcastID: testRefID, Width: 2, Height: 2, FPS: 1, Source: &BroadcastSource{Kind: BroadcastSourceStudent, Hostname: strings.Repeat("a", MaxSourceHostname+1)}},
+	} {
+		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
+		}
+	}
+	big := StudentPresentAnswer{RefID: testRefID, PresentID: testRefID, Attempt: 1, SDP: "v=0" + strings.Repeat("a", MaxSDP)}
+	if err := big.Validate(); !errors.Is(err, ErrMessageTooLarge) {
+		t.Errorf("oversized answer: %v, want message_too_large", err)
+	}
+	for _, p := range []Payload{
+		StudentPresentStart{PresentID: testRefID, MaxWidth: MinPresentWidth, FPS: 1, MaxKbps: MinPresentKbps},
+		StudentPresentStart{PresentID: testRefID, MaxWidth: MaxPresentWidth, FPS: MaxPresentFPS, MaxKbps: MaxPresentKbps},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: PresentEnded},
+		StudentPresentAck{RefID: testRefID, PresentID: testRefID, Status: PresentAccepted, Width: 4096, Height: 2},
+		StudentPresentICE{PresentID: testRefID, Attempt: MaxBroadcastAttempt},
+	} {
+		if err := p.Validate(); err != nil {
+			t.Errorf("%T: the limits must be valid: %v", p, err)
+		}
+	}
+	for s, final := range map[PresentStatus]bool{PresentAccepted: false, PresentEnded: true, PresentFailed: true} {
+		if s.Final() != final {
+			t.Errorf("%s.Final() = %v", s, !final)
 		}
 	}
 }

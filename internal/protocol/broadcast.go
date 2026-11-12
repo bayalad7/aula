@@ -27,6 +27,9 @@ type ScreenBroadcastStart struct {
 	Width       int    `json:"width"`
 	Height      int    `json:"height"`
 	FPS         int    `json:"fps"`
+	// Source says whose screen it is; nil means the teacher's. Only sent to
+	// agents with screen.present.view (docs/protocol.md §5.24).
+	Source *BroadcastSource `json:"source,omitempty"`
 }
 
 // MessageType implements Payload.
@@ -42,6 +45,9 @@ func (p ScreenBroadcastStart) Validate() error {
 	}
 	if p.FPS < 1 || p.FPS > MaxBroadcastFPS {
 		return invalid(TypeScreenBroadcastStart, "fps must be 1-%d", MaxBroadcastFPS)
+	}
+	if p.Source != nil {
+		return p.Source.validate()
 	}
 	return nil
 }
@@ -95,20 +101,26 @@ func (ScreenBroadcastICE) MessageType() Type { return TypeScreenBroadcastICE }
 
 // Validate implements Payload.
 func (p ScreenBroadcastICE) Validate() error {
-	if err := validateAttempt(TypeScreenBroadcastICE, p.BroadcastID, p.Attempt); err != nil {
+	return validateCandidate(TypeScreenBroadcastICE, p.BroadcastID, p.Attempt, p.Candidate, p.SDPMid, p.SDPMLineIndex)
+}
+
+// validateCandidate checks one trickled ICE candidate of screen.broadcast.ice
+// or student.present.ice.
+func validateCandidate(t Type, id string, attempt int, candidate, mid string, mline int) error {
+	if err := validateAttempt(t, id, attempt); err != nil {
 		return err
 	}
-	if utf8.RuneCountInString(p.Candidate) > MaxICECandidate {
-		return invalid(TypeScreenBroadcastICE, "candidate longer than %d characters", MaxICECandidate)
+	if utf8.RuneCountInString(candidate) > MaxICECandidate {
+		return invalid(t, "candidate longer than %d characters", MaxICECandidate)
 	}
-	if p.Candidate != "" && !strings.HasPrefix(p.Candidate, "candidate:") {
-		return invalid(TypeScreenBroadcastICE, `candidate must start with "candidate:"`)
+	if candidate != "" && !strings.HasPrefix(candidate, "candidate:") {
+		return invalid(t, `candidate must start with "candidate:"`)
 	}
-	if utf8.RuneCountInString(p.SDPMid) > MaxSDPMid {
-		return invalid(TypeScreenBroadcastICE, "sdp_mid longer than %d characters", MaxSDPMid)
+	if utf8.RuneCountInString(mid) > MaxSDPMid {
+		return invalid(t, "sdp_mid longer than %d characters", MaxSDPMid)
 	}
-	if p.SDPMLineIndex < 0 || p.SDPMLineIndex > MaxSDPMLineIndex {
-		return invalid(TypeScreenBroadcastICE, "sdp_mline_index must be 0-%d", MaxSDPMLineIndex)
+	if mline < 0 || mline > MaxSDPMLineIndex {
+		return invalid(t, "sdp_mline_index must be 0-%d", MaxSDPMLineIndex)
 	}
 	return nil
 }

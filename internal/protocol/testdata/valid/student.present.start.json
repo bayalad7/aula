@@ -1,0 +1,1 @@
+{ "v": 1, "id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "ts": 1792771200000, "type": "student.present.start", "payload": { "present_id": "c0a1b2c3-d4e5-4f60-8a71-b2c3d4e5f607", "max_width": 1920, "fps": 15, "max_kbps": 2500 } }

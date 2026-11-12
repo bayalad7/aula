@@ -1,0 +1,1 @@
+{ "v": 1, "id": "7a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "ts": 1792771200000, "type": "screen.broadcast.start", "payload": { "broadcast_id": "7d1f2e3a-4b5c-4d6e-a7f8-9a0b1c2d3e4f", "width": 1920, "height": 1080, "fps": 15, "source": { "kind": "student", "hostname": "LAB3-PC07" } } }

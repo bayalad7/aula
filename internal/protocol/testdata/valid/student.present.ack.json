@@ -1,0 +1,1 @@
+{ "v": 1, "id": "2a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "ts": 1792771200000, "type": "student.present.ack", "payload": { "ref_id": "5b0e8f3c-2a6d-4c1e-9b7a-0f3d2e1c4b5a", "present_id": "c0a1b2c3-d4e5-4f60-8a71-b2c3d4e5f607", "status": "accepted", "width": 1920, "height": 1080 } }

@@ -43,6 +43,13 @@ const (
 	// CapPoll shows the teacher's polls in the window and lets the student
 	// answer (§5.23). Every OS, whenever the agent has a window.
 	CapPoll Capability = "poll"
+	// CapScreenPresent publishes the student's own screen to the class
+	// (§5.24): Windows, with display capture, an H.264 encoder and the window
+	// excluded from the capture; never the simulated students.
+	CapScreenPresent Capability = "screen.present"
+	// CapScreenPresentView shows a classmate's screen with its name (§5.24):
+	// declared with screen.broadcast by agents that know the source field.
+	CapScreenPresentView Capability = "screen.present.view"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -100,6 +107,11 @@ var requiredCapability = map[Type]Capability{
 	TypePollVoteAck: CapPoll,
 	TypePollClose:   CapPoll,
 	TypePollResults: CapPoll,
+
+	TypeStudentPresentStart: CapScreenPresent,
+	TypeStudentPresentOffer: CapScreenPresent,
+	TypeStudentPresentICE:   CapScreenPresent, // only when sent P → A
+	TypeStudentPresentStop:  CapScreenPresent,
 }
 
 // agentCapability lists the capability an agent must have declared before the

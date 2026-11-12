@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/bayalad7/aula/internal/broadcast"
+	"github.com/bayalad7/aula/internal/classend"
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/participation"
@@ -18,10 +19,11 @@ import (
 // Frontend → backend: the bound methods of App (View, Copy, DismissNotice,
 // ReportMedia, BroadcastAnswer, BroadcastCandidate, BroadcastFailed,
 // PowerPostpone, DismissPower, SetCompact, ReportWindow, RaiseHand, LowerHand,
-// SendTeacherMessage, OpenReceivedFolder, OpenCollectionFolder, AnswerPoll).
+// SendTeacherMessage, OpenReceivedFolder, OpenCollectionFolder, AnswerPoll,
+// DismissClassEnd).
 // EventParticipation is in participation.go, EventTimer in timer.go,
 // EventFiles in files.go, EventCollections in collect.go, EventPolls in
-// poll.go and EventPresent in present.go.
+// poll.go, EventPresent in present.go and EventClassEnd in classend.go.
 const (
 	// EventStatus carries a Status whenever the connection state changes.
 	EventStatus = "aula:status"
@@ -158,6 +160,8 @@ type View struct {
 	Polls poll.BallotView `json:"polls"`
 	// Present is the band of a presentation of this screen, if any (§5.24).
 	Present broadcast.PresentView `json:"present"`
+	// ClassEnd is the «La clase terminó» card, if any (§5.25).
+	ClassEnd *classend.Card `json:"classEnd"`
 	// Capabilities are what this computer lets the teacher do (the hello's),
 	// for «Qué puede hacer Aula en este equipo» (nota de interfaz 13).
 	Capabilities []string `json:"capabilities"`

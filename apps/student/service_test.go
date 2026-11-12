@@ -182,7 +182,7 @@ func TestServiceAgentFollowsItsHelper(t *testing.T) {
 		t.Fatal(err)
 	}
 	s = c.waitAgent(t, "agent with helper", func(s session.Session) bool { return len(s.Capabilities) > 0 })
-	want := []string{"code.view", "hand", "msg.show", "msg.student", "poll", "screen.broadcast", "screen.present.view", "screen.snapshot", "screen.thumb", "timer"}
+	want := []string{"class.end", "code.view", "hand", "msg.show", "msg.student", "poll", "screen.broadcast", "screen.present.view", "screen.snapshot", "screen.thumb", "timer"}
 	if !slices.Equal(capsOf(s), want) || s.Username != "ana" {
 		t.Fatalf("with a helper: %v as %q, want %v as ana", capsOf(s), s.Username, want)
 	}

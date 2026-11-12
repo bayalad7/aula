@@ -62,6 +62,7 @@ func TestNoBindingTurnsOffTransparency(t *testing.T) {
 		"OpenReceivedFolder": "opens in Explorer the folder of a push it saved (rule 56); no indicator involved",
 		// Rule 61: only the activity folder the agent created, by its ID.
 		"OpenCollectionFolder": "opens in Explorer the activity folder of a collection (rule 61); no indicator involved",
+		"DismissClassEnd":      "closes the «La clase terminó» card (§5.25); the bands went with what caused them",
 	}
 	app := reflect.TypeOf(&App{})
 	for i := range app.NumMethod() {

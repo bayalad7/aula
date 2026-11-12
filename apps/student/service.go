@@ -203,6 +203,7 @@ func runService(ctx context.Context, sessionChanged <-chan struct{}) error {
 	}
 	sa.app.extra = sa.policy.Handle
 	sa.app.onLeave = func() { _ = sa.policy.Clear("disconnected") }
+	sa.app.endRestrictions = func() error { return sa.policy.Clear("class ended") }
 	defer func() { _ = sa.policy.Clear("service stopping") }()
 	sa.app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }
 	sa.app.start(ctx)
@@ -339,6 +340,8 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	h.Capabilities = append(h.Capabilities, protocol.CapTimer)
 	// And the poll cards of its list (§5.23).
 	h.Capabilities = append(h.Capabilities, protocol.CapPoll)
+	// And it can leave its window as freshly opened (§5.25).
+	h.Capabilities = append(h.Capabilities, protocol.CapClassEnd)
 	if sa.ready.Capture {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb, protocol.CapScreenSnapshot)
 	}

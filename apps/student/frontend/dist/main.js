@@ -116,7 +116,7 @@
   let compacto = false;
   // Lo que el alumno aún no ve: código y archivos «Nuevo» y avisos abiertos.
   const sinVer = () => list.querySelectorAll(".nuevo:not([hidden])").length + archivosNuevos() + recoNuevas() + encuestasNuevas() + avisos.length
-    + ($("tarea-nuevo").hidden ? 0 : 1);
+    + ($("tarea-nuevo").hidden ? 0 : 1) + ($("fin-clase-nuevo").hidden ? 0 : 1);
   function pintarCompacto() {
     const v = { canal: status.channel, profesor: status.teacher };
     $("compacto").dataset.estado = status.state;
@@ -914,6 +914,40 @@
   $("temporizador-fin-ok").addEventListener("click", ocultarFinTemporizador);
   $("temporizador-fin").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); ocultarFinTemporizador(); } });
 
+  // --- La clase terminó (docs/protocol.md §5.25, docs/privacidad.md regla 83) ----------------------
+  // Go manda la tarjeta (classend.Card: la hora y lo que se quitó) y aquí se arma el texto. Llega
+  // con notify, nunca trae la ventana; el alumno la cierra con «Entendido» y se va sola con código
+  // nuevo (null). Lo que tenía banda ya la quitó al quitarse.
+  const FC = "finClase.quitado."; // + campo de classend.Removed
+  let finClaseId = "";
+  function renderFinClase(c) {
+    $("fin-clase").hidden = !c;
+    if (!c) {
+      $("fin-clase-nuevo").hidden = true;
+      finClaseId = "";
+      title();
+      return;
+    }
+    const r = c.removed || {};
+    const quitado = ["restrictions", "pause", "control", "present", "broadcast", "timer", "polls", "snippets", "notices",
+      "files", "collections", "opened", "hand", "messages"].filter((k) => r[k]).map((k) => T(FC + k));
+    $("fin-clase-hora").textContent = T("finClase.hora", { hora: new Date(c.at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) });
+    let texto = quitado.length ? T("finClase.texto", { lista: quitado.join(", ") }) : T("finClase.nada");
+    if (r.files || r.collections) texto += " " + T("finClase.archivos");
+    $("fin-clase-texto").textContent = texto;
+    if (c.endId !== finClaseId) {
+      $("fin-clase-nuevo").hidden = false;
+      anunciar(T("finClase.titulo") + ". " + texto);
+    }
+    finClaseId = c.endId;
+    title();
+  }
+  $("fin-clase-nuevo").textContent = T("codigo.nuevo");
+  const finClaseVista = () => { if (!$("fin-clase-nuevo").hidden) { $("fin-clase-nuevo").hidden = true; title(); } };
+  $("fin-clase").addEventListener("focusin", finClaseVista);
+  $("fin-clase").addEventListener("pointerdown", finClaseVista);
+  $("fin-clase-ok").addEventListener("click", () => { api.DismissClassEnd(); renderFinClase(null); });
+
   // --- Levantar la mano y escribir al profesor (docs/protocol.md §5.18) -----------------------------
   // Lo hace el alumno: nada de esto quita el foco ni trae la ventana, y no hay
   // banda. Go manda el estado (participation.DeskView) y aquí se arma el texto.
@@ -1330,6 +1364,7 @@
   rt.EventsOn(ev.COLLECTIONS, renderRecolecciones);
   rt.EventsOn(ev.OPENED, renderAbiertos);
   rt.EventsOn(ev.POLLS, renderEncuestas);
+  rt.EventsOn(ev.CLASS_END, renderFinClase);
   rt.EventsOn(ev.PRESENT, renderPresent);
   api.View().then((v) => {
     abiertos = (v.opened && v.opened.list) || [];
@@ -1345,6 +1380,7 @@
     renderRecolecciones(v.collections);
     renderEncuestas(v.polls);
     renderPresent(v.present);
+    if (v.classEnd) renderFinClase(v.classEnd);
   });
   probeMedia();
 })();

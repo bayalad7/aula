@@ -3,10 +3,12 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/bayalad7/aula/internal/classend"
 	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/poll"
@@ -114,6 +116,15 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 	for _, c := range pollErrorCodes {
 		need("encuesta.error."+c, "poll.go (pollErrorCodes)")
+	}
+	// «La clase terminó» says each thing that was removed (classend.Removed).
+	removed := reflect.TypeOf(classend.Removed{})
+	for i := range removed.NumField() {
+		tag := strings.Split(removed.Field(i).Tag.Get("json"), ",")[0]
+		need("finClase.quitado."+tag, "classend.Removed")
+		if !strings.Contains(main, `"`+tag+`"`) {
+			t.Errorf("main.js (renderFinClase) does not list classend.Removed.%s", removed.Field(i).Name)
+		}
 	}
 	// Why a file was not saved (protocol.FilePushReason), in camelCase.
 	for _, r := range protocol.FilePushReasons {

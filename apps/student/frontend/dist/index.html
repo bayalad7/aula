@@ -133,6 +133,20 @@
       <h2 id="enviados-titulo" class="enviados__titulo" data-t="mensaje.enviados"></h2>
       <ol id="enviados-lista" class="enviados__lista"></ol>
     </section>
+    <!-- La clase terminó (prompt 10.14): la hora y lo que se quitó, arriba del Estado vacío, con
+         «Nuevo»; nunca quita el foco. No es una banda: el alumno la cierra con «Entendido». -->
+    <section id="fin-clase" class="codigo-recibido tarea" hidden tabindex="-1" aria-labelledby="fin-clase-titulo">
+      <div class="codigo-recibido__cabecera">
+        <div class="codigo-recibido__info">
+          <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#hecho"/></svg>
+          <h2 class="codigo-recibido__titulo" id="fin-clase-titulo" data-t="finClase.titulo"></h2>
+          <span class="insignia insignia--conectado nuevo" id="fin-clase-nuevo" hidden></span>
+          <span class="codigo-recibido__meta" id="fin-clase-hora"></span>
+        </div>
+        <button type="button" class="btn btn--sm" id="fin-clase-ok" data-t="finClase.entendido" data-icono="hecho"></button>
+      </div>
+      <p class="tarea__texto" id="fin-clase-texto"></p>
+    </section>
     <div id="empty" class="vacio">
       <svg class="icono icono--xl" aria-hidden="true"><use id="vacio-icono" href="sistema/iconos.svg#codigo"/></svg>
       <h2 id="vacio-titulo"></h2>

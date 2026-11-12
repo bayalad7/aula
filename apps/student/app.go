@@ -14,6 +14,7 @@ import (
 
 	"github.com/bayalad7/aula/internal/agentsvc"
 	"github.com/bayalad7/aula/internal/broadcast"
+	"github.com/bayalad7/aula/internal/classend"
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/collect"
@@ -105,6 +106,9 @@ type App struct {
 	// ends (they end with it, docs/privacidad.md rule 24).
 	extra   func(env protocol.Envelope) (protocol.Payload, bool)
 	onLeave func()
+	// endRestrictions removes the class restrictions with their journal when
+	// the teacher ends the class (§5.25.1); nil in window mode, which has none.
+	endRestrictions func() error
 
 	// reload re-reads the configuration files; nil when the configuration
 	// came from command-line flags, which pin it. Checked every reloadEvery,
@@ -127,6 +131,7 @@ type App struct {
 	ctrl       remote.State      // remote control in force (rules 36-41)
 	cl         *transport.Client // the connection with the console; nil while not connected
 	opened     []openapp.Opened  // what the teacher opened, for the corner notices (rule 66)
+	endCard    *classend.Card    // «La clase terminó», until dismissed or new code arrives (§5.25)
 
 	timerMu sync.Mutex
 	timerT  *time.Timer // the next tick of the countdown
@@ -462,7 +467,7 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		_, err := cl.Send(ctx, p)
 		return err
 	}
-	if a.handleParticipation(env) || a.handleTimer(ctx, cl, env) || a.handlePoll(ctx, cl, env) {
+	if a.handleParticipation(env) || a.handleTimer(ctx, cl, env) || a.handlePoll(ctx, cl, env) || a.handleClassEnd(ctx, cl, env) {
 		return
 	}
 	var reply protocol.Payload
@@ -523,6 +528,14 @@ func (a *App) onBoard(snippets []codedist.Snippet) {
 	}
 	a.emit(EventBoard, Board{Snippets: snippets})
 	if len(snippets) > 0 {
+		// New code: the next class began, the «La clase terminó» card goes.
+		a.mu.Lock()
+		had := a.endCard != nil
+		a.endCard = nil
+		a.mu.Unlock()
+		if had {
+			a.emit(EventClassEnd, (*classend.Card)(nil))
+		}
 		a.notify() // never raise: the student keeps the keyboard (prompt 19)
 	}
 }
@@ -581,7 +594,7 @@ func (a *App) View() View {
 		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
 		Participation: a.desk.View(), Timer: a.countdown.View(), Files: a.filesView(a.inbox.List()),
 		Collections: a.collectionsView(), Opened: Opened{List: append([]openapp.Opened{}, a.opened...)},
-		Polls: a.ballot.View(), Present: a.present.Current(), Capabilities: caps}
+		Polls: a.ballot.View(), Present: a.present.Current(), Capabilities: caps, ClassEnd: a.endCard}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

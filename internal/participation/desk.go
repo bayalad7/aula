@@ -291,3 +291,22 @@ func (d *Desk) View() DeskView {
 	}
 	return v
 }
+
+// Reset lowers the hand and forgets the messages, without telling the
+// console (the class ended and the console forgot them, docs/protocol.md
+// §5.25). It reports whether the hand was up and how many messages had not
+// gone out yet.
+func (d *Desk) Reset() (hand bool, unsent int) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	hand = d.handID != ""
+	for _, s := range d.sent {
+		if s.Status == SentSending {
+			unsent++
+		}
+	}
+	d.handID, d.note, d.byTeacher = "", "", false
+	d.sent = nil
+	clear(d.envelopes)
+	return hand, unsent
+}

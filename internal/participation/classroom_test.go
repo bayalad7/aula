@@ -302,3 +302,25 @@ func TestDeskRefusals(t *testing.T) {
 		t.Error("a new connection did not clear the refusal")
 	}
 }
+
+func TestDeskReset(t *testing.T) {
+	d, _ := newTestDesk()
+	if _, err := d.Raise(""); err != nil {
+		t.Fatal(err)
+	}
+	m, err := d.Write("¿se entrega hoy?")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.Sending(protocol.NewID(), m)
+	hand, unsent := d.Reset()
+	if !hand || unsent != 1 {
+		t.Fatalf("Reset = %v, %d", hand, unsent)
+	}
+	if v := d.View(); v.Hand != HandDown || len(v.Messages) != 0 {
+		t.Fatalf("after Reset: %+v", v)
+	}
+	if out := d.Reconnected(); len(out) != 0 {
+		t.Fatalf("nothing is resent after Reset: %v", out)
+	}
+}

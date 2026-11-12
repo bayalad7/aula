@@ -512,3 +512,15 @@ func (r *Responder) log() *slog.Logger {
 	}
 	return slog.Default()
 }
+
+// Forget abandons the round in course and forgets every collection (the
+// class ended, docs/protocol.md §5.25); it returns how many there were. The
+// student's folders and files stay.
+func (r *Responder) Forget() int {
+	r.Reset()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	n := len(r.list)
+	r.list = nil
+	return n
+}

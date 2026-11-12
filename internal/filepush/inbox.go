@@ -106,3 +106,13 @@ func commonFolder(items []Item) string {
 	}
 	return strings.Join(common, "/")
 }
+
+// Clear forgets every card (the class ended, docs/protocol.md §5.25) and
+// returns how many there were. The files stay where they were saved.
+func (in *Inbox) Clear() int {
+	in.mu.Lock()
+	defer in.mu.Unlock()
+	n := len(in.list)
+	in.list = nil
+	return n
+}

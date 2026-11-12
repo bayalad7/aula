@@ -612,3 +612,14 @@ func TestTemplateDeleteStaysInside(t *testing.T) {
 		t.Fatalf("second delete = %v", err)
 	}
 }
+
+func TestInboxClear(t *testing.T) {
+	var in Inbox
+	in.Add(Item{PushID: "p1", FileID: "f1", Index: 1, Files: 1, Path: "a.py", At: time.Now()})
+	if n := in.Clear(); n != 1 || len(in.List()) != 0 {
+		t.Fatalf("Clear = %d, list %v", n, in.List())
+	}
+	if _, ok := in.Folder("p1"); ok {
+		t.Fatal("a cleared card has no folder to open")
+	}
+}

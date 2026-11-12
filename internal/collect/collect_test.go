@@ -595,3 +595,14 @@ func TestCopyTo(t *testing.T) {
 		t.Fatalf("missing = %v", err)
 	}
 }
+
+func TestResponderForget(t *testing.T) {
+	r := &Responder{Reader: newMem()}
+	open := protocol.FileCollectOpen{CollectID: protocol.NewID(), Date: "2026-11-06", Activity: "Ej"}
+	if reply, _ := r.Handle(context.Background(), func(context.Context, protocol.Payload) error { return nil }, protocol.New(open)); reply == nil {
+		t.Fatal("open not answered")
+	}
+	if n := r.Forget(); n != 1 || len(r.Collections()) != 0 {
+		t.Fatalf("Forget = %d, left %v", n, r.Collections())
+	}
+}

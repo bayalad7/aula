@@ -258,7 +258,20 @@ func (a *App) currentHello() protocol.HelloInfo {
 	if a.helloFor != nil {
 		return a.helloFor()
 	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	return a.hello
+}
+
+// capabilities is what this computer lets the teacher do, as the window shows
+// it in «Qué puede hacer Aula en este equipo» (nota de interfaz 13): the
+// capabilities of the hello, never empty (null) for the window.
+func (a *App) capabilities() []string {
+	out := []string{}
+	for _, c := range a.currentHello().Capabilities {
+		out = append(out, string(c))
+	}
+	return out
 }
 
 // requestRestart asks supervise to reconnect with a new hello.
@@ -540,6 +553,7 @@ func (a *App) View() View {
 		return v
 	}
 	bc := a.viewer.Current() // before a.mu: the viewer calls into the app with its lock held
+	caps := a.capabilities()
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	snippets := a.board.Snippets()
@@ -550,7 +564,7 @@ func (a *App) View() View {
 		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
 		Participation: a.desk.View(), Timer: a.countdown.View(), Files: a.filesView(a.inbox.List()),
 		Collections: a.collectionsView(), Opened: Opened{List: append([]openapp.Opened{}, a.opened...)},
-		Polls: a.ballot.View(), Present: a.present.Current()}
+		Polls: a.ballot.View(), Present: a.present.Current(), Capabilities: caps}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

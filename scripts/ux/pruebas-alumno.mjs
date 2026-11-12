@@ -628,6 +628,30 @@ await caso("bandas-orden", "todo", async (p) => {
   ok(orden.join() === "power,banda-control,banda-vista,banda-mostrando,restrictions", "orden " + orden.join());
 });
 
+// Qué puede hacer Aula en este equipo (nota de interfaz 13): el botón de la tira abre un diálogo con
+// la grilla (verde con ✓ lo que permite, gris con ✗ lo que no); Esc lo cierra y el foco vuelve.
+await caso("capacidades", "conectado", async (p) => {
+  await p.click("#capacidades");
+  await sleep(150);
+  const c = await p.evaluate(() => ({ abierto: document.getElementById("dlg-capacidades").open,
+    total: document.querySelectorAll("#capacidades-lista .capacidad").length,
+    si: document.querySelectorAll("#capacidades-lista .capacidad--si").length,
+    tip: document.querySelector("#capacidades-lista .capacidad").dataset.tip }));
+  ok(c.abierto, "el diálogo no se abrió");
+  ok(c.total === 19 && c.si === 17, "grilla " + JSON.stringify(c));
+  ok(c.tip === "Recibir código para copiar: sí", "tooltip: " + c.tip);
+  await p.keyboard.press("Escape");
+  await sleep(100);
+  const f = await p.evaluate(() => ({ abierto: document.getElementById("dlg-capacidades").open, foco: document.activeElement.id }));
+  ok(!f.abierto && f.foco === "capacidades", "Esc: " + JSON.stringify(f));
+});
+// Mensaje al profesor en su propio diálogo (nota de interfaz 12).
+await caso("mensaje-dialogo", "conectado", async (p) => {
+  await p.click("#escribir");
+  const a = await p.evaluate(() => ({ abierto: document.getElementById("dlg-mensaje").open, foco: document.activeElement.id }));
+  ok(a.abierto && a.foco === "redactar-texto", "al abrir: " + JSON.stringify(a));
+});
+
 // Tu pantalla mostrada a la clase (prompt 12.1; privacidad, reglas 75-82). La decide y la termina
 // el profesor: la banda no tiene botones, no se oculta con el teclado y no hay nada que responder.
 await caso("mostrando-banda", "mostrando", async (p) => {

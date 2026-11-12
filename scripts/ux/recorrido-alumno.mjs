@@ -145,6 +145,11 @@ await f("86-mostrando-angosta", "mostrando", { w: 480, h: 360 });
 await f("87-mostrando-compacto", "mostrando", { w: 380, h: 80, pasos: click("#compactar") });
 await f("88-viendo-companero", "transmision-alumno");
 
+// Notas de interfaz 12 y 13: el mensaje al profesor en su diálogo y «Qué puede hacer Aula».
+await f("89-mensaje-dialogo", "conectado", { pasos: click("#escribir") });
+await f("90-capacidades", "conectado", { pasos: seq(click("#capacidades"), async () => { await sleep(200); }) });
+await f("91-capacidades-oscuro-angosta", "conectado", { oscuro: true, w: 480, h: 560, pasos: seq(click("#capacidades"), async () => { await sleep(200); }) });
+
 // Modo compacto (la ventana real se encoge a 380×112: aquí, la tira en ese tamaño)
 await f("28-compacto", "conectado", { w: 380, h: 80, pasos: click("#compactar") });
 await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: seq(click("#compactar"), async (p) => {

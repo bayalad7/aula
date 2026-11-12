@@ -26,6 +26,8 @@
       <!-- Lo que hace el alumno (prompt 10.6): no quita el foco a nadie. -->
       <button type="button" id="mano" class="btn btn--sm mano-boton" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span id="mano-texto"></span></button>
       <button type="button" id="escribir" class="btn btn--sm" aria-expanded="false" aria-controls="redactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg><span data-t="mensaje.boton"></span></button>
+      <!-- Qué puede hacer Aula en este equipo (nota de interfaz 13): transparencia para el alumno. -->
+      <button type="button" id="capacidades" class="btn btn--fantasma btn--icono btn--sm" aria-haspopup="dialog" aria-controls="dlg-capacidades" data-t-aria-label="capacidades.boton" data-t-title="capacidades.boton"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button>
       <button type="button" id="compactar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.compactar" data-t-title="ventana.compactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#contraer"/></svg></button>
     </span>
     <details id="estado-detalles" class="detalles estado-conexion__detalles" hidden>
@@ -45,9 +47,9 @@
     <section id="power" class="franja franja--urgente" role="alert" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg>
       <span id="power-text" class="franja__texto"></span>
-      <button type="button" id="power-postpone" class="btn btn--sm btn--sobre-color" data-t="energia.posponer"></button>
+      <button type="button" id="power-postpone" class="btn btn--sm btn--sobre-color" data-t="energia.posponer" data-icono="reloj"></button>
       <span id="power-left" class="franja__nota"></span>
-      <button type="button" id="power-dismiss" class="btn btn--sm btn--sobre-color" data-t="energia.entendido" hidden></button>
+      <button type="button" id="power-dismiss" class="btn btn--sm btn--sobre-color" data-t="energia.entendido" hidden data-icono="hecho"></button>
     </section>
     <!-- Control remoto (reglas 37-40): después de la energía; sin botón para cerrarse ni para cortar. -->
     <p id="banda-control" class="franja franja--control" role="status" hidden>
@@ -67,12 +69,12 @@
     <section id="restrictions" class="franja franja--restricciones" role="status" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg>
       <span id="restr-text" class="franja__texto"></span>
-      <button type="button" id="restr-toggle" class="btn btn--sm" aria-expanded="false" aria-controls="restr-details" data-t="banda.verDetalles"></button>
+      <button type="button" id="restr-toggle" class="btn btn--sm" aria-expanded="false" aria-controls="restr-details" data-t="banda.verDetalles" data-icono="flecha-abajo"></button>
       <div id="restr-details" class="franja__detalle" hidden></div>
       <!-- Las apps que Aula cerró (regla 22): se quedan hasta que el alumno las lee. -->
       <p id="app-closed" class="franja__detalle franja__cerradas" role="alert" hidden>
         <span id="app-closed-text"></span>
-        <button type="button" id="app-closed-ok" class="btn btn--sm" data-t="banda.appCerradaOk"></button>
+        <button type="button" id="app-closed-ok" class="btn btn--sm" data-t="banda.appCerradaOk" data-icono="hecho"></button>
       </p>
     </section>
   </div>
@@ -100,7 +102,7 @@
     <div class="franja franja--recibiendo" role="status">
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg>
       <span id="bc-notice" class="franja__texto"></span>
-      <button type="button" id="bc-size" class="btn btn--sm btn--sobre-color" aria-pressed="false" data-t="banda.tamanoReal"></button>
+      <button type="button" id="bc-size" class="btn btn--sm btn--sobre-color" aria-pressed="false" data-t="banda.tamanoReal" data-icono="expandir"></button>
     </div>
     <div id="bc-stage" class="bc-stage" data-fit="window">
       <video id="bc-video" autoplay muted playsinline></video>
@@ -113,26 +115,13 @@
     <section id="mano-estado" class="mano-estado" role="status" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg>
       <span id="mano-estado-texto" class="mano-estado__texto"></span>
-      <button type="button" id="motivo-abrir" class="btn btn--sm btn--fantasma" data-t="mano.agregarMotivo" hidden></button>
+      <button type="button" id="motivo-abrir" class="btn btn--sm btn--fantasma" data-t="mano.agregarMotivo" hidden data-icono="mas"></button>
       <form id="motivo" class="mano-estado__motivo" hidden>
         <label class="campo"><span class="campo__etiqueta" data-t="mano.motivoEtiqueta"></span>
-          <input id="motivo-texto" maxlength="140" autocomplete="off">
+          <input id="motivo-texto" maxlength="140" autocomplete="off" data-icono="mano">
           <span class="campo__ayuda" data-t="mano.motivoAyuda"></span></label>
       </form>
     </section>
-    <form id="redactar" class="tarjeta redactar" aria-labelledby="redactar-titulo" hidden>
-      <div class="tarjeta__cabecera"><h2 id="redactar-titulo" data-t="mensaje.titulo"></h2></div>
-      <div class="tarjeta__cuerpo redactar__cuerpo">
-        <label class="campo"><span class="campo__etiqueta" data-t="mensaje.etiqueta"></span>
-          <textarea id="redactar-texto" rows="3" maxlength="500" aria-describedby="redactar-ayuda"></textarea>
-          <span class="campo__ayuda" id="redactar-ayuda"></span>
-          <span class="campo__error" id="redactar-error" role="alert" hidden></span></label>
-        <div class="grupo-botones">
-          <button type="submit" id="redactar-enviar" class="btn btn--primario btn--sm"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="mensaje.enviar"></span></button>
-          <button type="button" id="redactar-cancelar" class="btn btn--sm btn--fantasma" data-t="mensaje.cancelar"></button>
-        </div>
-      </div>
-    </form>
     <section id="enviados" class="enviados" aria-labelledby="enviados-titulo" hidden>
       <h2 id="enviados-titulo" class="enviados__titulo" data-t="mensaje.enviados"></h2>
       <ol id="enviados-lista" class="enviados__lista"></ol>
@@ -153,6 +142,36 @@
     <p id="anuncio" class="solo-lector" role="status"></p>
   </main>
 
+  <!-- Mensaje al profesor (prompt 10.6, nota de interfaz 12): su propio diálogo, que abre el alumno. -->
+  <dialog class="dialogo dialogo--form" id="dlg-mensaje" aria-labelledby="redactar-titulo">
+    <form id="redactar" class="dialogo__cuerpo pila" hidden>
+      <div class="dialogo__titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg><h2 id="redactar-titulo" class="crece"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" id="redactar-cerrar" data-t-aria-label="mensaje.cancelar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <label class="campo"><span class="campo__etiqueta" data-t="mensaje.etiqueta"></span>
+        <textarea id="redactar-texto" rows="4" maxlength="500" aria-describedby="redactar-ayuda" data-icono="mensaje"></textarea>
+        <span class="campo__ayuda" id="redactar-ayuda"></span>
+        <span class="campo__error" id="redactar-error" role="alert" hidden></span></label>
+      <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+        <button type="button" id="redactar-cancelar" class="btn" data-t="mensaje.cancelar" data-icono="cerrar"></button>
+        <button type="submit" id="redactar-enviar" class="btn btn--primario"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="mensaje.enviar"></span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Qué puede hacer Aula en este equipo (nota de interfaz 13): la misma grilla que la ficha de la consola. -->
+  <dialog class="dialogo dialogo--form" id="dlg-capacidades" aria-labelledby="capacidades-titulo" aria-describedby="capacidades-texto">
+    <div class="dialogo__cuerpo pila">
+      <div class="dialogo__titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><h2 id="capacidades-titulo" class="crece" data-t="capacidades.titulo"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" id="capacidades-cerrar" data-t-aria-label="capacidades.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <p id="capacidades-texto" data-t="capacidades.texto"></p>
+      <ul class="capacidades" id="capacidades-lista"></ul>
+      <p class="pequeno suave" data-t="capacidades.nota"></p>
+      <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+        <button type="button" class="btn" id="capacidades-entendido" data-t="aviso.entendido" data-icono="hecho"></button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Avisos del profesor: en una esquina, sin mover el código (prompt 19). -->
   <section id="avisos" class="avisos-flotantes" data-t-aria-label="aviso.region" aria-live="polite">
     <div id="notices" class="avisos"></div>
@@ -163,7 +182,7 @@
         <span class="toast__titulo" data-t="control.finTitulo"></span>
         <span id="control-fin-texto"></span>
       </div>
-      <button type="button" id="control-fin-ok" class="btn btn--sm" data-t="aviso.entendido"></button>
+      <button type="button" id="control-fin-ok" class="btn btn--sm" data-t="aviso.entendido" data-icono="hecho"></button>
     </div>
     <!-- El fin del temporizador (prompt 10.8): aviso suave, sin quitar el foco. -->
     <div id="temporizador-fin" class="toast" hidden>
@@ -172,9 +191,9 @@
         <span class="toast__titulo" data-t="temporizador.finTitulo"></span>
         <span id="temporizador-fin-texto"></span>
       </div>
-      <button type="button" id="temporizador-fin-ok" class="btn btn--sm" data-t="aviso.entendido"></button>
+      <button type="button" id="temporizador-fin-ok" class="btn btn--sm" data-t="aviso.entendido" data-icono="hecho"></button>
     </div>
-    <button type="button" id="avisos-mas" class="btn btn--sm" hidden></button>
+    <button type="button" id="avisos-mas" class="btn btn--sm" hidden data-icono="mas"></button>
   </section>
 
   <template id="snippet-template">
@@ -250,7 +269,7 @@
           <p class="suave encuesta-privacidad"></p>
           <div class="encuesta-opciones"></div>
           <label class="campo encuesta-texto" hidden><span class="campo__etiqueta" data-t="encuesta.respuestaEtiqueta"></span>
-            <input type="text" maxlength="140" autocomplete="off">
+            <input type="text" maxlength="140" autocomplete="off" data-icono="editar">
             <span class="campo__ayuda encuesta-ayuda"></span></label>
         </fieldset>
         <div class="grupo-botones encuesta-botones">
@@ -275,7 +294,7 @@
         <span class="notice-text"></span>
         <span class="notice-cita" hidden></span>
       </div>
-      <button type="button" class="btn btn--sm dismiss"></button>
+      <button type="button" class="btn btn--sm dismiss" data-icono="hecho"></button>
     </div>
   </template>
 
@@ -300,6 +319,7 @@
   <script src="vendor/prism/prism-rust.min.js"></script>
   <script src="vendor/prism/prism-kotlin.min.js"></script>
   <script src="sistema/receptor-video.js"></script>
+  <script src="sistema/iconos.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

@@ -152,4 +152,7 @@ type View struct {
 	Polls poll.BallotView `json:"polls"`
 	// Present is the band of a presentation of this screen, if any (§5.24).
 	Present broadcast.PresentView `json:"present"`
+	// Capabilities are what this computer lets the teacher do (the hello's),
+	// for «Qué puede hacer Aula en este equipo» (nota de interfaz 13).
+	Capabilities []string `json:"capabilities"`
 }

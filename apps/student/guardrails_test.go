@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
+	"strings"
 	"testing"
 )
 
@@ -66,6 +68,52 @@ func TestNoBindingTurnsOffTransparency(t *testing.T) {
 		name := app.Method(i).Name
 		if _, ok := reviewed[name]; !ok {
 			t.Errorf("new binding App.%s: check it cannot hide or turn off a transparency indicator, then list it here", name)
+		}
+	}
+}
+
+// Every button and every form field of the window carries a reference icon
+// (user's request, 2026-11-11): a button has an <svg> or data-icono (drawn by
+// sistema/iconos.js), a text field, list or text area has data-icono, a radio
+// is an «opción agrupada» (.opcion-seg) with its icon, and a yes/no box of a
+// form is an interruptor. Image buttons, links styled as buttons and the
+// selection boxes of a list are the exceptions.
+func TestEveryButtonAndFieldHasAnIcon(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("frontend", "dist", "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	html := string(b)
+	line := func(i int) int { return strings.Count(html[:i], "\n") + 1 }
+	exempt := []string{"nav-lateral__clase-compacta", "cap-marco", "alumno__pantalla", "enlace"}
+	// A link styled as a button counts as a button.
+	for _, m := range regexp.MustCompile(`(?s)<(?:button\b|a class="btn)([^>]*)>(.*?)</(?:button|a)>`).FindAllStringSubmatchIndex(html, -1) {
+		attrs, inner := html[m[2]:m[3]], html[m[4]:m[5]]
+		if strings.Contains(inner, "<svg") || strings.Contains(attrs, "data-icono=") {
+			continue
+		}
+		if slices.ContainsFunc(exempt, func(c string) bool { return strings.Contains(attrs, c) }) {
+			continue
+		}
+		t.Errorf("index.html:%d: a button without an icon (add data-icono): %s", line(m[0]), strings.TrimSpace(attrs))
+	}
+	for _, m := range regexp.MustCompile(`<(input|select|textarea)\b([^>]*)>`).FindAllStringSubmatchIndex(html, -1) {
+		attrs := html[m[4]:m[5]]
+		switch {
+		case strings.Contains(attrs, `type="radio"`):
+			if !strings.HasSuffix(strings.TrimSpace(html[max(0, m[0]-40):m[0]]), `<label class="opcion-seg">`) {
+				t.Errorf("index.html:%d: a radio outside an «opción agrupada» (.opcion-seg)", line(m[0]))
+			}
+		case strings.Contains(attrs, `type="checkbox"`):
+			if !strings.Contains(attrs, "interruptor") && !strings.Contains(attrs, "marca") && !strings.Contains(attrs, "alumnos-todos") {
+				t.Errorf("index.html:%d: a form checkbox that is not an interruptor", line(m[0]))
+			}
+		case strings.Contains(attrs, `type="hidden"`), strings.Contains(attrs, `type="file"`):
+		default:
+			// data-icono-fijo: the icon is already in the markup (a field with a prefix).
+			if !strings.Contains(attrs, "data-icono=") && !strings.Contains(attrs, "data-icono-fijo=") {
+				t.Errorf("index.html:%d: a field without its reference icon (add data-icono)", line(m[0]))
+			}
 		}
 	}
 }

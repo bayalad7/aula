@@ -984,7 +984,9 @@
       (err) => { $("mano-estado-texto").textContent = errorDe(err); });
   });
 
-  // El mensaje se escribe en una tarjeta arriba de la lista: Enter envía, Esc cancela.
+  // El mensaje se escribe en su propio diálogo (nota de interfaz 12): Enter envía, Esc cancela.
+  // El formulario lleva `hidden` mientras el diálogo está cerrado (lo miran las pruebas y la tira).
+  const dlgMensaje = $("dlg-mensaje");
   const area = $("redactar-texto");
   const pintarAyuda = () => {
     $("redactar-ayuda").textContent = T("mensaje.ayuda", { n: [...area.value].length });
@@ -992,14 +994,15 @@
   function abrirRedactar() {
     if (compacto) ponerCompacto(false, true); // lo pide el alumno: necesita la ventana
     $("redactar").hidden = false;
+    if (!dlgMensaje.open) dlgMensaje.showModal();
     $("redactar-titulo").textContent = T("mensaje.titulo", { profesor: status.teacher || T("energia.profesor") });
     $("escribir").setAttribute("aria-expanded", "true");
     pintarAyuda();
-    window.scrollTo(0, 0);
     area.focus();
   }
   function cerrarRedactar(foco) {
     $("redactar").hidden = true;
+    if (dlgMensaje.open) dlgMensaje.close();
     $("redactar-error").hidden = true;
     $("escribir").setAttribute("aria-expanded", "false");
     if (foco) $("escribir").focus();
@@ -1007,6 +1010,9 @@
   $("escribir").addEventListener("click", () => ($("redactar").hidden ? abrirRedactar() : cerrarRedactar(true)));
   $("compacto-escribir").addEventListener("click", abrirRedactar);
   $("redactar-cancelar").addEventListener("click", () => cerrarRedactar(true));
+  $("redactar-cerrar").addEventListener("click", () => cerrarRedactar(true));
+  // Esc del diálogo (fuera del campo) cierra igual que «Cancelar».
+  dlgMensaje.addEventListener("cancel", (e) => { e.preventDefault(); cerrarRedactar(true); });
   area.addEventListener("input", () => { $("redactar-error").hidden = true; area.removeAttribute("aria-invalid"); pintarAyuda(); });
   area.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("redactar").requestSubmit(); }
@@ -1075,6 +1081,56 @@
     $("bc-size").textContent = real ? T("banda.ajustar") : T("banda.tamanoReal");
     $("bc-size").setAttribute("aria-pressed", String(real));
   });
+
+  // --- Qué puede hacer Aula en este equipo (nota de interfaz 13) ------------------------------
+  // La misma grilla que la ficha del alumno en la consola, desde las capacidades que este equipo
+  // declara (View().capabilities). Se pide al abrir: cambian si el ayudante del servicio cambia.
+  const PUEDE = [
+    ["code.view", "codigo", () => T("capacidad.codigo")], ["msg.show", "aviso", () => T("capacidad.avisos")],
+    ["hand", "mano", () => T("capacidad.mano")], ["msg.student", "mensaje", () => T("capacidad.mensajes")],
+    ["timer", "reloj", () => T("capacidad.temporizador")], ["poll", "encuesta", () => T("capacidad.encuestas")],
+    ["file.push", "archivo", () => T("capacidad.archivos")], ["file.collect", "carpeta", () => T("capacidad.recoger")],
+    ["screen.broadcast", "transmitir", () => T("capacidad.transmision")], ["screen.present.view", "ojo", () => T("capacidad.verCompanero")],
+    ["screen.thumb", "miniaturas", () => T("capacidad.miniaturas")], ["screen.snapshot", "captura", () => T("capacidad.captura")],
+    ["screen.present", "pantalla", () => T("capacidad.proyectar")], ["remote", "control", () => T("capacidad.control")],
+    ["power", "energia", () => T("capacidad.energia")], ["app.block", "candado", () => T("capacidad.apps")],
+    ["web.filter", "filtro", () => T("capacidad.web")], ["open.url", "externo", () => T("capacidad.abrirPagina")],
+    ["open.app", "app", () => T("capacidad.abrirApp")],
+  ];
+  const SVGNS = "http://www.w3.org/2000/svg";
+  function iconoCap(id, cls) {
+    const s = document.createElementNS(SVGNS, "svg");
+    s.setAttribute("class", "icono" + (cls ? " " + cls : ""));
+    s.setAttribute("aria-hidden", "true");
+    const u = document.createElementNS(SVGNS, "use");
+    u.setAttribute("href", "sistema/iconos.svg#" + id);
+    s.append(u);
+    return s;
+  }
+  function pintarCapacidades(caps) {
+    const tiene = new Set(caps || []);
+    $("capacidades-lista").replaceChildren(...PUEDE.map(([c, ic, nombre]) => {
+      const si = tiene.has(c);
+      const texto = si ? T("capacidades.si", { accion: nombre() }) : T("capacidades.no", { accion: nombre() });
+      const li = document.createElement("li");
+      li.className = "capacidad" + (si ? " capacidad--si" : "");
+      li.dataset.tip = texto;
+      li.tabIndex = 0;
+      const sr = document.createElement("span");
+      sr.className = "solo-lector";
+      sr.textContent = texto;
+      li.append(iconoCap(ic), iconoCap(si ? "hecho" : "cerrar", "capacidad__marca"), sr);
+      return li;
+    }));
+  }
+  const dlgCapacidades = $("dlg-capacidades");
+  $("capacidades").addEventListener("click", () => {
+    api.View().then((v) => pintarCapacidades(v.capabilities), () => pintarCapacidades([]));
+    dlgCapacidades.showModal();
+    $("capacidades-entendido").focus();
+  });
+  for (const id of ["capacidades-cerrar", "capacidades-entendido"]) $(id).addEventListener("click", () => dlgCapacidades.close());
+  dlgCapacidades.addEventListener("close", () => $("capacidades").focus());
 
   // --- Mostrar tu pantalla a la clase (docs/privacidad.md, reglas 75-82) ------------------------
   // Lo decide el profesor, como el control remoto: Go trae la ventana al frente y manda la fase
@@ -1210,6 +1266,9 @@
   powerDismiss.addEventListener("click", () => api.DismissPower());
 
   // --- Arranque ------------------------------------------------------------------------------------
+  // Los iconos de referencia de botones y campos (data-icono, sistema/iconos.js): también los de
+  // lo que se agregue después.
+  window.AulaIconos.vigilar(document.body);
   aplicarTextos(document);
   // Suscribirse primero y después pedir el estado completo, para no perder nada.
   rt.EventsOn(ev.POWER, renderPower);

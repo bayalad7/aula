@@ -30,7 +30,9 @@ func (a *App) awaitMedia(ctx context.Context) {
 		}
 	}
 	a.mediaOnce.Do(func() { close(a.mediaReady) }) // later reports are ignored
+	a.mu.Lock()                                    // View reads the hello (Capabilities) from the window's thread
 	a.hello.Capabilities = append(slices.Clone(a.hello.Capabilities), a.viewer.Capabilities()...)
+	a.mu.Unlock()
 }
 
 // ReportMedia is called by the frontend on load: whether it has

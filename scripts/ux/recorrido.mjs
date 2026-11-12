@@ -347,6 +347,23 @@ await f("164-temporizador-otro-oscuro-900x600", "lab", { oscuro: true, w: 900, h
   pasos: seq(click('[data-panel="temporizador"]'), click("#temporizador-otro")) });
 await f("162-plantilla-eliminar", "lab-archivos", { ruta: "archivos", pasos: click("#plantillas-filas tr:first-child .eliminar") });
 
+// Pausar pantallas (docs/protocol.md §5.9, prompt 10.21): el panel de la barra, la franja con quién no
+// acusó y el mensaje, la insignia «En pausa» en la fila, la acción en la Pantalla grande, el diálogo
+// para cambiar el mensaje, Ctrl+Mayús+P y su versión oscura a 900×600.
+const panelPausa = seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12")), click('[data-panel="pausa"]'),
+  async (p) => { await p.type("#pausa-texto", "Miren al pizarrón un momento."); });
+await f("166-panel-pausa", "lab", { pasos: panelPausa });
+await f("167-pausa-franja", "lab", { pasos: seq(panelPausa, click("#pausa-aplicar"), async () => { await sleep(400); }) });
+await f("168-pausa-sin-acusar", "lab-pausa");
+await f("169-pausa-cambiar-mensaje", "lab-pausa", { pasos: click("#f-pausa-mensaje") });
+await f("170-pantalla-grande-pausa", "lab-pausa", { pasos: grande });
+await f("171-pausa-atajo", "lab", { pasos: async (p) => {
+  await p.keyboard.down("Control"); await p.keyboard.down("Shift"); await p.keyboard.press("KeyP");
+  await p.keyboard.up("Shift"); await p.keyboard.up("Control");
+  await sleep(400);
+} });
+await f("172-pausa-oscuro-900x600", "lab-pausa", { oscuro: true, w: 900, h: 600, pasos: click('[data-panel="pausa"]') });
+
 await cerrar();
 let graves = 0;
 for (const [nombre, r] of Object.entries(informe)) {

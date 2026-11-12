@@ -163,6 +163,11 @@ await f("29-compacto-nuevos-y-vista", "pantalla-vista", { w: 380, h: 80, pasos: 
 }) });
 
 await f("40-compacto-controlado", "control", { w: 380, h: 80, pasos: click("#compactar") });
+// Pantalla en pausa (prompt 10.21): la banda al volver a la ventana y la insignia del modo compacto.
+// La ventana de pausa es nativa: el arnés no la ve (caso manual A-xx).
+await f("92-banda-pausa", "pausa");
+await f("93-compacto-en-pausa", "pausa", { w: 380, h: 80, pasos: click("#compactar") });
+await f("94-banda-pausa-oscuro", "todo", { oscuro: true });
 
 // Tema y tamaño
 await f("22-oscuro-varios-codigos", "varios-codigos", { oscuro: true });

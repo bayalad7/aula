@@ -666,9 +666,31 @@ await caso("compacto-control", "conectado", async (p) => {
   ok(await p.evaluate(() => !document.getElementById("compacto-control").hidden && document.getElementById("compacto-vista").hidden),
     "en el modo compacto no se ve «Controlado»");
 });
+// Pantalla en pausa (reglas 9-10): la banda dice quién, no se cierra y se va al reanudar; pausar
+// saca la ventana del modo compacto y, dentro de él, se ve «En pausa».
+await caso("banda-pausa", "pausa", async (p) => {
+  await bandaPermanente(p, "#banda-pausa");
+  const t = await p.evaluate(() => [document.getElementById("banda-pausa-texto").textContent, document.title]);
+  ok(t[0].startsWith("Prof. Ayala (canal 1) pausó esta computadora"), "banda: " + t[0]);
+  ok(t[1] === "Aula — Prof. Ayala pausó esta computadora (canal 1)", "título: " + t[1]);
+  await p.focus(".copy");
+  await emitir(p, "aula:status", { state: "connected", teacher: "Prof. Ayala", channel: "1", detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "", paused: false });
+  const fin = await p.evaluate(() => ({ banda: document.getElementById("banda-pausa").hidden, foco: document.activeElement.classList.contains("copy"), titulo: document.title }));
+  ok(fin.banda, "la banda sigue al reanudar");
+  ok(fin.foco, "reanudar le quitó el foco al alumno");
+  ok(fin.titulo.startsWith("Aula — conectado"), "título al reanudar: " + fin.titulo);
+});
+await caso("compacto-pausa", "conectado", async (p) => {
+  await p.click("#compactar");
+  await emitir(p, "aula:status", { state: "connected", teacher: "Prof. Ayala", channel: "1", detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "", paused: true });
+  ok(await p.evaluate(() => document.getElementById("compacto").hidden && !document.getElementById("banda-pausa").hidden),
+    "la pausa no sacó la ventana del modo compacto");
+  await p.click("#compactar");
+  ok(await p.evaluate(() => !document.getElementById("compacto-pausa").hidden), "en el modo compacto no se ve «En pausa»");
+});
 await caso("bandas-orden", "todo", async (p) => {
   const orden = await p.evaluate(() => [...document.querySelectorAll("#bandas > .franja")].filter((b) => !b.hidden).map((b) => b.id));
-  ok(orden.join() === "power,banda-control,banda-vista,banda-mostrando,restrictions", "orden " + orden.join());
+  ok(orden.join() === "power,banda-control,banda-pausa,banda-vista,banda-mostrando,restrictions", "orden " + orden.join());
 });
 
 // Qué puede hacer Aula en este equipo (nota de interfaz 13): el botón de la tira abre un diálogo con

@@ -18,7 +18,7 @@
   const channel = "1";
   // El estado: Go manda estados, no frases (apps/student/events.go, Status).
   const st = (state, extra) => Object.assign({ state, teacher: state === "searching" || state === "unconfigured" ? "" : teacher,
-    channel: state === "unconfigured" ? "" : channel, detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "", presenting: false }, extra);
+    channel: state === "unconfigured" ? "" : channel, detail: "", cause: "", viewed: false, watching: false, restricted: false, control: "", presenting: false, paused: false }, extra);
   const conectado = st("connected");
   const status = {
     "sin-configurar": st("unconfigured", { detail: "no hay configuración: falta config.json en C:\ProgramData\Aula\alumno (canal y clave pública del centro); pide al administrador que instale Aula en este equipo" }),
@@ -38,7 +38,9 @@
     // Una captura durante las miniaturas: la banda de vista sigue, el aviso es aparte.
     "captura-vista": st("connected", { viewed: true }),
     "control-pausa": st("connected", { viewed: true, control: "paused" }),
-    todo: st("connected", { restricted: true, viewed: true, control: "active", presenting: true }),
+    // Pantalla en pausa (docs/privacidad.md, reglas 9-10): la ventana nativa cubre los monitores.
+    pausa: st("connected", { paused: true }),
+    todo: st("connected", { restricted: true, viewed: true, control: "active", presenting: true, paused: true }),
   }[scene] || conectado;
 
   const ahora = new Date().toISOString();
@@ -49,7 +51,7 @@
   const java = { id: "sn-3", exercise: "3", title: "", lang: "java", receivedAt: ahora,
     content: "public class Hola {\n    public static void main(String[] args) {\n        for (int i = 0; i < 3; i++) {\n            System.out.println(\"Hola \" + i);\n        }\n    }\n}\n" };
   const snippets = { "un-codigo": [py], "varios-codigos": [py, js, java], "pantalla-vista": [py], transmision: [],
-    control: [py], "control-pausa": [py], captura: [py], "captura-vista": [py],
+    control: [py], "control-pausa": [py], pausa: [py], captura: [py], "captura-vista": [py],
     restricciones: [py], "aviso-info": [py], "aviso-privado": [py], "aviso-warning": [py], "varios-avisos": [py, js, java], "muchos-avisos": [py], abierto: [py] }[scene] || [];
 
   const aviso = (id, level, text) => ({ id, level, text, at: ahora });

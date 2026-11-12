@@ -27,13 +27,15 @@
     canCollect: s.capabilities.includes("file.collect"),
     canOpenUrl: s.capabilities.includes("open.url"), canOpenApp: s.capabilities.includes("open.app"),
     canPresent: s.capabilities.includes("screen.present"), canPresentView: s.capabilities.includes("screen.present.view"),
+    canPause: s.capabilities.includes("screen.freeze"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "screen.present", "screen.present.view"];
+    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "screen.present", "screen.present.view", "screen.freeze"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
     lastCodeAck: "", ackedAt: "", simulated: false, connectedAt: "10:31", lastError: null, hand: 0, newMessages: 0,
+    pause: "", pauseUnacked: false,
   }, o, caps(o));
 
   // muchos_alumnos -n 2: SIM-01, SIM-02 (code.view y msg.show).
@@ -111,7 +113,7 @@
       canCode: n("canCode"), canNotice: n("canNotice"), canThumb: n("canThumb"),
       canBroadcast: r("canBroadcast"), canAppBlock: r("canAppBlock"), canWebFilter: r("canWebFilter"), canPower: r("canPower"),
       canSnapshot: n("canSnapshot"), canTimer: n("canTimer"), canPoll: n("canPoll"), canCollect: n("canCollect"),
-      canOpenUrl: r("canOpenUrl"), canOpenApp: r("canOpenApp") };
+      canOpenUrl: r("canOpenUrl"), canOpenApp: r("canOpenApp"), canPause: r("canPause") };
   };
 
   // Abrir página o app (apps/teacher/open.go): el catálogo de Ajustes y las últimas órdenes.
@@ -257,6 +259,23 @@
   }[scene] || { current: null, closed: [] };
   const emitPolls = () => window.__emit("aula:polls", JSON.parse(JSON.stringify(polls)));
   const copiaPolls = () => JSON.parse(JSON.stringify(polls));
+  // Pausar pantallas (apps/teacher/pause.go): en lab-pausa, dos equipos en pausa, uno que no
+  // acusó y el mensaje en vigor. Los dobles acusan al momento (como un agente rápido).
+  let pausaMensaje = "";
+  if (scene === "lab-pausa") {
+    lab[0].pause = "paused";
+    lab[1].pause = "sent";
+    lab[1].pauseUnacked = true;
+    pausaMensaje = "Miren al pizarrón un momento.";
+  }
+  const resumenPausas = () => {
+    const c = list.filter((s) => s.state === "connected" && !s.simulated);
+    return { paused: c.filter((s) => s.pause === "paused" || s.pause === "sent").length,
+      unacked: c.filter((s) => s.pause === "sent" && s.pauseUnacked).length,
+      failed: c.filter((s) => s.pause === "failed").length, message: pausaMensaje };
+  };
+  const emitPausas = () => { window.__emit("aula:pauses", resumenPausas()); window.__emit("aula:students", studentsView()); };
+  const pausaDe = (hosts) => list.filter((s) => s.state === "connected" && !s.simulated && (!hosts.length || hosts.includes(s.hostname)));
   const view = () => ({
     active: !scene.startsWith("setup"), class: cls, students: studentsView(), history, deliveries,
     hotkey: scene === "atajo-ocupado"
@@ -265,7 +284,7 @@
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true,
       mode: bcActive ? "fullscreen" : "", targeted: 0 },
     restrictions, remote, snapshots: snaps, participation: Object.assign({}, part, { arrival: null }),
-    timer: Object.assign({}, timer), polls: copiaPolls(), present: Object.assign({}, present),
+    timer: Object.assign({}, timer), polls: copiaPolls(), present: Object.assign({}, present), pauses: resumenPausas(),
   });
 
 
@@ -374,6 +393,32 @@
     PresentViewFailed: call("PresentViewFailed"),
     PowerAction: call("PowerAction", { sent: 3, unsupported: ["lab-ubuntu-02"], failed: [] }),
     PowerCancel: call("PowerCancel", { sent: 3, unsupported: [], failed: [] }),
+    PauseScreens: call("PauseScreens", (req) => {
+      if ((req.message || "").length > 300) return new Error("aula:invalidPauseMessage: el mensaje de la pausa tiene más de 300 caracteres");
+      const objetivo = pausaDe(req.hosts || []);
+      const pueden = objetivo.filter((s) => s.canPause && !(present.active && present.sessionId === s.id));
+      if (!pueden.length) return new Error("aula:noPauseTargets: ningún alumno conectado de los elegidos puede pausar su pantalla");
+      pausaMensaje = req.message || "";
+      for (const s of pueden) { s.pause = "sent"; s.pauseUnacked = false; }
+      despues(() => { for (const s of pueden) s.pause = "paused"; emitPausas(); });
+      emitPausas();
+      return { sent: pueden.length, unsupported: objetivo.filter((s) => !s.canPause).map((s) => s.hostname),
+        presenting: objetivo.filter((s) => s.canPause && present.active && present.sessionId === s.id).map((s) => s.hostname), failed: [] };
+    }),
+    ResumeScreens: call("ResumeScreens", (hosts) => {
+      const objetivo = pausaDe(hosts || []).filter((s) => s.pause);
+      for (const s of objetivo) { s.pause = ""; s.pauseUnacked = false; }
+      if (!resumenPausas().paused) pausaMensaje = "";
+      emitPausas();
+      return { sent: objetivo.length, unsupported: [], presenting: [], failed: [] };
+    }),
+    ChangePauseMessage: call("ChangePauseMessage", (m) => {
+      if ((m || "").length > 300) return new Error("aula:invalidPauseMessage: el mensaje de la pausa tiene más de 300 caracteres");
+      pausaMensaje = m || "";
+      emitPausas();
+      return { sent: resumenPausas().paused, unsupported: [], presenting: [], failed: [] };
+    }),
+    Pauses: call("Pauses", () => resumenPausas()),
     AllowedApps: call("AllowedApps", () => allowed),
     DefaultAllowedApps: call("DefaultAllowedApps", () => appsEjemplo.slice()),
     SaveAllowedApps: call("SaveAllowedApps", (apps) => {

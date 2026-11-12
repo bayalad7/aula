@@ -380,7 +380,7 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{EventStudents, EventHistory, EventDeliveries, EventCapture, EventClass, EventFrame, EventBroadcast, EventRestrictions, EventSimulation} {
+	for _, name := range []string{EventStudents, EventHistory, EventDeliveries, EventCapture, EventClass, EventFrame, EventBroadcast, EventRestrictions, EventSimulation, EventClassEnd} {
 		if !strings.Contains(string(js), `"`+name+`"`) {
 			t.Errorf("events.js does not define %q", name)
 		}
@@ -389,7 +389,8 @@ func TestEventContractMatchesFrontend(t *testing.T) {
 	for _, m := range []string{"Setup", "StartClass", "View", "Emit", "Reemit", "Resend", "ClearScreens", "SendNoticeTo", "CaptureClipboard",
 		"OpenScreens", "CloseScreens", "ViewScreen", "Displays", "StartBroadcast", "StopBroadcast",
 		"SetRestriction", "ClearRestriction", "ClearAllRestrictions", "PowerAction", "PowerCancel", "InstallerInfo",
-		"Simulation", "SimulationStart", "SimulationAdd", "SimulationRemove", "SimulationFault", "SimulationStop", "Manual", "ManualSearch"} {
+		"Simulation", "SimulationStart", "SimulationAdd", "SimulationRemove", "SimulationFault", "SimulationStop", "Manual", "ManualSearch",
+		"ClassEndPreview", "FinishClass", "RetryClassEnd", "ClassEnd"} {
 		if !strings.Contains(string(main), "api."+m+"(") {
 			t.Errorf("main.js does not call App.%s", m)
 		}

@@ -26,4 +26,5 @@ window.AulaEvents = Object.freeze({
   PRESENT: "aula:present",
   PRESENT_VIEW: "aula:present-view",
   PRESENT_SIGNAL: "aula:present-signal",
+  CLASS_END: "aula:class-end",
 });

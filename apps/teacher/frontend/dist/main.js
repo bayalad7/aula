@@ -357,6 +357,7 @@
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
     api.Simulation().then(pintarSimulacion);
+    api.ClassEnd().then((v) => { if (v.endId) finTerminar = v; }, () => {});
     api.AllowedApps().then(cargarAppsPermitidas, () => {});
     api.OpenOrders().then(pintarOrdenesAbrir, () => {});
     if (!manual) {
@@ -511,7 +512,8 @@
       ["canHand", "ficha.mano", "mano"], ["canMessage", "ficha.mensajes", "mensaje"], ["canTimer", "ficha.temporizador", "reloj"], ["canPoll", "ficha.encuestas", "encuesta"],
       ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"],
       ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"],
-      ["canPresent", "ficha.proyectar", "transmitir"], ["canPresentView", "ficha.verCompanero", "ojo"], ["canPause", "ficha.pausa", "pausa"]];
+      ["canPresent", "ficha.proyectar", "transmitir"], ["canPresentView", "ficha.verCompanero", "ojo"], ["canPause", "ficha.pausa", "pausa"],
+      ["canClassEnd", "ficha.terminar", "salir"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
       const si = !!s[c];
       const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
@@ -3791,6 +3793,130 @@
   });
   $("f-clave-que-hago").addEventListener("click", () => abrirAjustes("acerca"));
 
+  // --- Terminar la clase (prompt 10.14) ---------------------------------------------------
+  // Bajo el Selector de clase. El diálogo muestra lo que sigue activo (lo mismo que la Franja
+  // global) y lo opcional; al terminar, los pasos y el resultado por alumno, que se llena con
+  // sus acuses (aula:class-end). Nunca se borra un archivo.
+  const dlgTerminar = $("dlg-terminar");
+  let finTerminar = null; // la última classend.View
+  function itemTerminar(ic, texto, estado) {
+    const li = el("li");
+    if (estado) li.dataset.estado = estado;
+    li.append(icono(ic), el("span", "", texto));
+    return li;
+  }
+  function abrirTerminar() {
+    api.ClassEndPreview().then((p) => {
+      if (p.running && finTerminar) { mostrarResultadoTerminar(); dlgTerminar.showModal(); $("te-cerrar").focus(); return; }
+      const activo = [];
+      if (p.broadcast) activo.push(itemTerminar("transmitir", T("terminar.item.transmision")));
+      if (p.present) activo.push(itemTerminar("transmitir", T("terminar.item.proyeccion", { equipo: p.present })));
+      if (p.control) activo.push(itemTerminar("control", T("terminar.item.control", { equipo: p.control })));
+      if (p.paused) activo.push(itemTerminar("pausa", P("terminar.item.pausa", p.paused)));
+      if (p.apps && p.web) activo.push(itemTerminar("candado", T("terminar.item.restriccionesAmbas")));
+      else if (p.apps) activo.push(itemTerminar("candado", T("terminar.item.restriccionesApps")));
+      else if (p.web) activo.push(itemTerminar("filtro", T("terminar.item.restriccionesWeb")));
+      if (p.timer) activo.push(itemTerminar("reloj", T("terminar.item.temporizador")));
+      if (p.poll) activo.push(itemTerminar("encuesta", T("terminar.item.encuesta")));
+      if (p.power) activo.push(itemTerminar("energia", P("terminar.item.energia", p.power)));
+      if (!activo.length) activo.push(itemTerminar("hecho", T("terminar.item.nada")));
+      $("te-activo").replaceChildren(...activo);
+      const vaciar = [itemTerminar("limpiar", T("terminar.item.ventanas"))];
+      if (p.snippets) vaciar.push(itemTerminar("codigo", P("terminar.item.historial", p.snippets)));
+      if (p.hands) vaciar.push(itemTerminar("mano", P("terminar.item.manos", p.hands)));
+      if (p.messages) vaciar.push(itemTerminar("mensaje", P("terminar.item.mensajes", p.messages)));
+      $("te-vaciar").replaceChildren(...vaciar);
+      // Lo opcional: recoger la última recolección y cancelar la energía (apagado por omisión:
+      // el profesor pudo programar el apagado de fin de día a propósito).
+      const reco = p.collection;
+      $("te-recoger-opcion").hidden = $("te-recoger-ayuda").hidden = !reco;
+      $("te-recoger").checked = false;
+      if (reco) {
+        $("te-recoger-texto").textContent = T("terminar.recoger", { actividad: reco.activity });
+        $("te-recoger-ayuda").textContent = P("terminar.recogerAyuda", reco.missing);
+      }
+      $("te-energia-opcion").hidden = $("te-energia-ayuda").hidden = !p.power;
+      $("te-energia").checked = false;
+      if (p.power) {
+        $("te-energia-texto").textContent = P("terminar.cancelarEnergia", p.power);
+        $("te-energia-ayuda").textContent = T("terminar.cancelarEnergiaAyuda");
+      }
+      $("te-opcional").hidden = !reco && !p.power;
+      let cons = P("terminar.consecuencia", p.students + p.simulated);
+      if (p.old) cons += " " + P("terminar.antiguos", p.old);
+      if (p.disconnected) cons += " " + P("terminar.desconectados", p.disconnected);
+      $("te-consecuencia").textContent = cons;
+      $("te-form").hidden = false;
+      $("te-resultado").hidden = true;
+      dlgTerminar.showModal();
+      $("te-cancelar").focus();
+    }, fallo);
+  }
+  // Estado de cada alumno: icono y tipo de insignia (color y texto: no depende solo del color).
+  const TE_PASO = "terminar.paso.", TE_ESTADO = "terminar.estado.", TE_MOTIVO = "terminar.motivo."; // + Go
+  const ESTADO_TERMINAR = {
+    waiting: ["pendiente", "info"], clean: ["hecho", "conectado"], partial: ["hecho", "advertencia"],
+    noack: ["advertencia", "advertencia"], away: ["desconectado", "desconectado"], failed: ["error", "error"],
+  };
+  function pintarTerminar(v) {
+    finTerminar = v;
+    if (dlgTerminar.open && !$("te-resultado").hidden) mostrarResultadoTerminar();
+  }
+  function mostrarResultadoTerminar() {
+    const v = finTerminar;
+    if (!v) return;
+    $("te-form").hidden = true;
+    $("te-resultado").hidden = false;
+    const hora = new Date(v.at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+    $("te-resumen").textContent = v.running ? T("terminar.enCurso")
+      : T("terminar.listo", { hora, limpios: v.clean, faltan: v.missing });
+    $("te-pasos").replaceChildren(...(v.steps || []).map((s) => itemTerminar(
+      s.status === "done" ? "hecho" : s.status === "kept" ? "info" : "error",
+      T(TE_PASO + s.kind + "." + s.status, { n: s.count }), s.status)));
+    const filas = (v.students || []).map((s) => {
+      const tr = el("tr");
+      const nombre = el("td", "celda-principal", s.hostname);
+      if (s.simulated) nombre.append(" ", insignia("simulado", "simulado", T("alumnos.simulado")));
+      const [ic, tipo] = ESTADO_TERMINAR[s.state] || ESTADO_TERMINAR.waiting;
+      const estado = el("td");
+      const texto = s.state === "failed" ? T(TE_MOTIVO + (s.reason || "internal")) : T(TE_ESTADO + s.state);
+      estado.append(insignia(tipo, ic, texto));
+      tr.append(nombre, estado);
+      return tr;
+    });
+    if (!filas.length) {
+      const tr = el("tr");
+      const td = el("td", "suave", T("terminar.sinAlumnos"));
+      td.colSpan = 2;
+      tr.append(td);
+      filas.push(tr);
+    }
+    $("te-alumnos").replaceChildren(...filas);
+    const faltan = (v.students || []).filter((s) => s.state === "noack" || s.state === "failed").length;
+    $("te-reintentar").hidden = v.running || faltan === 0;
+    $("te-reintentar-texto").textContent = P("terminar.reintentar", faltan);
+    $("te-nota-reconectar").hidden = !(v.students || []).some((s) => s.state === "away" || s.state === "noack");
+  }
+  $("te-cancelar").addEventListener("click", () => dlgTerminar.close());
+  $("te-cerrar").addEventListener("click", () => dlgTerminar.close());
+  dlgTerminar.addEventListener("close", () => $("nav-terminar").focus());
+  $("te-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const b = $("te-terminar");
+    ocupado(b, true);
+    api.FinishClass({ collect: $("te-recoger").checked, cancelPower: $("te-energia").checked }).then((v) => {
+      finTerminar = v;
+      mostrarResultadoTerminar();
+      $("te-cerrar").focus();
+    }, fallo).finally(() => ocupado(b, false));
+  });
+  $("te-reintentar").addEventListener("click", () => {
+    const b = $("te-reintentar");
+    ocupado(b, true);
+    api.RetryClassEnd().then((v) => { finTerminar = v; mostrarResultadoTerminar(); }, fallo).finally(() => ocupado(b, false));
+  });
+  $("nav-terminar").addEventListener("click", abrirTerminar);
+
   // Cambiar de canal o de nombre: reabre la clase, con la consecuencia dicha
   // antes. El historial de código se conserva.
   function abrirCambiarCanal() {
@@ -3884,6 +4010,7 @@
   rt.EventsOn(ev.SIMULATION, pintarSimulacion);
   rt.EventsOn(ev.PARTICIPATION, alParticipar);
   rt.EventsOn(ev.TIMER, alTemporizador);
+  rt.EventsOn(ev.CLASS_END, pintarTerminar);
   rt.EventsOn(ev.POLLS, pintarEncuestas);
   rt.EventsOn(ev.FILES, pintarArchivos);
   rt.EventsOn(ev.COLLECTIONS, pintarRecolecciones);

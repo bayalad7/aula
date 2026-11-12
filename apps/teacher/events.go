@@ -73,6 +73,9 @@ const (
 	EventOpens = "aula:opens"
 	// EventAllowedApps carries AllowedApps whenever the catalog is saved.
 	EventAllowedApps = "aula:allowed-apps"
+	// EventClassEnd carries a classend.View whenever a step of «Terminar la
+	// clase» ends or a student answers (§5.25).
+	EventClassEnd = "aula:class-end"
 )
 
 // Setup is what the channel selection screen needs.
@@ -130,7 +133,8 @@ type Student struct {
 	CanPresent   bool     `json:"canPresent"`   // screen.present (Windows agents; never simulated students)
 	// CanPresentView: screen.present.view, it can be shown a classmate's screen.
 	CanPresentView bool `json:"canPresentView"`
-	CanPause       bool `json:"canPause"` // screen.freeze (Windows agents; never simulated students)
+	CanPause       bool `json:"canPause"`    // screen.freeze (Windows agents; never simulated students)
+	CanClassEnd    bool `json:"canClassEnd"` // class.end: leaves its window clean when the class ends (§5.25)
 	// Pause is this student's pause (screen.Pause*: sent, paused, resuming,
 	// failed; "" without one) and PauseUnacked whether the agent has not
 	// answered within screen.AckWait.

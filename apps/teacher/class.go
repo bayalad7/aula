@@ -66,6 +66,9 @@ type classHooks struct {
 	// onOpen receives open.ack and the errors (which may answer an open.url
 	// or open.app), from real students only (§5.22).
 	onOpen func(sessionID string, env protocol.Envelope)
+	// onClassEnd receives class.end.ack, from real and simulated students
+	// (§5.25).
+	onClassEnd func(sessionID string, p protocol.ClassEndAck)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
 }
@@ -284,6 +287,10 @@ func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, prot
 			if h.onPoll != nil {
 				h.onPoll(conn.ID(), env)
 			}
+		case protocol.ClassEndAck:
+			if h.onClassEnd != nil {
+				h.onClassEnd(conn.ID(), p)
+			}
 		case protocol.FilePushAck, protocol.FileCollectAck, protocol.FileCollectResponse:
 			if h.onFile != nil {
 				h.onFile(conn.ID(), env)
@@ -368,6 +375,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 			case protocol.PollVote, protocol.PollAck:
 				if hooks.onPoll != nil {
 					hooks.onPoll(conn.ID(), env)
+				}
+			case protocol.ClassEndAck:
+				if hooks.onClassEnd != nil {
+					hooks.onClassEnd(conn.ID(), p)
 				}
 			case protocol.FilePushAck, protocol.FileCollectAck, protocol.FileCollectResponse:
 				if hooks.onFile != nil {

@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/bayalad7/aula/internal/broadcast"
+	"github.com/bayalad7/aula/internal/classend"
 	"github.com/bayalad7/aula/internal/classtimer"
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/collect"
@@ -111,6 +112,13 @@ type App struct {
 
 	agentErrs agentErrors // the last error each student reported
 
+	// ends is «Terminar la clase» (§5.25): the steps, each student's answer
+	// and who is owed a class.end when they reconnect. endMu makes sending a
+	// class.end and recording it atomic with respect to its ack.
+	ends           *classend.Class
+	endMu          sync.Mutex
+	endCollectWait time.Duration // 0: classend.CollectWait (tests shorten it)
+
 	checks *connectChecks // the connection checker (CheckConnection)
 
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
@@ -151,6 +159,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	a.proj = a.newProjector(broadcastKbps(m))
 	a.checks = newConnectChecks(log)
+	a.ends = classend.NewClass(func() time.Time { return a.now() })
 	return a
 }
 
@@ -245,7 +254,8 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
 		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage, onPause: a.onPauseMessage,
 		onRemote: a.onRemoteMessage, onSnapshot: a.onSnapshotMessage, onClassroom: a.onClassroomMessage,
-		onTimer: a.onTimerAck, onPoll: a.onPollMessage, onFile: a.onFileMessage, onOpen: a.onOpenMessage, onError: a.onAgentError}, a.log)
+		onTimer: a.onTimerAck, onPoll: a.onPollMessage, onFile: a.onFileMessage, onOpen: a.onOpenMessage, onClassEnd: a.onClassEndAck,
+		onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -291,6 +301,7 @@ func (a *App) EndClass() {
 		a.resetPolls()
 		a.sendRestrictions(class, a.restr.Reset())
 		a.sendScreen(class, a.wall.Close())
+		a.ends.Reset() // nobody is owed a class.end on another channel
 		class.Stop()
 	}
 }
@@ -615,6 +626,7 @@ func (a *App) onChange() {
 		return
 	}
 	a.emit(EventStudents, a.studentsIn(class))
+	a.syncClassEnd(class) // first: who reconnects is cleaned before anything is resent (§5.25.3)
 	a.syncScreens()
 	a.syncRemote(class.Sessions())
 	a.syncSnapshots(class)
@@ -674,7 +686,7 @@ func studentsOf(list []session.Session) Students {
 			CanFiles: s.Can(protocol.CapFilePush), CanCollect: s.Can(protocol.CapFileCollect),
 			CanOpenURL: s.Can(protocol.CapOpenURL), CanOpenApp: s.Can(protocol.CapOpenApp),
 			CanPresent: s.Can(protocol.CapScreenPresent), CanPresentView: s.Can(protocol.CapScreenPresentView),
-			CanPause: s.Can(protocol.CapScreenFreeze),
+			CanPause: s.Can(protocol.CapScreenFreeze), CanClassEnd: s.Can(protocol.CapClassEnd),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))

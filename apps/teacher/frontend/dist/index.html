@@ -50,6 +50,8 @@
         <strong id="nav-clase-texto"></strong>
       </button>
       <button type="button" class="nav-lateral__clase-compacta" id="nav-clase-compacta"></button>
+      <!-- Terminar la clase (prompt 10.14): bajo el Selector de clase; abre su propio diálogo. -->
+      <button type="button" class="nav-lateral__boton nav-lateral__terminar" id="nav-terminar" data-t-title="terminar.ayudaBoton"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salir"/></svg><span class="nav-lateral__texto" data-t="terminar.boton"></span></button>
       <p class="nav-lateral__grupo" data-t="nav.grupoClase"></p>
       <a href="#alumnos" data-vista="alumnos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span class="nav-lateral__texto" data-t="nav.alumnos"></span></a>
       <a href="#codigo" data-vista="codigo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#codigo"/></svg><span class="nav-lateral__texto" data-t="nav.codigo"></span></a>
@@ -971,6 +973,52 @@
             <button type="submit" class="btn btn--primario" id="pg-privado-enviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="privado.enviar"></span></button>
           </div>
         </form>
+    </div>
+  </dialog>
+
+  <!-- Terminar la clase (prompt 10.14): lo que sigue activo, lo opcional y, después, el resultado por alumno. -->
+  <dialog class="dialogo dialogo--form" id="dlg-terminar" aria-labelledby="dlg-terminar-titulo">
+    <div class="dialogo__cuerpo pila">
+      <div class="dialogo__titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salir"/></svg><h2 id="dlg-terminar-titulo" class="crece" data-t="terminar.titulo"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <form id="te-form" class="pila">
+        <p class="pequeno" data-t="terminar.explica"></p>
+        <div class="pila-mini">
+          <h3 class="terminar__subtitulo" data-t="terminar.activo"></h3>
+          <ul class="lista-limpia terminar__lista" id="te-activo"></ul>
+        </div>
+        <div class="pila-mini" id="te-vaciar-bloque">
+          <h3 class="terminar__subtitulo" data-t="terminar.vaciar"></h3>
+          <ul class="lista-limpia terminar__lista" id="te-vaciar"></ul>
+        </div>
+        <div class="pila-mini" id="te-opcional" hidden>
+          <h3 class="terminar__subtitulo" data-t="terminar.opcional"></h3>
+          <label class="opcion" id="te-recoger-opcion" hidden><input type="checkbox" class="interruptor" id="te-recoger" role="switch" aria-describedby="te-recoger-ayuda"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg> <span id="te-recoger-texto"></span></label>
+          <span class="campo__ayuda" id="te-recoger-ayuda" hidden></span>
+          <label class="opcion" id="te-energia-opcion" hidden><input type="checkbox" class="interruptor" id="te-energia" role="switch" aria-describedby="te-energia-ayuda"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg> <span id="te-energia-texto"></span></label>
+          <span class="campo__ayuda" id="te-energia-ayuda" hidden></span>
+        </div>
+        <p class="dialogo__consecuencia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="te-consecuencia"></span></p>
+        <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+          <button type="button" class="btn" id="te-cancelar" data-t="comun.cancelar" data-icono="cerrar"></button>
+          <button type="submit" class="btn btn--peligro" id="te-terminar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salir"/></svg><span data-t="terminar.terminar"></span></button>
+        </div>
+      </form>
+      <div class="pila" id="te-resultado" hidden>
+        <p class="pequeno" id="te-resumen" role="status"></p>
+        <ul class="lista-limpia terminar__lista" id="te-pasos"></ul>
+        <div class="tabla-adaptable terminar__tabla" tabindex="0" role="region" data-t-aria-label="terminar.tablaEtiqueta">
+          <table class="tabla" data-t-aria-label="terminar.tablaEtiqueta">
+            <thead><tr><th scope="col" data-t="terminar.colEquipo"></th><th scope="col" data-t="terminar.colEstado"></th></tr></thead>
+            <tbody id="te-alumnos"></tbody>
+          </table>
+        </div>
+        <p class="pequeno suave" id="te-nota-reconectar" data-t="terminar.notaReconectar" hidden></p>
+        <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+          <button type="button" class="btn" id="te-reintentar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reenviar"/></svg><span id="te-reintentar-texto"></span></button>
+          <button type="button" class="btn btn--primario" id="te-cerrar" data-t="comun.cerrar" data-icono="hecho"></button>
+        </div>
+      </div>
     </div>
   </dialog>
 

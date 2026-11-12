@@ -93,6 +93,7 @@ const (
 	codeAllowedAppsNotSaved  = "allowedAppsNotSaved"
 	codePresentUnsupported   = "presentUnsupported"
 	codePresentFailed        = "presentFailed"
+	codeEndBusy              = "endBusy"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -112,7 +113,7 @@ var errorCodes = []string{
 	codeTemplateExists, codeTemplateInvalid, codeTemplateGone, codeTemplateNotDeleted,
 	codeCollectActivity, codeCollectFolder, codeCollectGone, codeCollectNoStudents, codeCollectNothing,
 	codeInvalidURL, codeNoOpenTargets, codeOpenAppGone, codeAllowedAppInvalid, codeAllowedAppsNotSaved,
-	codePresentUnsupported, codePresentFailed,
+	codePresentUnsupported, codePresentFailed, codeEndBusy,
 }
 
 // errorHelp is the section of the manual (docs/administracion) that each
@@ -199,6 +200,7 @@ var errorHelp = map[string]string{
 	codeOpenAppGone:          "ajustes#apps-permitidas",
 	codeAllowedAppInvalid:    "ajustes#apps-permitidas",
 	codeAllowedAppsNotSaved:  "ajustes#apps-permitidas",
+	codeEndBusy:              "tareas-frecuentes#terminar-la-clase",
 }
 
 // codedError is an error the UI can explain by its code.

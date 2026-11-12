@@ -171,3 +171,16 @@ a.insignia:hover { text-decoration: underline; }
 #alumnos-resumen { align-items: center; }
 /* Los contadores y la selección (nota de interfaz v0.1.0 006) miden lo mismo que los controles. */
 #alumnos-resumen .insignia, #seleccion-texto { min-height: var(--alto-control); padding: 0 var(--e-3); border-radius: var(--r-md); }
+
+/* Terminar la clase (prompt 10.14): el botón bajo el Selector de clase y su diálogo. */
+.nav-lateral__terminar { margin: calc(-1 * var(--e-2)) 0 var(--e-2); color: var(--c-error); }
+.nav-lateral__terminar:hover { background: var(--c-error-suave, var(--c-superficie-2)); }
+.terminar__subtitulo { margin: 0; font-size: var(--t-sm); font-weight: var(--peso-medio); color: var(--c-texto-suave); }
+.terminar__lista { display: grid; gap: var(--e-1); }
+.terminar__lista li { display: flex; align-items: center; gap: var(--e-2); font-size: var(--t-sm); }
+.terminar__lista li .icono { flex: none; color: var(--c-texto-suave); }
+.terminar__lista li[data-estado="failed"] .icono, .terminar__lista li[data-estado="timeout"] .icono { color: var(--c-error); }
+.terminar__lista li[data-estado="done"] .icono { color: var(--c-exito, var(--c-texto-suave)); }
+.terminar__tabla { max-height: 14rem; overflow: auto; }
+.terminar__tabla .tabla thead th:first-child, .terminar__tabla .tabla td:first-child { text-align: left; }
+@media (max-height: 700px) { .terminar__tabla { max-height: 8rem; } }

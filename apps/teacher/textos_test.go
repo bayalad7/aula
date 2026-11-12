@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/bayalad7/aula/internal/broadcast"
+	"github.com/bayalad7/aula/internal/classend"
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/connectcheck"
 	"github.com/bayalad7/aula/internal/filepush"
@@ -163,6 +164,21 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 	for _, r := range []protocol.PresentReason{protocol.PresentCaptureUnavailable, protocol.PresentEncoderUnavailable, protocol.PresentBusy, broadcast.ReasonNoAnswer} {
 		need("proyectar.fallo."+agentErrorKey(protocol.ErrorCode(r)), "main.js (PresentState.Reason)")
+	}
+	// «Terminar la clase» (internal/classend): each step by how it ended,
+	// each student's state and why its window could not be fully cleared.
+	for k, outcomes := range classend.StepOutcomes {
+		for _, o := range outcomes {
+			need("terminar.paso."+string(k)+"."+string(o), "main.js (classend.Step)")
+		}
+	}
+	for _, st := range classend.States {
+		if st != classend.StateFailed { // failed shows its reason
+			need("terminar.estado."+string(st), "main.js (classend.State)")
+		}
+	}
+	for _, r := range []protocol.ClassEndReason{protocol.ClassEndRestrictions, protocol.ClassEndPause, protocol.ClassEndInternal} {
+		need("terminar.motivo."+string(r), "main.js (class.end.ack reason)")
 	}
 	// Error texts are chosen by the code Go returns (errores.go).
 	for _, code := range errorCodes {

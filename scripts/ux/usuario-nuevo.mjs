@@ -64,8 +64,8 @@ await paso("Escribir y emitir el primer código", "simulada", "", [
     teclas += 1; // escribir el código cuenta como una acción
     await sleep(200);
   },
-  ver("Pegar del portapapeles"),
-  pulsar("Emitir (reemplaza lo que ven)"),
+  ver("Pegar"),
+  pulsar("Emitir"),
 ]);
 // 5. Ver quién lo recibió: Últimos envíos, «Quién falta», «Reenviar a los que faltan».
 await paso("Ver quién lo recibió y reenviar", "simulada", "codigo", [

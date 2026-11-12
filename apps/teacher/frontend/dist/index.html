@@ -194,7 +194,8 @@
                     </div>
                     <div id="editor" class="editor" data-t-aria-label="codigo.editor"></div>
                     <p class="pequeno suave" id="codigo-ayuda-teclado"></p>
-                    <!-- Pie de envío (nota de interfaz 11): a quién, y las acciones con la principal a la derecha. -->
+                    <!-- Pie de envío (notas de interfaz 11 y 14): a quién, y las acciones en una fila, la principal
+                         primero, con textos cortos y su explicación en un tooltip. -->
                     <div class="pie-envio">
                       <fieldset class="pie-envio__destino">
                         <legend class="campo__etiqueta" data-t="codigo.enviarA"></legend>
@@ -203,13 +204,11 @@
                           <label class="opcion-seg"><input type="radio" name="codigo-destino" value="seleccion" id="codigo-destino-seleccion-radio"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#filtro"/></svg> <span id="codigo-destino-seleccion"></span></label>
                         </div>
                       </fieldset>
-                      <div class="pie-envio__acciones">
-                        <button type="button" class="btn btn--fantasma" id="codigo-pegar" data-t-title="codigo.pegarAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#portapapeles"/></svg><span data-t="codigo.pegar"></span></button>
-                        <button type="button" class="btn btn--fantasma btn--peligro-texto" id="codigo-limpiar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg><span data-t="codigo.limpiar"></span></button>
-                        <span class="pie-envio__principal">
-                          <button type="button" class="btn" id="codigo-agregar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="codigo.agregar"></span></button>
-                          <button type="button" class="btn btn--primario btn--lg" id="codigo-emitir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="codigo.emitir"></span></button>
-                        </span>
+                      <div class="pie-envio__acciones pie-envio__acciones--fila">
+                        <button type="button" class="btn btn--primario" id="codigo-emitir" data-t-ayuda="codigo.emitirAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="codigo.emitir"></span></button>
+                        <button type="button" class="btn" id="codigo-agregar" data-t-ayuda="codigo.agregarAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="codigo.agregar"></span></button>
+                        <button type="button" class="btn btn--peligro-texto" id="codigo-limpiar" data-t-ayuda="codigo.limpiarAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg><span data-t="codigo.limpiar"></span></button>
+                        <button type="button" class="btn" id="codigo-pegar" data-t-ayuda="codigo.pegarAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#portapapeles"/></svg><span data-t="codigo.pegar"></span></button>
                       </div>
                       <p class="pie-envio__motivo" id="codigo-motivo" aria-live="polite"></p>
                     </div>
@@ -1093,7 +1092,8 @@
       <td class="celda-principal nombre"></td><td class="archivos"></td><td class="tamano"></td><td class="estado"></td>
       <td><div class="grupo-botones grupo-botones--fin">
         <button type="button" class="btn btn--sm usar" data-icono="archivo"></button>
-        <button type="button" class="btn btn--sm btn--fantasma abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span></span></button></div></td>
+        <button type="button" class="btn btn--sm btn--fantasma abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span></span></button>
+        <button type="button" class="btn btn--sm btn--fantasma btn--icono btn--peligro-texto eliminar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg></button></div></td>
     </tr>
   </template>
   <template id="t-historial-archivos">

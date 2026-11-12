@@ -375,6 +375,24 @@ func (a *App) SaveTemplate(name string, files []filepush.Source) (FilesView, err
 	return v, nil
 }
 
+// DeleteTemplate removes a template and its folder in
+// Documentos\Aula\plantillas (nota de interfaz 16). The frontend asked first.
+// What was sent with it before stays in «Archivos enviados».
+func (a *App) DeleteTemplate(name string) (FilesView, error) {
+	t := a.templates()
+	if t.Dir == "" {
+		return FilesView{}, codedf(codeTemplateInvalid, "no se encontró la carpeta Documentos")
+	}
+	if err := t.Delete(name); err != nil {
+		a.log.Warn("template not deleted", "err", err)
+		return FilesView{}, templateError(err)
+	}
+	a.log.Info("template deleted")
+	v := a.Files()
+	a.emit(EventFiles, v)
+	return v, nil
+}
+
 // OpenTemplates shows a template's folder in Explorer, or the folder of all
 // templates when name is empty (created if missing).
 func (a *App) OpenTemplates(name string) error {
@@ -479,6 +497,8 @@ func templateError(err error) error {
 		return codedf(codeTemplateExists, "ya hay una plantilla con ese nombre")
 	case errors.Is(err, filepush.ErrTemplateMissing):
 		return codedf(codeTemplateGone, "esa plantilla ya no está en la carpeta de plantillas")
+	case errors.Is(err, filepush.ErrTemplateNotDeleted):
+		return codedf(codeTemplateNotDeleted, "no se pudo eliminar la plantilla: %w", err)
 	case errors.Is(err, filepush.ErrInvalidPath), errors.Is(err, filepush.ErrNoFiles):
 		return codedf(codeTemplateInvalid, "el nombre de la plantilla o sus archivos no son válidos")
 	}

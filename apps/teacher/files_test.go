@@ -200,6 +200,39 @@ func TestTemplatesSaveListSendOpen(t *testing.T) {
 	if err := h.app.OpenTemplates("../.."); errorCode(err) != codeTemplateGone && errorCode(err) != codeTemplateInvalid {
 		t.Fatalf("open outside = %v", err)
 	}
+
+	// Delete (nota de interfaz 16): only the template's folder; what was sent stays in the history.
+	outside := filepath.Join(docs, "Aula", "no-tocar.txt")
+	if err := os.WriteFile(outside, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, bad := range []string{"../..", "..", "", "a/b", `..\Aula`} {
+		if _, err := h.app.DeleteTemplate(bad); errorCode(err) != codeTemplateInvalid && errorCode(err) != codeTemplateGone {
+			t.Errorf("delete %q = %v", bad, err)
+		}
+	}
+	if _, err := h.app.DeleteTemplate("No existe"); errorCode(err) != codeTemplateGone {
+		t.Errorf("delete missing = %v", err)
+	}
+	v, err = h.app.DeleteTemplate("Ejercicio 4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(v.Templates) != 0 {
+		t.Fatalf("templates after delete = %+v", v.Templates)
+	}
+	if _, err := os.Stat(filepath.Join(docs, "Aula", "plantillas", "Ejercicio 4")); !os.IsNotExist(err) {
+		t.Fatalf("template folder still there: %v", err)
+	}
+	if _, err := os.Stat(outside); err != nil {
+		t.Fatalf("a file outside the templates was touched: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(docs, "Aula", "plantillas")); err != nil {
+		t.Fatalf("the templates folder itself was removed: %v", err)
+	}
+	if s := h.app.Files().Sends; len(s) != 1 {
+		t.Fatalf("history after delete = %+v", s)
+	}
 }
 
 // Closing the class stops what is being sent: the students that did not

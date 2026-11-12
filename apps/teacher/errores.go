@@ -78,6 +78,7 @@ const (
 	codeTemplateExists       = "templateExists"
 	codeTemplateInvalid      = "templateInvalid"
 	codeTemplateGone         = "templateGone"
+	codeTemplateNotDeleted   = "templateNotDeleted"
 	codeCollectActivity      = "collectActivity"
 	codeCollectFolder        = "collectFolder"
 	codeCollectGone          = "collectGone"
@@ -106,7 +107,7 @@ var errorCodes = []string{
 	codeInvalidTimer, codeNoTimerTargets, codeTimerGone, codeTimerTooLong,
 	codeInvalidPoll, codeNoPollTargets, codePollGone, codePollNotShareable,
 	codePushNoFiles, codePushTooLarge, codePushPathInvalid, codePushFileGone, codePushUnsupported,
-	codeTemplateExists, codeTemplateInvalid, codeTemplateGone,
+	codeTemplateExists, codeTemplateInvalid, codeTemplateGone, codeTemplateNotDeleted,
 	codeCollectActivity, codeCollectFolder, codeCollectGone, codeCollectNoStudents, codeCollectNothing,
 	codeInvalidURL, codeNoOpenTargets, codeOpenAppGone, codeAllowedAppInvalid, codeAllowedAppsNotSaved,
 	codePresentUnsupported, codePresentFailed,
@@ -183,6 +184,7 @@ var errorHelp = map[string]string{
 	codeTemplateExists:       "archivos#plantillas-de-ejercicio",
 	codeTemplateInvalid:      "archivos#plantillas-de-ejercicio",
 	codeTemplateGone:         "archivos#plantillas-de-ejercicio",
+	codeTemplateNotDeleted:   "archivos#plantillas-de-ejercicio",
 	codeCollectActivity:      "archivos#recolecciones",
 	codeCollectFolder:        "archivos#dónde-queda-lo-recogido",
 	codeCollectGone:          "archivos#recolecciones",

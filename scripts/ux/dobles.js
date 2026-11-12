@@ -542,6 +542,10 @@
       ? new Error("aula:templateExists: ya hay una plantilla con ese nombre")
       : (filesView.templates.push({ name, size: 0, problem: "", files: files.map((x) => tplArchivo(x.rel, 1000)) }), filesView))),
     OpenTemplates: call("OpenTemplates", null),
+    DeleteTemplate: call("DeleteTemplate", (name) => {
+      filesView.templates = filesView.templates.filter((t) => t.name !== name);
+      return JSON.parse(JSON.stringify(filesView));
+    }),
     Collections: call("Collections", collectionsView),
     OpenCollection: call("OpenCollection", (r) => {
       if (!r.activity.trim() || /[\\/:*?"<>|]/.test(r.activity)) return new Error("aula:collectActivity: el nombre de la actividad no sirve como carpeta");

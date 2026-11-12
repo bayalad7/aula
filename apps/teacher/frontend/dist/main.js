@@ -31,7 +31,9 @@
     for (const e of $$("[data-t]", root)) e.textContent = T(e.dataset.t);
     for (const [attr, name] of [["tAriaLabel", "aria-label"], ["tTitle", "title"], ["tPlaceholder", "placeholder"], ["tEtiqueta", "data-etiqueta"],
       // El tooltip del sistema de diseño: la barra de acciones, cuando solo se ven iconos.
-      ["tTip", "data-tip"], ["tTip", "aria-label"]]) {
+      ["tTip", "data-tip"], ["tTip", "aria-label"],
+      // Tooltip que explica un botón con texto: no cambia su nombre, lo describe.
+      ["tAyuda", "data-tip"], ["tAyuda", "aria-description"]]) {
       const sel = "[data-" + attr.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()) + "]";
       for (const e of $$(sel, root)) e.setAttribute(name, T(e.dataset[attr]));
     }
@@ -1481,7 +1483,29 @@
       g.replaceChildren(el("span", "", T(base + ".texto")), a);
       g.hidden = false;
       b.setAttribute("aria-expanded", "true");
+      colocarGlobo(b, g);
     });
+  }
+  // El globo flota encima de su «i» (nota de interfaz 15); abajo si arriba no cabe dentro de lo que
+  // lo recorta (un panel, un diálogo o la ventana), y corrido a un lado si se saldría por ahí.
+  function colocarGlobo(b, g) {
+    g.classList.remove("info-globo--abajo");
+    g.style.setProperty("--globo-dx", "0px");
+    g.style.setProperty("--globo-x", (b.offsetLeft + b.offsetWidth / 2) + "px");
+    let caja = { top: 0, left: 0, right: window.innerWidth };
+    for (let p = g.parentElement; p; p = p.parentElement) {
+      const o = getComputedStyle(p);
+      if (/(auto|scroll|hidden)/.test(o.overflowY + o.overflowX) || p.tagName === "DIALOG") { caja = p.getBoundingClientRect(); break; }
+    }
+    const margen = 8;
+    let r = g.getBoundingClientRect();
+    if (r.top < Math.max(caja.top, 0) + margen) {
+      g.classList.add("info-globo--abajo");
+      r = g.getBoundingClientRect();
+    }
+    const izq = Math.max(caja.left, 0) + margen, der = Math.min(caja.right, window.innerWidth) - margen;
+    const dx = r.left < izq ? izq - r.left : r.right > der ? der - r.right : 0;
+    g.style.setProperty("--globo-dx", dx + "px");
   }
   function cerrarInfos() {
     for (const b of $$("[data-info]")) {
@@ -2225,7 +2249,7 @@
 
   function pintarDestinoCodigo() {
     const n = seleccion.size;
-    $("codigo-destino-todos").textContent = T("destino.todos", { n: conectados().length });
+    $("codigo-destino-todos").textContent = T("codigo.destinoTodos", { n: conectados().length });
     $("codigo-destino-seleccion").textContent = n ? P("codigo.destinoSeleccion", n) : T("codigo.destinoSinSeleccion");
     const radio = $("codigo-destino-seleccion-radio");
     radio.disabled = n === 0;
@@ -2440,6 +2464,15 @@
       abrir.querySelector("span").textContent = T("archivos.abrirCarpeta");
       abrir.setAttribute("aria-label", T("archivos.abrirCarpetaDe", { nombre: t.name }));
       abrir.addEventListener("click", () => api.OpenTemplates(t.name).catch(fallo));
+      // Eliminar (nota de interfaz 16): con confirmación; lo ya enviado no cambia.
+      const eliminar = tr.querySelector(".eliminar");
+      eliminar.setAttribute("aria-label", T("archivos.eliminarDe", { nombre: t.name }));
+      eliminar.dataset.tip = T("archivos.eliminar");
+      eliminar.addEventListener("click", () => {
+        confirmar({ titulo: T("archivos.eliminarTitulo", { nombre: t.name }), texto: T("archivos.eliminarTexto"),
+          consecuencia: T("archivos.eliminarConsecuencia"), si: T("archivos.eliminarSi"), peligro: true })
+          .then((si) => { if (si) api.DeleteTemplate(t.name).then(pintarArchivos, fallo); });
+      });
       return tr;
     }));
   }

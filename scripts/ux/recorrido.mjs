@@ -325,6 +325,15 @@ await f("155-dialogo-privado-oscuro", "lab", { oscuro: true, pasos: seq(grande, 
 await f("156-panel-pantalla-seleccion-completa", "lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12")),
   click('[data-panel="pantalla"]'), click('input[name="pantalla-modo"][value="fullscreen"]')) });
 await f("157-panel-pantalla-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: click('[data-panel="pantalla"]') });
+// Notas de interfaz 14-16: el pie de envío en una fila con su tooltip; la «i» abre un globo flotante
+// encima; eliminar una plantilla pide confirmación.
+const pieEnvio = async (p) => { await p.evaluate(() => document.querySelector(".pie-envio").scrollIntoView({ block: "center" })); };
+await f("158-codigo-pie-envio", "datos", { ruta: "codigo", pasos: seq(pieEnvio, async (p) => { await p.focus("#codigo-limpiar"); await p.keyboard.press("Tab"); await sleep(150); }) });
+await f("159-codigo-pie-envio-oscuro-900x600", "datos", { ruta: "codigo", oscuro: true, w: 900, h: 600, pasos: pieEnvio });
+await f("160-ficha-info-globo", "lab", { pasos: seq(click(`${fila("LAB3-PC07")} .ficha`), click('#panel-alumno [data-info="capacidades"]')) });
+await f("161-ficha-info-globo-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600,
+  pasos: seq(click(`${fila("LAB3-PC07")} .ficha`), click('#panel-alumno [data-info="capacidades"]')) });
+await f("162-plantilla-eliminar", "lab-archivos", { ruta: "archivos", pasos: click("#plantillas-filas tr:first-child .eliminar") });
 
 await cerrar();
 let graves = 0;

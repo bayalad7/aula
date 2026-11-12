@@ -48,6 +48,9 @@ type Ready struct {
 	Input     bool `json:"input"`     // keyboard and mouse injection, for remote control
 	Files     bool `json:"files"`     // the student's work folder, for file.push
 	Open      bool `json:"open"`      // open a page or an app in the session, for open.*
+	// Present: monitor capture, an H.264 encoder and windows that can be
+	// excluded from the capture, for student.present.* (§5.24).
+	Present bool `json:"present"`
 }
 
 // Binding is a call of the window (View, Copy…) forwarded to the agent.

@@ -64,6 +64,7 @@ type monitorInfoApp struct {
 type winAppWindow struct {
 	mu    sync.Mutex
 	saved *windowPlacement // placement before Compact(true)
+	held  *held            // what Hold found; nil when not held
 }
 
 func newAppWindow() (AppWindow, error) {

@@ -15,7 +15,26 @@ type AppWindow interface {
 	// the work area of its monitor, without activating it nor keeping it on
 	// top. With on false it puts the remembered placement back.
 	Compact(on bool, width, height int) error
+	// Hold keeps the window up while the teacher broadcasts to it
+	// (docs/privacidad.md rule 12). HoldWindow keeps it above the other
+	// windows, movable and resizable, without minimize nor close;
+	// HoldFullscreen makes it cover its monitor, borderless, above
+	// everything, without minimize nor close. A minimized window is restored
+	// right away. The first Hold remembers the placement, styles and z-order;
+	// a later Hold changes the mode from there.
+	Hold(mode HoldMode) error
+	// Release puts back what the first Hold remembered, exactly. Idempotent.
+	Release() error
 }
+
+// HoldMode is how AppWindow.Hold keeps the window up.
+type HoldMode int
+
+// Hold modes.
+const (
+	HoldWindow HoldMode = iota + 1
+	HoldFullscreen
+)
 
 // NewAppWindow returns the main window of this process, or ErrNotSupported.
 // Call it once the window exists.

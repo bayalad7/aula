@@ -570,3 +570,45 @@ func TestTemplates(t *testing.T) {
 func slogTo(w *bytes.Buffer) *slog.Logger {
 	return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: slog.LevelDebug}))
 }
+
+// TestTemplateDeleteStaysInside: Delete removes only a template folder right
+// under Dir; a link in its place is not followed and its target is kept.
+func TestTemplateDeleteStaysInside(t *testing.T) {
+	dir := t.TempDir()
+	tpl := Templates{Dir: filepath.Join(dir, "plantillas")}
+	src := filepath.Join(dir, "main.py")
+	if err := os.WriteFile(src, []byte("print(1)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := tpl.Save("Ejercicio 4", []Source{{Path: src, Rel: "main.py"}}); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(dir, "fuera")
+	if err := os.MkdirAll(outside, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(tpl.Dir, "Enlace")); err == nil {
+		if err := tpl.Delete("Enlace"); !errors.Is(err, ErrTemplateMissing) {
+			t.Fatalf("delete a link = %v", err)
+		}
+		if _, err := os.Stat(outside); err != nil {
+			t.Fatal("the link's target was removed")
+		}
+	} else {
+		t.Logf("no symlink here (%v); only the folder case runs", err)
+	}
+	for _, bad := range []string{"..", "../fuera", ""} {
+		if err := tpl.Delete(bad); err == nil {
+			t.Fatalf("delete %q accepted", bad)
+		}
+	}
+	if err := tpl.Delete("Ejercicio 4"); err != nil {
+		t.Fatal(err)
+	}
+	if l, _ := tpl.List(); len(l) != 0 {
+		t.Fatalf("templates after delete: %+v", l)
+	}
+	if err := tpl.Delete("Ejercicio 4"); !errors.Is(err, ErrTemplateMissing) {
+		t.Fatalf("second delete = %v", err)
+	}
+}

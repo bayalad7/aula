@@ -20,6 +20,9 @@ const TemplatesFolder = "plantillas"
 var (
 	ErrTemplateExists  = errors.New("filepush: a template with that name exists")
 	ErrTemplateMissing = errors.New("filepush: no such template")
+	// ErrTemplateNotDeleted: the system refused (a file open in another
+	// program, no permission); what could be removed is gone.
+	ErrTemplateNotDeleted = errors.New("filepush: the template could not be deleted")
 )
 
 // Templates are the reusable exercise templates: one folder per template
@@ -165,6 +168,31 @@ func (t Templates) Path(name string) (string, error) {
 		return "", fmt.Errorf("%w: %s", ErrTemplateMissing, name)
 	}
 	return p, nil
+}
+
+// Delete removes template name: its folder, directly under Dir, with what is
+// inside. Nothing outside Dir is touched: the name must pass CheckName, and a
+// link or a junction in its place is not a template (it is never followed).
+// What was already sent to the students does not change.
+func (t Templates) Delete(name string) error {
+	if err := CheckName(name); err != nil {
+		return err
+	}
+	if t.Dir == "" {
+		return fmt.Errorf("%w: %s", ErrTemplateMissing, name)
+	}
+	p := filepath.Join(t.Dir, name)
+	if filepath.Dir(p) != filepath.Clean(t.Dir) {
+		return fmt.Errorf("%w: %s", ErrInvalidPath, name)
+	}
+	info, err := os.Lstat(p)
+	if err != nil || !info.IsDir() {
+		return fmt.Errorf("%w: %s", ErrTemplateMissing, name)
+	}
+	if err := os.RemoveAll(p); err != nil {
+		return fmt.Errorf("%w: %v", ErrTemplateNotDeleted, err)
+	}
+	return nil
 }
 
 // Save makes template name from the files of a push. It never replaces a

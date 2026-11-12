@@ -42,6 +42,9 @@ type classHooks struct {
 	onPolicyAck func(sessionID string, p protocol.Payload)
 	// onPower receives power.ack and the errors (which may answer an order).
 	onPower func(sessionID string, env protocol.Envelope)
+	// onPause receives screen.freeze.ack and the errors (which may answer a
+	// screen.freeze or screen.unfreeze). Real students only (§5.9).
+	onPause func(sessionID string, env protocol.Envelope)
 	// onRemote receives remote.ack and the errors (which may answer a
 	// remote.start).
 	onRemote func(sessionID string, env protocol.Envelope)
@@ -342,6 +345,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if hooks.onPower != nil {
 					hooks.onPower(conn.ID(), env)
 				}
+			case protocol.ScreenFreezeAck:
+				if hooks.onPause != nil {
+					hooks.onPause(conn.ID(), env)
+				}
 			case protocol.RemoteAck:
 				if hooks.onRemote != nil {
 					hooks.onRemote(conn.ID(), env)
@@ -381,6 +388,9 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 				if p, isErr := env.Payload.(protocol.ErrorPayload); isErr {
 					if hooks.onPower != nil {
 						hooks.onPower(conn.ID(), env)
+					}
+					if hooks.onPause != nil {
+						hooks.onPause(conn.ID(), env)
 					}
 					if hooks.onRemote != nil {
 						hooks.onRemote(conn.ID(), env)

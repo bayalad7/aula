@@ -83,6 +83,13 @@
         <button type="button" class="btn btn--sm btn--sobre-color" id="f-control-ver" data-t="control.ver" data-icono="ojo"></button>
         <button type="button" class="btn btn--sm btn--sobre-color" id="f-control-soltar" data-t="control.soltar" data-icono="detener"></button>
       </p>
+      <!-- Pantallas en pausa (prompt 10.21): sigue activa mientras la clase corre. -->
+      <p class="franja franja--pausa" id="f-pausa" role="status" hidden>
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pausa"/></svg>
+        <span class="franja__texto"><span id="f-pausa-texto"></span> <span class="franja__nota" id="f-pausa-nota"></span></span>
+        <button type="button" class="btn btn--sm btn--sobre-color" id="f-pausa-mensaje" aria-haspopup="dialog" aria-controls="dlg-pausa" data-t="pausa.cambiarMensaje" data-icono="editar"></button>
+        <button type="button" class="btn btn--sm btn--sobre-color" id="f-pausa-reanudar" data-t="pausa.reanudarTodo" data-icono="reanudar"></button>
+      </p>
       <p class="franja franja--energia" id="f-energia" role="status" hidden>
         <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg>
         <span class="franja__texto" id="f-energia-texto"></span>
@@ -166,6 +173,7 @@
                 <span class="barra-acciones__seleccion" id="seleccion-texto" aria-live="polite"></span>
                 <button type="button" class="btn" data-panel="pantalla" aria-expanded="false" data-t-tip="panel.pantalla"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg><span class="btn__texto" data-t="panel.pantalla"></span></button>
                 <button type="button" class="btn" data-panel="aviso" aria-expanded="false" data-t-tip="panel.aviso"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#aviso"/></svg><span class="btn__texto" data-t="panel.aviso"></span></button>
+                <button type="button" class="btn" data-panel="pausa" aria-expanded="false" data-t-tip="panel.pausaTip"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pausa"/></svg><span class="btn__texto" data-t="panel.pausa"></span></button>
                 <button type="button" class="btn" data-panel="restricciones" aria-expanded="false" data-t-tip="panel.restricciones"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg><span class="btn__texto" data-t="panel.restricciones"></span></button>
                 <button type="button" class="btn" data-panel="energia" aria-expanded="false" data-t-tip="panel.energia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg><span class="btn__texto" data-t="panel.energia"></span></button>
                 <button type="button" class="btn" data-panel="captura" aria-expanded="false" data-t-tip="panel.captura"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#captura"/></svg><span class="btn__texto" data-t="panel.captura"></span></button>
@@ -646,6 +654,29 @@
           </div>
         </aside>
 
+        <!-- Pausar pantallas (prompt 10.21): a la selección o a todos, con un mensaje opcional. -->
+        <aside class="panel-lateral" id="panel-pausa" hidden aria-labelledby="h-panel-pausa">
+          <div class="panel-lateral__cabecera">
+            <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pausa"/></svg>
+            <h2 id="h-panel-pausa" tabindex="-1" data-t="panel.pausaTitulo"></h2>
+            <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-panel data-t-aria-label="panel.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
+          </div>
+          <div class="panel-lateral__cuerpo">
+            <p data-destino-hosts></p>
+            <p class="aviso-en-linea" id="pausa-sin-soporte" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="pausa-sin-soporte-texto"></span></p>
+            <p class="pequeno suave" data-t="pausa.explica"></p>
+            <label class="campo"><span class="campo__etiqueta" data-t="pausa.mensaje"></span>
+              <textarea id="pausa-texto" rows="3" maxlength="300" data-t-placeholder="pausa.ejemplo" aria-describedby="pausa-ayuda pausa-error" data-icono="aviso"></textarea>
+              <span class="campo__ayuda" id="pausa-ayuda"></span>
+              <span class="campo__error" id="pausa-error" hidden></span></label>
+            <p class="pequeno suave" data-t="pausa.atajo"></p>
+          </div>
+          <div class="panel-lateral__pie">
+            <button type="button" class="btn btn--fantasma" id="pausa-reanudar" data-icono="reanudar" hidden><span id="pausa-reanudar-texto"></span></button>
+            <button type="button" class="btn btn--primario" id="pausa-aplicar" data-icono="pausa"><span id="pausa-aplicar-texto"></span></button>
+          </div>
+        </aside>
+
         <aside class="panel-lateral" id="panel-restricciones" hidden aria-labelledby="h-panel-restricciones">
           <div class="panel-lateral__cabecera">
             <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#candado"/></svg>
@@ -928,6 +959,24 @@
           <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
             <button type="button" class="btn" id="pg-privado-cancelar" data-t="comun.cancelar" data-icono="cerrar"></button>
             <button type="submit" class="btn btn--primario" id="pg-privado-enviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="privado.enviar"></span></button>
+          </div>
+        </form>
+    </div>
+  </dialog>
+
+  <!-- Cambiar el mensaje de la pausa (prompt 10.21), desde la franja: en su propio diálogo. -->
+  <dialog class="dialogo dialogo--form" id="dlg-pausa" aria-labelledby="dlg-pausa-titulo">
+    <div class="dialogo__cuerpo pila">
+      <div class="dialogo__titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pausa"/></svg><h2 id="dlg-pausa-titulo" class="crece" data-t="pausa.cambiarTitulo"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+        <form id="dlg-pausa-form" class="pila">
+          <label class="campo"><span class="campo__etiqueta" data-t="pausa.mensaje"></span>
+            <textarea id="dlg-pausa-texto" rows="3" maxlength="300" data-t-placeholder="pausa.ejemplo" aria-describedby="dlg-pausa-ayuda dlg-pausa-error" data-icono="aviso"></textarea>
+            <span class="campo__ayuda" id="dlg-pausa-ayuda"></span>
+            <span class="campo__error" id="dlg-pausa-error" role="alert" hidden></span></label>
+          <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+            <button type="button" class="btn" id="dlg-pausa-cancelar" data-t="comun.cancelar" data-icono="cerrar"></button>
+            <button type="submit" class="btn btn--primario" id="dlg-pausa-cambiar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#editar"/></svg><span data-t="pausa.cambiar"></span></button>
           </div>
         </form>
     </div>

@@ -82,14 +82,15 @@ type App struct {
 	proj      *broadcast.Projector
 	presClass classroom // the class the presentation goes to; guarded by mu
 
-	restr *policy.ClassPolicy  // class restrictions: who has what (D-017)
-	power *power.Tracker       // power orders and each agent's answer (§5.15)
-	opens *openapp.Tracker     // pages and apps opened, and each agent's answer (§5.22)
-	desk  *remote.Desk         // remote control: one computer at a time (§5.16)
-	snaps *snapshot.Store      // screenshots of students, in memory until saved (§5.17)
-	board *participation.Board // raised hands and students' messages, in memory (§5.18)
-	timer *classtimer.Class    // the exercise timer of the class (§5.19)
-	polls *poll.Class          // the live polls of the class (§5.23)
+	restr  *policy.ClassPolicy  // class restrictions: who has what (D-017)
+	power  *power.Tracker       // power orders and each agent's answer (§5.15)
+	pauses *screen.Pauses       // paused screens and each agent's answer (§5.9)
+	opens  *openapp.Tracker     // pages and apps opened, and each agent's answer (§5.22)
+	desk   *remote.Desk         // remote control: one computer at a time (§5.16)
+	snaps  *snapshot.Store      // screenshots of students, in memory until saved (§5.17)
+	board  *participation.Board // raised hands and students' messages, in memory (§5.18)
+	timer  *classtimer.Class    // the exercise timer of the class (§5.19)
+	polls  *poll.Class          // the live polls of the class (§5.23)
 	// files and pusher send the teacher's files (§5.20); chooseFiles opens
 	// the system dialog (replaced in tests: never a window on the desktop).
 	files       fileState
@@ -133,6 +134,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.broadcastUDPPort = a.port + 1
 	a.restr = policy.NewClassPolicy()
 	a.power = &power.Tracker{Now: func() time.Time { return a.now() }}
+	a.pauses = &screen.Pauses{}
 	a.opens = &openapp.Tracker{}
 	a.desk = &remote.Desk{Now: func() time.Time { return a.now() }}
 	a.snaps = &snapshot.Store{Now: func() time.Time { return a.now() }, Logger: log,
@@ -241,7 +243,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	}
 	class, info, err := a.start(ctx, classConfig{Channel: channel, ConsoleName: consoleName, Dir: a.dir,
 		SiteKeyDir: a.siteKeyDir, Port: a.port}, classHooks{onAck: a.onAck, onChange: a.onChange, onFrame: a.onFrame,
-		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage,
+		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage, onPause: a.onPauseMessage,
 		onRemote: a.onRemoteMessage, onSnapshot: a.onSnapshotMessage, onClassroom: a.onClassroomMessage,
 		onTimer: a.onTimerAck, onPoll: a.onPollMessage, onFile: a.onFileMessage, onOpen: a.onOpenMessage, onError: a.onAgentError}, a.log)
 	if err != nil {
@@ -252,8 +254,9 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	// they survive a change of channel or name (docs/ux/historial/consola-analisis.md, C2).
 	a.class, a.info, a.startErr = class, info, ""
 	a.mu.Unlock()
-	a.power.Reset() // orders of another class are not followed
-	a.opens.Clear() // nor its openings
+	a.power.Reset()  // orders of another class are not followed
+	a.pauses.Reset() // nor its pauses
+	a.opens.Clear()  // nor its openings
 	a.emit(EventOpens, a.OpenOrders())
 	a.resetTimer() // nor its timer
 	a.resetPolls() // nor its polls
@@ -315,6 +318,7 @@ func (a *App) View() View {
 	if a.class != nil {
 		v.Timer = a.timer.Snapshot(a.class.Sessions(), simSessionsOf(a.class))
 		v.Polls = a.polls.Snapshot(a.class.Sessions(), simSessionsOf(a.class))
+		v.Pauses = a.pauses.Summary()
 	} else {
 		v.Timer = a.timer.Snapshot(nil, nil)
 		v.Polls = a.polls.Snapshot(nil, nil)
@@ -620,6 +624,7 @@ func (a *App) onChange() {
 	a.syncTimer(class)                                        // and the timer, with what is left
 	a.syncPolls(class)                                        // and the open poll, or how it ended
 	a.syncCollections(class)                                  // and the folders of the open collections
+	a.syncPauses(class)                                       // who left is not paused any more (rule 10)
 }
 
 // onFrame forwards a thumbnail of the stream in force to the screens view.
@@ -669,6 +674,7 @@ func studentsOf(list []session.Session) Students {
 			CanFiles: s.Can(protocol.CapFilePush), CanCollect: s.Can(protocol.CapFileCollect),
 			CanOpenURL: s.Can(protocol.CapOpenURL), CanOpenApp: s.Can(protocol.CapOpenApp),
 			CanPresent: s.Can(protocol.CapScreenPresent), CanPresentView: s.Can(protocol.CapScreenPresentView),
+			CanPause: s.Can(protocol.CapScreenFreeze),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))
@@ -702,6 +708,9 @@ func studentsOf(list []session.Session) Students {
 			}
 			if st.CanPower {
 				out.CanPower++
+			}
+			if st.CanPause {
+				out.CanPause++
 			}
 			if st.CanSnapshot {
 				out.CanSnapshot++

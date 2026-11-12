@@ -142,6 +142,7 @@ func (a *App) studentsIn(class classroom) Students {
 	st.CanTimer += sims.CanTimer
 	st.CanCollect += sims.CanCollect // they hand in their last code (§5.21)
 	a.markParticipation(st.Students)
+	a.markPauses(st.Students)
 	present := map[string]bool{}
 	for i := range st.Students {
 		s := &st.Students[i]

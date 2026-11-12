@@ -3,6 +3,7 @@
 "use strict";
 window.AulaEvents = Object.freeze({
   STUDENTS: "aula:students",
+  PAUSES: "aula:pauses",
   HISTORY: "aula:history",
   DELIVERIES: "aula:deliveries",
   CAPTURE: "aula:capture",

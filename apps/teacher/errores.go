@@ -37,6 +37,8 @@ const (
 	codeBroadcastFailed      = "broadcastFailed"
 	codeInvalidPower         = "invalidPower"
 	codeNoPowerTargets       = "noPowerTargets"
+	codeNoPauseTargets       = "noPauseTargets"
+	codeInvalidPauseMessage  = "invalidPauseMessage"
 	codeInvalidRestriction   = "invalidRestriction"
 	codeInvalidApp           = "invalidApp"
 	codeInvalidDomain        = "invalidDomain"
@@ -99,7 +101,7 @@ var errorCodes = []string{
 	codeInvalidName, codeInvalidMode, codeEmptyCode, codeTitleTooLong, codeCodeTooLarge, codeInvalidNotice,
 	codeUnknownLanguage, codeSnippetGone, codeDeliveryGone, codeClipboardUnavailable, codeClipboardEmpty,
 	codeClipboardTooLarge, codeNoH264, codeHideConsole, codeAlreadyBroadcasting, codeBroadcastFailed,
-	codeInvalidPower, codeNoPowerTargets, codeInvalidRestriction, codeInvalidApp, codeInvalidDomain,
+	codeInvalidPower, codeNoPowerTargets, codeNoPauseTargets, codeInvalidPauseMessage, codeInvalidRestriction, codeInvalidApp, codeInvalidDomain,
 	codeSimUnavailable, codeSimClosed, codeSimFull, codeSimCapability, codeSimGone, codeSimFault, codeSimFailed, codeManualFailed,
 	codeCheckRunning, codeAlreadyControlling, codeRemoteUnsupported, codeRemoteGone,
 	codeSnapshotUnsupported, codeSnapshotTooMany, codeSnapshotGone, codeSnapshotSaveFailed, codeSnapshotFolder,
@@ -143,6 +145,8 @@ var errorHelp = map[string]string{
 	codePresentFailed:        "solucion-de-problemas#no-se-puede-proyectar-a-un-alumno",
 	codeInvalidPower:         "tareas-frecuentes#apagar-o-reiniciar-los-equipos",
 	codeNoPowerTargets:       "tareas-frecuentes#apagar-o-reiniciar-los-equipos",
+	codeNoPauseTargets:       "tareas-frecuentes#pausar-las-pantallas",
+	codeInvalidPauseMessage:  "tareas-frecuentes#pausar-las-pantallas",
 	codeInvalidRestriction:   "tareas-frecuentes#bloquear-aplicaciones-o-sitios",
 	codeInvalidApp:           "tareas-frecuentes#bloquear-aplicaciones-o-sitios",
 	codeInvalidDomain:        "tareas-frecuentes#bloquear-aplicaciones-o-sitios",

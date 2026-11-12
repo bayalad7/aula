@@ -25,6 +25,10 @@ func (a *App) TakeControl(sessionID string) (remote.Control, error) {
 	if !ok || !s.Can(protocol.CapRemote) {
 		return remote.Control{}, codedf(codeRemoteUnsupported, "el equipo de este alumno no permite el control remoto")
 	}
+	// The teacher wants the real screen: a paused one is resumed first (§5.9).
+	if a.unpauseBefore(class, s) {
+		a.log.Info("pause removed to take control", "session", s.ID)
+	}
 	start, c, err := a.desk.Take(s.ID, s.Hostname)
 	if errors.Is(err, remote.ErrBusy) {
 		return c, codedf(codeAlreadyControlling, "ya controlas %s: suéltalo antes de ayudar a otro alumno", c.Hostname)

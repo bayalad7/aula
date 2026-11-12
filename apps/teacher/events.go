@@ -8,6 +8,7 @@ import (
 	"github.com/bayalad7/aula/internal/poll"
 	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/remote"
+	"github.com/bayalad7/aula/internal/screen"
 	"github.com/bayalad7/aula/internal/snapshot"
 )
 
@@ -18,6 +19,9 @@ const (
 	// EventStudents carries Students when an agent joins, leaves, goes silent
 	// or acknowledges code.
 	EventStudents = "aula:students"
+	// EventPauses carries a screen.PauseSummary whenever screens are paused,
+	// resumed, acknowledged or a paused student leaves (docs/protocol.md §5.9).
+	EventPauses = "aula:pauses"
 	// EventHistory carries History after every code emission.
 	EventHistory = "aula:history"
 	// EventDeliveries carries Deliveries when something is sent or acked.
@@ -126,6 +130,12 @@ type Student struct {
 	CanPresent   bool     `json:"canPresent"`   // screen.present (Windows agents; never simulated students)
 	// CanPresentView: screen.present.view, it can be shown a classmate's screen.
 	CanPresentView bool `json:"canPresentView"`
+	CanPause       bool `json:"canPause"` // screen.freeze (Windows agents; never simulated students)
+	// Pause is this student's pause (screen.Pause*: sent, paused, resuming,
+	// failed; "" without one) and PauseUnacked whether the agent has not
+	// answered within screen.AckWait.
+	Pause        string `json:"pause"`
+	PauseUnacked bool   `json:"pauseUnacked"`
 	// Hand is this student's place in the line of raised hands (0: down);
 	// NewMessages, their messages not answered yet. The badge in Notas.
 	Hand        int `json:"hand"`
@@ -173,6 +183,8 @@ type Students struct {
 	// students never have them (they change the computer, §5.22).
 	CanOpenURL int `json:"canOpenUrl"`
 	CanOpenApp int `json:"canOpenApp"`
+	// CanPause counts connected agents with screen.freeze (never simulated).
+	CanPause int `json:"canPause"`
 	// Connected counts real students only; Simulated counts the connected
 	// simulated ones. CanCode, CanNotice and CanThumb include both.
 	Simulated int `json:"simulated"`
@@ -266,6 +278,8 @@ type View struct {
 	Timer classtimer.Snapshot `json:"timer"`
 	// Polls are the live polls of the class (§5.23).
 	Polls poll.View `json:"polls"`
+	// Pauses are the paused screens of the class (§5.9).
+	Pauses screen.PauseSummary `json:"pauses"`
 }
 
 // Snapshots is the list of screenshots in memory, oldest request first.

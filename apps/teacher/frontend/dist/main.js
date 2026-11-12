@@ -343,6 +343,7 @@
     pintarParticipacion(v.participation || participacion);
     pintarTemporizador(v.timer || temporizador);
     if (v.polls) pintarEncuestas(v.polls);
+    pintarPausas(v.pauses);
     pintarHistorial(v.history);
     pintarEnvios(v.deliveries);
     api.Setup().then((s) => { setup = s; });
@@ -367,6 +368,9 @@
     if (s.lastError) n.push(insignia("error", "error", T("alumnos.noPudo", { r: errorAlumno(s.lastError.code).titulo })));
     if (s.appsActive || s.webActive) n.push(insignia("advertencia", "candado", T("alumnos.conRestricciones")));
     if (s.power) n.push(insigniaEnergia(s.power));
+    if (s.pause === "paused") n.push(insignia("info", "pausa", T("alumnos.enPausa")));
+    else if (s.pause === "sent") n.push(insignia("advertencia", "pendiente", T(s.pauseUnacked ? "alumnos.pausaSinAcusar" : "alumnos.pausando")));
+    else if (s.pause === "failed") n.push(insignia("error", "error", T("alumnos.pausaNoSePudo")));
     if (!s.canCode) n.push(insignia("", "info", s.username ? T("alumnos.noRecibeCodigo") : T("alumnos.sinSesion")));
     else if (!s.canThumb && !s.simulated) n.push(insignia("", "info", T("alumnos.noComparte")));
     return n;
@@ -444,6 +448,7 @@
     pintarMiniaturas();
     pintarSeleccion();
     pintarEnergia();
+    if (panel === "pausa") pintarPanelPausa();
     if (!$("panel-restricciones").hidden) pintarPanelRestricciones();
     pintarDestinoCodigo();
     actualizarAccionesCodigo();
@@ -496,7 +501,7 @@
       ["canHand", "ficha.mano", "mano"], ["canMessage", "ficha.mensajes", "mensaje"], ["canTimer", "ficha.temporizador", "reloj"], ["canPoll", "ficha.encuestas", "encuesta"],
       ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"],
       ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"],
-      ["canPresent", "ficha.proyectar", "transmitir"], ["canPresentView", "ficha.verCompanero", "ojo"]];
+      ["canPresent", "ficha.proyectar", "transmitir"], ["canPresentView", "ficha.verCompanero", "ojo"], ["canPause", "ficha.pausa", "pausa"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
       const si = !!s[c];
       const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
@@ -544,6 +549,12 @@
       texto: (s) => T(proyectandoA(s) ? "proyectar.detener" : "proyectar.boton"),
       visible: (s) => !s.simulated && s.state === "connected" && s.canPresent,
       hacer: (s, b) => (proyectandoA(s) ? detenerProyeccion() : proyectar(s, b)) },
+    // Pausar su pantalla (prompt 10.21): solo reales; cambia el equipo (privacidad, reglas 9-10).
+    // No a quien se está mostrando a la clase. En pausa, el mismo botón la quita.
+    { id: "pausa", icono: "pausa", boton: "pg-pausar", nota: "pausa.fichaNota",
+      texto: (s) => T(enPausa(s) ? "pausa.reanudarUno" : "pausa.pausarUno"),
+      visible: (s) => !s.simulated && s.state === "connected" && s.canPause && !proyectandoA(s),
+      hacer: (s, b) => (enPausa(s) ? reanudar([s.hostname]) : pausar([s.hostname], "", b)) },
     // Abrir página o app (prompt 10.11): solo reales; cambia el equipo (privacidad, regla 70).
     { id: "abrir", icono: "externo", boton: "pg-abrir1-abrir", dialogo: "dlg-abrir", nota: "abrir.fichaNota",
       texto: () => T("abrir.boton"),
@@ -1528,6 +1539,7 @@
     if (id === "pantalla") pintarPanelPantalla();
     if (id === "restricciones") pintarPanelRestricciones();
     if (id === "energia") pintarPanelEnergia();
+    if (id === "pausa") pintarPanelPausa();
     if (id === "captura") pintarLote();
     if (id === "temporizador") pintarPanelTemporizador();
     if (id === "encuesta") pintarPanelEncuesta();
@@ -1875,6 +1887,110 @@
   $("f-energia-cancelar").addEventListener("click", () => {
     api.PowerCancel([]).then((r) => toast("info", P("energia.canceladaEn", r.sent)), fallo);
   });
+
+  // --- Pausar pantallas (docs/protocol.md §5.9; privacidad, reglas 9-11) -------------------
+  // Panel de la barra (la selección o todos), la acción de la Pantalla grande para uno, la franja
+  // mientras haya pausa y Ctrl+Mayús+P. Solo equipos reales: los simulados nunca la reciben. El
+  // alumno que se está mostrando a la clase no se pausa (su pantalla es la que ven los demás).
+  let pausas = { paused: 0, unacked: 0, failed: 0, message: "" };
+  const enPausa = (s) => s.pause === "sent" || s.pause === "paused";
+  const objetivoPausa = () => (seleccion.size ? seleccionados() : conectados()).filter((s) => !s.simulated);
+  function pintarPanelPausa() {
+    const objetivo = objetivoPausa();
+    const pueden = objetivo.filter((s) => s.canPause && !proyectandoA(s));
+    const pausados = objetivo.filter(enPausa);
+    $("pausa-aplicar-texto").textContent = P("pausa.pausar", pueden.length);
+    $("pausa-aplicar").disabled = pueden.length === 0;
+    $("pausa-reanudar").hidden = pausados.length === 0;
+    $("pausa-reanudar-texto").textContent = P("pausa.reanudar", pausados.length);
+    $("pausa-sin-soporte").hidden = pueden.length === objetivo.length && pueden.length > 0;
+    $("pausa-sin-soporte-texto").textContent = pueden.length === 0 ? T("pausa.nadiePuede") : P("pausa.algunosNo", objetivo.length - pueden.length);
+    cuentaPausa($("pausa-texto"), $("pausa-ayuda"));
+  }
+  const cuentaPausa = (campo, ayuda) => { ayuda.textContent = T("pausa.cuenta", { n: campo.value.length }); };
+  $("pausa-texto").addEventListener("input", () => { limpiarCampo($("pausa-texto"), $("pausa-error")); cuentaPausa($("pausa-texto"), $("pausa-ayuda")); });
+  // Qué pasó con una pausa: a cuántos llegó y quién se quedó igual.
+  function avisoPausa(r, titulo) {
+    let texto = "";
+    if (r.unsupported.length) texto += T("pausa.noLaSoportan", { lista: r.unsupported.join(", ") }) + " ";
+    if (r.presenting.length) texto += T("pausa.proyectando", { lista: r.presenting.join(", ") }) + " ";
+    if (r.failed.length) texto += T("pausa.noLlego", { lista: r.failed.join(", ") });
+    toast(r.failed.length ? "advertencia" : "exito", titulo, texto.trim() || T("pausa.pausadasTexto"));
+  }
+  function pausar(hosts, mensaje, b, campo, caja) {
+    if (b) ocupado(b, true);
+    return api.PauseScreens({ hosts, message: mensaje }).then((r) => {
+      if (campo) campo.value = "";
+      if (panel === "pausa") cerrarPanel();
+      avisoPausa(r, P("pausa.pausadas", r.sent));
+    }, (err) => {
+      const m = amable(err);
+      if (campo && m.codigo === "invalidPauseMessage") errorEnCampo(campo, caja, m.texto);
+      else fallo(err);
+    }).finally(() => { if (b) ocupado(b, false); });
+  }
+  function reanudar(hosts) {
+    return api.ResumeScreens(hosts).then((r) => toast("info", P("pausa.reanudadas", r.sent), ""), fallo);
+  }
+  $("pausa-aplicar").addEventListener("click", () =>
+    pausar(equiposReales(), $("pausa-texto").value.trim(), $("pausa-aplicar"), $("pausa-texto"), $("pausa-error")));
+  $("pausa-reanudar").addEventListener("click", () => reanudar(equiposReales()).then(() => cerrarPanel()));
+  $("pausa-texto").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("pausa-aplicar").click(); }
+  });
+  function pintarPausas(p) {
+    pausas = p || pausas;
+    const hay = pausas.paused + pausas.failed > 0;
+    $("f-pausa").hidden = !hay;
+    if (hay) {
+      $("f-pausa-texto").textContent = P("pausa.franja", pausas.paused);
+      const nota = [];
+      if (pausas.unacked) nota.push(P("pausa.franjaSinAcusar", pausas.unacked));
+      if (pausas.failed) nota.push(P("pausa.franjaFallo", pausas.failed));
+      if (pausas.message) nota.push(T("pausa.franjaMensaje", { mensaje: pausas.message }));
+      $("f-pausa-nota").textContent = nota.join(" ");
+      $("f-pausa-mensaje").hidden = pausas.paused === 0;
+    }
+    if (panel === "pausa") pintarPanelPausa();
+  }
+  $("f-pausa-reanudar").addEventListener("click", () => reanudar([]));
+  // Cambiar el mensaje: en su propio diálogo, a todos los que siguen en pausa.
+  const dlgPausa = $("dlg-pausa");
+  $("f-pausa-mensaje").addEventListener("click", () => {
+    $("dlg-pausa-texto").value = pausas.message || "";
+    cuentaPausa($("dlg-pausa-texto"), $("dlg-pausa-ayuda"));
+    dlgPausa.showModal();
+    $("dlg-pausa-texto").focus();
+  });
+  $("dlg-pausa-texto").addEventListener("input", () => {
+    limpiarCampo($("dlg-pausa-texto"), $("dlg-pausa-error"));
+    cuentaPausa($("dlg-pausa-texto"), $("dlg-pausa-ayuda"));
+  });
+  $("dlg-pausa-cancelar").addEventListener("click", () => dlgPausa.close());
+  dlgPausa.addEventListener("close", () => { limpiarCampo($("dlg-pausa-texto"), $("dlg-pausa-error")); $("f-pausa-mensaje").focus(); });
+  $("dlg-pausa-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const b = $("dlg-pausa-cambiar");
+    ocupado(b, true);
+    api.ChangePauseMessage($("dlg-pausa-texto").value.trim()).then((r) => {
+      dlgPausa.close();
+      toast("exito", P("pausa.cambiado", r.sent), "");
+    }, (err) => {
+      const m = amable(err);
+      if (m.codigo === "invalidPauseMessage") errorEnCampo($("dlg-pausa-texto"), $("dlg-pausa-error"), m.texto);
+      else fallo(err);
+    }).finally(() => ocupado(b, false));
+  });
+  // Ctrl+Mayús+P: pausa a todos o, si ya hay pausa, reanuda a todos. En la fase de captura, para
+  // que el editor de código no lo tome como su paleta de comandos.
+  document.addEventListener("keydown", (e) => {
+    if (!(e.ctrlKey || e.metaKey) || !e.shiftKey || e.altKey || e.code !== "KeyP") return;
+    if ($("app").hidden || document.querySelector("dialog[open]") || enControl) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (pausas.paused > 0) reanudar([]);
+    else pausar([], "");
+  }, true);
 
   // --- Temporizador de ejercicio (docs/protocol.md §5.19) -----------------------------------
   // Panel de la barra de acciones (todos o la selección), franja mientras corre y su
@@ -3699,6 +3815,7 @@
 
   // --- Eventos del backend -----------------------------------------------------------------
   rt.EventsOn(ev.STUDENTS, pintarAlumnos);
+  rt.EventsOn(ev.PAUSES, pintarPausas);
   rt.EventsOn(ev.HISTORY, (h) => pintarHistorial(h.entries));
   rt.EventsOn(ev.DELIVERIES, (d) => pintarEnvios(d.deliveries));
   rt.EventsOn(ev.CAPTURE, alCapturar);

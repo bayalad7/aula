@@ -86,6 +86,10 @@ func (a *App) StartPresent(sessionID string) (PresentState, error) {
 	if !src.Can(protocol.CapScreenPresent) {
 		return a.PresentState(), codedf(codePresentUnsupported, "el equipo de %s no puede mostrar su pantalla a la clase", src.Hostname)
 	}
+	// The class must see the real screen: a paused one is resumed first (§5.9).
+	if a.unpauseBefore(class, src) {
+		a.log.Info("pause removed to project", "session", src.ID)
+	}
 	if a.bc.Status().Active {
 		a.StopBroadcast()
 	}

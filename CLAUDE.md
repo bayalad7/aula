@@ -207,6 +207,10 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
 - **Cierre:** casos manuales en `docs/desarrollo/probar-consola-local.md` (C-xx de la consola,
   A-xx del alumno) y `docs/progreso.md`; lo nativo que el arnés no ve (ventana, icono, SO) queda
   como caso manual, sin clics sintéticos en el escritorio del usuario.
+- **CHANGELOG:** toda función o cambio visible agrega su línea en «Sin publicar» de
+  `CHANGELOG.md`, en su área y en palabras de quien usa o instala Aula (no la etapa ni el
+  paquete). Al publicar, esa sección toma el número y la fecha de la versión
+  (`docs/desarrollo/publicar.md`).
 
 ## Integración continua (GitHub Actions)
 - Remoto: `origin` = `https://github.com/bayalad7/aula.git`.

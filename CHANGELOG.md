@@ -1,76 +1,93 @@
 # Cambios
 
 Los cambios de Aula que nota quien la usa o la instala. Versionado semántico (`x.y.z`, ver
-`CLAUDE.md`); las versiones de prueba llevan `-rc.N`. Para el detalle técnico, el historial de git
-y `docs/progreso.md`.
+`CLAUDE.md`). Para el detalle técnico, el historial de git y `docs/progreso.md`.
 
-## Sin publicar
+Cada función o cambio visible agrega su línea en «Sin publicar» al terminarse. Al publicar, esa
+sección pasa a llamarse con el número y la fecha de la versión (`docs/desarrollo/publicar.md`).
 
-Etapa 18: la consola del profesor rediseñada, con su manual, sus diagramas y el aula simulada.
-Etapa 19: la app del alumno pulida, sobre el mismo sistema de diseño. Sin cambios al protocolo ni
-a la configuración: los alumnos instalados siguen funcionando igual.
+## Sin publicar (v0.1.0, la primera versión de desarrollo)
 
-### App del alumno (etapa 19)
+Aula para el centro de cómputo: el profesor ve y guía a su grupo desde una consola, y cada alumno
+recibe el código formateado para copiarlo con un clic. Es transparente: el alumno siempre ve qué
+está viendo o haciendo el profesor en su equipo. Las versiones de prueba anteriores (`-rc`) se
+retiraron; esta es la primera.
 
-- **No interrumpe:** el código y los avisos llegan sin quitarle el teclado al alumno ni poner la
-  ventana encima de su editor. Minimizada, parpadea en la barra de tareas; el título dice cuántos
-  hay nuevos.
-- **Cerrar ya no la quita:** la ventana se oculta y Aula sigue con su icono en el área de
-  notificación (antes, cerrar terminaba el agente, o la ventana reaparecía sola en modo
-  servicio).
-- **Modo compacto:** una tira pequeña en una esquina con el estado y lo nuevo.
-- **Código:** lo más nuevo arriba, sin saltos; **Ctrl+Mayús+C** copia el seleccionado; ↑/↓
-  cambian de código; nombre del lenguaje y hora de llegada.
-- **Avisos** en una esquina, con icono y nivel, sin empujar el código.
-- **Transparencia:** bandas permanentes con orden fijo (energía, pantalla vista, restricciones,
-  transmisión) que no se pueden cerrar; «Aula cerró…» se queda hasta leerlo.
-- **Textos para el alumno:** estado tranquilo («Esperando a tu profesor») y por qué no conecta,
-  en palabras llanas; lo técnico, plegado en «Detalles para TI».
-- Modo oscuro y accesibilidad (WCAG AA, teclado) con el sistema de diseño de la consola.
+### Clase y conexión
 
-### Nuevo
-
-- **Navegación nueva:** Alumnos, Código y Aula simulada en un menú lateral, y Ayuda y Ajustes
-  abajo. Las acciones (aviso, pantalla, restricciones y energía) se aplican sobre la selección de
-  alumnos desde la barra de acciones.
-- **Ficha del alumno:** su sistema, su versión, qué puede hacer su equipo y el último error que
-  mandó, con su motivo.
+- **Canales del 1 al 16000**, como en un centro de cómputo: cada equipo de alumno tiene su canal
+  fijo y la consola abre el suyo; varias salas conviven en la misma red.
+- Los alumnos encuentran solos a su profesor en la red local y se conectan de forma segura (TLS),
+  solo a una consola con la **clave del centro**.
+- **¿Falta un alumno?**: un asistente paso a paso y **Comprobar la conexión**, que dice dónde se
+  atoraría un alumno (anuncio, puerto, conexión segura, red y firewall).
 - **Aula simulada:** alumnos de prueba dentro de la consola para probarla sin laboratorio, con
-  fallas a propósito (lento, desconectado, no confirma). Siempre marcados y contados aparte; nunca
-  reciben energía, restricciones ni la transmisión.
-- **Envíos:** cada envío dice quién lo tiene y quién falta, y se le puede reenviar a quien falta.
-- **Manual dentro de la consola:** búsqueda, ayuda de la pantalla actual con «?», «¿Falta un
-  alumno?» paso a paso, y enlace al manual desde cada error.
-- **Diagramas dibujados** en el manual, en claro y oscuro, con zoom y «Ver en grande», y una
-  galería con filtro por público.
-- **Comprobar la conexión:** desde «¿Falta un alumno?», revisa el anuncio, el puerto, la conexión
-  segura con la clave del centro y la red y el firewall del equipo del profesor, y dice dónde se
-  atoraría un alumno.
-- **Atajos de teclado** en el manual.
+  fallas a propósito. Siempre marcados y contados aparte; nunca reciben nada que cambie un equipo.
 
-### Mejorado
+### Código
 
-- **Sistema de diseño** propio (`internal/ui`), con modo claro y oscuro y contraste WCAG AA
-  comprobado. La consola funciona a 900×600.
-- **Errores** con la fórmula «qué pasó + qué hacer», junto al campo cuando es de un formulario,
-  sin perder lo escrito.
-- **Teclado y lectores de pantalla:** todo se usa con el teclado. El foco siempre se ve y vuelve
-  al botón que abrió un panel. Se comprueba con axe-core y con un recorrido solo con Tab.
+- Escribir o pegar código y **Emitir** (reemplaza lo que ven), **Agregar** (debajo de lo que ven),
+  **Limpiar…** y **Pegar** desde el portapapeles o con un atajo desde cualquier programa.
+- A todos o a los seleccionados. Cada envío dice quién lo tiene y quién falta, con **Reenviar a
+  los que faltan**, y queda en el historial de la clase para abrirlo o reemitirlo.
+- En el alumno, el código llega con colores y un botón **Copiar**, sin quitarle el teclado.
 
-### Corregido
+### Ver y guiar la clase
 
-- Dos clics rápidos en «Emitir» mandaban dos ejercicios.
-- Si abrir la clase fallaba, la pantalla de arranque borraba el canal y el nombre escritos.
-- Un enlace a una sección del manual quedaba antes de ella cuando había diagramas arriba.
-- El diagrama 03 mostraba un color como texto.
+- **Miniaturas** de las pantallas y una **Pantalla grande** de un alumno, con su aviso visible en
+  el equipo del alumno.
+- **Mostrar mi pantalla:** a todos o a los seleccionados, en una ventana encima de las suyas o en
+  **pantalla completa** para presentaciones; se libera sola si se pierde la conexión.
+- **Proyectar a la clase** la pantalla de un alumno.
+- **Captura** de la pantalla de un alumno, que solo se guarda si el profesor pulsa «Guardar».
+- **Control remoto** de un alumno, con aviso antes y pausa si el alumno usa su equipo.
+
+### Participación
+
+- **Manos levantadas y mensajes** de los alumnos, en la vista «Participación».
+- **Avisos** a la clase y **mensajes privados** a un alumno.
+- **Temporizador** de ejercicio, con descripción de lo que hay que hacer y duraciones de 1 a 60
+  minutos (u otra); extender y detener.
+- **Encuestas en vivo:** opción múltiple, sí o no, o respuesta corta; anónimas o nominales, con
+  resultados para compartir.
+
+### Archivos
+
+- **Enviar archivos** sueltos o una **plantilla** a la carpeta `Documentos\Aula` de cada alumno,
+  con quién los tiene y quién falta.
+- **Plantillas** de ejercicio: crear, abrir su carpeta y eliminar.
+- **Recolecciones:** recoger el trabajo de cada alumno de una carpeta acordada.
+- **Abrir** una página o una app permitida en el equipo del alumno.
+
+### Control del equipo (Windows)
+
+- **Restricciones** de la clase: bloquear apps y filtrar sitios web, siempre reversibles.
+- **Energía:** apagar, reiniciar o cerrar sesión con cuenta regresiva que el alumno ve y puede
+  posponer.
+
+### App del alumno
+
+- No interrumpe: lo que llega se ve sin quitar el foco; el icono del área de notificación y el
+  modo compacto.
+- **Transparencia:** bandas fijas y sin botón de cerrar cuando el profesor ve, controla, restringe
+  o transmite; el alumno sabe siempre quién y qué.
+- **Qué puede hacer Aula en este equipo**, levantar la mano y escribir al profesor desde la tira.
+
+### Consola
+
+- Navegación por módulos (Alumnos, Código, Archivos, Participación), acciones sobre la selección
+  desde la barra de acciones y **Ficha del alumno** con lo que puede hacer su equipo.
+- **Manual y diagramas** dentro de la consola, con búsqueda y ayuda de cada pantalla.
+- Modo claro y oscuro, teclado completo y contraste WCAG AA; funciona a 900×600.
 
 ### Para quien instala
 
-- El ejecutable de la consola pasa de 23,07 MB a 25,86 MB (+12 %), sobre todo por los diagramas
-  dibujados (1,78 MB).
-- Compilar sigue sin necesitar Node: los diagramas dibujados se guardan en el repositorio.
-- La consola no carga nada de Internet.
+- Instaladores para Windows; el agente del alumno se instala como **servicio** y muestra su
+  ventana en la sesión del alumno.
+- Las versiones van firmadas (`checksums.txt` con la llave de releases del repositorio).
+- La consola no carga nada de Internet; compilar no necesita Node.
 
-## 0.3.0-rc.2 y anteriores
+### Todavía no
 
-Versiones de prueba anteriores a este archivo; ver sus notas en GitHub Releases.
+- La pantalla en blanco de la clase, la asistencia y bitácora, Linux y macOS en las funciones que
+  tocan el sistema, y la auto-actualización.

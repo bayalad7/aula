@@ -93,7 +93,8 @@ Una `corrección` o una `mejora` pequeña y local no necesita esta pausa: dilo y
 - Ajusta o agrega los casos manuales de `docs/desarrollo/probar-consola-local.md`.
 - `gofmt -l .` sin salida, `go vet ./...`,
   `go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...` y `go test -race ./...`.
-- Actualiza `docs/progreso.md`.
+- Actualiza `docs/progreso.md` y, si el cambio se nota (no una corrección interna), su línea en
+  «Sin publicar» de `CHANGELOG.md` (en «Corregido» si es una corrección).
 
 Al terminar, muestra el antes y el después (con capturas si cambió algo visible), lo que falta
 probar a mano y la versión que sugiere el cambio. Espera la aprobación. **No hagas commit ni

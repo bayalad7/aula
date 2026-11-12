@@ -20,6 +20,14 @@ git tag -a v0.1.0-rc.1 -m "Aula 0.1.0-rc.1"
 git push origin v0.1.0-rc.1
 ```
 
+Antes de crear el tag, en `develop`:
+
+1. En `CHANGELOG.md`, «Sin publicar» pasa a `## vX.Y.Z (AAAA-MM-DD)` y arriba queda una
+   «Sin publicar» vacía. Revisa que estén todas las funciones y correcciones de la versión
+   (`docs/progreso.md` y `git log` desde la versión anterior).
+2. Commit (`documentacion(docs): CHANGELOG de vX.Y.Z`) y, en la release de GitHub, usa esa sección
+   como notas (las que genera `--generate-notes` solo listan los commits).
+
 Al publicar una estable, las notas de interfaz de esa versión quedan cerradas: cambia
 `docs/ux/notas/VERSION` a la siguiente (por ejemplo, de `v0.1.0` a `v0.2.0`) y regenera los
 índices con `node scripts/ux/anotar.mjs --indice` (`docs/desarrollo/notas-ux.md`).

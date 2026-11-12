@@ -1,0 +1,27 @@
+{
+  "n": 4,
+  "version": "v0.1.0",
+  "fecha": "2026-11-12T19:16:47.855Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1517,
+    "alto": 712
+  },
+  "zona": {
+    "id": "alumnos-miniaturas",
+    "nombre": "Miniaturas",
+    "cadena": "Consola › Vista Alumnos › Miniaturas"
+  },
+  "elemento": {
+    "etiqueta": "ul#alumnos-cuadricula",
+    "texto": "Esperando imagen… LAB3-PC07Conectado alumno07 Esperando imagen… LAB3-PC12Conecta",
+    "claveTexto": "",
+    "selector": "#alumnos-cuadricula"
+  },
+  "tipo": "agregar",
+  "texto": "Necesito una configuración donde pueda cambiar el ajuste del tamaño de las vistas en miniaturas para la grilla, algo como: Pequeño, Mediano, Grande, Extra grande, Mejor ajuste, para que las pantallas se puedan volver mas pequeñas o más grandes."
+}

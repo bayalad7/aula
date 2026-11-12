@@ -1,0 +1,27 @@
+{
+  "n": 5,
+  "version": "v0.1.0",
+  "fecha": "2026-11-12T19:19:24.892Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1517,
+    "alto": 712
+  },
+  "zona": {
+    "id": "tarjeta-alumno",
+    "nombre": "Tarjeta del alumno",
+    "cadena": "Consola › Vista Alumnos › Miniaturas › Tarjeta del alumno"
+  },
+  "elemento": {
+    "etiqueta": "li",
+    "texto": "Esperando imagen… LAB3-PC12Conectado alumno12",
+    "claveTexto": "",
+    "selector": "#alumnos-cuadricula > li.alumno:nth-of-type(2)"
+  },
+  "tipo": "estilo",
+  "texto": "Quiero que la vista miniatura se represente en forma de un icono de monitor para darle un mejor diseño y estilo y que la pantalla pues sea la imagen del alumno"
+}

@@ -1,0 +1,27 @@
+{
+  "n": 3,
+  "version": "v0.1.0",
+  "fecha": "2026-11-12T19:08:27.765Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1517,
+    "alto": 712
+  },
+  "zona": {
+    "id": "",
+    "nombre": "(zona sin nombre)",
+    "cadena": "Consola › (zona sin nombre)"
+  },
+  "elemento": {
+    "etiqueta": "input#cc-canal",
+    "texto": "",
+    "claveTexto": "",
+    "selector": "#cc-canal"
+  },
+  "tipo": "error",
+  "texto": "El input de cambio de canal permite ingresar texto, solo debería ser puros números enteros del 1 al 16000"
+}

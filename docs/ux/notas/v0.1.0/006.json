@@ -1,0 +1,27 @@
+{
+  "n": 6,
+  "version": "v0.1.0",
+  "fecha": "2026-11-12T19:26:53.395Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1517,
+    "alto": 712
+  },
+  "zona": {
+    "id": "barra-acciones",
+    "nombre": "Barra de acciones",
+    "cadena": "Consola › Vista Alumnos › Barra de acciones"
+  },
+  "elemento": {
+    "etiqueta": "div",
+    "texto": "Sin selección: las acciones van a todos los conectados Mostrar mi pantalla Aviso",
+    "claveTexto": "alumnos.barraEtiqueta",
+    "selector": "#contenido > section.vista__seccion:nth-of-type(1) > div.barra-acciones:nth-of-type(2) > div.barra-acciones__dentro"
+  },
+  "tipo": "mover",
+  "texto": "Este texto que controla si no hay alumnos seleccionados o el contador de cuantos hay seleccionados, muevelo en la parte de la cabecera aún lado de donde esta el contador de los conectados o desconectados, y que las leyendas de los textos no sean tan largos \"simplifícalos\" y agrégales tooltips como mensajes de ayuda si es necesario, esto servirá para la barra de acciones para que tenga más espacio para nuevas acciones"
+}

@@ -20,8 +20,10 @@ export const zonas = {
     { id: "alumnos-modo", dentro: "alumnos", nombre: "Selector Lista | Miniaturas", selector: "[data-vista-de=alumnos] .segmentado", que: "Cambia entre la tabla y las miniaturas de pantalla." },
     { id: "alumnos-lista", dentro: "alumnos", nombre: "Lista de alumnos", selector: "#alumnos-lista", que: "Tabla con un alumno por fila." },
     { id: "fila-alumno", dentro: "alumnos-lista", nombre: "Fila del alumno", selector: "#alumnos-filas > tr", que: "Un alumno: casilla, equipo, estado, insignias y el botón de su ficha." },
+    { id: "alumnos-seleccion", dentro: "alumnos", nombre: "Selección", selector: "#seleccion-texto", que: "A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip." },
+    { id: "alumnos-tamano", dentro: "alumnos", nombre: "Tamaño de las miniaturas", selector: "#tamano-miniaturas", que: "Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; solo en Miniaturas y se recuerda." },
     { id: "alumnos-miniaturas", dentro: "alumnos", nombre: "Miniaturas", selector: "#alumnos-miniaturas", que: "Cuadrícula con la pantalla de cada alumno." },
-    { id: "tarjeta-alumno", dentro: "alumnos-miniaturas", nombre: "Tarjeta del alumno", selector: "#alumnos-cuadricula > li", que: "La miniatura de un alumno con su nombre; un clic abre la Pantalla grande." },
+    { id: "tarjeta-alumno", dentro: "alumnos-miniaturas", nombre: "Tarjeta del alumno", selector: "#alumnos-cuadricula > li", que: "La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande." },
     { id: "barra-acciones", dentro: "alumnos", nombre: "Barra de acciones", selector: ".barra-acciones", que: "Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…)." },
 
     // Paneles y diálogos que salen de Alumnos

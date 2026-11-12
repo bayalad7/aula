@@ -17,10 +17,11 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 1 | **Menú** | Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes. |
 | 2 | **Selector de clase** | Canal y nombre de la clase abierta; abre «Cambiar de canal». |
 | 3 | **Cabecera de la vista** | Título de la vista, su resumen y el «?» de ayuda contextual. |
-| 4 | **Selector Lista | Miniaturas** | Cambia entre la tabla y las miniaturas de pantalla. |
-| 5 | **Lista de alumnos** | Tabla con un alumno por fila. |
-| 6 | **Fila del alumno** | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha. |
-| 7 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 4 | **Selección** | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
+| 5 | **Selector Lista | Miniaturas** | Cambia entre la tabla y las miniaturas de pantalla. |
+| 6 | **Lista de alumnos** | Tabla con un alumno por fila. |
+| 7 | **Fila del alumno** | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha. |
+| 8 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
 
 ### Consola · Alumnos (miniaturas)
 
@@ -28,9 +29,10 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Miniaturas** | Cuadrícula con la pantalla de cada alumno. |
-| 2 | **Tarjeta del alumno** | La miniatura de un alumno con su nombre; un clic abre la Pantalla grande. |
-| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 1 | **Tamaño de las miniaturas** | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; solo en Miniaturas y se recuerda. |
+| 2 | **Miniaturas** | Cuadrícula con la pantalla de cada alumno. |
+| 3 | **Tarjeta del alumno** | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
+| 4 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
 
 ### Consola · Ficha del alumno
 
@@ -243,8 +245,10 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `alumnos-modo` | Vista Alumnos › Selector Lista | Miniaturas | Cambia entre la tabla y las miniaturas de pantalla. |
 | `alumnos-lista` | Vista Alumnos › Lista de alumnos | Tabla con un alumno por fila. |
 | `fila-alumno` | Vista Alumnos › Lista de alumnos › Fila del alumno | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha. |
+| `alumnos-seleccion` | Vista Alumnos › Selección | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
+| `alumnos-tamano` | Vista Alumnos › Tamaño de las miniaturas | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; solo en Miniaturas y se recuerda. |
 | `alumnos-miniaturas` | Vista Alumnos › Miniaturas | Cuadrícula con la pantalla de cada alumno. |
-| `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno con su nombre; un clic abre la Pantalla grande. |
+| `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
 | `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
 | `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande. |
 | `ficha-puede` | Ficha del alumno › Qué puede hacer su equipo | Lista de capacidades del equipo del alumno. |

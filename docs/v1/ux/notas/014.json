@@ -1,0 +1,27 @@
+{
+  "n": 14,
+  "fecha": "2026-11-12T06:40:24.208Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "codigo",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "codigo-editor",
+    "nombre": "Tarjeta del editor",
+    "cadena": "Consola › Vista Código › Tarjeta del editor"
+  },
+  "elemento": {
+    "etiqueta": "div",
+    "texto": "Enviar a Todos los conectados (4) Los seleccionados (no hay ninguno) Pegar del p",
+    "claveTexto": "",
+    "selector": "div.vista__cuerpo.pila > div.codigo-rejilla > section.tarjeta:nth-of-type(1) > div.tarjeta__cuerpo.pila:nth-of-type(2) > div.pie-envio:nth-of-type(3)"
+  },
+  "tipo": "estilo",
+  "texto": "Simplifica el texto de los botones, el texto es tan largo que hace que los botones den un salto y no se acomoden uniformemente, agrega un mensaje de ayuda a los botones en forma de tooltip / popover para terminar de explicar que hacen los botones y ordénalos de la siguiente manera; 1. Emitir, 2. Agregar debajo de lo que ven, 3. Limpiar pantallas, 4. Pegar del portapaletes. Algunos textos son muy confusos entre mas cortes y claros mejor.",
+  "respuesta": "Pie de envío en una fila: Emitir, Agregar, Limpiar…, Pegar, con textos cortos y su explicación en un tooltip; «Todos (n)» y «Seleccionados (n)»."
+}

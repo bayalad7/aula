@@ -1,0 +1,27 @@
+{
+  "n": 18,
+  "fecha": "2026-11-12T07:29:51.768Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "participacion",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "panel-temporizador",
+    "nombre": "Panel Temporizador",
+    "cadena": "Consola › Panel Temporizador"
+  },
+  "elemento": {
+    "etiqueta": "aside#panel-temporizador",
+    "texto": "Temporizador Todos los conectados (4) 1 equipo no lo verá: tiene una versión ant",
+    "claveTexto": "",
+    "selector": "#panel-temporizador"
+  },
+  "tipo": "agregar",
+  "texto": "Para el temporizador solamente se puede mandar el nombre como \"Ejercicio 1\", agrega un campo nuevo de tipo \"text\" donde se pueda mandar la descripción de lo que tienen que realizar el problema, actividad, trabajo, etc...",
+  "respuesta": "Campo «Descripción (opcional)», hasta 1000 caracteres; viaja en timer.start (description, v0.15) y el alumno la lee en una tarjeta «Qué hacer» arriba de su lista, con «Nuevo» y sin quitar el foco."
+}

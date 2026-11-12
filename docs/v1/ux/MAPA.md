@@ -99,7 +99,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 1 | **Menú** | Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes. |
 | 2 | **Enviar archivos** | Plantilla o archivos elegidos, «Guardar en», «Reemplazar», «Enviar a» y Enviar. |
 | 3 | **Envíos de archivos** | Cada envío de archivos con quién lo tiene y quién falta. |
-| 4 | **Plantillas** | Las plantillas de Documentos\Aula\plantillas con Usar y Abrir carpeta. |
+| 4 | **Plantillas** | Las plantillas de Documentos\Aula\plantillas: Nueva plantilla, Usar, Abrir carpeta y Eliminar. |
 | 5 | **Archivos enviados** | Los envíos de la clase, para reenviarlos. |
 
 ### Consola · Archivos › Recolecciones
@@ -242,6 +242,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `pg-acciones` | Pantalla grande › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase y Abrir página o app (ACCIONES_ALUMNO en main.js). |
 | `dlg-privado` | Diálogo Mensaje privado | Escribir un mensaje solo para un alumno, con su tipo; se abre desde la Pantalla grande. |
 | `dlg-abrir` | Diálogo Abrir en un alumno | Abrir una página o una app permitida en el equipo de un alumno; se abre desde la Pantalla grande. |
+| `dlg-plantilla` | Diálogo Nueva plantilla | Crear una plantilla con su nombre y sus archivos; se abre desde Plantillas (nota de interfaz 17). |
 | `panel-aviso` | Panel Aviso | Mandar un aviso a la selección. |
 | `panel-pantalla` | Panel Transmitir | Transmitir tu pantalla a la clase. |
 | `panel-restricciones` | Panel Restricciones | Bloquear aplicaciones y filtrar sitios. |
@@ -261,7 +262,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `archivos-pestanas` | Vista Archivos › Selector Enviar | Recolecciones | Cambia entre enviar archivos y las recolecciones. |
 | `archivos-enviar` | Vista Archivos › Enviar archivos | Plantilla o archivos elegidos, «Guardar en», «Reemplazar», «Enviar a» y Enviar. |
 | `archivos-envios` | Vista Archivos › Envíos de archivos | Cada envío de archivos con quién lo tiene y quién falta. |
-| `plantillas` | Vista Archivos › Plantillas | Las plantillas de Documentos\Aula\plantillas con Usar y Abrir carpeta. |
+| `plantillas` | Vista Archivos › Plantillas | Las plantillas de Documentos\Aula\plantillas: Nueva plantilla, Usar, Abrir carpeta y Eliminar. |
 | `archivos-historial` | Vista Archivos › Archivos enviados | Los envíos de la clase, para reenviarlos. |
 | `recolecciones` | Vista Archivos › Recolecciones | Crear la carpeta de una actividad en los equipos y recoger lo que guardó cada alumno. |
 | `reco-nueva` | Vista Archivos › Recolecciones › Nueva recolección | Actividad, tipos de archivo y «Crear carpeta en los equipos». |

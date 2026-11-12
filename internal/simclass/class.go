@@ -55,9 +55,10 @@ const (
 // The exercise timer only informs: they count it and acknowledge it.
 // Files the teacher sends: they acknowledge them but write nothing on the disk
 // (filepush with an in-memory folder that keeps only the names). And a
-// collection gets their last code, from memory too (collect.go).
+// collection gets their last code, from memory too (collect.go). When the
+// teacher ends the class they clear their simulated window (classend.go).
 var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect, protocol.CapPoll}
+	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect, protocol.CapPoll, protocol.CapClassEnd}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities
@@ -444,6 +445,9 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 			return
 		}
 		if s.handlePoll(ctx, cl, env, fault) {
+			return
+		}
+		if s.handleClassEnd(ctx, cl, env, fault) {
 			return
 		}
 		if s.handleFile(ctx, send, env) {

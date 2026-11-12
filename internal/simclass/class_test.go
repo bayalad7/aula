@@ -44,6 +44,7 @@ type console struct {
 	msgs   []protocol.Envelope // msg.student
 	votes  []protocol.PollVote
 	polls  []protocol.PollAck
+	ends   []protocol.ClassEndAck
 }
 
 func startConsole(t *testing.T) *console {
@@ -86,6 +87,8 @@ func startConsole(t *testing.T) *console {
 				c.msgs = append(c.msgs, env)
 			case protocol.PollAck:
 				c.polls = append(c.polls, p)
+			case protocol.ClassEndAck:
+				c.ends = append(c.ends, p)
 			case protocol.PollVote:
 				c.votes = append(c.votes, p)
 				go conn.Send(context.Background(), protocol.PollVoteAck{RefID: env.ID, PollID: p.PollID, Status: protocol.PollVoteAccepted})
@@ -537,4 +540,59 @@ func TestSimulatedStudentsAnswerPolls(t *testing.T) {
 		p := cl.Students()[0].Poll
 		return len(acks) == 3 && p != nil && !p.Open && p.Results != nil
 	})
+}
+
+func (c *console) endAck(refID string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.ContainsFunc(c.ends, func(a protocol.ClassEndAck) bool {
+		return a.RefID == refID && a.Status == protocol.ClassEndClean
+	})
+}
+
+// When the teacher ends the class, a simulated student clears its simulated
+// window (code, timer, hand) and acknowledges; the noack fault never does
+// (prompt 10.14).
+func TestSimulatedStudentsEndTheClass(t *testing.T) {
+	c := startConsole(t)
+	cl := newClass(t, c)
+	a, _ := cl.Add(protocol.OSWindows, nil)
+	b, _ := cl.Add(protocol.OSWindows, nil)
+	eventually(t, "connected", func() bool { return len(c.connected()) == 2 })
+	if err := cl.SetFault(b.ID, FaultNoAck, 0); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	sa := sessionOf(t, c, a.Name).ID
+	if _, err := c.Send(ctx, sa, protocol.CodeShare{SnippetID: protocol.NewID(), Lang: "go", Content: "x", Mode: protocol.ModeReplace}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Send(ctx, sa, protocol.TimerStart{TimerID: protocol.NewID(), DurationS: 600, RemainingMS: 600_000}); err != nil {
+		t.Fatal(err)
+	}
+	if err := cl.Raise(a.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "code, timer and hand", func() bool {
+		s := cl.Students()[0]
+		return len(s.Snippets) == 1 && s.Timer.State == classtimer.StateRunning && s.Hand != participation.HandDown
+	})
+	end := protocol.ClassEnd{EndID: protocol.NewID()}
+	refA, err := c.Send(ctx, sa, end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	refB, err := c.Send(ctx, sessionOf(t, c, b.Name).ID, end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "the ack", func() bool { return c.endAck(refA) })
+	s := cl.Students()[0]
+	if len(s.Snippets) != 0 || s.Timer.State != classtimer.StateNone || s.Hand != participation.HandDown || s.Notices != 0 {
+		t.Fatalf("the simulated window is not clean: %+v", s)
+	}
+	time.Sleep(100 * time.Millisecond)
+	if c.endAck(refB) {
+		t.Error("a student with the noack fault acknowledged class.end")
+	}
 }

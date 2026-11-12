@@ -24,6 +24,8 @@ const pantallas = [
     pasos: seq(miniaturas, click(".alumno__pantalla:not([disabled])"), cuadros(["LAB3-PC07"])), zonas: ["pantalla-grande", "pg-acciones"] },
   { app: "profesor", archivo: "consola-franja-panel", titulo: "Consola · Franja global y un panel de la barra", escena: "lab-transmitiendo",
     pasos: click('.barra-acciones [data-panel="aviso"]'), zonas: ["franja", "panel-aviso", "barra-acciones"] },
+  { app: "profesor", archivo: "consola-pausa", titulo: "Consola · Pausar pantallas", escena: "lab-pausa",
+    pasos: click('.barra-acciones [data-panel="pausa"]'), zonas: ["franja", "panel-pausa", "barra-acciones"] },
   { app: "profesor", archivo: "consola-abrir", titulo: "Consola · Abrir página o app", escena: "lab-abrir",
     pasos: click('.barra-acciones [data-panel="abrir"]'), zonas: ["panel-abrir", "barra-acciones"] },
   { app: "profesor", archivo: "consola-ajustes-apps", titulo: "Consola · Ajustes › Apps permitidas", escena: "datos", h: 800,

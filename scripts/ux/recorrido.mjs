@@ -364,6 +364,26 @@ await f("171-pausa-atajo", "lab", { pasos: async (p) => {
 } });
 await f("172-pausa-oscuro-900x600", "lab-pausa", { oscuro: true, w: 900, h: 600, pasos: click('[data-panel="pausa"]') });
 
+// Notas de interfaz v0.1.0 001–006 (2026-11-12): «Enviar a» y los botones en una fila, el canal solo
+// con dígitos, las miniaturas como monitores con su tamaño, y la selección en la cabecera.
+const alPie = async (p) => { await p.evaluate(() => document.querySelector("[data-vista-de] .pie-envio:not([hidden])")?.scrollIntoView({ block: "center" })); };
+await f("173-pie-envio-codigo", "lab", { ruta: "codigo", pasos: alPie });
+await f("174-pie-envio-archivos", "lab", { ruta: "archivos", pasos: async (p) => {
+  await p.evaluate(() => document.querySelector("#archivos-panel-enviar .pie-envio").scrollIntoView({ block: "center" }));
+} });
+await f("175-pie-envio-oscuro-900x600", "lab", { ruta: "codigo", oscuro: true, w: 900, h: 600, pasos: alPie });
+await f("176-canal-solo-digitos", "lab", { pasos: seq(click("#nav-clase"), async (p) => { await p.type("#cc-canal", "1a2b-3"); await sleep(150); }) });
+const miniaturasDe = (tamano) => seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB3-PC12"]), async (p) => {
+  await p.select("#tamano-miniaturas-select", tamano); await sleep(200);
+});
+await f("177-miniaturas-monitor", "lab", { pasos: miniaturasDe("mediano") });
+await f("178-miniaturas-pequeno", "lab", { pasos: miniaturasDe("pequeno") });
+await f("179-miniaturas-extra", "lab", { pasos: miniaturasDe("extra") });
+await f("180-miniaturas-ajustar", "lab", { pasos: miniaturasDe("ajustar") });
+await f("181-miniaturas-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: miniaturasDe("grande") });
+await f("182-seleccion-cabecera", "lab", { pasos: seq(click(fila("LAB3-PC07")), click(fila("LAB3-PC12"))) });
+await f("183-seleccion-cabecera-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: async (p) => { await p.hover("#seleccion-texto"); await sleep(200); } });
+
 await cerrar();
 let graves = 0;
 for (const [nombre, r] of Object.entries(informe)) {

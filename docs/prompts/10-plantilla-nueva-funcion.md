@@ -69,8 +69,9 @@ Espera mi aprobación.
 
 ## Backlog sugerido (orden recomendado)
 
-Estado: hechos el 1 (prompt 12), el 4 (10.1), el 5 (10.2) y el 6 (10.3). Lo que
-falta tiene su prompt en `docs/prompts/10.4` a `10.13`, `12.1`, `12.2`, `13` y `14`.
+Estado: hechos el 1 (prompt 12), el 4 (10.1), el 5 (10.2) y el 6 (10.3), y 10.4 a 10.12, 12.1 y
+12.2. Lo que falta tiene su prompt en `docs/prompts/10.13` a `10.21` (lista en `00-LEEME.md`),
+`13` y `14`.
 
 **Fase 2**
 1. Transmitir la pantalla del profesor a los alumnos (WebRTC con `pion/webrtc`; señalización

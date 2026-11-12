@@ -36,7 +36,7 @@ Sistema multiplataforma de gestión de aula (estilo LanSchool / Veyon) con un m�
 | 06 | `06-cliente-alumno-codigo.md` | App estudiante: overlay con Monaco y botón Copiar | Módulo C |
 | 07 | `07-consola-profesor.md` | App profesor: lista, hotkey de captura, emisión | Módulo C |
 | 08 | `08-hito1-integracion.md` | Distribución de código de punta a punta + instaladores | **Hito 1 ✔** |
-| 09 | `09-monitoreo-miniaturas-y-freeze.md` | Miniaturas y pantalla en blanco (con aviso visible) | Módulo B |
+| 09 | `09-monitoreo-miniaturas-y-freeze.md` | Miniaturas (la pantalla en blanco pasó a 10.21) | Módulo B |
 | 10 | `10-plantilla-nueva-funcion.md` | Plantilla reutilizable por función | Fases 2–3 |
 | 11 | `11-revision-y-auditoria.md` | Revisión de seguridad/privacidad al cerrar cada fase | Siempre |
 | 12 | `12-broadcast-pantalla-webrtc.md` | Transmitir tu pantalla a los alumnos (WebRTC) ✅ | Fase 2 |
@@ -51,8 +51,23 @@ Sistema multiplataforma de gestión de aula (estilo LanSchool / Veyon) con un m�
 | 19 | `19-pulido-app-alumno-ux.md` | Pulido de la app del alumno: overlay de código, avisos y transparencia ✅ | Pulido |
 | 20 | `20-auditoria-limpieza-artefactos.md` | Auditoría y limpieza de los artefactos de `docs/v1/ux/` (hecha el 12/11/2026; `docs/v1` ya no existe) | Docs |
 
-Las funciones del backlog con prompt propio son `10.1` a `10.13` (hechas: 10.1 servicio, 10.2
-restricciones, 10.3 energía).
+Las funciones del backlog con prompt propio son `10.1` a `10.21` (hechas: 10.1 a 10.12; ver
+`docs/progreso.md`). Las de 10.13 en adelante (redactadas el 12/11/2026):
+
+| # | Archivo | Resultado | Para |
+|---|---|---|---|
+| 10.13 | `10.13-asistencia-y-bitacora.md` | Identidad del alumno (cuenta, nombre, grado, grupo), materias con su lista, asistencia y bitácora | `v0.1.0` |
+| 10.14 | `10.14-terminar-la-clase.md` | Un botón que deja el laboratorio limpio para el siguiente grupo | `v0.1.0` |
+| 10.15 | `10.15-nombres-y-mapa-del-aula.md` | Nombre de cada equipo y vista «Como en el salón» | `v0.1.0` |
+| 10.16 | `10.16-grupos-guardados.md` | Selecciones con nombre y equipos de trabajo al azar | `v0.1.0` si hay tiempo |
+| 10.17 | `10.17-entregar-codigo-desde-el-overlay.md` | El alumno entrega su código (`code.collect`) | `v0.1.0` |
+| 10.18 | `10.18-perfiles-de-clase.md` | «Iniciar clase» con un perfil guardado por materia | Después |
+| 10.19 | `10.19-encender-equipos-wake-on-lan.md` | Encender los equipos con Wake-on-LAN | Después |
+| 10.20 | `10.20-cuestionario-con-puntaje.md` | Mejora de 10.12: cuestionario con respuesta correcta y puntaje (`/funcionalidad-mejora`) | Después |
+| 10.21 | `10.21-pantalla-en-blanco.md` | Pantalla en blanco («Pausar pantallas»), la parte pendiente de 09 | `v0.1.0` |
+
+Orden sugerido para `v0.1.0`: 10.21 → 10.13 → 10.14 → 10.15 → 10.17 → 15 (auto-actualización)
+→ 11 (revisión) → pruebas en VM.
 
 > Las etapas 12 a 19 son ampliaciones posteriores al Hito 1; no tienen un orden estricto entre sí.
 > La `17` puede correrse temprano (tras el protocolo, etapa 03) para los diagramas base.

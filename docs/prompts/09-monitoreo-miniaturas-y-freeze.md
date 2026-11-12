@@ -1,5 +1,9 @@
 # 09 · Módulo B — Monitoreo: miniaturas y pantalla en blanco
 
+> **Estado (12/11/2026):** las miniaturas están hechas. La pantalla en blanco (`screen.freeze`)
+> se movió a su propio prompt, **`10.21-pantalla-en-blanco.md`**, al día con lo implementado
+> después (servicio, transmisión, bandas). No uses este prompt para ella.
+
 **Prerrequisitos:** Hito 1 cerrado (etapa 08).
 **Duración estimada:** 2–4 sesiones.
 **Marco:** esto convierte a Aula en gestión de aula al estilo Veyon. El monitoreo es **transparente y con aviso al alumno**, nunca vigilancia oculta.

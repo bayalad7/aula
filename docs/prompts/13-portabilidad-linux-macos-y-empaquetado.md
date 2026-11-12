@@ -1,6 +1,7 @@
 # 13 · Portabilidad Linux/macOS + empaquetado multiplataforma
 
-**Prerrequisitos:** Hito 1 cerrado (08) y, idealmente, la etapa 09 (para portar también captura y overlay).
+**Prerrequisitos:** Hito 1 cerrado (08) y, idealmente, 10.21 (pantalla en blanco) para portar
+también el overlay. Actualizado el 12/11/2026 con las interfaces de 10.1 a 12.2.
 **Duración estimada:** 3–6 sesiones (conviene una por plataforma).
 **Marco:** completar "multiplataforma", que es requisito central. Se hace por capas: primero que todo compile y corra en cada SO, luego cada función de `platform`, luego el empaquetado.
 
@@ -16,8 +17,9 @@ y anótalo en una tabla de compatibilidad en docs/compatibilidad.md.
 ## Alcance por plataforma (repite el bloque por SO)
 1. **Compilar y correr**: `wails build` de ambas apps en <SO>; resolver dependencias de cgo y de
    WebView (WebKitGTK en Linux, WKWebView en macOS).
-2. **Interfaces de platform**: `ScreenCapture`, `ScreenOverlay`, portapapeles, hotkey global y,
-   si ya existe, `ServiceControl`. Implementa lo posible en <SO>.
+2. **Interfaces de platform**: todas las de «Encaje con lo implementado» (abajo), empezando por
+   las del Hito 1 (portapapeles, hotkey global, `ScreenCapture`, `ScreenIndicator`) y siguiendo por
+   el servicio, que las demás necesitan. Implementa lo posible en <SO>.
 3. **Permisos**:
    - Linux: documenta X11 vs Wayland (captura y control de entrada en Wayland requieren
      aprobación por sesión; recomienda sesión X11 para el laboratorio). Reglas Polkit/DBus si
@@ -58,14 +60,40 @@ Actualiza docs/progreso.md y docs/compatibilidad.md.
 Aplica la «Definición de terminado» de CLAUDE.md (consola, app del alumno, transparencia, arnés,
 manual y diagramas). Para esta etapa en concreto:
 - Las interfaces de `internal/platform` que hoy solo tienen implementación de Windows son más que
-  las de este prompt:
-  - `ScreenCapture`, `ScreenIndicator` y `Clipboard`;
-  - `Hotkeys`, el servicio (`service_*`) y su canal local (named pipe → socket Unix);
-  - `Power`, las restricciones (`policy_*`: bloqueo de apps, DNS local);
-  - `DisplayCapture`, H.264 y `ExcludeFromCapture`;
-  - `NetworkInspector`, `AppWindow` y `Tray`.
+  las de este prompt (al día con 12.2, 12/11/2026). Recórrelas todas con `grep "interface {"
+  internal/platform/*.go` por si se agregó alguna:
+  - pantalla: `ScreenCapture`, `ScreenIndicator`, `DisplayCapture`, `VideoEncoder` (H.264) y
+    `ExcludeFromCapture` (miniaturas, captura 10.5, transmisión 12 y proyectar 12.1);
+  - entrada: `InputInjector` (control remoto 10.4: en Linux X11 con XTest; en Wayland no se
+    puede sin portal; en macOS, permiso de Accesibilidad);
+  - `Clipboard` y `Hotkeys`;
+  - servicio: `ServiceControl`, `SessionManager` (`session_windows.go`), el canal local (named
+    pipe → socket Unix) y el secreto del equipo (`machinesecret.go`). En Linux, systemd con un
+    ayudante por sesión gráfica; en macOS, un LaunchDaemon y un LaunchAgent;
+  - energía: `Power` (10.3);
+  - restricciones (10.2): `ProcessControl`/`Process`, `DNSRedirect` y `BrowserDoH`;
+  - archivos (10.9, 10.10): `WorkFolder`, `WorkFolderReader` y las carpetas conocidas
+    (`folders_*`: `Documentos\Aula` → `~/Documentos/Aula` según `xdg-user-dir DOCUMENTS` en Linux,
+    `~/Documents/Aula` en macOS);
+  - abrir (10.11): `Launcher`, con sus reglas fijas por SO (Linux: `.desktop` instalados o
+    binarios bajo `/usr/bin` y `/opt`; macOS: apps en `/Applications`; nunca herramientas del
+    sistema). Redefinir esas reglas es parte del diseño de cada SO;
+  - red: `NetworkInspector` (comprobador de conexión, firewall: `ufw`/`firewalld`, `pf`);
+  - ventana: `AppWindow` y `Tray`;
+  - **si ya existen al portar:** `PauseOverlay` (pantalla en blanco, 10.21: ventana siempre encima
+    en todos los monitores; en Wayland, decir honestamente qué no se puede) y la lectura de la MAC
+    para encender equipos (10.19).
 
-  Recórrelas todas y anota cada una en `docs/compatibilidad.md`.
+  Anota cada una en `docs/compatibilidad.md` (créalo: todavía no existe) con una fila por función
+  visible (no por interfaz) y una columna por SO: ✓, parcial (qué falta) o ✗ (por qué), y en qué
+  condición (X11 o Wayland, permiso de macOS). La ficha «Qué puede hacer su equipo» ya muestra lo
+  que cada agente declara: comprueba que en Linux y macOS no declara nada que no haga.
+- Las funciones que no tocan el SO (código, avisos, manos y mensajes, temporizador, encuestas,
+  identidad y asistencia de 10.13, entregas de código de 10.17) deben funcionar igual en los tres
+  sistemas sin trabajo extra: pruébalo, no lo des por hecho.
+- Privacidad: cada función portada que observa o controla al alumno agrega sus textos de aviso a
+  `docs/privacidad.md` antes de implementarse (sección «Pendiente para etapas futuras»), con las
+  mismas reglas que en Windows.
 - La app del alumno se comporta igual en todos los SO (prompt 19): nunca quita el foco y cerrar
   no la termina. Sin `Tray`, cerrar minimiza; con `Tray` en Linux (StatusNotifierItem por DBus),
   se oculta como en Windows. Sin `AppWindow`, el modo compacto usa solo Wails. Pruébalo con
@@ -74,6 +102,10 @@ manual y diagramas). Para esta etapa en concreto:
   (icono, portapapeles) se saltan sin sesión gráfica, como las de Windows.
 - Diagramas: actualizar 02-componentes (implementaciones por SO) y 13-agente-servicio si el
   servicio se porta.
+- Manual: `docs/administracion/primeros-pasos.md` (instalar en Linux y macOS) y Solución de
+  problemas (X11 o Wayland, permisos de macOS); el diagnóstico `aula-cliente diagnostico` debe
+  decir qué falta en cada SO.
+- Cada SO portado es una versión minor y lleva su línea en «Sin publicar» de `CHANGELOG.md`.
 ~~~~
 
 ## Verificación manual

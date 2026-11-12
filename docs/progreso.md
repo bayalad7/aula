@@ -25,7 +25,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 07 | App profesor: lista, hotkey de captura, emisión | ✅ Completada (falta prueba en VMs) |
 | 08 | Hito 1: distribución de código de punta a punta + instaladores | ✅ **Hito 1 completado** (falta validación en laboratorio) |
 | 08.1 | v0.2.0: canales numéricos tipo LanSchool, clave del centro, diagnóstico del agente | ✅ Completada (falta prueba real, `docs/prueba-vms.md` §10) |
-| 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 Miniaturas hechas. La pantalla en blanco está documentada (protocolo §5.9, reglas 9-10) y diseñada (prototipo `alumno-pausa.html`); falta implementarla |
+| 09 | Monitoreo: miniaturas y pantalla en blanco (con aviso visible) | 🚧 Miniaturas hechas. La pantalla en blanco está documentada (protocolo §5.9, reglas 9-10) y diseñada (prototipo `alumno-pausa.html`); se implementa en **10.21** |
 | 10 | Plantilla reutilizable para nuevas funciones | ✅ Completada (al día con las etapas 18 y 19) |
 | 10.1 (09.3) | Agente del alumno como servicio de Windows (servicio + ayudante) | ✅ Implementado y probado en CI (falta prueba en VM, `docs/prueba-vms.md` §13) |
 | 10.2 | Restricciones de la clase: bloqueo de apps y filtro web (Windows) | ✅ Implementado y probado en CI con administrador (falta prueba en VM, `docs/prueba-vms.md` §14) |
@@ -39,8 +39,16 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.10 | Recoger los archivos de cada alumno (recolecciones) | ✅ Implementado y probado en CI con dobles y alumnos simulados; pestaña «Recolecciones» de Archivos (falta la prueba en VM, `docs/prueba-vms.md` §22, y los casos C-74 a C-78 y A-23 a A-25). `code.collect` (entregar desde el overlay) sigue reservado |
 | 10.11 | Enviar una URL o abrir una app | ✅ Implementado y probado en CI con dobles; panel «Abrir» de la barra, la acción en la ficha y la Pantalla grande, y Ajustes › Apps permitidas (falta la prueba en VM, `docs/prueba-vms.md` §23, y los casos C-79 a C-83 y A-26 y A-27) |
 | 10.12 | Encuestas en vivo | ✅ Implementado y probado en CI con dobles y alumnos simulados; panel «Encuesta» de la barra, franja y sección «Encuestas» de Participación (falta la prueba en VM, `docs/prueba-vms.md` §24, y los casos C-84 a C-88 y A-28 a A-30) |
-| 10.13 | Asistencia y bitácora | ⏳ Pendiente |
-| 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.4.0-rc.1`) |
+| 10.13 | Identidad del alumno (cuenta, nombre, grado, grupo), materias, asistencia y bitácora | ⏳ Pendiente (prompt ampliado el 12/11/2026) |
+| 10.14 | Terminar la clase | ⏳ Pendiente (prompt del 12/11/2026) |
+| 10.15 | Nombres de los equipos y mapa del aula | ⏳ Pendiente (prompt del 12/11/2026) |
+| 10.16 | Grupos guardados y equipos de trabajo | ⏳ Pendiente (prompt del 12/11/2026) |
+| 10.17 | Entregar código desde la app del alumno (`code.collect`) | ⏳ Pendiente (prompt del 12/11/2026) |
+| 10.18 | Perfiles de clase («Iniciar clase») | ⏳ Pendiente, después de `v0.1.0` |
+| 10.19 | Encender equipos (Wake-on-LAN) | ⏳ Pendiente, después de `v0.1.0` |
+| 10.20 | Cuestionario con puntaje (mejora de 10.12) | ⏳ Pendiente, después de `v0.1.0` |
+| 10.21 | Pantalla en blanco (la parte pendiente de 09) | ⏳ Pendiente (prompt del 12/11/2026; protocolo §5.9–5.11 ya documentado) |
+| 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.1.0`) |
 | 12 (09.2) | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 12.1 | Proyectar la pantalla de un alumno a la clase | ✅ Implementado y probado en CI con dobles y de punta a punta con pion por loopback; «Proyectar a la clase» en la ficha y la Pantalla grande, con su franja (falta la prueba en VM, `docs/prueba-vms.md` §25, y los casos C-89 a C-94 y A-31 a A-34) |
 | 12.2 | Mejora de la transmisión: a una selección; modos ventana y pantalla completa | ✅ Implementado y probado en CI con dobles y con una consola real que deja de responder (falta la prueba en VM, `docs/prueba-vms.md` §26, y los casos C-99 a C-101 y A-37 a A-41 en la ventana real) |
@@ -71,9 +79,11 @@ el que se trabajó antes; las notas de abajo lo conservan.
    (`ACCIONES_ALUMNO` en `main.js`) en la Ficha y la Pantalla grande; «Qué puede hacer su equipo»
    es una grilla de iconos con ✓/✗ y tooltip (componente `data-tip` en `internal/ui`); las
    capturas del arnés, del mapa, de las notas y del manual son WebP (manual: de 463 KB a 288 KB).
-5. Cualquier función de 10.10 a 10.13 con `/funcionalidad-nueva <número>` (10.10 reutiliza
-   el troceo común y la carpeta de trabajo `Documentos\Aula` de 10.9). Las que recogen
-   respuestas (10.10, 10.12, 10.13) agregan su sección a la vista «Participación».
+5. Funciones para `v0.1.0` (prompts del 12/11/2026, lista en `docs/prompts/00-LEEME.md`), con
+   `/funcionalidad-nueva <número>` y en este orden: 10.21 (pantalla en blanco) → 10.13
+   (identidad, asistencia y bitácora) → 10.14 (terminar la clase) → 10.15 (nombres y mapa) →
+   10.17 (entregar código); 10.16 si hay tiempo. Después: 15 (auto-actualización) y 11 (revisión).
+   10.18 a 10.20 quedan para después de `v0.1.0` (10.20 con `/funcionalidad-mejora`).
 6. Menor (traído de la entrega E11, eliminada en la limpieza del 12/11/2026): el comprobador de
    conexión deja en el registro de la consola una línea `TLS handshake error … EOF` del servidor
    HTTP por cada dirección que prueba. Es inofensiva; si molesta, se silencia en `transport`.

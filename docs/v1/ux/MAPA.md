@@ -39,7 +39,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Ficha del alumno** | Panel derecho con los datos de un alumno y sus acciones. |
-| 2 | **Acciones sobre el alumno** | Tomar control, Mensaje privado, Tomar captura, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
+| 2 | **Acciones sobre el alumno** | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
 | 3 | **Qué puede hacer su equipo** | Lista de capacidades del equipo del alumno. |
 
 ### Consola · Pantalla grande
@@ -48,7 +48,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Pantalla grande** | La pantalla de un alumno en grande; también la vista del control remoto. |
+| 1 | **Pantalla grande** | La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno. |
 | 2 | **Acciones sobre el alumno (Pantalla grande)** | Las mismas acciones que en la Ficha del alumno. |
 
 ### Consola · Franja global y un panel de la barra
@@ -57,7 +57,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
+| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
 | 2 | **Panel Aviso** | Mandar un aviso a la selección. |
 | 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
 
@@ -140,7 +140,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
+| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
 | 2 | **Sección Encuestas** | La encuesta abierta con sus barras en vivo y Cerrar, y las anteriores con Compartir resultados. |
 
 
@@ -154,7 +154,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 |---|---|---|
 | 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
 | 2 | **Botones de la tira** | Levantar la mano, Mensaje al profesor y Modo compacto. |
-| 3 | **Bandas de transparencia** | Lo que el profesor hace con el equipo (pantalla vista, control, restricciones, energía); no se cierran. |
+| 3 | **Bandas de transparencia** | Lo que el profesor hace con el equipo (pantalla vista, control, tu pantalla mostrada a la clase, restricciones, energía); no se cierran. |
 | 4 | **Estado vacío** | Lo que se ve cuando no hay código ni archivos. |
 
 ### Alumno · Código recibido
@@ -227,7 +227,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 |---|---|---|
 | `menu` | Menú | Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes. |
 | `menu-clase` | Menú › Selector de clase | Canal y nombre de la clase abierta; abre «Cambiar de canal». |
-| `franja` | Franja global | Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
+| `franja` | Franja global | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
 | `cabecera` | Cabecera de la vista | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | `avisos` | Avisos (toasts) | Mensajes breves abajo a la derecha tras una acción. |
 | `alumnos` | Vista Alumnos | Los alumnos del canal, en lista o miniaturas. |
@@ -238,9 +238,9 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno con su nombre; un clic abre la Pantalla grande. |
 | `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
 | `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y sus acciones. |
-| `ficha-acciones` | Ficha del alumno › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
+| `ficha-acciones` | Ficha del alumno › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
 | `ficha-puede` | Ficha del alumno › Qué puede hacer su equipo | Lista de capacidades del equipo del alumno. |
-| `pantalla-grande` | Pantalla grande | La pantalla de un alumno en grande; también la vista del control remoto. |
+| `pantalla-grande` | Pantalla grande | La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno. |
 | `pg-acciones` | Pantalla grande › Acciones sobre el alumno (Pantalla grande) | Las mismas acciones que en la Ficha del alumno. |
 | `panel-aviso` | Panel Aviso | Mandar un aviso a la selección. |
 | `panel-pantalla` | Panel Transmitir | Transmitir tu pantalla a la clase. |
@@ -288,7 +288,8 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `tira` | Tira de identidad | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
 | `tira-botones` | Tira de identidad › Botones de la tira | Levantar la mano, Mensaje al profesor y Modo compacto. |
 | `tira-temporizador` | Tira de identidad › Insignia del temporizador | Cuánto falta del ejercicio. |
-| `bandas` | Bandas de transparencia | Lo que el profesor hace con el equipo (pantalla vista, control, restricciones, energía); no se cierran. |
+| `bandas` | Bandas de transparencia | Lo que el profesor hace con el equipo (pantalla vista, control, tu pantalla mostrada a la clase, restricciones, energía); no se cierran. |
+| `banda-mostrando` | Bandas de transparencia › Banda «Tu pantalla se está mostrando» | Mientras sus compañeros ven su pantalla; sin botones: la termina el profesor. |
 | `mano-estado` | Estado de la mano | «Tu mano está levantada» y el motivo. |
 | `redactar` | Mensaje al profesor | La tarjeta para escribirle al profesor. |
 | `enviados` | Tus mensajes | Los mensajes enviados y si llegaron. |
@@ -303,4 +304,4 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `tarjeta-codigo` | Lista de código › Tarjeta de código | Un fragmento con su ejercicio, título, lenguaje y Copiar. |
 | `avisos` | Avisos en la esquina | Avisos del profesor y de Aula, abajo a la derecha. |
 | `compacto` | Modo compacto | La ventana encogida a una tira. |
-| `transmision` | Vista de la transmisión | La pantalla del profesor ocupando la ventana. |
+| `transmision` | Vista de la transmisión | La pantalla del profesor, o la de un compañero, ocupando la ventana. |

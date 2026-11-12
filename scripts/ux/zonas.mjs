@@ -11,7 +11,7 @@ export const zonas = {
     // Marco
     { id: "menu", nombre: "Menú", selector: ".nav-lateral", que: "Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes." },
     { id: "menu-clase", dentro: "menu", nombre: "Selector de clase", selector: "#nav-clase", que: "Canal y nombre de la clase abierta; abre «Cambiar de canal»." },
-    { id: "franja", nombre: "Franja global", selector: ".principal > .franja", que: "Lo que sigue activo durante la clase (transmitir, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo." },
+    { id: "franja", nombre: "Franja global", selector: ".principal > .franja", que: "Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo." },
     { id: "cabecera", nombre: "Cabecera de la vista", selector: ".vista__cabecera", que: "Título de la vista, su resumen y el «?» de ayuda contextual." },
     { id: "avisos", nombre: "Avisos (toasts)", selector: "#avisos", que: "Mensajes breves abajo a la derecha tras una acción." },
 
@@ -26,9 +26,9 @@ export const zonas = {
 
     // Paneles y diálogos que salen de Alumnos
     { id: "ficha", nombre: "Ficha del alumno", selector: "#panel-alumno", que: "Panel derecho con los datos de un alumno y sus acciones." },
-    { id: "ficha-acciones", dentro: "ficha", nombre: "Acciones sobre el alumno", selector: "#ficha-acciones", que: "Tomar control, Mensaje privado, Tomar captura, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js)." },
+    { id: "ficha-acciones", dentro: "ficha", nombre: "Acciones sobre el alumno", selector: "#ficha-acciones", que: "Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js)." },
     { id: "ficha-puede", dentro: "ficha", nombre: "Qué puede hacer su equipo", selector: "#ficha-puede", que: "Lista de capacidades del equipo del alumno." },
-    { id: "pantalla-grande", nombre: "Pantalla grande", selector: "#pantalla-grande", que: "La pantalla de un alumno en grande; también la vista del control remoto." },
+    { id: "pantalla-grande", nombre: "Pantalla grande", selector: "#pantalla-grande", que: "La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno." },
     { id: "pg-acciones", dentro: "pantalla-grande", nombre: "Acciones sobre el alumno (Pantalla grande)", selector: "#pg-acciones", que: "Las mismas acciones que en la Ficha del alumno." },
     { id: "panel-aviso", nombre: "Panel Aviso", selector: "#panel-aviso", que: "Mandar un aviso a la selección." },
     { id: "panel-pantalla", nombre: "Panel Transmitir", selector: "#panel-pantalla", que: "Transmitir tu pantalla a la clase." },
@@ -82,7 +82,8 @@ export const zonas = {
     { id: "tira", nombre: "Tira de identidad", selector: "#estado", que: "Arriba: a qué clase está conectado, el temporizador y los botones del alumno." },
     { id: "tira-botones", dentro: "tira", nombre: "Botones de la tira", selector: "#mano, #escribir, #compactar", que: "Levantar la mano, Mensaje al profesor y Modo compacto." },
     { id: "tira-temporizador", dentro: "tira", nombre: "Insignia del temporizador", selector: "#temporizador", que: "Cuánto falta del ejercicio." },
-    { id: "bandas", nombre: "Bandas de transparencia", selector: "#bandas", que: "Lo que el profesor hace con el equipo (pantalla vista, control, restricciones, energía); no se cierran." },
+    { id: "bandas", nombre: "Bandas de transparencia", selector: "#bandas", que: "Lo que el profesor hace con el equipo (pantalla vista, control, tu pantalla mostrada a la clase, restricciones, energía); no se cierran." },
+    { id: "banda-mostrando", dentro: "bandas", nombre: "Banda «Tu pantalla se está mostrando»", selector: "#banda-mostrando", que: "Mientras sus compañeros ven su pantalla; sin botones: la termina el profesor." },
     { id: "mano-estado", nombre: "Estado de la mano", selector: "#mano-estado", que: "«Tu mano está levantada» y el motivo." },
     { id: "redactar", nombre: "Mensaje al profesor", selector: "#redactar", que: "La tarjeta para escribirle al profesor." },
     { id: "enviados", nombre: "Tus mensajes", selector: "#enviados", que: "Los mensajes enviados y si llegaron." },
@@ -97,7 +98,7 @@ export const zonas = {
     { id: "tarjeta-codigo", dentro: "codigos", nombre: "Tarjeta de código", selector: "#snippets > li", que: "Un fragmento con su ejercicio, título, lenguaje y Copiar." },
     { id: "avisos", nombre: "Avisos en la esquina", selector: "#avisos", que: "Avisos del profesor y de Aula, abajo a la derecha." },
     { id: "compacto", nombre: "Modo compacto", selector: "#compacto", que: "La ventana encogida a una tira." },
-    { id: "transmision", nombre: "Vista de la transmisión", selector: "#broadcast", que: "La pantalla del profesor ocupando la ventana." },
+    { id: "transmision", nombre: "Vista de la transmisión", selector: "#broadcast", que: "La pantalla del profesor, o la de un compañero, ocupando la ventana." },
   ],
 };
 
@@ -111,6 +112,8 @@ export const escenas = {
     "lab-control": "Controlando un alumno",
     "lab-control-pausa": "Control en pausa",
     "lab-transmitiendo": "Transmitiendo tu pantalla",
+    "lab-proyectar-conectando": "Proyectando: conectando con el alumno",
+    "lab-proyectando": "Proyectando la pantalla de un alumno",
     "lab-restr-activa": "Restricciones activas",
     "lab-energia-pendiente": "Reinicio pendiente",
     "lab-captura-falla": "Captura que falló",
@@ -143,6 +146,8 @@ export const escenas = {
     restricciones: "Restricciones",
     "energia-cuenta": "Cuenta para reiniciar",
     transmision: "Transmisión del profesor",
+    "transmision-alumno": "Viendo la pantalla de un compañero",
+    mostrando: "Tu pantalla se está mostrando",
     todo: "Todas las bandas",
     buscando: "Buscando la clase",
     "sin-conexion": "Sin conexión",

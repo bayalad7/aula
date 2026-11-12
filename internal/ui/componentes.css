@@ -135,6 +135,45 @@ a:hover { text-decoration-thickness: 2px; }
 input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; margin: 0; accent-color: var(--c-acento); }
 .opcion { display: inline-flex; align-items: center; gap: var(--e-2); cursor: pointer; }
 
+/* Campo con icono de referencia: <input data-icono="carpeta"> → <span class="entrada">
+   (sistema/iconos.js). El icono va a la izquierda, dentro del borde del campo. */
+.entrada { position: relative; display: block; min-width: 0; }
+.entrada__icono { position: absolute; left: var(--e-3); top: 50%; transform: translateY(-50%);
+  width: 1.05rem; height: 1.05rem; color: var(--c-texto-suave); pointer-events: none; }
+.entrada--area .entrada__icono { top: calc(var(--e-2) + 0.55rem); transform: none; }
+.entrada > input, .entrada > select, .entrada > textarea { padding-left: calc(var(--e-3) + 1.6rem) !important; }
+.entrada:focus-within .entrada__icono { color: var(--c-acento); }
+/* Un prefijo fijo dentro del campo (Documentos\Aula\): va pegado al icono. */
+.entrada--prefijo { display: flex; align-items: center; border: 1px solid var(--c-borde-fuerte);
+  border-radius: var(--r-md); background: var(--c-superficie); }
+.entrada--prefijo:focus-within { border-color: var(--c-acento); box-shadow: 0 0 0 1px var(--c-acento); }
+.entrada__prefijo { padding-left: calc(var(--e-3) + 1.6rem); color: var(--c-texto-suave); white-space: nowrap; }
+.entrada--prefijo > input { border: 0 !important; box-shadow: none !important; padding-left: var(--e-1) !important; background: transparent; }
+
+/* Opciones agrupadas: radios que se ven como un selector segmentado con icono. El radio sigue
+   ahí (teclado con flechas, formularios), visualmente oculto. */
+.opciones-seg { display: inline-flex; flex-wrap: wrap; padding: 2px; gap: 2px; border: 1px solid var(--c-borde-fuerte);
+  border-radius: var(--r-md); background: var(--c-superficie); }
+.opcion-seg { position: relative; display: inline-flex; align-items: center; gap: var(--e-1);
+  min-height: calc(var(--alto-control) - 6px); padding: 0 var(--e-3); border-radius: var(--r-sm); cursor: pointer; }
+.opcion-seg > input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.opcion-seg:hover { background: var(--c-superficie-2); }
+.opcion-seg:has(input:checked) { background: var(--c-acento-suave); color: var(--c-acento-sobre-suave); font-weight: var(--peso-medio); }
+.opcion-seg:has(input:focus-visible) { outline: 2px solid var(--c-foco); outline-offset: 1px; }
+.opcion-seg:has(input:disabled) { opacity: 0.55; cursor: not-allowed; }
+.opcion-seg .icono { width: 1.05rem; height: 1.05rem; }
+
+/* Interruptor: una casilla de formulario (sí o no) con forma de interruptor. */
+input.interruptor { appearance: none; -webkit-appearance: none; position: relative; flex: none;
+  width: 2.25rem; height: 1.3rem; border-radius: 999px; background: var(--c-borde-fuerte); cursor: pointer;
+  transition: background var(--transicion); }
+input.interruptor::before { content: ""; position: absolute; top: 2px; left: 2px; width: calc(1.3rem - 4px); height: calc(1.3rem - 4px);
+  border-radius: 50%; background: var(--c-superficie); box-shadow: var(--sombra-1); transition: transform var(--transicion); }
+input.interruptor:checked { background: var(--c-acento); }
+input.interruptor:checked::before { transform: translateX(0.95rem); }
+input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offset: 2px; }
+.opcion > .icono { width: 1.05rem; height: 1.05rem; color: var(--c-texto-suave); }
+
 /* --- Insignias de estado --------------------------------------------------------------- */
 .insignia {
   display: inline-flex; align-items: center; gap: 0.3em;
@@ -477,7 +516,9 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-weight: var(--peso-medio);
 }
-@container (max-width: 54rem) {
+/* 64rem: con la raíz de 15 px son 960 px, lo que piden los ocho botones con su texto (nota de
+   interfaz 2); debajo, solo iconos con su tooltip (data-tip). */
+@container (max-width: 64rem) {
   .barra-acciones .btn__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .barra-acciones .btn { width: var(--alto-control); padding: 0; }
   .barra-acciones__dentro { padding-left: var(--e-4); padding-right: var(--e-4); }
@@ -756,3 +797,47 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
   background: var(--c-texto); color: var(--c-superficie); font-size: var(--t-sm); font-weight: var(--peso-normal, 400);
   line-height: 1.3; text-align: center; box-shadow: var(--sombra-1); pointer-events: none;
 }
+
+/* Pie de envío: el final de un formulario que manda algo a los alumnos (Código, Archivos). A quién
+   arriba; las acciones abajo, las secundarias a la izquierda y la principal, grande, a la derecha. */
+.pie-envio { display: grid; gap: var(--e-3); margin: var(--e-1) calc(-1 * var(--e-4)) calc(-1 * var(--e-4));
+  padding: var(--e-4); border-top: 1px solid var(--c-borde); background: var(--c-superficie-2);
+  border-radius: 0 0 var(--r-lg) var(--r-lg); }
+.pie-envio__destino { display: grid; gap: var(--e-1); margin: 0; padding: 0; border: 0; min-width: 0; }
+.pie-envio__destino .opciones-seg { justify-self: start; }
+.pie-envio__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
+.pie-envio__principal { display: inline-flex; flex-wrap: wrap; gap: var(--e-2); margin-left: auto; }
+.pie-envio__motivo { margin: 0; font-size: var(--t-sm); color: var(--c-texto-suave); }
+.pie-envio__motivo:empty { display: none; }
+.btn--peligro-texto { color: var(--c-error); }
+
+/* Zona de archivos: la lista de lo elegido, con borde punteado, y su estado vacío. */
+.zona-archivos { display: grid; gap: var(--e-2); padding: var(--e-3); border: 1.5px dashed var(--c-borde-fuerte);
+  border-radius: var(--r-md); background: var(--c-superficie); }
+.zona-archivos__vacio { display: grid; justify-items: center; gap: var(--e-1); margin: 0; padding: var(--e-2) 0;
+  color: var(--c-texto-suave); text-align: center; }
+.zona-archivos__vacio[hidden] { display: none; }
+.zona-archivos > div:last-child { display: flex; justify-content: center; }
+.archivo-elegido { padding: var(--e-1) var(--e-2); border: 1px solid var(--c-borde); border-radius: var(--r-md);
+  background: var(--c-superficie-2); }
+
+/* Diálogo de un formulario (mensaje privado, abrir en un alumno, mensaje al profesor): ancho de
+   lectura y los botones al pie, a la derecha. */
+.dialogo--form { width: min(34rem, calc(100vw - 2rem)); }
+.dialogo__pie-botones { padding-top: var(--e-3); border-top: 1px solid var(--c-borde); }
+
+/* Qué puede hacer un equipo: grilla de 5 iconos; verde con ✓ si puede, gris con ✗ si no (color y
+   marca: no depende solo del color). El nombre sale en el tooltip y lo lee el lector de pantalla.
+   La usan la ficha del alumno en la consola (#ficha-puede) y la app del alumno. */
+.capacidades, #ficha-puede { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--e-2);
+  margin: 0; padding: 0; list-style: none; }
+.capacidad { position: relative; display: grid; place-items: center; height: 2.75rem; border: 1px solid var(--c-borde);
+  border-radius: var(--r-md); background: var(--c-superficie-2); color: var(--c-texto-suave); }
+.capacidad > .icono:first-child { width: 1.4rem; height: 1.4rem; }
+.capacidad--si { border-color: var(--c-conectado-solido); background: var(--c-conectado-fondo); color: var(--c-conectado); }
+.capacidad__marca { position: absolute; right: 3px; bottom: 3px; width: 0.8rem; height: 0.8rem; }
+/* En las orillas, el tooltip se alinea al borde para no salirse. */
+.capacidades > :nth-child(5n + 1)[data-tip]:hover::after, #ficha-puede > :nth-child(5n + 1)[data-tip]:hover::after { left: 0; transform: none; }
+.capacidades > :nth-child(5n)[data-tip]:hover::after, #ficha-puede > :nth-child(5n)[data-tip]:hover::after { left: auto; right: 0; transform: none; }
+.dialogo__titulo { display: flex; align-items: center; gap: var(--e-2); }
+.dialogo__titulo h2 { flex: 1; min-width: 0; margin: 0; }

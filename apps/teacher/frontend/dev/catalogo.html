@@ -260,6 +260,45 @@ discord</textarea></label>
       </ol>
     </section>
 
+    <section id="formularios-iconos" aria-labelledby="h-formularios-iconos">
+      <h2 id="h-formularios-iconos">Formularios con iconos de referencia</h2>
+      <p class="suave">Todo botón y todo campo lleva su icono. En las apps basta <code>data-icono="nombre"</code>: <code>sistema/iconos.js</code> lo dibuja (y lo repone si el texto cambia). Aquí, el marcado que produce.</p>
+      <div class="pila" style="max-width:34rem">
+        <label class="campo"><span class="campo__etiqueta">Título</span>
+          <span class="entrada"><svg class="icono entrada__icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#editar"/></svg><input placeholder="Por ejemplo: Factorial recursivo"></span></label>
+        <label class="campo"><span class="campo__etiqueta">Guardar en</span>
+          <span class="entrada entrada--prefijo"><svg class="icono entrada__icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#carpeta"/></svg><span class="entrada__prefijo mono">Documentos\Aula\</span><input placeholder="Ejercicio 4"></span></label>
+        <fieldset class="campo"><legend class="campo__etiqueta">Tipo (opciones agrupadas)</legend>
+          <div class="opciones-seg">
+            <label class="opcion-seg"><input type="radio" name="cat-tipo" checked> <svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#info"/></svg> <span>Información</span></label>
+            <label class="opcion-seg"><input type="radio" name="cat-tipo"> <svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#advertencia"/></svg> <span>Advertencia</span></label>
+          </div></fieldset>
+        <label class="opcion"><input type="checkbox" class="interruptor" role="switch" checked> <svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#reenviar"/></svg> <span>Reemplazar si ya lo tienen (interruptor)</span></label>
+        <div class="tarjeta"><div class="tarjeta__cuerpo pila">
+          <div class="zona-archivos">
+            <p class="zona-archivos__vacio"><svg class="icono icono--lg" aria-hidden="true"><use href="../dist/sistema/iconos.svg#archivo"/></svg><span>Aún no eliges archivos.</span></p>
+            <div><button type="button" class="btn"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#mas"/></svg><span>Elegir archivos…</span></button></div>
+          </div>
+          <div class="pie-envio">
+            <fieldset class="pie-envio__destino"><legend class="campo__etiqueta">Enviar a (pie de envío)</legend>
+              <div class="opciones-seg">
+                <label class="opcion-seg"><input type="radio" name="cat-dest" checked> <svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#alumnos"/></svg> <span>Todos los conectados (4)</span></label>
+                <label class="opcion-seg"><input type="radio" name="cat-dest"> <svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#filtro"/></svg> <span>Los seleccionados (2)</span></label>
+              </div></fieldset>
+            <div class="pie-envio__acciones">
+              <button type="button" class="btn btn--fantasma"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#portapapeles"/></svg><span>Pegar del portapapeles</span></button>
+              <button type="button" class="btn btn--fantasma btn--peligro-texto"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#limpiar"/></svg><span>Limpiar pantallas…</span></button>
+              <span class="pie-envio__principal">
+                <button type="button" class="btn"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#mas"/></svg><span>Agregar debajo</span></button>
+                <button type="button" class="btn btn--primario btn--lg"><svg class="icono" aria-hidden="true"><use href="../dist/sistema/iconos.svg#enviar"/></svg><span>Emitir</span></button>
+              </span>
+            </div>
+            <p class="pie-envio__motivo">Escribe o pega código para emitir.</p>
+          </div>
+        </div></div>
+      </div>
+    </section>
+
     <section id="iconos" aria-labelledby="h-iconos">
       <h2 id="h-iconos">Iconos</h2>
       <p class="suave">Leídos de <code>iconos.svg</code>. Uso: <code>&lt;svg class="icono"&gt;&lt;use href="sistema/iconos.svg#id"/&gt;&lt;/svg&gt;</code></p>

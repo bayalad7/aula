@@ -31,7 +31,8 @@ func TestIconsAreSymbolsOfTheSprite(t *testing.T) {
 	if len(inText) != len(sprite.Symbols) {
 		t.Errorf("%d symbols written, %d parsed: one is inside a comment", len(inText), len(sprite.Symbols))
 	}
-	used := regexp.MustCompile(`iconos\.svg#([a-z-]+)|icono\("([a-z-]+)"`)
+	// data-icono="x" in the HTML and icono: "x" in main.js are drawn by iconos.js.
+	used := regexp.MustCompile(`iconos\.svg#([a-z-]+)|icono\("([a-z-]+)"|data-icono="([a-z-]+)"|icono: "([a-z-]+)"`)
 	for _, f := range []string{
 		"../../apps/teacher/frontend/dist/index.html", "../../apps/teacher/frontend/dist/main.js",
 		"../../apps/student/frontend/dist/index.html", "../../apps/student/frontend/dist/main.js",
@@ -41,7 +42,7 @@ func TestIconsAreSymbolsOfTheSprite(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, m := range used.FindAllSubmatch(src, -1) {
-			id := string(m[1]) + string(m[2])
+			id := string(m[1]) + string(m[2]) + string(m[3]) + string(m[4])
 			if !defined[id] {
 				t.Errorf("%s uses the icon %q, which iconos.svg does not define", f, id)
 			}

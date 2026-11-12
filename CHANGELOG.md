@@ -34,8 +34,9 @@ retiraron; esta es la primera.
 
 ### Ver y guiar la clase
 
-- **Miniaturas** de las pantallas y una **Pantalla grande** de un alumno, con su aviso visible en
-  el equipo del alumno.
+- **Miniaturas** de las pantallas, cada una como un monitor y en el tamaño que elijas (o ajustadas
+  para ver a todos), y una **Pantalla grande** de un alumno, con su aviso visible en el equipo del
+  alumno. Arriba de la lista se ve a quién van las acciones: «Todos (n)» o «n seleccionados».
 - **Mostrar mi pantalla:** a todos o a los seleccionados, en una ventana encima de las suyas o en
   **pantalla completa** para presentaciones; se libera sola si se pierde la conexión.
 - **Proyectar a la clase** la pantalla de un alumno.

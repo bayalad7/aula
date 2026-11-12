@@ -1195,6 +1195,16 @@ Para que cada función pendiente respete lo implementado:
   v0.15, opcional; tarjeta «Qué hacer» en el alumno, nunca en los registros); 019 rejilla de
   duraciones con «Otro…». Casos C-102 a C-107.
 
+## Notas de interfaz v0.1.0 001–006 (2026-11-12)
+
+Hechas con `/notas-ux` (sin commit): en Código y Archivos, «Enviar a» y los botones en la misma
+fila (`.pie-envio`); los campos de canal solo admiten dígitos; las miniaturas son monitores
+(`--c-monitor-marco`, `--c-monitor-pie`) con **Tamaño** (Pequeño a Extra grande o Ajustar a la
+pantalla, recordado en la consola); la selección («Todos (n)» / «n seleccionados», con tooltip) pasa
+de la barra de acciones a la cabecera, y la barra, solo de botones, muestra los nueve con su texto
+desde 1035 px. Capturas 173–183 del arnés, mapa y manual (Alumnos) al día. Falta revisarlas en la
+ventana real.
+
 ## Etapa 10.21: pausar pantallas (pantalla en blanco, D-013) — notas
 
 Aprobado el 12/11/2026 (`/funcionalidad-nueva 10.21`). Ubicación elegida por el usuario: panel

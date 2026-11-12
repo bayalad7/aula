@@ -18,8 +18,10 @@ o solo a algunos.
 - **Lista**: una fila por equipo con su estado, el código que tiene en pantalla, su sistema y
   versión de Aula, y notas (por ejemplo, «No comparte su pantalla», «Restricciones» o «No pudo: …»
   si su equipo contestó con un problema).
-- **Miniaturas**: la pantalla de cada alumno, actualizada cada segundo. Haz clic en una para verla
-  en grande.
+- **Miniaturas**: la pantalla de cada alumno, como un monitor, actualizada cada segundo. Haz clic
+  en una para verla en grande. Con **Tamaño** las haces más chicas o más grandes (Pequeño, Mediano,
+  Grande, Extra grande) o eliges **Ajustar a la pantalla** para ver a todos sin desplazarte; la
+  consola recuerda tu elección.
 
 Mientras ves las miniaturas, cada alumno tiene en su pantalla el aviso «Tu pantalla está siendo
 vista por el profesor». Las imágenes no se guardan: al salir de Miniaturas se dejan de pedir.
@@ -60,9 +62,9 @@ privado, Proyectar, Pausar ni Abrir.
 
 ## Seleccionar alumnos
 
-Haz clic en una fila o su casilla, o usa **Seleccionar todos** (también con Ctrl+A). La barra de
-abajo dice cuántos tienes seleccionados. **Sin selección, las acciones van a todos los
-conectados.**
+Haz clic en una fila o su casilla, o usa **Seleccionar todos** (también con Ctrl+A). Arriba, junto
+a los conectados, dice **Todos (n)** o **n seleccionados** (al pasar el mouse explica a quién van).
+**Sin selección, las acciones van a todos los conectados.**
 
 ## Acciones sobre la selección
 

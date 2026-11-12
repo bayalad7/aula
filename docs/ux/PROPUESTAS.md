@@ -31,6 +31,20 @@ SemVer).
   con una regla nueva en `docs/privacidad.md`. Recomendación: decidirlo junto con la política del
   centro antes de diseñarlo.
 
+## P-03 · Borrar los archivos del alumno al terminar la clase
+
+- **Pide:** prompt 10.14: que «Terminar la clase» deje también vacía la carpeta `Documentos\Aula`
+  del alumno (archivos recibidos y recolecciones), para que el siguiente grupo no los vea.
+- **Hoy:** `class.end` (§5.25) solo quita las tarjetas de la ventana; los archivos se quedan
+  (`docs/privacidad.md` regla 84). Decisión del 2026-11-12: no borrar en esta versión.
+- **Necesitaría:** un campo opcional en `class.end` (por ejemplo, `clear_work_folder`) y una
+  regla del agente que solo borre lo que Aula escribió (con su diario, como las restricciones),
+  nunca lo que el alumno creó. Es compatible hacia atrás si es opcional (versión menor).
+- **Privacidad y riesgo:** borrar trabajo del alumno es irreversible: pediría confirmación del
+  profesor, un aviso en la tarjeta «La clase terminó» y quizá que el administrador lo habilite
+  por centro. Recomendación: decidirlo con 10.13 (cuentas por alumno), que separa el trabajo de
+  cada grupo.
+
 ## Notas (no son cambios de protocolo)
 
 - **Columna «Canal»** (Fase 3, punto 2): no se agrega a la lista porque todos los alumnos que ve la

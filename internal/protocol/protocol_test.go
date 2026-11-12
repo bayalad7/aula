@@ -88,6 +88,7 @@ func samplePayloads() []Payload {
 		MsgShow{Text: "Revisa la línea 12", Level: LevelWarning, Personal: true},
 		TimerStart{TimerID: testRefID, Label: "Ejercicio 1", DurationS: 600, RemainingMS: 600000},
 		TimerStart{TimerID: testRefID, DurationS: 60, RemainingMS: 32000},
+		TimerStart{TimerID: testRefID, Label: "Ejercicio 2", DurationS: 600, RemainingMS: 600000, Description: "Resuelve 3 a 5.\nEntrega."},
 		TimerExtend{TimerID: testRefID, AddS: 300, RemainingMS: 572000},
 		TimerStop{TimerID: testRefID},
 		TimerAck{RefID: testSnippetID, TimerID: testRefID, Status: TimerRunning, RemainingMS: 599980},
@@ -773,6 +774,7 @@ func TestTimerLimits(t *testing.T) {
 	for _, p := range []Payload{
 		TimerStart{TimerID: "x", DurationS: 60, RemainingMS: 60000},
 		TimerStart{TimerID: testRefID, Label: strings.Repeat("ñ", MaxTimerLabel+1), DurationS: 60, RemainingMS: 60000},
+		TimerStart{TimerID: testRefID, DurationS: 60, RemainingMS: 60000, Description: strings.Repeat("ñ", MaxTimerDescription+1)},
 		TimerStart{TimerID: testRefID, DurationS: MinTimerDurationS - 1, RemainingMS: 9000},
 		TimerStart{TimerID: testRefID, DurationS: MaxTimerDurationS + 1, RemainingMS: 60000},
 		TimerStart{TimerID: testRefID, DurationS: 60, RemainingMS: 0},

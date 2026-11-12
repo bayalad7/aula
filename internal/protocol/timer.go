@@ -4,12 +4,13 @@ import "unicode/utf8"
 
 // Limits of the timer.* messages (docs/protocol.md §5.19, §7).
 const (
-	MaxTimerLabel     = 40
-	MinTimerDurationS = 10
-	MaxTimerDurationS = 4 * 60 * 60
-	MaxTimerRemaining = MaxTimerDurationS * 1000 // milliseconds
-	MinTimerExtendS   = 60
-	MaxTimerExtendS   = 60 * 60
+	MaxTimerLabel       = 40
+	MaxTimerDescription = 1000
+	MinTimerDurationS   = 10
+	MaxTimerDurationS   = 4 * 60 * 60
+	MaxTimerRemaining   = MaxTimerDurationS * 1000 // milliseconds
+	MinTimerExtendS     = 60
+	MaxTimerExtendS     = 60 * 60
 )
 
 // TimerStatus is the state a timer.ack reports.
@@ -29,6 +30,9 @@ type TimerStart struct {
 	Label       string `json:"label"`
 	DurationS   int    `json:"duration_s"`
 	RemainingMS int64  `json:"remaining_ms"`
+	// Description says what to do (v0.15); plain text, may be empty. Never
+	// logged.
+	Description string `json:"description,omitempty"`
 }
 
 // MessageType implements Payload.
@@ -41,6 +45,9 @@ func (p TimerStart) Validate() error {
 	}
 	if utf8.RuneCountInString(p.Label) > MaxTimerLabel {
 		return invalid(TypeTimerStart, "label exceeds %d characters", MaxTimerLabel)
+	}
+	if utf8.RuneCountInString(p.Description) > MaxTimerDescription {
+		return invalid(TypeTimerStart, "description exceeds %d characters", MaxTimerDescription)
 	}
 	if p.DurationS < MinTimerDurationS || p.DurationS > MaxTimerDurationS {
 		return invalid(TypeTimerStart, "duration_s must be %d-%d", MinTimerDurationS, MaxTimerDurationS)

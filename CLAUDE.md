@@ -138,16 +138,20 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
     nueva se agrega a `zonas.mjs` y se regenera el mapa con `node scripts/ux/mapa.mjs`.
   - Una función con **su propio material de trabajo** (archivos, encuestas, recolecciones,
     plantillas…) es un **módulo propio del menú**; no se mete dentro de otro módulo.
-  - Una **acción sobre un alumno** aparece en **todos** los lugares donde se ve a un alumno: la
-    Ficha del alumno y la Pantalla grande (y la Tarjeta del alumno si tiene menú). No se agrega
-    solo en uno.
+  - Una **acción sobre un alumno** (tomar control, mensaje privado, captura, proyectar, abrir…)
+    va en la **Pantalla grande** (`ACCIONES_ALUMNO`), y lo que pide un formulario se abre en su
+    propio diálogo. La **Ficha del alumno** solo informa: datos, qué puede hacer su equipo y su
+    último error (nota de interfaz 5, 2026-11-11).
+  - **Todo botón y todo campo de formulario lleva un icono de referencia** (prueba): botones y
+    campos con `data-icono` (`sistema/iconos.js`) o su `<svg>`; las opciones de radio son
+    «opciones agrupadas» (`.opcion-seg`) con icono, y una casilla de formulario es un interruptor.
   - Antes de implementar, el diseño muestra **2–3 bocetos de ubicación** con los nombres del mapa
     y una recomendación; el usuario elige. Ninguna ubicación se da por hecha.
   - Las notas del usuario sobre la interfaz llegan por el anotador (`node scripts/ux/anotar.mjs`,
     en `docs/v1/ux/notas/`) y se trabajan con `/notas-ux`.
 - **Consola, dentro de la navegación actual:**
   - Lo que se aplica a alumnos va sobre la selección de Alumnos, con un panel de la barra de
-    acciones o en la ficha del alumno. Nada de pantallas a pantalla completa nuevas.
+    acciones, o en la Pantalla grande si es para uno. Nada de pantallas a pantalla completa nuevas.
   - Lo que **responden** los alumnos en vivo (manos y mensajes, encuestas, recolecciones,
     asistencia y bitácora, temporizador) va en la vista **«Participación»** del menú (grupo
     Clase), una sección por función. La creó 10.6 (manos y mensajes), con su página del manual

@@ -1145,6 +1145,28 @@ Para que cada función pendiente respete lo implementado:
   - una base común más el encaje por prompt.
 
 
+## Notas de interfaz 001–011 e iconos en formularios (2026-11-11) — notas
+
+- **Iconos en todo botón y todo campo** (pedido del usuario, ambas apps): `internal/ui/iconos.js`
+  dibuja el icono de `data-icono` en botones y campos (y lo repone si la página reescribe el
+  texto); componentes nuevos en `internal/ui`: campo con icono (`.entrada`, con prefijo
+  `.entrada--prefijo`), opciones agrupadas (`.opciones-seg`/`.opcion-seg`, los radios), interruptor
+  (`input.interruptor`), pie de envío (`.pie-envio`) y zona de archivos (`.zona-archivos`), en el
+  catálogo; iconos nuevos `persona-buscar`, `volver`, `detener`, `reiniciar`. La prueba
+  `TestEveryButtonAndFieldHasAnIcon` (consola y alumno) lo exige; CLAUDE.md lo dice.
+- **Notas:** 1 fila de la ficha marcada y «equipo · usuario» en su cabecera; 2 tooltips en la
+  barra y la barra pasa a solo iconos a 64rem (antes se desbordaba a 900 px); 3 y 9 títulos de
+  tabla centrados; 4 icono propio de «¿Falta un alumno?»; 5 **las acciones sobre un alumno solo en
+  la Pantalla grande** (la ficha solo informa; CLAUDE.md y el manual al día); 6 conteos de la
+  altura de los botones; 7 y 8 mensaje privado y abrir en un alumno en su propio diálogo; 10 y 11
+  formularios de Enviar archivos y del editor de Código con pie de envío.
+- **Notas 12 y 13 (alumno):** «Mensaje al profesor» en su diálogo; botón ⓘ en la tira con «Qué
+  puede hacer Aula en este equipo» (`View().capabilities`, la grilla `.capacidades` pasó a
+  `internal/ui`). Casos A-35 y A-36.
+- **Verificación:** recorrido completo de la consola (154 capturas) y del alumno (88) sin errores
+  de JS ni violaciones serias; 54 pruebas del alumno; mapa y capturas del manual regenerados;
+  casos C-95 a C-98 y los C-xx/A-xx que usaban la ficha, al día.
+
 ## Etapa 12.1: proyectar la pantalla de un alumno — notas
 
 - **Diseño aprobado** (2026-11-11): «Proyectar a la clase» en la Ficha del alumno y en la Pantalla

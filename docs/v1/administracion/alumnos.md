@@ -31,25 +31,28 @@ sistema, versión de Aula, canal, desde qué hora está conectado y sus restricc
 **qué puede hacer su equipo** (recibir código, mostrar su pantalla, energía, control remoto…), y
 arriba, si su equipo contestó con un problema, cuál fue y qué hacer.
 
-Si su equipo lo permite, la ficha tiene el botón **Tomar control**: ves su pantalla en vivo y
-manejas su mouse y su teclado para ayudarlo (ver
-[Tareas frecuentes](tareas-frecuentes#ayudar-a-un-alumno-tomando-el-control)).
+Mientras la ficha está abierta, su fila queda marcada con una línea a la izquierda, y la ficha dice
+arriba su equipo y su usuario («LAB3-PC07 · alumno07»). La ficha solo informa: lo que haces con un
+alumno está en su **pantalla en grande**.
 
-Con **Mensaje privado** le escribes solo a él: le llega como «Mensaje para ti» y ningún otro
-alumno lo ve (ver [Tareas frecuentes](tareas-frecuentes#mandar-un-mensaje-privado-a-un-alumno)).
+## Acciones sobre un alumno
 
-Con **Tomar captura** guardas una foto de su pantalla: primero ves la vista previa y solo se
-guarda en tu equipo si pulsas **Guardar**. Funciona también con los alumnos simulados y mientras lo
-controlas (ver [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno)).
+En **Miniaturas**, haz clic en la pantalla de un alumno para verla en grande. Arriba están sus
+acciones (al pasar el mouse, cada una dice qué hace):
 
-Con **Abrir página o app** le abres una página en su navegador o una app permitida, solo a él (ver
-[Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos)). No sale para los
-alumnos simulados.
+- **Tomar control**: ves su pantalla en vivo y manejas su mouse y su teclado (ver
+  [Tareas frecuentes](tareas-frecuentes#ayudar-a-un-alumno-tomando-el-control)).
+- **Mensaje privado**: se abre un diálogo para escribirle solo a él; le llega como «Mensaje para
+  ti» (ver [Tareas frecuentes](tareas-frecuentes#mandar-un-mensaje-privado-a-un-alumno)).
+- **Tomar captura**: una foto de su pantalla; solo se guarda si pulsas **Guardar** (ver
+  [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno)).
+- **Proyectar a la clase**: sus compañeros ven su pantalla en grande (ver
+  [Tareas frecuentes](tareas-frecuentes#proyectar-la-pantalla-de-un-alumno)).
+- **Abrir página o app**: se abre un diálogo para abrirle una página o una app permitida (ver
+  [Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos)).
 
-Con **Proyectar a la clase** sus compañeros ven su pantalla en grande; el alumno lo ve en la suya y
-solo tú la detienes (ver
-[Tareas frecuentes](tareas-frecuentes#proyectar-la-pantalla-de-un-alumno)). Mientras dura, el mismo
-botón dice **Detener**. No sale para los alumnos simulados.
+Solo salen las que su equipo permite; los alumnos simulados no tienen Tomar control, Mensaje
+privado, Proyectar ni Abrir.
 
 ![La ficha de un alumno con un problema reciente](img/ficha-alumno.webp)
 

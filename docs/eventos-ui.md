@@ -38,6 +38,7 @@ que no es parte de la página.
 | `aula:notices` | `Notices` | Llega `msg.show`, el profesor toma una captura de esta pantalla (aviso `kind: "snapshot"`, con `notify`, nunca `raise`) o el alumno cierra un aviso. |
 | `aula:broadcast` | `BroadcastView` | Empieza o termina la transmisión de la pantalla del profesor. Llega **antes** que la oferta: la vista y su franja se muestran primero. |
 | `aula:broadcast-signal` | `broadcast.Signal` | Una oferta SDP (`kind: "offer"`) o un candidato ICE del profesor (`kind: "ice"`), ya validados por Go. |
+| — | `View().capabilities` | Las capacidades que este equipo declara (las de `hello`): la ventana arma «Qué puede hacer Aula en este equipo» con la misma grilla que la ficha de la consola. Se piden al abrir el diálogo (nota de interfaz 13). |
 | `aula:present` | `broadcast.PresentView` | Tu pantalla mostrada a la clase (§5.24): `{phase, presentId}`. `phase: "live"` (la banda, y `Status.presenting`; Go trae la ventana al frente con `raise` antes del primer cuadro) o `""` (nada). La ventana no tiene binding para detenerla: solo el profesor. |
 | `aula:restrictions` | `policy.State` | Empiezan, cambian o terminan las restricciones de la clase. Llega **antes** de aplicarlas. `{apps, web}`: cada uno `null` o `{policyId, mode, items (≤ 15), total}`. |
 | `aula:app-closed` | `AppClosed` | El agente cerró una app bloqueada: `{app: "steam.exe"}`, como mucho uno por app cada 30 s. |

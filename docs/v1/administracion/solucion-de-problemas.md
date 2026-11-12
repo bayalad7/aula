@@ -85,7 +85,7 @@ franja «Este equipo no tiene la clave del centro», pide que la instalen en tu 
 
 ## No se puede proyectar a un alumno
 
-- **El botón no aparece en su ficha:** su equipo no tiene Windows o tiene una versión de Aula
+- **El botón no aparece en su pantalla en grande:** su equipo no tiene Windows o tiene una versión de Aula
   anterior (la ficha dice «Mostrar su pantalla a la clase: no»), o es un alumno simulado.
 - **«No pudo mostrar su pantalla»:** su sesión estaba bloqueada, su Windows no permite ocultar la
   ventana de Aula de la captura, o le falta el codificador de video (en ediciones N, el «Media

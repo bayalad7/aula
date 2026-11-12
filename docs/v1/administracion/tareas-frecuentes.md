@@ -27,8 +27,8 @@ pulsa **Detener** en la franja. Por ahora, solo equipos con Windows pueden recib
 Para mostrar al grupo el trabajo de alguien: su pantalla se ve en grande en los equipos de sus
 compañeros, como cuando muestras la tuya.
 
-1. En [Alumnos](alumnos#la-ficha-de-un-alumno), abre la **ficha** del alumno (o su pantalla en
-   grande desde **Miniaturas**).
+1. En [Alumnos](alumnos#acciones-sobre-un-alumno) › **Miniaturas**, haz clic en su pantalla para
+   verla en grande.
 2. Pulsa **Proyectar a la clase**.
 
 No se le pregunta al alumno: tú decides cuándo empieza y cuándo termina, como al tomar el control.
@@ -37,7 +37,7 @@ LAB3-PC07 · 3 de 12 viendo», con **Ver** y **Detener**:
 
 - **Ver** abre su pantalla en grande en tu consola: es lo mismo que ven sus compañeros. Cerrar esa
   vista no detiene la proyección.
-- **Detener** (en la franja, en su ficha o en su pantalla en grande) la termina en todos los
+- **Detener** (en la franja o en su pantalla en grande) la termina en todos los
   equipos.
 
 - **El alumno siempre lo sabe:** su ventana de Aula pasa al frente con la banda «Tu pantalla se
@@ -103,9 +103,12 @@ por alumno. Solo se lee esa carpeta y el alumno ve antes y después qué se reco
 
 Para una pista o una corrección que solo le sirve a uno, sin que lo vea el resto:
 
-1. En **Alumnos**, abre su ficha (el botón de información al final de su fila).
-2. Pulsa **Mensaje privado**, escribe y elige **Información** o **Advertencia**.
-3. Pulsa **Enter** (o **Enviar**). **Shift+Enter** pasa a otra línea y **Esc** cancela.
+1. En [Alumnos](alumnos#acciones-sobre-un-alumno) › **Miniaturas**, haz clic en su pantalla para
+   verla en grande.
+2. Pulsa **Mensaje privado**: se abre un diálogo. Escribe y elige **Información** o
+   **Advertencia**.
+3. Pulsa **Enter** (o **Enviar**). **Shift+Enter** pasa a otra línea y **Esc** o **Cancelar**
+   cierra el diálogo.
 
 Le aparece en la esquina como **«Mensaje para ti»**, sin quitarle el teclado; ningún otro alumno
 lo recibe. Debajo del botón ves «Enviado… · ya lo vio» cuando su equipo lo mostró, y en
@@ -152,7 +155,7 @@ Para que todos abran la misma página («entren a docs.python.org») o el mismo 
 Se abre en el navegador predeterminado de cada alumno, o en su equipo si es una app. Cada alumno
 ve un aviso con lo que se abrió y quién lo pidió. En el panel, **Últimas que abriste** dice en
 cuántos equipos se abrió y en cuáles no, y por qué. Para un solo alumno, usa **Abrir página o app**
-en su [ficha](alumnos#la-ficha-de-un-alumno) o en la pantalla en grande.
+en su [pantalla en grande](alumnos#acciones-sobre-un-alumno): se abre un diálogo solo para él.
 
 - Solo se abren direcciones `http://` o `https://`, y solo las apps de
   [Ajustes › Apps permitidas](ajustes#apps-permitidas). Aula nunca ejecuta comandos.
@@ -176,12 +179,9 @@ marcas **Forzar ahora**, no hay cuenta y las aplicaciones se cierran sin guardar
 
 ## Ayudar a un alumno tomando el control
 
-1. En [Alumnos](alumnos#la-ficha-de-un-alumno), abre la **ficha** del alumno (botón de información
-   al final de su fila).
-2. Pulsa **Tomar control**.
-
-También desde **Miniaturas**: haz clic en la pantalla de un alumno para verla en grande y pulsa
-**Tomar control** arriba. Es lo más rápido cuando ves que alguien está haciendo otra cosa.
+1. En [Alumnos](alumnos#acciones-sobre-un-alumno) › **Miniaturas**, haz clic en la pantalla del
+   alumno para verla en grande. Es lo más rápido cuando ves que alguien está haciendo otra cosa.
+2. Pulsa **Tomar control** arriba.
 
 Se abre su pantalla en grande y en vivo. Haz clic sobre ella: tu mouse y tu teclado manejan su
 equipo hasta que pulses **Soltar**. Mientras dura, una franja arriba de tu consola dice
@@ -212,14 +212,15 @@ ayudar, no para ver videos.
 
 Una foto fija de su pantalla, a resolución completa, para revisarla después o dejar evidencia.
 
-1. En [Alumnos](alumnos#la-ficha-de-un-alumno), abre la **ficha** del alumno.
+1. En [Alumnos](alumnos#acciones-sobre-un-alumno) › **Miniaturas**, haz clic en su pantalla para
+   verla en grande.
 2. Pulsa **Tomar captura**. En unos segundos ves la **vista previa**; haz clic en la imagen para
    verla a tamaño real.
 3. Pulsa **Guardar** para guardarla en tu equipo, o **Descartar** si no la necesitas. Al guardar,
    la consola te dice dónde quedó y te deja **Abrir carpeta**.
 
-También desde la vista en grande de **Miniaturas** y **mientras controlas** a un alumno: el botón
-**Tomar captura** está arriba, junto a **Soltar**. Tomarla no suelta el control; tu teclado
+También **mientras controlas** a un alumno: el botón **Tomar captura** está arriba, junto a
+**Soltar**. Tomarla no suelta el control; tu teclado
 deja de llegar a su equipo mientras ves la vista previa, y al cerrarla vuelves a la vista del
 control (haz clic en su pantalla para seguir).
 

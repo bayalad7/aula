@@ -19,7 +19,7 @@ const pantallas = [
   { app: "profesor", archivo: "consola-miniaturas", titulo: "Consola · Alumnos (miniaturas)", escena: "lab", pasos: miniaturas,
     zonas: ["alumnos-miniaturas", "tarjeta-alumno", "barra-acciones"] },
   { app: "profesor", archivo: "consola-ficha", titulo: "Consola · Ficha del alumno", escena: "lab", h: 900,
-    pasos: click(`${fila("LAB3-PC07")} .ficha`), zonas: ["ficha", "ficha-acciones", "ficha-puede"] },
+    pasos: click(`${fila("LAB3-PC07")} .ficha`), zonas: ["ficha", "ficha-puede"] },
   { app: "profesor", archivo: "consola-pantalla-grande", titulo: "Consola · Pantalla grande", escena: "lab",
     pasos: seq(miniaturas, click(".alumno__pantalla:not([disabled])"), cuadros(["LAB3-PC07"])), zonas: ["pantalla-grande", "pg-acciones"] },
   { app: "profesor", archivo: "consola-franja-panel", titulo: "Consola · Franja global y un panel de la barra", escena: "lab-transmitiendo",

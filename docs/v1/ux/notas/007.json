@@ -1,0 +1,27 @@
+{
+  "n": 7,
+  "fecha": "2026-11-12T01:09:42.232Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "pantalla-grande",
+    "nombre": "Pantalla grande",
+    "cadena": "Consola › Pantalla grande"
+  },
+  "elemento": {
+    "etiqueta": "div",
+    "texto": "LAB3-PC12 · alumno12 Tomar controlMensaje privadoTomar capturaProyectar a la cla",
+    "claveTexto": "",
+    "selector": "#pantalla-grande > div.dialogo__cuerpo:nth-of-type(1)"
+  },
+  "tipo": "estilo",
+  "texto": "Cuando se le da click en el botón de mensaje privado, se despliegue un formulario por debajo que la verdad no tiene diseño ni buena funcionalidad, sería mejor que en un nuevo modal se abriera el formulario del envio del mensaje con un buen diseño, cambiando los checkbox por botones agrupados de selección con iconos y el boton de cancelar tenga icono también",
+  "respuesta": "El mensaje privado se abre en su propio diálogo, con el tipo en opciones agrupadas con icono y «Cancelar» con icono."
+}

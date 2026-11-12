@@ -1,0 +1,27 @@
+{
+  "n": 1,
+  "fecha": "2026-11-11T21:03:02.536Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "fila-alumno",
+    "nombre": "Fila del alumno",
+    "cadena": "Consola › Vista Alumnos › Lista de alumnos › Fila del alumno"
+  },
+  "elemento": {
+    "etiqueta": "button",
+    "texto": "Ver la ficha de LAB3-PC07",
+    "claveTexto": "alumnos.tablaEtiqueta",
+    "selector": "#alumnos-filas > tr:nth-of-type(1) > td.col-accion:nth-of-type(7) > button.btn.btn--fantasma"
+  },
+  "tipo": "estilo",
+  "texto": "Cuando se le da click en el botón \"i\" para ver la información de la ficha del alumno, esa fila debe recibir un resaltado activo claro (ej. un resaltar el borde izquierdo o poner un fondo distinto al de selección múltiple) para anclar visualmente la tabla con el panel derecho.\n\nIdealmente, hacer clic en i debería desmarcar selecciones previas o sincronizarse, y en la cabecera del panel derecho poner tanto el nombre del equipo como el del usuario: LAB3-PC07 · alumno07 (actualmente solo dice LAB3-PC07 arriba y alumno07 queda escondido en la lista de metadatos).",
+  "respuesta": "La fila de la ficha abierta queda marcada (línea de acento a la izquierda, fondo distinto de la selección) y la cabecera dice «LAB3-PC07 · alumno07». La selección se conserva (decisión del usuario)."
+}

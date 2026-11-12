@@ -1,0 +1,27 @@
+{
+  "n": 4,
+  "fecha": "2026-11-11T21:21:52.108Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "cabecera",
+    "nombre": "Cabecera de la vista",
+    "cadena": "Consola › Vista Alumnos › Cabecera de la vista"
+  },
+  "elemento": {
+    "etiqueta": "header",
+    "texto": "Alumnos 4 conectados1 desconectado Lista Miniaturas Seleccionar todos ¿Falta un ",
+    "claveTexto": "",
+    "selector": "#contenido > section.vista__seccion:nth-of-type(1) > header.vista__cabecera"
+  },
+  "tipo": "estilo",
+  "texto": "Cambia el icono del botón \"¿Falta un alumno?\" ya que es el mismo que el icono del botón de ayuda general",
+  "respuesta": "«¿Falta un alumno?» tiene su propio icono (persona con lupa), distinto del de ayuda."
+}

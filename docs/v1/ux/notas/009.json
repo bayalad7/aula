@@ -1,0 +1,27 @@
+{
+  "n": 9,
+  "fecha": "2026-11-12T01:14:14.989Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "codigo",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "historial",
+    "nombre": "Historial de la clase",
+    "cadena": "Consola › Vista Código › Historial de la clase"
+  },
+  "elemento": {
+    "etiqueta": "tr",
+    "texto": "#TítuloLenguaje LíneasEmitidoÚltima vez Acciones",
+    "claveTexto": "",
+    "selector": "#historial-tabla > table.tabla > thead > tr"
+  },
+  "tipo": "estilo",
+  "texto": "Centra los títulos de la tabla",
+  "respuesta": "Los títulos del Historial de la clase van centrados."
+}

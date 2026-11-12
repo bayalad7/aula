@@ -38,9 +38,8 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Ficha del alumno** | Panel derecho con los datos de un alumno y sus acciones. |
-| 2 | **Acciones sobre el alumno** | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
-| 3 | **Qué puede hacer su equipo** | Lista de capacidades del equipo del alumno. |
+| 1 | **Ficha del alumno** | Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande. |
+| 2 | **Qué puede hacer su equipo** | Lista de capacidades del equipo del alumno. |
 
 ### Consola · Pantalla grande
 
@@ -49,7 +48,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Pantalla grande** | La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno. |
-| 2 | **Acciones sobre el alumno (Pantalla grande)** | Las mismas acciones que en la Ficha del alumno. |
+| 2 | **Acciones sobre el alumno** | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase y Abrir página o app (ACCIONES_ALUMNO en main.js). |
 
 ### Consola · Franja global y un panel de la barra
 
@@ -153,7 +152,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
-| 2 | **Botones de la tira** | Levantar la mano, Mensaje al profesor y Modo compacto. |
+| 2 | **Botones de la tira** | Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto. |
 | 3 | **Bandas de transparencia** | Lo que el profesor hace con el equipo (pantalla vista, control, tu pantalla mostrada a la clase, restricciones, energía); no se cierran. |
 | 4 | **Estado vacío** | Lo que se ve cuando no hay código ni archivos. |
 
@@ -174,7 +173,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
-| 2 | **Mensaje al profesor** | La tarjeta para escribirle al profesor. |
+| 2 | **Diálogo Mensaje al profesor** | El diálogo para escribirle al profesor. |
 | 3 | **Archivos recibidos** | Una tarjeta por envío de archivos. |
 | 4 | **Tarjeta de archivo** | Qué llegó, dónde quedó y Abrir carpeta. |
 
@@ -237,11 +236,12 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `alumnos-miniaturas` | Vista Alumnos › Miniaturas | Cuadrícula con la pantalla de cada alumno. |
 | `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno con su nombre; un clic abre la Pantalla grande. |
 | `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…). |
-| `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y sus acciones. |
-| `ficha-acciones` | Ficha del alumno › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js). |
+| `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande. |
 | `ficha-puede` | Ficha del alumno › Qué puede hacer su equipo | Lista de capacidades del equipo del alumno. |
 | `pantalla-grande` | Pantalla grande | La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno. |
-| `pg-acciones` | Pantalla grande › Acciones sobre el alumno (Pantalla grande) | Las mismas acciones que en la Ficha del alumno. |
+| `pg-acciones` | Pantalla grande › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase y Abrir página o app (ACCIONES_ALUMNO en main.js). |
+| `dlg-privado` | Diálogo Mensaje privado | Escribir un mensaje solo para un alumno, con su tipo; se abre desde la Pantalla grande. |
+| `dlg-abrir` | Diálogo Abrir en un alumno | Abrir una página o una app permitida en el equipo de un alumno; se abre desde la Pantalla grande. |
 | `panel-aviso` | Panel Aviso | Mandar un aviso a la selección. |
 | `panel-pantalla` | Panel Transmitir | Transmitir tu pantalla a la clase. |
 | `panel-restricciones` | Panel Restricciones | Bloquear aplicaciones y filtrar sitios. |
@@ -286,12 +286,13 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | id | Zona | Qué es |
 |---|---|---|
 | `tira` | Tira de identidad | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
-| `tira-botones` | Tira de identidad › Botones de la tira | Levantar la mano, Mensaje al profesor y Modo compacto. |
+| `tira-botones` | Tira de identidad › Botones de la tira | Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto. |
 | `tira-temporizador` | Tira de identidad › Insignia del temporizador | Cuánto falta del ejercicio. |
 | `bandas` | Bandas de transparencia | Lo que el profesor hace con el equipo (pantalla vista, control, tu pantalla mostrada a la clase, restricciones, energía); no se cierran. |
 | `banda-mostrando` | Bandas de transparencia › Banda «Tu pantalla se está mostrando» | Mientras sus compañeros ven su pantalla; sin botones: la termina el profesor. |
 | `mano-estado` | Estado de la mano | «Tu mano está levantada» y el motivo. |
-| `redactar` | Mensaje al profesor | La tarjeta para escribirle al profesor. |
+| `redactar` | Diálogo Mensaje al profesor | El diálogo para escribirle al profesor. |
+| `capacidades` | Qué puede hacer Aula en este equipo | La grilla de lo que el profesor puede hacer con este equipo, como la ficha de la consola. |
 | `enviados` | Tus mensajes | Los mensajes enviados y si llegaron. |
 | `vacio` | Estado vacío | Lo que se ve cuando no hay código ni archivos. |
 | `encuestas` | Encuestas | Una tarjeta por encuesta del profesor, arriba de la lista. |

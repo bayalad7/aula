@@ -25,11 +25,12 @@ export const zonas = {
     { id: "barra-acciones", dentro: "alumnos", nombre: "Barra de acciones", selector: ".barra-acciones", que: "Abajo: lo que se aplica a la selección (aviso, transmitir, restricciones, captura, temporizador, encuesta, energía…)." },
 
     // Paneles y diálogos que salen de Alumnos
-    { id: "ficha", nombre: "Ficha del alumno", selector: "#panel-alumno", que: "Panel derecho con los datos de un alumno y sus acciones." },
-    { id: "ficha-acciones", dentro: "ficha", nombre: "Acciones sobre el alumno", selector: "#ficha-acciones", que: "Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Abrir página o app: las mismas que en la Pantalla grande (ACCIONES_ALUMNO en main.js)." },
+    { id: "ficha", nombre: "Ficha del alumno", selector: "#panel-alumno", que: "Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande." },
     { id: "ficha-puede", dentro: "ficha", nombre: "Qué puede hacer su equipo", selector: "#ficha-puede", que: "Lista de capacidades del equipo del alumno." },
     { id: "pantalla-grande", nombre: "Pantalla grande", selector: "#pantalla-grande", que: "La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno." },
-    { id: "pg-acciones", dentro: "pantalla-grande", nombre: "Acciones sobre el alumno (Pantalla grande)", selector: "#pg-acciones", que: "Las mismas acciones que en la Ficha del alumno." },
+    { id: "pg-acciones", dentro: "pantalla-grande", nombre: "Acciones sobre el alumno", selector: "#pg-acciones", que: "Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase y Abrir página o app (ACCIONES_ALUMNO en main.js)." },
+    { id: "dlg-privado", nombre: "Diálogo Mensaje privado", selector: "#dlg-privado", que: "Escribir un mensaje solo para un alumno, con su tipo; se abre desde la Pantalla grande." },
+    { id: "dlg-abrir", nombre: "Diálogo Abrir en un alumno", selector: "#dlg-abrir", que: "Abrir una página o una app permitida en el equipo de un alumno; se abre desde la Pantalla grande." },
     { id: "panel-aviso", nombre: "Panel Aviso", selector: "#panel-aviso", que: "Mandar un aviso a la selección." },
     { id: "panel-pantalla", nombre: "Panel Transmitir", selector: "#panel-pantalla", que: "Transmitir tu pantalla a la clase." },
     { id: "panel-restricciones", nombre: "Panel Restricciones", selector: "#panel-restricciones", que: "Bloquear aplicaciones y filtrar sitios." },
@@ -80,12 +81,13 @@ export const zonas = {
 
   alumno: [
     { id: "tira", nombre: "Tira de identidad", selector: "#estado", que: "Arriba: a qué clase está conectado, el temporizador y los botones del alumno." },
-    { id: "tira-botones", dentro: "tira", nombre: "Botones de la tira", selector: "#mano, #escribir, #compactar", que: "Levantar la mano, Mensaje al profesor y Modo compacto." },
+    { id: "tira-botones", dentro: "tira", nombre: "Botones de la tira", selector: "#mano, #escribir, #capacidades, #compactar", que: "Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto." },
     { id: "tira-temporizador", dentro: "tira", nombre: "Insignia del temporizador", selector: "#temporizador", que: "Cuánto falta del ejercicio." },
     { id: "bandas", nombre: "Bandas de transparencia", selector: "#bandas", que: "Lo que el profesor hace con el equipo (pantalla vista, control, tu pantalla mostrada a la clase, restricciones, energía); no se cierran." },
     { id: "banda-mostrando", dentro: "bandas", nombre: "Banda «Tu pantalla se está mostrando»", selector: "#banda-mostrando", que: "Mientras sus compañeros ven su pantalla; sin botones: la termina el profesor." },
     { id: "mano-estado", nombre: "Estado de la mano", selector: "#mano-estado", que: "«Tu mano está levantada» y el motivo." },
-    { id: "redactar", nombre: "Mensaje al profesor", selector: "#redactar", que: "La tarjeta para escribirle al profesor." },
+    { id: "redactar", nombre: "Diálogo Mensaje al profesor", selector: "#dlg-mensaje", que: "El diálogo para escribirle al profesor." },
+    { id: "capacidades", nombre: "Qué puede hacer Aula en este equipo", selector: "#dlg-capacidades", que: "La grilla de lo que el profesor puede hacer con este equipo, como la ficha de la consola." },
     { id: "enviados", nombre: "Tus mensajes", selector: "#enviados", que: "Los mensajes enviados y si llegaron." },
     { id: "vacio", nombre: "Estado vacío", selector: "#empty", que: "Lo que se ve cuando no hay código ni archivos." },
     { id: "encuestas", nombre: "Encuestas", selector: "#encuestas", que: "Una tarjeta por encuesta del profesor, arriba de la lista." },

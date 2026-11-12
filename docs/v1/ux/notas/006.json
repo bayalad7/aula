@@ -1,0 +1,27 @@
+{
+  "n": 6,
+  "fecha": "2026-11-11T23:34:11.901Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "cabecera",
+    "nombre": "Cabecera de la vista",
+    "cadena": "Consola › Vista Alumnos › Cabecera de la vista"
+  },
+  "elemento": {
+    "etiqueta": "div#alumnos-resumen",
+    "texto": "4 conectados1 desconectado",
+    "claveTexto": "",
+    "selector": "#alumnos-resumen"
+  },
+  "tipo": "estilo",
+  "texto": "Mejorar el diseño para que tengan la misma altura que los botones que se encuentran a su lado",
+  "respuesta": "Los conteos «4 conectados · 1 desconectado» tienen la altura de los botones de al lado."
+}

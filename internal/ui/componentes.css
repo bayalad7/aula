@@ -226,10 +226,19 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
   cursor: pointer;
 }
 .alumno[data-seleccionado="true"] { border-color: var(--c-acento); box-shadow: 0 0 0 2px var(--c-acento); }
+/* Cada miniatura es un monitor (nota de interfaz v0.1.0 005): la imagen del alumno es la pantalla,
+   dentro de un marco, con su pie debajo. */
+.alumno__monitor { position: relative; display: grid; padding-bottom: 14px; }
+.alumno__monitor::before, .alumno__monitor::after {
+  content: ""; position: absolute; left: 50%; transform: translateX(-50%); background: var(--c-monitor-pie);
+}
+.alumno__monitor::before { bottom: 4px; width: 12%; height: 10px; }
+.alumno__monitor::after { bottom: 0; width: 34%; height: 5px; border-radius: 3px; }
 .alumno__pantalla {
   display: grid; place-items: center;
   aspect-ratio: 16 / 9;
   overflow: hidden;
+  border: 6px solid var(--c-monitor-marco); border-bottom-width: 9px;
   border-radius: var(--r-md);
   background: var(--c-superficie-2);
   color: var(--c-texto-suave);
@@ -240,7 +249,7 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
 .alumno__pie { display: flex; align-items: center; gap: var(--e-2); min-width: 0; }
 .alumno__nombre { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--peso-medio); }
 .alumno__sub { font-size: var(--t-sm); color: var(--c-texto-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.alumno__marca { position: absolute; top: calc(var(--e-2) + 6px); left: calc(var(--e-2) + 6px); }
+.alumno__marca { position: absolute; z-index: 1; top: calc(var(--e-2) + 12px); left: calc(var(--e-2) + 12px); }
 .alumno--desconectado .alumno__pantalla { background: var(--c-desconectado-fondo); }
 
 /* --- Tabla que pasa a tarjetas en ventana angosta ------------------------------------------ */
@@ -520,14 +529,15 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
   display: flex; align-items: center; gap: var(--e-2);
   padding: var(--e-3) var(--e-5);
 }
-.barra-acciones__seleccion {
-  flex: 1; min-width: 0; margin-right: var(--e-2);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-weight: var(--peso-medio);
-}
-/* 64rem: con la raíz de 15 px son 960 px, lo que piden los ocho botones con su texto (nota de
-   interfaz 2); debajo, solo iconos con su tooltip (data-tip). */
-@container (max-width: 64rem) {
+/* La selección se dice en la cabecera (nota de interfaz v0.1.0 006): la barra es solo de botones,
+   con menos relleno para que quepan con su texto. */
+.barra-acciones__dentro { padding-left: var(--e-4); padding-right: var(--e-4); }
+.barra-acciones .btn { padding: 0 var(--e-2); }
+.tamano-miniaturas { display: inline-flex; align-items: center; gap: var(--e-2); font-size: var(--t-sm); }
+.tamano-miniaturas .control { width: auto; }
+/* 69rem: con la raíz de 15 px son 1035 px, lo que piden los nueve botones con su texto (nota de
+   interfaz 2, y Pausar de 10.21); debajo, solo iconos con su tooltip (data-tip). */
+@container (max-width: 69rem) {
   .barra-acciones .btn__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .barra-acciones .btn { width: var(--alto-control); padding: 0; }
   .barra-acciones__dentro { padding-left: var(--e-4); padding-right: var(--e-4); }
@@ -547,9 +557,11 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
 .panel-lateral__cuerpo { flex: 1; overflow: auto; display: grid; align-content: start; gap: var(--e-4); padding: var(--e-4); }
 .panel-lateral__pie { display: flex; justify-content: flex-end; gap: var(--e-2); padding: var(--e-3) var(--e-4); border-top: 1px solid var(--c-borde); background: var(--c-superficie-2); }
 
+/* El ancho de cada miniatura lo elige el profesor (nota de interfaz v0.1.0 004): --ancho-miniatura;
+   «Ajustar» fija las columnas desde main.js para que todos quepan sin desplazar. */
 .cuadricula-alumnos {
   display: grid; gap: var(--e-3);
-  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--ancho-miniatura, 13.5rem), 100%), 1fr));
   margin: 0; padding: 0; list-style: none;
 }
 .cuadricula-alumnos__grupo {
@@ -830,19 +842,22 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
   white-space: normal; /* un botón no parte líneas; su tooltip sí */
 }
 
-/* Pie de envío: el final de un formulario que manda algo a los alumnos (Código, Archivos). A quién
-   arriba; las acciones abajo, las secundarias a la izquierda y la principal, grande, a la derecha. */
-.pie-envio { display: grid; gap: var(--e-3); margin: var(--e-1) calc(-1 * var(--e-4)) calc(-1 * var(--e-4));
+/* Pie de envío: el final de un formulario que manda algo a los alumnos (Código, Archivos). A quién a
+   la izquierda y las acciones a la derecha, en la misma fila (notas de interfaz v0.1.0 001-002); si
+   no caben, las acciones bajan a la línea siguiente, todavía a la derecha. El motivo, debajo. */
+.pie-envio { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e-3) var(--e-4);
+  margin: var(--e-1) calc(-1 * var(--e-4)) calc(-1 * var(--e-4));
   padding: var(--e-4); border-top: 1px solid var(--c-borde); background: var(--c-superficie-2);
   border-radius: 0 0 var(--r-lg) var(--r-lg); }
 .pie-envio__destino { display: grid; gap: var(--e-1); margin: 0; padding: 0; border: 0; min-width: 0; }
 .pie-envio__destino .opciones-seg { justify-self: start; }
-.pie-envio__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
+.pie-envio__acciones { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--e-2);
+  margin-left: auto; }
 .pie-envio__principal { display: inline-flex; flex-wrap: wrap; gap: var(--e-2); margin-left: auto; }
 /* Una fila de acciones del mismo alto, la principal primero (Código, nota de interfaz 14). */
 .pie-envio__acciones--fila { flex-wrap: nowrap; }
 .pie-envio__acciones--fila > .btn { flex: none; }
-.pie-envio__motivo { margin: 0; font-size: var(--t-sm); color: var(--c-texto-suave); }
+.pie-envio__motivo { flex-basis: 100%; margin: 0; font-size: var(--t-sm); color: var(--c-texto-suave); }
 .pie-envio__motivo:empty { display: none; }
 .btn--peligro-texto { color: var(--c-error); }
 

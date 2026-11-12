@@ -56,6 +56,9 @@
   /* Fondo del video de la transmisión del profesor (convención: negro en los dos temas) */
   --c-video-fondo: #000000;
   --c-video-texto: #e7eaf0;
+  /* Miniaturas: el marco y el pie del monitor de cada alumno (nota de interfaz v0.1.0 005) */
+  --c-monitor-marco: #1f2937;
+  --c-monitor-pie: #9ca3af;
 
   /* Sintaxis del código (sobre --c-superficie-2) */
   --c-sintaxis-comentario: #57606f;
@@ -147,6 +150,8 @@
     --c-vista-solido-texto: #06292f;
     --c-video-fondo: #000000;
     --c-video-texto: #e7eaf0;
+    --c-monitor-marco: #0b0e14;
+    --c-monitor-pie: #4b5563;
     --c-sintaxis-comentario: #9aa4b5;
     --c-sintaxis-clave: #c9adff;
     --c-sintaxis-cadena: #7ed69c;
@@ -199,6 +204,8 @@
   --c-vista-solido-texto: #06292f;
   --c-video-fondo: #000000;
   --c-video-texto: #e7eaf0;
+  --c-monitor-marco: #0b0e14;
+  --c-monitor-pie: #4b5563;
   --c-sintaxis-comentario: #9aa4b5;
   --c-sintaxis-clave: #c9adff;
   --c-sintaxis-cadena: #7ed69c;

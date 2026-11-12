@@ -347,7 +347,7 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `screen.thumb.start` | P → A | `screen.thumb` | `interval_ms`, `quality`, `max_width` | `screen.thumb.frame` periódicos o `error` |
 | `screen.thumb.frame` | A → P | — | `ref_id`, `seq`, `width`, `height`, `jpeg` | — |
 | `screen.thumb.stop` | P → A | `screen.thumb` | `{}` | — |
-| `screen.broadcast.start` | P → A | `screen.broadcast` | `broadcast_id`, `width`, `height`, `fps` | — (sigue `screen.broadcast.offer`) o `error` |
+| `screen.broadcast.start` | P → A | `screen.broadcast` | `broadcast_id`, `width`, `height`, `fps` (opcionales `source`, `mode`) | — (sigue `screen.broadcast.offer`) o `error` |
 | `screen.broadcast.offer` | P → A | `screen.broadcast` | `broadcast_id`, `attempt`, `sdp` | `screen.broadcast.answer` o `error` |
 | `screen.broadcast.answer` | A → P | — | `ref_id`, `broadcast_id`, `attempt`, `sdp` | — |
 | `screen.broadcast.ice` | A ↔ P | `screen.broadcast` (P → A) | `broadcast_id`, `attempt`, `candidate`, `sdp_mid`, `sdp_mline_index` | — |
@@ -554,8 +554,8 @@ Confirma el estado en que quedó la pantalla: `true` tras `screen.freeze` y `fal
 > Implementado en v0.4 (Windows), aprobado el 2026-10-29. Decisión técnica en D-014;
 > implementación en `internal/broadcast`.
 
-El profesor transmite un monitor suyo como video WebRTC a todos los agentes del canal que
-declararon `screen.broadcast`. El WebSocket autenticado lleva **solo la señalización**; el
+El profesor transmite un monitor suyo como video WebRTC a los agentes del canal que
+declararon `screen.broadcast` (todos o los seleccionados, §5.12.1). El WebSocket autenticado lleva **solo la señalización**; el
 video va por WebRTC (SRTP sobre UDP), directo de la consola a cada alumno, dentro de la LAN.
 
 ```
@@ -606,9 +606,23 @@ Avisa que empieza una transmisión. El agente **debe** mostrar la vista de trans
 | `width`, `height` | entero | Tamaño del video, 1–4096. Informativo: el agente ajusta la vista. |
 | `fps` | entero | Cuadros por segundo previstos, 1–30. Informativo. |
 | `source` | objeto, opcional | Ausente: la pantalla es del profesor. `{"kind": "student", "hostname": "LAB3-PC07"}`: es la de un compañero (§5.24); la vista lo dice. Solo se envía a agentes con `screen.present.view`. `hostname`: 1–63 caracteres. |
+| `mode` | string, opcional | Cómo se muestra la vista (v0.15; `docs/privacidad.md` regla 12). `"window"`: una ventana siempre encima de las demás, que el alumno puede mover y redimensionar pero no minimizar ni cerrar. `"fullscreen"`: cubre el monitor del alumno, encima de todo, sin minimizar ni cerrar. **Ausente** (una consola anterior): la ventana maximizada de v0.4, que el alumno puede minimizar. Otro valor → `error` `invalid_message`. Un agente anterior ignora el campo y usa la de v0.4. |
 
 Sin respuesta propia: la sigue `screen.broadcast.offer`. Si el agente no puede mostrar la vista,
 responde `error` `internal` y no procesa la oferta.
+
+**A quién** (v0.15). El destino no viaja en el mensaje: la consola solo envía `start` a quien lo
+recibe. Para **todos**, a toda sesión conectada con `screen.broadcast`, también a las que se unen
+después. Para **los seleccionados**, a los equipos (por nombre de equipo) que el profesor tenía
+seleccionados al empezar, también si se reconectan; uno que no estaba seleccionado no la recibe
+aunque se una después.
+
+**Se libera sola** (`"window"` y `"fullscreen"`, regla 10 de privacidad). La vista y lo que
+impide minimizar o cerrar duran solo lo que dura la transmisión **en esta sesión**: terminan con
+`screen.broadcast.stop`, con un `start` de otra transmisión, al cerrarse el WebSocket y cuando la
+consola deja de responder (el plazo de inactividad de §3.4, 15 s sin mensajes, cierra la
+conexión). Al terminar, la ventana del agente vuelve a como estaba antes del `start` (tamaño,
+posición, modo compacto u oculta en el área de notificación); no cierra ni toca otros programas.
 
 #### 5.12.2 `screen.broadcast.offer` (P → A)
 

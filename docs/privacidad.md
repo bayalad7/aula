@@ -30,7 +30,9 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
    código y los avisos que llegan solo marcan el icono; la ventana no reaparece sola, salvo por
    una acción del profesor sobre el equipo (energía, restricciones, su transmisión o el control remoto, reglas 12, 20,
    26 y 36). El distintivo de pantalla vista (regla 6) no depende de la ventana: se ve igual. Donde no
-   hay área de notificación (Linux y macOS por ahora), cerrar minimiza.
+   hay área de notificación (Linux y macOS por ahora), cerrar minimiza. **Excepción:** mientras el
+   profesor transmite su pantalla en una ventana o en pantalla completa, cerrar no hace nada hasta
+   que la transmisión termine (regla 12).
 3. **El agente se presenta con su nombre real** (equipo y usuario del sistema) y solo después de
    comprobar que la consola es la autorizada (`docs/protocol.md` §3.1). Sabe quién lo ve.
 4. **Lo que recibe el alumno se ve, sin quitarle el teclado.** El código y los avisos aparecen en
@@ -89,8 +91,9 @@ pantalla en blanco (`screen.freeze`, §5.9–5.11, **pendiente**: reglas 9 y 10)
 Reglas para `screen.broadcast.*` (`docs/protocol.md` §5.12), aprobadas el 2026-10-29.
 
 12. **El alumno sabe que está recibiendo, y de quién.** Al llegar `screen.broadcast.start`, y
-    **antes** de aceptar la conexión de video, la ventana de Aula se trae al frente, se maximiza
-    y cambia a la vista de transmisión, con una franja fija arriba del video:
+    **antes** de aceptar la conexión de video, la ventana de Aula se trae al frente (sale del
+    área de notificación y del modo compacto) y cambia a la vista de transmisión, con una franja
+    fija arriba del video:
 
     > **Estás viendo la pantalla de <profesor> (canal <X>)** (con su icono)
 
@@ -101,17 +104,40 @@ Reglas para `screen.broadcast.*` (`docs/protocol.md` §5.12), aprobadas el 2026-
     Mientras se conecta o reconecta, la vista dice "Conectando con la pantalla del profesor…" en
     lugar del video. El botón **Tamaño real** muestra el video píxel a píxel, con barras de
     desplazamiento, si la pantalla del alumno es más chica que la del profesor. La franja no se
-    puede ocultar desde Aula. El alumno puede minimizar o
-    redimensionar la ventana (no es un bloqueo: bloquear es la pantalla en blanco, reglas 9–10);
-    el título de la barra de tareas sigue indicando la transmisión.
+    puede ocultar desde Aula. El profesor elige en el panel cómo se muestra (v0.15,
+    `docs/protocol.md` §5.12.1), y la franja lo dice:
+
+    - **En una ventana:** queda encima de las demás ventanas. El alumno la puede mover y cambiarle
+      el tamaño, pero no minimizarla ni cerrarla.
+    - **En pantalla completa:** cubre el monitor del alumno, encima de todo, sin bordes, y el
+      alumno no la puede minimizar ni cerrar. Es para presentaciones (PowerPoint, Canva…). Es la
+      decisión del profesor.
+
+    En los dos modos, cerrar la ventana (la X, Alt+F4) no hace nada mientras dura la
+    transmisión: es la **única excepción a la regla 2**. Tampoco se encoge al modo compacto. Lo que
+    sí sigue funcionando es lo del sistema: Ctrl+Alt+Supr, cambiar de usuario y cerrar sesión. Aula
+    no lo bloquea.
+
+    **Nadie queda bloqueado si se pierde la clase (como la regla 10).** El modo dura solo lo que
+    dura la transmisión en esta conexión: se libera solo con «Detener», al cerrar la clase o
+    cambiar de canal, al cortarse la conexión y cuando la consola deja de responder (los 15 s sin
+    mensajes que marcan la desconexión, `docs/protocol.md` §3.4). Si no fuera así, el alumno no
+    sabría por qué sigue bloqueado y podría perder el trabajo que tiene abierto. Al liberarse, la
+    ventana de Aula **vuelve a como estaba** (su tamaño y lugar, el modo compacto u oculta en el
+    área de notificación), sin cerrar ni tocar sus programas.
+
+    Una consola anterior a v0.15 no manda el modo: la ventana se maximiza y el alumno la puede
+    minimizar o redimensionar (no es un bloqueo: bloquear es la pantalla en blanco, reglas 9–10).
+    El título de la barra de tareas sigue indicando la transmisión.
 13. **Recibir no expone al alumno.** La conexión es solo de recepción: el agente rechaza ofertas
     con audio, canal de datos o envío de video, no usa cámara, micrófono ni captura de pantalla
     para esto, y no envía nada propio por WebRTC. Por eso **no** se muestra el distintivo "Tu
     pantalla está siendo vista" (regla 6), que significa otra cosa; si el profesor abre además
     las miniaturas, ese distintivo aparece como siempre.
 14. **Termina con la clase.** La vista y su franja desaparecen con `screen.broadcast.stop`, al
-    cerrarse la conexión con la consola o al cerrar el agente. Al terminar, la ventana vuelve a
-    la vista de código.
+    cerrarse la conexión con la consola (también cuando la consola deja de responder) o al cerrar
+    el agente. Al terminar, la ventana vuelve a la vista de código y a como estaba antes de la
+    transmisión (regla 12).
 15. **Lo que el profesor transmite, lo sabe el profesor.** Mientras transmite, la consola muestra
     una franja roja "● Transmitiendo tu pantalla (monitor N) a M alumnos" con el botón
     "Detener", y no transmite nada sin que el profesor pulse "Transmitir mi pantalla". La

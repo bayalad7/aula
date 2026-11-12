@@ -13,12 +13,26 @@ Sin selección van a todos los conectados; con selección, solo a los elegidos.
 
 ## Mostrar tu pantalla
 
-1. Pulsa **Mostrar mi pantalla**.
-2. Elige el monitor y pulsa **Empezar**.
+1. Si es solo para algunos, selecciónalos en Alumnos; sin selección, la ven todos los conectados
+   y los que se conecten después.
+2. Pulsa **Mostrar mi pantalla**.
+3. Elige el monitor y el **Modo**:
+   - **En una ventana:** queda encima de sus ventanas. La pueden mover y cambiar de tamaño (para
+     copiar lo que haces en su editor), pero no cerrar ni minimizar.
+   - **Pantalla completa:** cubre toda su pantalla y no la pueden cerrar ni minimizar. Úsala para
+     presentaciones (PowerPoint, Canva…).
+4. Pulsa **Empezar**.
 
-Tus alumnos ven tu pantalla en grande, con tu nombre arriba. Una franja roja en tu consola te
-recuerda que estás transmitiendo; la ventana de Aula no aparece en la transmisión. Para terminar,
-pulsa **Detener** en la franja. Por ahora, solo equipos con Windows pueden recibirla.
+Tus alumnos ven tu pantalla con tu nombre arriba. Una franja roja en tu consola te recuerda que
+estás transmitiendo, en qué modo y a cuántos; la ventana de Aula no aparece en la transmisión.
+Para terminar, pulsa **Detener** en la franja: la transmisión termina en todos y la ventana de
+cada alumno vuelve a como estaba, sin tocar sus programas. Por ahora, solo equipos con Windows
+pueden recibirla.
+
+Nadie queda bloqueado: si un equipo pierde la conexión con tu consola, o tu consola deja de
+responder, su pantalla completa se quita sola en unos segundos. También termina al cerrar la
+clase o cambiar de canal. Si ese alumno se reconecta mientras sigues transmitiendo, vuelve a
+recibirla en el mismo modo.
 
 {{diagrama:14-transmision-pantalla}}
 

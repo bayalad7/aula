@@ -1,7 +1,8 @@
 # Progreso
 
-Última actualización: 2026-11-11 (12.1 proyectar la pantalla de un alumno implementada, falta la
-prueba en VM; 10.12 encuestas en vivo implementadas, falta la prueba en VM;
+Última actualización: 2026-11-12 (12.2 transmisión a una selección y modos ventana y pantalla
+completa implementada, falta la prueba en VM y en la ventana real; 12.1 proyectar la pantalla de
+un alumno implementada, falta la prueba en VM; 10.12 encuestas en vivo implementadas, falta la prueba en VM;
 10.11 abrir página o app implementada, falta la prueba en VM;
 10.10 recolecciones implementadas, falta la prueba en VM;
 10.9 enviar archivos y plantillas implementado, falta la prueba en
@@ -42,7 +43,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.4.0-rc.1`) |
 | 12 (09.2) | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 12.1 | Proyectar la pantalla de un alumno a la clase | ✅ Implementado y probado en CI con dobles y de punta a punta con pion por loopback; «Proyectar a la clase» en la ficha y la Pantalla grande, con su franja (falta la prueba en VM, `docs/prueba-vms.md` §25, y los casos C-89 a C-94 y A-31 a A-34) |
-| 12.2 | Mejora de la transmisión: a una selección; modos ventana y pantalla completa | ⏳ Pendiente (`/funcionalidad-mejora 12.2`) |
+| 12.2 | Mejora de la transmisión: a una selección; modos ventana y pantalla completa | ✅ Implementado y probado en CI con dobles y con una consola real que deja de responder (falta la prueba en VM, `docs/prueba-vms.md` §26, y los casos C-99 a C-101 y A-37 a A-41 en la ventana real) |
 | 13 | Portabilidad Linux/macOS y empaquetado | ⏳ Pendiente |
 | 14 | Sandbox para ejecutar entregas | ⏳ Pendiente (después de 10.10) |
 | 15 | Flota: despliegue, auto-actualización y diagnóstico | 🚧 El diagnóstico está casi todo hecho (`aula-cliente diagnostico`, comprobador de conexión, ficha del alumno); faltan la auto-actualización, la guía de despliegue y marcar a los desactualizados |
@@ -1166,6 +1167,41 @@ Para que cada función pendiente respete lo implementado:
 - **Verificación:** recorrido completo de la consola (154 capturas) y del alumno (88) sin errores
   de JS ni violaciones serias; 54 pruebas del alumno; mapa y capturas del manual regenerados;
   casos C-95 a C-98 y los C-xx/A-xx que usaban la ficha, al día.
+
+## Etapa 12.2: transmisión a una selección, y modos ventana y pantalla completa — notas
+
+- **Protocolo (v0.15, compatible):** `screen.broadcast.start` lleva `mode` opcional (`window` o
+  `fullscreen`); sin él, el agente muestra la ventana maximizada de v0.4, y un agente anterior
+  ignora el campo. El destino no viaja: `broadcast.Options.Hostnames` limita el `Caster` (su
+  `Eligible`) a los equipos seleccionados **por nombre**, para que uno que se reconecta la reciba
+  otra vez; sin selección van todos, también los que llegan después. `Status` suma `Mode` y
+  `Targeted`.
+- **Consola:** el panel «Mostrar mi pantalla» toma «Para» de la selección como Aviso y Energía
+  (`data-destino-hosts`) y agrega «Modo» (opciones agrupadas con icono y su explicación).
+  `StartBroadcast(monitor, modo, equipos)`. La franja dice el modo y a cuántos. Arreglado de paso:
+  antes de empezar, el panel decía «nadie puede recibirla», porque el estado inactivo trae
+  `eligible` en 0; ahora cuenta en la interfaz a los que tienen `canBroadcast` (sin simulados).
+  Y la franja ya no dice «()» cuando la lista de monitores no está cargada.
+- **Alumno:** `platform.AppWindow` suma `Hold(HoldWindow|HoldFullscreen)` y `Release`
+  (`appwindow_hold_windows.go`). Guarda la colocación, el estilo y el orden z, quita minimizar y
+  pone gris la X; en pantalla completa usa `WS_POPUP` sobre el monitor de la ventana, y un vigilante
+  la restaura si algo la minimiza (Windows+D). `appWindow.hold` reemplaza a `maximize`: guarda si
+  estaba compacta, oculta o maximizada, la trae al frente y la sujeta; al soltarla, la deja como
+  estaba. Mientras está sujeta, `beforeClose` no la oculta (excepción a la regla 2) y no se encoge
+  al modo compacto. `raiseWindow` ya no quita el «siempre encima» si la transmisión lo sostiene. En
+  servicio pasa por `agentsvc.EventHold` (sustituye a `EventMaximize`). Las llamadas a Wails van
+  por la interfaz `shell` (`apps/student/shell.go`) para probar `hold` sin ventana.
+- **Liberación (criterio de aceptación):** se suelta con `screen.broadcast.stop`, con otro `start`,
+  al cerrarse la conexión y cuando la consola deja de responder (el plazo de inactividad del
+  transporte cierra la sesión y `viewer.Stop` llama `hold(false)`).
+  `TestFullscreenIsReleasedWhenTheConsoleStopsAnswering` lo prueba con una consola real detrás de
+  un proxy TCP que se congela (falla si no se congela). `window_test.go` prueba que la ventana
+  vuelve a como estaba.
+- **Proyectar un alumno (12.1)** sigue sin `mode`: los receptores ven la vista de v0.4.
+- **Pruebas:** `TestBroadcastModeAndTargets`, `TestViewerMode`, `TestBroadcastToTheSelection`,
+  `TestHoldModes`, `TestHoldReleaseRestoresTheWindow`, `TestHoldWithoutNativeControl`; casos
+  `banda-transmision-window` y `banda-transmision-fullscreen` de `pruebas-alumno.mjs`; capturas
+  156 y 157 (consola) y 15b (alumno).
 
 ## Etapa 12.1: proyectar la pantalla de un alumno — notas
 

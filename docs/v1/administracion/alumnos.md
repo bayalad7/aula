@@ -68,7 +68,7 @@ La barra de abajo abre un panel a la derecha, sin tapar la lista:
 
 | Acción | Qué hace | Más |
 |---|---|---|
-| Mostrar mi pantalla | Tus alumnos ven tu pantalla en grande, con tu nombre arriba. | [Tareas frecuentes](tareas-frecuentes#mostrar-tu-pantalla) |
+| Mostrar mi pantalla | Tus alumnos ven tu pantalla con tu nombre arriba, en una ventana encima de las suyas o en pantalla completa. | [Tareas frecuentes](tareas-frecuentes#mostrar-tu-pantalla) |
 | Aviso | Un mensaje que aparece en su pantalla. | [Tareas frecuentes](tareas-frecuentes#mandar-un-aviso) |
 | Restricciones | Bloquea aplicaciones o sitios web durante la clase. | [Tareas frecuentes](tareas-frecuentes#bloquear-aplicaciones-o-sitios) |
 | Energía | Apaga, reinicia o cierra la sesión de los equipos. | [Tareas frecuentes](tareas-frecuentes#apagar-o-reiniciar-los-equipos) |

@@ -8,8 +8,8 @@ secciones_manual: [v1/administracion/tareas-frecuentes, protocol, privacidad]
 
 # Transmisión de la pantalla del profesor
 
-¿Cómo se negocia el video WebRTC por la sesión autenticada y cómo se recupera un alumno que
-pierde la imagen?
+¿A quién le llega, cómo se negocia el video WebRTC por la sesión autenticada, cómo se recupera un
+alumno que pierde la imagen y cómo se libera su ventana?
 
 ```mermaid
 %%{init: {"htmlLabels": false}}%%
@@ -24,8 +24,9 @@ sequenceDiagram
         participant F as Ventana (RTCPeerConnection en WebView2)
     end
 
-    B->>V: screen.broadcast.start {broadcast_id, width, height, fps}
-    V->>F: vista maximizada con la franja<br/>«Estás viendo la pantalla de …»
+    Note over B: Para: los equipos seleccionados (por nombre)<br/>o todos, también los que llegan después
+    B->>V: screen.broadcast.start {broadcast_id, width, height, fps, mode}
+    V->>F: al frente y sujeta según mode, con la franja<br/>«Estás viendo la pantalla de …»<br/>window: encima, sin minimizar ni cerrar<br/>fullscreen: cubre el monitor, sin minimizar ni cerrar
     B->>M: conexión nueva para este agente (attempt 1)
     M-->>B: oferta sendonly, una sola m=video H.264
     B->>V: screen.broadcast.offer {broadcast_id, attempt, sdp}
@@ -53,8 +54,10 @@ sequenceDiagram
         B->>V: screen.broadcast.stop {broadcast_id}
     else se cierra el WebSocket
         Note over V: el agente cierra WebRTC por sí mismo
+    else la consola deja de responder (15 s sin mensajes)
+        Note over V: el plazo de inactividad cierra la sesión<br/>y con ella la transmisión
     end
-    V->>F: quita la vista y la franja
+    V->>F: quita la vista y la franja<br/>la ventana vuelve a como estaba
 ```
 
 ## Lo que no es obvio
@@ -69,6 +72,15 @@ sequenceDiagram
   autenticada, solo acepta video de la consola legítima.
 - **La vista va antes que la oferta** (regla 12): si no se puede mostrar, el agente responde
   `error internal` y no procesa la oferta.
+- **A quién** (v0.15): el destino no viaja en el mensaje. La consola solo manda `start` a los
+  equipos que el profesor tenía seleccionados al empezar, por nombre de equipo para que un alumno
+  que se reconecta la reciba otra vez; sin selección, a todos, también a los que llegan después.
+  Los alumnos simulados nunca: no declaran `screen.broadcast`.
+- **Se libera sola** (regla 12, como la 10): `window` y `fullscreen` impiden cerrar y minimizar
+  (`platform.AppWindow.Hold`), pero solo mientras dura la sesión. Detener, cortar la conexión o
+  que la consola deje de responder la sueltan (`Release`), y la ventana vuelve a su tamaño y
+  lugar, al modo compacto o al área de notificación. Sin `mode` (una consola anterior) es la vista
+  maximizada de v0.4.
 - **El reintento no tumba la sesión**: cada intento lleva un `attempt` mayor y el agente descarta
   lo de intentos viejos. Si el agente se reconecta mientras la transmisión sigue, la consola le
   reenvía `start` y `offer`.
@@ -85,6 +97,8 @@ sequenceDiagram
 - `internal/broadcast/broadcaster.go`, `internal/broadcast/caster.go`,
   `internal/broadcast/pion.go`, `internal/broadcast/sdp.go`, `internal/broadcast/source.go`
 - `internal/broadcast/viewer.go`
+- `internal/platform/appwindow.go`, `internal/platform/appwindow_hold_windows.go`,
+  `apps/student/window.go`
 - `internal/platform/broadcast.go`, `internal/platform/h264_windows.go`
 - `apps/teacher/broadcast.go`, `apps/student/broadcast.go`
 - `docs/protocol.md` §5.12 y §5.24, `docs/privacidad.md` reglas 12–16 y 80,

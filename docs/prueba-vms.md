@@ -1279,3 +1279,20 @@ consola en el equipo del profesor; el aula simulada cerrada.
 | **PR-F** Registros | Revisa `aula-agente.log` (VM 1) y el log de la consola. | Dicen «presentation started/ended» con `present`, intentos y tamaños; **nunca** el SDP, los candidatos ni ningún cuadro. Ningún extremo escribió imágenes ni video en disco. |
 
 **Para aceptar** bastan PR-A, PR-B y PR-C en ✅, con las cifras de PR-D anotadas.
+
+## 26. Transmisión: a una selección, y modos ventana y pantalla completa (12.2)
+
+Comprueba que la transmisión llega solo a los seleccionados, que cada modo deja hacer lo que dice y
+nada más, y que nadie queda bloqueado si se pierde la clase (`docs/protocol.md` §5.12.1,
+`docs/privacidad.md` regla 12). Con tres VMs Windows: la VM 1 con el agente **como servicio**, las
+VM 2 y 3 en modo ventana, y la consola en el equipo del profesor.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **TS-A** Solo a la selección (**aceptación**) | Selecciona las VM 1 y 2 › **Mostrar mi pantalla** › **En una ventana** › **Empezar**. Luego desconecta y reconecta la red de la VM 2. | Las VM 1 y 2 la ven; la VM 3 no. La franja dice «en una ventana a 2 de 2 alumnos». La VM 2 la recibe otra vez al reconectarse. |
+| **TS-B** Modo ventana (**aceptación**) | En la VM 1: muévela, cámbiale el tamaño, haz clic en el Bloc de notas, pulsa Alt+F4 y la X. | Se mueve y cambia de tamaño; sigue encima del Bloc de notas; no tiene botón de minimizar y Alt+F4 y la X no hacen nada. |
+| **TS-C** Pantalla completa (**aceptación**) | **Detener**; transmite de nuevo en **Pantalla completa**. En la VM 1 prueba Alt+F4, Esc, Windows+D y Windows+M. | Cubre el monitor, sin bordes ni botones; no sale con ninguna de esas teclas (si se minimiza, vuelve sola). Ctrl+Alt+Supr sí funciona. |
+| **TS-D** Se libera sola (**aceptación**) | En pantalla completa, desconecta la red de la VM 2; en otra prueba, cierra la consola a la fuerza (Administrador de tareas). | En unos 15 s la vista se quita sola y la ventana de Aula vuelve a como estaba; los programas abiertos siguen igual. |
+| **TS-E** Detener deja todo como estaba | Antes de transmitir, deja Aula compacta en la VM 2 y cerrada al área de notificación en la VM 3 (selecciona todas); **Detener**. | La VM 2 vuelve a la tira compacta y la VM 3 vuelve a ocultarse. |
+
+**Para aceptar** bastan TS-A a TS-D en ✅.

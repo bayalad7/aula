@@ -223,7 +223,7 @@
       "pantallas": [
         "alumnos"
       ],
-      "hash": "sha256:d86c7f5590d83d39fd0d16d09e8b7a1a9dade290cb117ff8a1a11370a4350ddc",
+      "hash": "sha256:4b2e4ced503a232c6534f4a0dc5e8488485c3c732663ea330efc3950e6706f52",
       "alt": "Transmisión de la pantalla del profesor: Cómo llega la pantalla del profesor como video a cada alumno y qué pasa si una conexión falla",
       "claro": "generados/14-transmision-pantalla.claro.svg",
       "oscuro": "generados/14-transmision-pantalla.oscuro.svg"

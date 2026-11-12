@@ -217,6 +217,22 @@ fuente y otro como receptor, ambos con Windows. El aula simulada abierta sirve p
 | C-93 | Con el aula simulada abierta, abre la pantalla en grande y la ficha de un alumno simulado | En la pantalla en grande no aparece **Proyectar a la clase**; en la ficha, «Qué puede hacer su equipo» dice «Mostrar su pantalla a la clase: no» y «Ver la pantalla de un compañero: no». Al proyectar a un real, los simulados no reciben nada. A 900×600 y en oscuro la franja y la Pantalla grande se leen completas |
 | C-94 | Proyectando, desconecta la fuente (cierra su agente o su red); luego vuelve a proyectar y cierra la clase | «<equipo> se desconectó»; la vista del receptor se cierra. Al cerrar la clase, la franja se va y el receptor vuelve a su vista de código |
 
+### Mostrar mi pantalla: a quién y en qué modo (v0.15)
+
+Con dos alumnos reales con Windows (VM o `-directo`) y el aula simulada abierta. Los A-37 a A-41
+se miran en la ventana real del alumno: el arnés no ve la ventana nativa (CLAUDE.md, «Cierre»).
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-99 | Sin selección, **Mostrar mi pantalla**; luego selecciona solo un alumno real y uno simulado y ábrelo otra vez | Sin selección: «Para todos los equipos conectados (n).» y «La verán los n alumnos que pueden recibirla…». Con selección: «Para 1 equipo seleccionado. 1 alumno simulado no la recibe: es de prueba.» y «La verá 1 alumno…». **Modo** con «En una ventana» (elegido) y «Pantalla completa», cada uno con icono y su explicación debajo |
+| C-100 | Con un alumno seleccionado, **Pantalla completa** › **Empezar**; luego desconecta y reconecta su red; conecta otro alumno | La franja roja «Mostrando tu pantalla (Monitor 1) en pantalla completa a 1 de 1 alumnos». Solo el seleccionado la recibe; al reconectarse la recibe otra vez; el que se conecta después no. El monitor y el modo quedan desactivados en el panel mientras transmites |
+| C-101 | **Detener** en la franja | La franja se va; en cada alumno la vista se cierra y su ventana vuelve a como estaba |
+| A-37 | Con tu editor al frente y Aula compacta, la consola transmite **En una ventana** | Aula sale del modo compacto y al frente, encima de tu editor, con la franja «Estás viendo la pantalla de <profesor> (canal <n>) · Se queda encima hasta que termine…». Puedes moverla y cambiarle el tamaño; **no** tiene botón de minimizar, la X está gris y Alt+F4 no hace nada. Al hacer clic en tu editor, Aula sigue encima. No hay botón de modo compacto |
+| A-38 | La consola **Detener** | La vista se cierra y Aula vuelve a la tira compacta en su esquina, sin quedarse encima. Repite con Aula cerrada al área de notificación antes de empezar: al terminar vuelve a ocultarse; con Aula maximizada: sigue maximizada |
+| A-39 | La consola transmite en **Pantalla completa** | Aula cubre todo el monitor (también la barra de tareas), sin bordes ni botones de ventana, con la franja arriba. No sale con Alt+F4, Esc, Windows+D ni Windows+M (si se minimiza, vuelve en menos de un segundo). Ctrl+Alt+Supr sí funciona |
+| A-40 | En pantalla completa, desconecta la red del alumno (o cierra la consola a la fuerza) | En unos 15 s la vista se quita sola y la ventana vuelve a como estaba; tus programas siguen abiertos y sin cambios. `aula-agente.log` dice «peer silent» o la desconexión y «broadcast ended why=disconnected» |
+| A-41 | Repite A-37 y A-39 con el agente como servicio | Lo mismo: lo hace el ayudante en tu sesión. `aula-cliente.log` no tiene errores «window: hold» |
+
 ### Notas de interfaz 001–011 e iconos (2026-11-11)
 
 | # | Pasos | Esperado |

@@ -66,7 +66,8 @@ que no es parte de la página.
 
 // BroadcastView: la transmisión de la pantalla del profesor
 { "active": true, "broadcastId": "7d1f…", "width": 1920, "height": 1080, "fps": 15,
-  "teacher": "Lab 3 — Prof. Ayala", "channel": "1" }
+  "teacher": "Lab 3 — Prof. Ayala", "channel": "1",
+  "mode": "fullscreen" }             // "window" o "fullscreen" (v0.15); ausente: una consola anterior
 
 // Signal: para el RTCPeerConnection de la interfaz; un attempt mayor reemplaza la conexión
 { "kind": "offer", "broadcastId": "7d1f…", "attempt": 1, "sdp": "v=0…" }
@@ -156,11 +157,16 @@ navegador.
   llega como `aula:broadcast` con `source` (su equipo): la franja dice «Estás viendo la pantalla
   de LAB3-PC07». El `RTCPeerConnection` de las dos apps es `sistema/receptor-video.js`.
 - **Transmisión del profesor** (`docs/privacidad.md`, reglas 12–14): con `aula:broadcast`
-  activo, Go trae la ventana al frente y la maximiza; la interfaz oculta el código y muestra la
-  franja azul fija con `notice` y el `<video>`. El `RTCPeerConnection` vive en la interfaz, sin
+  activo, Go trae la ventana al frente (`raise`, sale del modo compacto) y la sujeta según `mode`
+  con `platform.AppWindow.Hold`: `window`, encima de las demás y sin minimizar ni cerrar;
+  `fullscreen`, cubriendo el monitor. Sin `mode`, la maximiza como antes. Mientras dura, cerrar no
+  la oculta (excepción a la regla 2) y `SetCompact(true)` no hace nada. La interfaz oculta el
+  código y el botón de modo compacto, y muestra la franja azul fija con `notice`, la nota del modo
+  (`#bc-modo`) y el `<video>`. El `RTCPeerConnection` vive en la interfaz, sin
   servidores ICE, y solo recibe: nunca pide cámara, micrófono ni pantalla. Los candidatos que
   llegan antes de aplicar la oferta se guardan y se aplican después. Al terminar (`active:
-  false`) la interfaz cierra la conexión y Go restaura la ventana. La CSP permite
+  false`: detener, desconexión o consola muda) la interfaz cierra la conexión y Go deja la ventana
+  como estaba (`Release`, y el modo compacto o el área de notificación). La CSP permite
   `media-src mediastream: blob:` para el video.
 - **Manos y mensajes** (`docs/privacidad.md`, reglas 50–52): lo hace el alumno, así que nada
   quita el foco ni trae la ventana, y no hay banda. «Levantar la mano» lleva `aria-pressed`; la
@@ -202,9 +208,9 @@ interfaz ──App.OpenScreens()──▶ screen.Wall ──screen.thumb.start�
 agentes ──screen.thumb.frame──▶ screen.Wall (solo el start vigente) ──"aula:frame"──▶ <img> de la cuadrícula
 interfaz ──App.ViewScreen(id)──▶ nuevo start a ese agente (1280 px); ViewScreen("") vuelve a 320 px
 interfaz ──App.CloseScreens()──▶ screen.thumb.stop a todos; Go olvida los cuadros
-interfaz ──App.StartBroadcast(monitor)──▶ excluye la consola de la captura ──▶ broadcast.Broadcaster
-          ──screen.broadcast.start/offer/ice──▶ agentes con screen.broadcast ──answer/ice──▶ Go
-broadcast.Broadcaster (receptores conectados) ──"aula:broadcast"──▶ franja roja "a M de N alumnos"
+interfaz ──App.StartBroadcast(monitor, modo, equipos)──▶ excluye la consola de la captura ──▶ broadcast.Broadcaster
+          ──screen.broadcast.start {mode}/offer/ice──▶ agentes con screen.broadcast (todos o esos equipos) ──answer/ice──▶ Go
+broadcast.Broadcaster (receptores conectados) ──"aula:broadcast"──▶ franja roja "en pantalla completa a M de N alumnos"
 interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la consola vuelve a las capturas
 ```
 
@@ -378,7 +384,7 @@ cada código tenga su enlace y que la sección exista.
 | `CloseScreens()` | — | Cierra la vista (**Cerrar** o Esc): envía `screen.thumb.stop` a todos los que transmitían y olvida los cuadros. |
 | `ViewScreen(sessionId)` | — | Vista en detalle de un alumno (clic en su miniatura): nuevo `screen.thumb.start` con 1280 px y calidad 70 solo a él. `ViewScreen("")` lo devuelve a miniatura. |
 | `Displays()` | `DisplayInfo[]` | Monitores para el selector de la transmisión. |
-| `StartBroadcast(monitor)` | `BroadcastState` / error | **Transmitir mi pantalla.** Excluye la ventana de la consola de la captura (si no puede, no transmite) y envía `screen.broadcast.start` + oferta a cada alumno con `canBroadcast`, y a los que se conecten después. Error si no hay clase, si ya transmite o si falta el codificador H.264. |
+| `StartBroadcast(monitor, mode, hostnames)` | `BroadcastState` / error | **Mostrar mi pantalla.** `mode`: `"window"` o `"fullscreen"` (privacidad, regla 12). `hostnames`: los equipos seleccionados en Alumnos (también si se reconectan), o `[]` para todos, incluidos los que se conecten después. Excluye la ventana de la consola de la captura (si no puede, no transmite) y envía `screen.broadcast.start` (con `mode`) + oferta a cada uno con `canBroadcast`; los simulados nunca. `BroadcastState` suma `mode` y `targeted` (equipos elegidos; 0 = todos). Error si no hay clase, si el modo no es uno de los dos, si ya transmite o si falta el codificador H.264. |
 | `StopBroadcast()` | `BroadcastState` | **Detener.** `screen.broadcast.stop` a todos; la consola vuelve a aparecer en las capturas. También ocurre al cambiar de canal o cerrar la clase. |
 | `BroadcastState()` | `BroadcastState` | Estado actual (también viene en `View().broadcast`). |
 | `StartPresent(sessionId)` | `PresentState` / error | **Proyectar a la clase** (ficha y Pantalla grande). Detiene la transmisión del profesor si la hay (la interfaz lo confirmó) y manda `student.present.start` al alumno (no se le pregunta). Errores: `noClass`, `studentGone`, `presentUnsupported`, `presentFailed`. |

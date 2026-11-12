@@ -144,6 +144,8 @@ func samplePayloads() []Payload {
 		StudentPresentStop{PresentID: testRefID},
 		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15,
 			Source: &BroadcastSource{Kind: BroadcastSourceStudent, Hostname: "LAB3-PC07"}},
+		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15, Mode: BroadcastWindow},
+		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15, Mode: BroadcastFullscreen},
 	}
 }
 
@@ -495,6 +497,7 @@ func TestPayloadValidation(t *testing.T) {
 		{"broadcast.start id", ScreenBroadcastStart{BroadcastID: "x", Width: 1920, Height: 1080, FPS: 15}},
 		{"broadcast.start size", ScreenBroadcastStart{BroadcastID: testRefID, Width: 5000, Height: 1080, FPS: 15}},
 		{"broadcast.start fps", ScreenBroadcastStart{BroadcastID: testRefID, Width: 1920, Height: 1080, FPS: 0}},
+		{"broadcast.start mode", ScreenBroadcastStart{BroadcastID: testRefID, Width: 1920, Height: 1080, FPS: 15, Mode: "kiosk"}},
 		{"broadcast.offer attempt", ScreenBroadcastOffer{BroadcastID: testRefID, Attempt: MaxBroadcastAttempt + 1, SDP: testSDP}},
 		{"broadcast.offer not sdp", ScreenBroadcastOffer{BroadcastID: testRefID, Attempt: 1, SDP: "hola"}},
 		{"broadcast.answer ref", ScreenBroadcastAnswer{RefID: "", BroadcastID: testRefID, Attempt: 1, SDP: testSDP}},

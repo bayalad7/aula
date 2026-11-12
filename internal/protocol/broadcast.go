@@ -30,7 +30,24 @@ type ScreenBroadcastStart struct {
 	// Source says whose screen it is; nil means the teacher's. Only sent to
 	// agents with screen.present.view (docs/protocol.md §5.24).
 	Source *BroadcastSource `json:"source,omitempty"`
+	// Mode says how the agent shows the view (v0.15); "" is the maximized
+	// window of v0.4, which the student may minimize.
+	Mode BroadcastMode `json:"mode,omitempty"`
 }
+
+// BroadcastMode is how the agent shows a broadcast (docs/protocol.md §5.12.1,
+// docs/privacidad.md rule 12). Both modes end by themselves with the session.
+type BroadcastMode string
+
+// Broadcast modes.
+const (
+	// BroadcastWindow keeps the view above the other windows; the student may
+	// move and resize it, not minimize nor close it.
+	BroadcastWindow BroadcastMode = "window"
+	// BroadcastFullscreen covers the student's monitor, above everything,
+	// without minimize nor close.
+	BroadcastFullscreen BroadcastMode = "fullscreen"
+)
 
 // MessageType implements Payload.
 func (ScreenBroadcastStart) MessageType() Type { return TypeScreenBroadcastStart }
@@ -45,6 +62,11 @@ func (p ScreenBroadcastStart) Validate() error {
 	}
 	if p.FPS < 1 || p.FPS > MaxBroadcastFPS {
 		return invalid(TypeScreenBroadcastStart, "fps must be 1-%d", MaxBroadcastFPS)
+	}
+	switch p.Mode {
+	case "", BroadcastWindow, BroadcastFullscreen:
+	default:
+		return invalid(TypeScreenBroadcastStart, "mode must be window or fullscreen")
 	}
 	if p.Source != nil {
 		return p.Source.validate()

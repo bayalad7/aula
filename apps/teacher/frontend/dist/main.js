@@ -1962,18 +1962,38 @@
   $("temporizador-detener").addEventListener("click", detenerTemporizador);
   $("temporizador-nuevo").addEventListener("click", () => { irA("alumnos"); abrirPanel("temporizador"); });
 
+  // Duración (nota de interfaz 19): una opción de la rejilla o «Otro…», que abre los minutos;
+  // «Volver a las opciones» los cierra y deja la última opción elegida.
+  let presetElegido = "10";
   for (const b of $$("[data-minutos]")) {
     b.textContent = T("temporizador.preset", { n: b.dataset.minutos });
     b.addEventListener("click", () => {
+      presetElegido = b.dataset.minutos;
       $("temporizador-minutos").value = b.dataset.minutos;
       limpiarCampo($("temporizador-minutos"), $("temporizador-error"));
-      marcarPreset();
+      otroMinutos(false);
     });
   }
-  function marcarPreset() {
-    for (const b of $$("[data-minutos]")) b.setAttribute("aria-pressed", String(b.dataset.minutos === $("temporizador-minutos").value));
+  function otroMinutos(on) {
+    $("temporizador-otro-campo").hidden = !on;
+    $("temporizador-otro").setAttribute("aria-pressed", String(on));
+    $("temporizador-otro").setAttribute("aria-expanded", String(on));
+    if (!on) $("temporizador-minutos").value = presetElegido;
+    for (const b of $$("[data-minutos]")) b.setAttribute("aria-pressed", String(!on && b.dataset.minutos === presetElegido));
   }
-  $("temporizador-minutos").addEventListener("input", () => { limpiarCampo($("temporizador-minutos"), $("temporizador-error")); marcarPreset(); });
+  $("temporizador-otro").addEventListener("click", () => { otroMinutos(true); $("temporizador-minutos").select(); $("temporizador-minutos").focus(); });
+  $("temporizador-volver").addEventListener("click", () => {
+    limpiarCampo($("temporizador-minutos"), $("temporizador-error"));
+    otroMinutos(false);
+    $("temporizador-otro").focus();
+  });
+  $("temporizador-minutos").addEventListener("input", () => limpiarCampo($("temporizador-minutos"), $("temporizador-error")));
+  // La descripción (nota de interfaz 18): opcional, hasta 1000 caracteres, con su cuenta.
+  const contarDescripcion = () => {
+    $("temporizador-descripcion-ayuda").textContent = T("temporizador.descripcionAyuda", { n: [...$("temporizador-descripcion").value].length });
+  };
+  $("temporizador-descripcion").addEventListener("input", contarDescripcion);
+  contarDescripcion();
 
   function pintarPanelTemporizador() {
     const objetivo = seleccion.size ? seleccionados() : conectados();
@@ -1995,7 +2015,8 @@
     const hosts = seleccion.size ? seleccionados().map((s) => s.hostname) : [];
     const b = $("temporizador-iniciar");
     ocupado(b, true);
-    api.StartTimer({ label: $("temporizador-etiqueta").value.trim(), durationS: min * 60, hosts }).then((t) => {
+    api.StartTimer({ label: $("temporizador-etiqueta").value.trim(), description: $("temporizador-descripcion").value.trim(),
+      durationS: min * 60, hosts }).then((t) => {
       pintarTemporizador(t);
       cerrarPanel();
       toast("exito", T("temporizador.iniciado"), T("temporizador.iniciadoTexto", { nombre: nombreTemporizador(t), tiempo: hmmss(t.remainingMs) }));
@@ -2419,7 +2440,9 @@
   let archivosVista = { templates: [], templatesError: "", sends: [] };
   const MB = 1024 * 1024;
   const tamano = (b) => (b >= MB ? T("archivos.mb", { n: (b / MB).toFixed(1) }) : T("archivos.kb", { n: Math.max(1, Math.round(b / 1024)) }));
-  const plantillaElegida = () => $("archivos-plantilla").value;
+  // ¿Qué envías? (nota de interfaz 17): archivos sueltos o una plantilla.
+  const modoArchivos = () => document.querySelector('input[name="archivos-que"]:checked').value;
+  const plantillaElegida = () => (modoArchivos() === "plantilla" ? $("archivos-plantilla").value : "");
   const PROBLEMA = "archivos.problema."; // + filepush.Template.Problem en camelCase
   const camel = (s) => String(s).replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 
@@ -2427,11 +2450,12 @@
     archivosVista = v;
     const sel = $("archivos-plantilla");
     const antes = sel.value;
-    sel.replaceChildren(Object.assign(el("option", "", T("archivos.sinPlantilla")), { value: "" }),
-      ...v.templates.map((t) => Object.assign(el("option", "", t.problem ? T("archivos.plantillaConProblema", { nombre: t.name }) : t.name), { value: t.name })));
-    sel.value = v.templates.some((t) => t.name === antes) ? antes : "";
-    $("archivos-abrir-plantillas-texto").textContent = sel.value ? T("archivos.abrirPlantilla") : T("archivos.abrirPlantillas");
-    pintarElegidos();
+    sel.replaceChildren(...v.templates.map((t) => Object.assign(el("option", "", t.problem ? T("archivos.plantillaConProblema", { nombre: t.name }) : t.name), { value: t.name })));
+    if (v.templates.some((t) => t.name === antes)) sel.value = antes;
+    // Sin plantillas no hay qué elegir: vuelve a archivos sueltos.
+    $("archivos-que-plantilla").disabled = v.templates.length === 0;
+    if (v.templates.length === 0) document.querySelector('input[name="archivos-que"][value="sueltos"]').checked = true;
+    pintarModoArchivos();
     pintarPlantillas(v.templates);
     pintarHistorialArchivos(v.sends);
   }
@@ -2457,7 +2481,7 @@
       usar.disabled = !!t.problem;
       usar.addEventListener("click", () => {
         $("archivos-plantilla").value = t.name;
-        $("archivos-plantilla").dispatchEvent(new Event("change"));
+        $("archivos-plantilla").dispatchEvent(new Event("change")); // elige «Una plantilla»
         $("archivos-plantilla").focus();
       });
       const abrir = tr.querySelector(".abrir");
@@ -2495,8 +2519,7 @@
       return li;
     }));
     $("archivos-vacio").hidden = filas.length > 0;
-    $("archivos-elegir").hidden = !!t;
-    $("archivos-guardar-plantilla").hidden = !!t;
+    $("archivos-elegir").hidden = modoArchivos() === "plantilla";
     const nota = !t ? "" : t.problem ? T(PROBLEMA + camel(t.problem)) : T("archivos.notaPlantilla", { n: t.files.length, tamano: tamano(t.size) });
     $("archivos-plantilla-nota").textContent = nota;
     actualizarAccionesArchivos();
@@ -2512,17 +2535,26 @@
     else if (t && t.problem) motivo = T(PROBLEMA + camel(t.problem));
     $("archivos-enviar").disabled = pueden === 0 || n === 0 || !!(t && t.problem);
     $("archivos-enviar-texto").textContent = n ? P("archivos.enviar", n) : T("archivos.enviarNada");
-    $("archivos-guardar-plantilla").disabled = elegidos.length === 0;
     $("archivos-motivo").textContent = motivo;
   }
 
+  function pintarModoArchivos() {
+    $("archivos-con-plantilla").hidden = modoArchivos() !== "plantilla";
+    pintarElegidos();
+  }
+  for (const r of $$('input[name="archivos-que"]')) {
+    r.addEventListener("change", () => {
+      const t = plantillaElegida();
+      if (t && !$("archivos-destino").value.trim()) $("archivos-destino").value = t;
+      pintarModoArchivos();
+    });
+  }
   $("archivos-plantilla").addEventListener("change", () => {
+    $("archivos-que-plantilla").checked = true; // elegir una plantilla (o «Usar») es enviar una plantilla
     const t = plantillaElegida();
     if (t && !$("archivos-destino").value.trim()) $("archivos-destino").value = t;
-    $("archivos-abrir-plantillas-texto").textContent = t ? T("archivos.abrirPlantilla") : T("archivos.abrirPlantillas");
-    pintarElegidos();
+    pintarModoArchivos();
   });
-  $("archivos-abrir-plantillas").addEventListener("click", () => api.OpenTemplates(plantillaElegida()).catch(fallo));
   $("archivos-elegir").addEventListener("click", () => {
     api.ChooseFiles(T("archivos.dialogo")).then((lista) => {
       for (const f of lista || []) if (!elegidos.some((e) => e.path === f.path)) elegidos.push(f);
@@ -2539,29 +2571,50 @@
       .then((d) => toast("exito", P("archivos.enviado", d.sent + d.simSent, { etiqueta: d.label }), T("archivos.enviadoTexto")), fallo)
       .finally(() => { ocupado(b, false); actualizarAccionesArchivos(); });
   });
-  $("archivos-guardar-plantilla").addEventListener("click", () => {
-    const f = $("archivos-nueva-plantilla");
-    f.hidden = !f.hidden;
-    $("archivos-guardar-plantilla").setAttribute("aria-expanded", String(!f.hidden));
-    if (!f.hidden) $("archivos-nombre-plantilla").focus();
+  // Nueva plantilla (nota de interfaz 17): en su diálogo, con su nombre y sus archivos. Empieza con
+  // los archivos sueltos que ya elegiste arriba, por si quieres guardarlos así.
+  let nuevaArchivos = [];
+  function pintarNuevaPlantilla() {
+    const tpl = $("t-archivo-elegido").content.firstElementChild;
+    $("plantilla-lista").replaceChildren(...nuevaArchivos.map((f, i) => {
+      const li = tpl.cloneNode(true);
+      li.querySelector(".nombre").textContent = f.rel;
+      li.querySelector(".tamano").textContent = tamano(f.size);
+      const q = li.querySelector(".quitar");
+      q.setAttribute("aria-label", T("archivos.quitar", { nombre: f.rel }));
+      q.title = T("archivos.quitar", { nombre: f.rel });
+      q.addEventListener("click", () => { nuevaArchivos.splice(i, 1); pintarNuevaPlantilla(); });
+      return li;
+    }));
+    $("plantilla-vacio").hidden = nuevaArchivos.length > 0;
+  }
+  $("plantillas-nueva").addEventListener("click", () => {
+    nuevaArchivos = modoArchivos() === "sueltos" ? elegidos.slice() : [];
+    $("plantilla-nombre").value = "";
+    limpiarCampo($("plantilla-nombre"), $("plantilla-error"));
+    pintarNuevaPlantilla();
+    $("dlg-plantilla").showModal();
+    $("plantilla-nombre").focus();
   });
-  $("archivos-cancelar-plantilla").addEventListener("click", () => {
-    $("archivos-nueva-plantilla").hidden = true;
-    $("archivos-guardar-plantilla").setAttribute("aria-expanded", "false");
-    $("archivos-guardar-plantilla").focus();
-  });
-  $("archivos-nueva-plantilla").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const nombre = $("archivos-nombre-plantilla").value.trim();
-    api.SaveTemplate(nombre, elegidos.map((f) => ({ path: f.path, rel: f.rel }))).then((v) => {
-      pintarArchivos(v);
-      $("archivos-plantilla").value = nombre;
-      elegidos = [];
-      $("archivos-nueva-plantilla").hidden = true;
-      $("archivos-guardar-plantilla").setAttribute("aria-expanded", "false");
-      $("archivos-plantilla").dispatchEvent(new Event("change"));
-      toast("exito", T("archivos.plantillaGuardada", { nombre }), T("archivos.plantillaGuardadaTexto"));
+  $("plantilla-cancelar").addEventListener("click", () => $("dlg-plantilla").close());
+  $("plantilla-elegir").addEventListener("click", () => {
+    api.ChooseFiles(T("archivos.dialogo")).then((lista) => {
+      for (const f of lista || []) if (!nuevaArchivos.some((e) => e.path === f.path)) nuevaArchivos.push(f);
+      pintarNuevaPlantilla();
     }, fallo);
+  });
+  $("plantilla-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const nombre = $("plantilla-nombre").value.trim();
+    if (!nombre) { errorEnCampo($("plantilla-nombre"), $("plantilla-error"), T("archivos.nombreFalta")); return; }
+    if (nuevaArchivos.length === 0) { errorEnCampo($("plantilla-nombre"), $("plantilla-error"), T("archivos.sinArchivos")); return; }
+    const b = $("plantilla-guardar");
+    ocupado(b, true);
+    api.SaveTemplate(nombre, nuevaArchivos.map((f) => ({ path: f.path, rel: f.rel }))).then((v) => {
+      pintarArchivos(v);
+      $("dlg-plantilla").close();
+      toast("exito", T("archivos.plantillaGuardada", { nombre }), T("archivos.plantillaGuardadaTexto"));
+    }, fallo).finally(() => ocupado(b, false));
   });
 
   function pintarHistorialArchivos(sends) {

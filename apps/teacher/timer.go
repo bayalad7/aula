@@ -18,9 +18,11 @@ import (
 
 // TimerRequest is what the Temporizador panel sends.
 type TimerRequest struct {
-	Label     string   `json:"label"`
-	DurationS int      `json:"durationS"`
-	Hosts     []string `json:"hosts"` // marked students; empty: the whole channel
+	Label string `json:"label"`
+	// Description is what the students have to do (nota de interfaz 18).
+	Description string   `json:"description"`
+	DurationS   int      `json:"durationS"`
+	Hosts       []string `json:"hosts"` // marked students; empty: the whole channel
 }
 
 // Timer returns the timer in force, for the franja and «Participación».
@@ -40,10 +42,10 @@ func (a *App) StartTimer(req TimerRequest) (classtimer.Snapshot, error) {
 	if !anyCanTimer(class, req.Hosts) {
 		return classtimer.Snapshot{}, codedf(codeNoTimerTargets, "ninguno de los alumnos elegidos puede mostrar el temporizador")
 	}
-	id, err := a.timer.Start(req.Label, req.DurationS, req.Hosts)
+	id, err := a.timer.Start(req.Label, req.Description, req.DurationS, req.Hosts)
 	if err != nil {
-		return classtimer.Snapshot{}, codedf(codeInvalidTimer, "temporizador no válido: un nombre de hasta %d caracteres y de %d s a %d h",
-			protocol.MaxTimerLabel, protocol.MinTimerDurationS, protocol.MaxTimerDurationS/3600)
+		return classtimer.Snapshot{}, codedf(codeInvalidTimer, "temporizador no válido: un nombre de hasta %d caracteres, una descripción de hasta %d y de %d s a %d h",
+			protocol.MaxTimerLabel, protocol.MaxTimerDescription, protocol.MinTimerDurationS, protocol.MaxTimerDurationS/3600)
 	}
 	a.log.Info("timer started", "timer", id, "duration_s", req.DurationS, "hosts", len(req.Hosts))
 	return a.timerChanged(class), nil

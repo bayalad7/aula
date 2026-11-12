@@ -255,12 +255,18 @@
                 <section class="tarjeta" aria-labelledby="h-archivos-enviar">
                   <div class="tarjeta__cabecera"><h2 id="h-archivos-enviar" data-t="archivos.enviarTitulo"></h2></div>
                   <div class="tarjeta__cuerpo pila">
-                    <div class="fila">
-                      <label class="campo crece"><span class="campo__etiqueta" data-t="archivos.plantilla"></span>
+                    <!-- Nota de interfaz 17: primero qué se envía; las plantillas se crean y cambian en su sección. -->
+                    <fieldset class="campo"><legend class="campo__etiqueta" data-t="archivos.que"></legend>
+                      <div class="opciones-seg">
+                        <label class="opcion-seg"><input type="radio" name="archivos-que" value="sueltos" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#archivo"/></svg> <span data-t="archivos.queSueltos"></span></label>
+                        <label class="opcion-seg"><input type="radio" name="archivos-que" value="plantilla" id="archivos-que-plantilla"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg> <span data-t="archivos.quePlantilla"></span></label>
+                      </div>
+                    </fieldset>
+                    <div class="pila-mini" id="archivos-con-plantilla" hidden>
+                      <label class="campo"><span class="campo__etiqueta" data-t="archivos.plantilla"></span>
                         <select id="archivos-plantilla" data-icono="archivo"></select></label>
-                      <button type="button" class="btn btn--fantasma" id="archivos-abrir-plantillas"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span id="archivos-abrir-plantillas-texto"></span></button>
+                      <p class="pequeno suave" id="archivos-plantilla-nota" aria-live="polite"></p>
                     </div>
-                    <p class="pequeno suave" id="archivos-plantilla-nota" aria-live="polite"></p>
                     <!-- Los archivos (nota de interfaz 10): una zona con su lista y «Elegir archivos…». -->
                     <div class="campo">
                       <span class="campo__etiqueta" id="archivos-lista-titulo" data-t="archivos.archivos"></span>
@@ -286,17 +292,10 @@
                         </div>
                       </fieldset>
                       <div class="pie-envio__acciones" id="archivos-botones">
-                        <button type="button" class="btn btn--fantasma" id="archivos-guardar-plantilla" aria-expanded="false" aria-controls="archivos-nueva-plantilla"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span data-t="archivos.guardarPlantilla"></span></button>
                         <span class="pie-envio__principal">
                           <button type="button" class="btn btn--primario btn--lg" id="archivos-enviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span id="archivos-enviar-texto"></span></button>
                         </span>
                       </div>
-                    <form id="archivos-nueva-plantilla" class="fila archivos-nueva-plantilla" hidden>
-                      <label class="campo crece"><span class="campo__etiqueta" data-t="archivos.nombrePlantilla"></span>
-                        <input id="archivos-nombre-plantilla" maxlength="100" autocomplete="off" data-t-placeholder="archivos.nombrePlantillaEjemplo" data-icono="editar"></label>
-                      <button type="submit" class="btn btn--primario" data-t="archivos.guardar" data-icono="guardar"></button>
-                      <button type="button" class="btn btn--fantasma" id="archivos-cancelar-plantilla" data-t="comun.cancelar" data-icono="cerrar"></button>
-                    </form>
                     <p class="pie-envio__motivo" id="archivos-motivo" aria-live="polite"></p>
                     </div>
                   </div>
@@ -313,7 +312,10 @@
 
               <section class="tarjeta" aria-labelledby="h-plantillas">
                 <div class="tarjeta__cabecera"><h2 id="h-plantillas" data-t="archivos.plantillas"></h2>
-                  <button type="button" class="btn btn--sm" id="plantillas-carpeta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="archivos.abrirPlantillas"></span></button></div>
+                  <div class="grupo-botones">
+                    <button type="button" class="btn btn--sm btn--primario" id="plantillas-nueva" aria-haspopup="dialog"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="archivos.nuevaPlantilla"></span></button>
+                    <button type="button" class="btn btn--sm" id="plantillas-carpeta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="archivos.abrirPlantillas"></span></button>
+                  </div></div>
                 <p class="tarjeta__cuerpo suave" id="plantillas-vacio" data-t="archivos.plantillasVacio"></p>
                 <div class="tabla-adaptable" id="plantillas-tabla">
                   <table class="tabla" aria-labelledby="h-plantillas">
@@ -711,18 +713,30 @@
             <label class="campo"><span class="campo__etiqueta" data-t="temporizador.nombre"></span>
               <input type="text" id="temporizador-etiqueta" maxlength="40" autocomplete="off" data-t-placeholder="temporizador.ejemplo" aria-describedby="temporizador-etiqueta-ayuda" data-icono="editar">
               <span class="campo__ayuda" id="temporizador-etiqueta-ayuda" data-t="temporizador.nombreAyuda"></span></label>
+            <!-- Nota de interfaz 18: qué tienen que hacer; el alumno lo lee en una tarjeta de su lista. -->
+            <label class="campo"><span class="campo__etiqueta" data-t="temporizador.descripcion"></span>
+              <textarea id="temporizador-descripcion" rows="3" maxlength="1000" data-t-placeholder="temporizador.descripcionEjemplo" aria-describedby="temporizador-descripcion-ayuda" data-icono="aviso"></textarea>
+              <span class="campo__ayuda" id="temporizador-descripcion-ayuda"></span></label>
             <fieldset class="campo"><legend class="campo__etiqueta" data-t="temporizador.duracion"></legend>
-              <div class="grupo-botones" id="temporizador-presets">
+              <!-- Nota de interfaz 19: rejilla de opciones del mismo tamaño; «Otro…» abre los minutos. -->
+              <div class="rejilla-opciones" id="temporizador-presets">
                 <button type="button" class="btn btn--sm" data-minutos="1" aria-pressed="false" data-icono="reloj"></button>
                 <button type="button" class="btn btn--sm" data-minutos="5" aria-pressed="false" data-icono="reloj"></button>
                 <button type="button" class="btn btn--sm" data-minutos="10" aria-pressed="true" data-icono="reloj"></button>
                 <button type="button" class="btn btn--sm" data-minutos="15" aria-pressed="false" data-icono="reloj"></button>
                 <button type="button" class="btn btn--sm" data-minutos="20" aria-pressed="false" data-icono="reloj"></button>
+                <button type="button" class="btn btn--sm" data-minutos="30" aria-pressed="false" data-icono="reloj"></button>
+                <button type="button" class="btn btn--sm" data-minutos="45" aria-pressed="false" data-icono="reloj"></button>
+                <button type="button" class="btn btn--sm" data-minutos="60" aria-pressed="false" data-icono="reloj"></button>
+                <button type="button" class="btn btn--sm" id="temporizador-otro" aria-pressed="false" aria-controls="temporizador-otro-campo" data-icono="editar"><span data-t="temporizador.otro"></span></button>
               </div>
-              <label class="campo"><span class="campo__etiqueta" data-t="temporizador.minutos"></span>
-                <input type="number" id="temporizador-minutos" min="1" max="240" step="1" value="10" inputmode="numeric" aria-describedby="temporizador-minutos-ayuda temporizador-error" data-icono="reloj">
-                <span class="campo__ayuda" id="temporizador-minutos-ayuda" data-t="temporizador.minutosAyuda"></span>
-                <span class="campo__error" id="temporizador-error" hidden></span></label>
+              <div class="pila-mini" id="temporizador-otro-campo" hidden>
+                <label class="campo"><span class="campo__etiqueta" data-t="temporizador.minutos"></span>
+                  <input type="number" id="temporizador-minutos" min="1" max="240" step="1" value="10" inputmode="numeric" aria-describedby="temporizador-minutos-ayuda temporizador-error" data-icono="reloj">
+                  <span class="campo__ayuda" id="temporizador-minutos-ayuda" data-t="temporizador.minutosAyuda"></span>
+                  <span class="campo__error" id="temporizador-error" hidden></span></label>
+                <button type="button" class="btn btn--sm btn--fantasma" id="temporizador-volver" data-icono="volver"><span data-t="temporizador.volverOpciones"></span></button>
+              </div>
             </fieldset>
             <p class="pequeno suave" data-t="temporizador.discreto"></p>
           </div>
@@ -916,6 +930,32 @@
             <button type="submit" class="btn btn--primario" id="pg-privado-enviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="privado.enviar"></span></button>
           </div>
         </form>
+    </div>
+  </dialog>
+
+  <!-- Nueva plantilla (nota de interfaz 17): su nombre y sus archivos, en su propio diálogo. -->
+  <dialog class="dialogo dialogo--form" id="dlg-plantilla" aria-labelledby="dlg-plantilla-titulo">
+    <div class="dialogo__cuerpo pila">
+      <div class="dialogo__titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><h2 id="dlg-plantilla-titulo" class="crece" data-t="archivos.nuevaTitulo"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <form id="plantilla-form" class="pila" novalidate>
+        <p class="pequeno suave" data-t="archivos.nuevaAyuda"></p>
+        <label class="campo"><span class="campo__etiqueta" data-t="archivos.nombrePlantilla"></span>
+          <input id="plantilla-nombre" maxlength="100" autocomplete="off" data-t-placeholder="archivos.nombrePlantillaEjemplo" aria-describedby="plantilla-error" data-icono="editar">
+          <span class="campo__error" id="plantilla-error" role="alert" hidden></span></label>
+        <div class="campo">
+          <span class="campo__etiqueta" id="plantilla-lista-titulo" data-t="archivos.archivos"></span>
+          <div class="zona-archivos">
+            <p class="zona-archivos__vacio" id="plantilla-vacio"><svg class="icono icono--lg" aria-hidden="true"><use href="sistema/iconos.svg#archivo"/></svg><span data-t="archivos.vacio"></span></p>
+            <ul class="lista-limpia archivos-elegidos" id="plantilla-lista" aria-labelledby="plantilla-lista-titulo"></ul>
+            <div><button type="button" class="btn" id="plantilla-elegir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="archivos.elegir"></span></button></div>
+          </div>
+        </div>
+        <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+          <button type="button" class="btn" id="plantilla-cancelar" data-t="comun.cancelar" data-icono="cerrar"></button>
+          <button type="submit" class="btn btn--primario" id="plantilla-guardar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span data-t="archivos.guardarPlantilla"></span></button>
+        </div>
+      </form>
     </div>
   </dialog>
 

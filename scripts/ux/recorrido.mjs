@@ -209,8 +209,12 @@ await f("95-archivos-elegidos", "lab", { ruta: "archivos", pasos: seq(archivos, 
   async (p) => { await p.type("#archivos-destino", "Ejercicio 4"); }) });
 await f("96-archivos-plantilla", "lab-archivos", { ruta: "archivos", pasos: seq(archivos, plantilla("Ejercicio 4")) });
 await f("97-archivos-plantilla-problema", "lab", { ruta: "archivos", pasos: seq(archivos, plantilla("Proyecto final")) });
-await f("98-archivos-guardar-plantilla", "lab", { ruta: "archivos", pasos: seq(archivos, click("#archivos-elegir"),
-  click("#archivos-guardar-plantilla"), async (p) => { await p.type("#archivos-nombre-plantilla", "Ejercicio 5"); }) });
+// Nota de interfaz 17: una plantilla nueva se crea en su sección, en un diálogo; empieza con los
+// archivos sueltos elegidos arriba.
+await f("98-archivos-nueva-plantilla", "lab", { ruta: "archivos", pasos: seq(archivos, click("#archivos-elegir"),
+  click("#plantillas-nueva"), async (p) => { await p.type("#plantilla-nombre", "Ejercicio 5"); }) });
+await f("98b-archivos-que-envias", "lab-archivos", { ruta: "archivos", pasos: seq(archivos, click('input[name="archivos-que"][value="plantilla"]')) });
+await f("98c-archivos-nueva-plantilla-oscuro-900x600", "lab", { ruta: "archivos", oscuro: true, w: 900, h: 600, pasos: click("#plantillas-nueva") });
 await f("99-archivos-enviado", "lab", { ruta: "archivos", pasos: seq(archivos, click("#archivos-elegir"), click("#archivos-enviar")) });
 await f("100-archivos-quien-falta", "lab-archivos", { ruta: "archivos", pasos: seq(archivos, click("[data-vista-de=archivos] .envio__desplegar")) });
 await f("101-archivos-historial", "lab-archivos", { h: 1100, ruta: "archivos", pasos: async (p) => {
@@ -333,6 +337,14 @@ await f("159-codigo-pie-envio-oscuro-900x600", "datos", { ruta: "codigo", oscuro
 await f("160-ficha-info-globo", "lab", { pasos: seq(click(`${fila("LAB3-PC07")} .ficha`), click('#panel-alumno [data-info="capacidades"]')) });
 await f("161-ficha-info-globo-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600,
   pasos: seq(click(`${fila("LAB3-PC07")} .ficha`), click('#panel-alumno [data-info="capacidades"]')) });
+// Nota 19: la rejilla de duraciones y «Otro…» con los minutos.
+await f("163-temporizador-duraciones", "lab", { pasos: click('[data-panel="temporizador"]') });
+await f("165-temporizador-descripcion", "lab", { pasos: seq(click('[data-panel="temporizador"]'), async (p) => {
+  await p.type("#temporizador-etiqueta", "Ejercicio 1");
+  await p.type("#temporizador-descripcion", "Resuelve los ejercicios 3 a 5 de la hoja.");
+}) });
+await f("164-temporizador-otro-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600,
+  pasos: seq(click('[data-panel="temporizador"]'), click("#temporizador-otro")) });
 await f("162-plantilla-eliminar", "lab-archivos", { ruta: "archivos", pasos: click("#plantillas-filas tr:first-child .eliminar") });
 
 await cerrar();

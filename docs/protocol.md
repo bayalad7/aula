@@ -318,6 +318,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `poll` | `poll.open`, `poll.close`, `poll.results`, `poll.vote.ack`; y acepta `poll.vote` | v0.13 (§5.23). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 | `screen.present` | `student.present.start`, `.offer`, `.ice`, `.stop` | v0.14 (§5.24). Windows, si hay captura de monitor, codificador H.264 y la ventana se puede excluir de la captura; en modo servicio, solo con el ayudante. Nunca los alumnos simulados. Linux y macOS no la declaran. |
 | `screen.present.view` | `screen.broadcast.*` con `source` (la pantalla de un compañero) | v0.14 (§5.24). La declara quien declara `screen.broadcast` y sabe mostrar de quién es la pantalla. Nunca los alumnos simulados. |
+| `class.end` | `class.end` | Sin publicar (§5.25). Todos los SO: no toca el sistema, limpia la ventana. Se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 
 `hand`, `msg.student` y `poll` habilitan mensajes que **inicia el agente**: la consola acepta
 `hand.*`, `msg.student` y `poll.vote` solo de un agente que declaró la capacidad (si no, responde
@@ -400,6 +401,8 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `student.present.answer` | A → P | — | `ref_id`, `present_id`, `attempt`, `sdp` | — |
 | `student.present.ice` | A ↔ P | `screen.present` (P → A) | `present_id`, `attempt`, `candidate`, `sdp_mid`, `sdp_mline_index` | — |
 | `student.present.stop` | P → A | `screen.present` | `present_id` | `student.present.ack` (`ended`); con otro id se ignora |
+| `class.end` | P → A | `class.end` | `end_id` | `class.end.ack` o `error` |
+| `class.end.ack` | A → P | — | `ref_id`, `end_id`, `status`, `reason`? | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -1956,6 +1959,88 @@ ignora.
 - **macOS:** pide el permiso «Grabación de pantalla» (Privacidad y seguridad). macOS no declara
   `screen.present` todavía.
 
+### 5.25 Terminar la clase (`class.end`)
+
+> Aprobado el 2026-11-12 (prompt 10.14), sin publicar. Todos los sistemas: limpiar la ventana no
+> toca el SO. Implementación en `internal/classend` (`Class` en la consola, `Clear` en el agente);
+> reglas en `docs/privacidad.md` 83–86. En la consola, «Terminar la clase» bajo el Selector de
+> clase del Menú, con su diálogo.
+
+Al acabar la hora, el profesor deja el laboratorio limpio con un solo botón: la consola detiene
+lo que sigue activo con los mensajes de siempre y después pide a cada agente que **deje su
+ventana como recién abierta**. El siguiente grupo no hereda nada.
+
+```
+Consola (P)                                                       Agente (A)
+   |  1. (opcional) Recoger el trabajo: file.collect.request ---->|  (§5.21; espera sus acuses ≤ 60 s)
+   |  2. screen.broadcast.stop, student.present.stop, remote.stop>|
+   |     screen.unfreeze, app.block.clear, web.filter.clear ----->|
+   |  3. timer.stop, poll.close --------------------------------->|
+   |  4. (solo si el profesor lo marca) power.cancel ------------>|
+   |  5. class.end ---------------------------------------------->|  limpia su ventana, en orden
+   |<------------------------------------------ class.end.ack ----|  clean | failed
+```
+
+Si un paso falla, los demás siguen y el resultado lo dice. Terminar dos veces seguidas no rompe
+nada: lo que ya estaba detenido se ignora y el agente vuelve a acusar `clean`.
+
+#### 5.25.1 `class.end` (P → A)
+
+```json
+{ "end_id": "5b0c…" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `end_id` | string | UUID v4 de la consola; identifica este fin de clase en el acuse. |
+
+El agente, en este orden (primero lo que actúa sobre el equipo, después la ventana):
+
+1. Suelta el control remoto (`remote.ack` `ended`), termina la proyección de su pantalla y cierra
+   la vista de la transmisión, como al cerrarse la conexión.
+2. Quita la pausa (§5.9).
+3. Quita las restricciones con su diario (§5.13–5.14; D-017), como al desconectarse.
+4. Quita el temporizador y las tarjetas de encuestas.
+5. Vacía la lista de código, los avisos, las tarjetas de archivos recibidos, de recolecciones y de
+   lo que se abrió; baja la mano y descarta los mensajes al profesor que aún no salieron (la
+   consola ya los olvidó).
+6. Muestra la tarjeta **«La clase terminó»** con la hora y lo que se quitó (regla 83), sin quitar el
+   foco.
+
+**Nunca** toca la energía pendiente (una cuenta regresiva de §5.15 sigue; solo `power.cancel` la
+detiene), ni borra, mueve o lee archivos del alumno (`Documentos\Aula` queda igual), ni cierra
+la conexión: el agente sigue conectado al canal, listo para la siguiente clase.
+
+#### 5.25.2 `class.end.ack` (A → P)
+
+```json
+{ "ref_id": "<id del class.end>", "end_id": "5b0c…", "status": "clean" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `ref_id` | string | `id` del `class.end`. |
+| `end_id` | string | El del pedido. |
+| `status` | string | `clean`: la ventana quedó limpia. `failed`: algo no se pudo quitar; el resto sí se hizo. |
+| `reason` | string | Solo con `failed`: `restrictions` (no se pudieron quitar las restricciones), `pause` (no se pudo quitar la pausa) o `internal`. Otro valor → `invalid_message`. |
+
+#### 5.25.3 Reglas de la consola
+
+- Lo envía a cada sesión conectada que declaró `class.end`, real o simulada. A un agente que **no
+  la declara** (versión anterior) le envía, además de las paradas de arriba, `code.clear` si
+  declara `code.view`; el resultado lo marca como «limpio en parte».
+- Quien no acusa en **10 s** queda «sin acuse». «Reintentar a los que faltan» vuelve a enviar
+  `class.end` a los que siguen conectados sin acuse o con `failed`.
+- **Al reconectar.** La consola recuerda, por equipo (`hostname`), a quien no acusó: un equipo
+  desconectado al terminar, o que no respondió. Cuando ese equipo vuelve a conectarse, recibe
+  `class.end` **antes** que lo que la consola reenvía al reconectar (temporizador, encuesta). No
+  pierde nada nuevo: mientras estuvo fuera no recibió nada. Lo recordado se olvida al acusar, al
+  terminar otra vez la clase o al cerrar la consola o cambiar de canal. Quien se conecta por
+  primera vez después de terminar no tiene nada que heredar: la consola ya no tiene nada activo.
+- La consola queda «sin clase»: sin temporizador, encuestas, manos, mensajes, envíos de archivos,
+  recolecciones en curso, aperturas, historial de código ni «Últimos envíos». Sigue anunciada en
+  el mismo canal. Las carpetas guardadas (capturas, recolecciones, plantillas) no se tocan.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -2012,6 +2097,7 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `student.present.*.sdp` / `ice.candidate` / `attempt` | Como `screen.broadcast.*` | Como `screen.broadcast.*` |
 | `screen.broadcast.start.source.hostname` | 1–63 caracteres | `error` `invalid_message` |
 | Acuse de `student.present.start` | 15 s | La consola termina la proyección (`failed`, `no_answer`) |
+| Acuse de `class.end` | 10 s | La consola lo marca «sin acuse» y se lo reenvía al reconectar |
 | `app.block.set.apps` | 1–100 nombres de ≤ 64 caracteres | `error` `invalid_message` |
 | `web.filter.set.domains` | 1–500 dominios de ≤ 253 caracteres | `error` `invalid_message` |
 | `power.action.delay_s` | 10–600 s (0 o ausente = 30 s) | `error` `invalid_message` |
@@ -2066,6 +2152,9 @@ emisor verifica el tamaño final de la envoltura.
 - De `poll.*` se registran `poll_id`, `kind`, `named`, `status`, el índice elegido, la longitud
   de `text` y los totales. **Nunca** `question`, `options` ni `text` (son texto del profesor y del
   alumno), y en una encuesta anónima tampoco qué eligió cada equipo.
+- De `class.end*` se registran `end_id`, `status`, `reason`, el equipo y qué se quitó (sin
+  contenido: cuántas tarjetas, si había restricciones). **Nunca** el código, los avisos ni los
+  nombres de los archivos que se quitaron de la ventana.
 - De un `msg.show` `personal` se registran el equipo, el `id` y la longitud; **nunca** el texto.
   En «Últimos envíos» la consola lo etiqueta «Mensaje privado a <equipo>», sin el texto.
 - De `hand.*` y `msg.student*` se registran `hand_id`, `message_id`, `by`, la longitud y el

@@ -147,6 +147,8 @@ func samplePayloads() []Payload {
 		StudentPresentAnswer{RefID: testSnippetID, PresentID: testRefID, Attempt: 1, SDP: "v=0\r\n"},
 		StudentPresentICE{PresentID: testRefID, Attempt: 1, Candidate: "candidate:1 1 udp 1 192.168.1.5 50000 typ host", SDPMid: "0"},
 		StudentPresentStop{PresentID: testRefID},
+		ClassEnd{EndID: testRefID},
+		ClassEndAck{RefID: testRefID, EndID: testRefID, Status: ClassEndFailed, Reason: ClassEndRestrictions},
 		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15,
 			Source: &BroadcastSource{Kind: BroadcastSourceStudent, Hostname: "LAB3-PC07"}},
 		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15, Mode: BroadcastWindow},
@@ -585,12 +587,13 @@ func TestRequiredCapability(t *testing.T) {
 		TypePollOpen: CapPoll, TypePollVoteAck: CapPoll, TypePollClose: CapPoll, TypePollResults: CapPoll,
 		TypeStudentPresentStart: CapScreenPresent, TypeStudentPresentOffer: CapScreenPresent,
 		TypeStudentPresentICE: CapScreenPresent, TypeStudentPresentStop: CapScreenPresent,
+		TypeClassEnd: CapClassEnd,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote, TypeStudentPresentAck, TypeStudentPresentAnswer, TypeScreenFreezeAck} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote, TypeStudentPresentAck, TypeStudentPresentAnswer, TypeScreenFreezeAck, TypeClassEndAck} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}
@@ -983,6 +986,25 @@ func TestStudentPresentLimits(t *testing.T) {
 	for s, final := range map[PresentStatus]bool{PresentAccepted: false, PresentEnded: true, PresentFailed: true} {
 		if s.Final() != final {
 			t.Errorf("%s.Final() = %v", s, !final)
+		}
+	}
+}
+
+func TestClassEndAckValidation(t *testing.T) {
+	ref, end := NewID(), NewID()
+	for _, c := range []struct {
+		ack ClassEndAck
+		ok  bool
+	}{
+		{ClassEndAck{RefID: ref, EndID: end, Status: ClassEndClean}, true},
+		{ClassEndAck{RefID: ref, EndID: end, Status: ClassEndFailed, Reason: ClassEndPause}, true},
+		{ClassEndAck{RefID: ref, EndID: end, Status: ClassEndClean, Reason: ClassEndPause}, false},
+		{ClassEndAck{RefID: ref, EndID: end, Status: ClassEndFailed}, false},
+		{ClassEndAck{RefID: ref, EndID: end, Status: "done"}, false},
+		{ClassEndAck{RefID: ref, EndID: "x", Status: ClassEndClean}, false},
+	} {
+		if err := c.ack.Validate(); (err == nil) != c.ok {
+			t.Errorf("%+v: err = %v, want ok %v", c.ack, err, c.ok)
 		}
 	}
 }

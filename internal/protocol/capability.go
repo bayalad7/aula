@@ -54,6 +54,9 @@ const (
 	// monitor (§5.9–5.11). Windows, in window mode or as a service with its
 	// helper; never the simulated students.
 	CapScreenFreeze Capability = "screen.freeze"
+	// CapClassEnd leaves the window as freshly opened when the teacher ends
+	// the class (§5.25). Every OS, whenever the agent has a window.
+	CapClassEnd Capability = "class.end"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -118,6 +121,8 @@ var requiredCapability = map[Type]Capability{
 	TypeStudentPresentOffer: CapScreenPresent,
 	TypeStudentPresentICE:   CapScreenPresent, // only when sent P → A
 	TypeStudentPresentStop:  CapScreenPresent,
+
+	TypeClassEnd: CapClassEnd,
 }
 
 // agentCapability lists the capability an agent must have declared before the

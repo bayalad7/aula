@@ -101,6 +101,9 @@ const (
 	TypeStudentPresentAnswer Type = "student.present.answer"
 	TypeStudentPresentICE    Type = "student.present.ice"
 	TypeStudentPresentStop   Type = "student.present.stop"
+	// Ending the class (docs/protocol.md §5.25).
+	TypeClassEnd    Type = "class.end"
+	TypeClassEndAck Type = "class.end.ack"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -340,6 +343,9 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeStudentPresentAnswer: decodeAs[StudentPresentAnswer],
 	TypeStudentPresentICE:    decodeAs[StudentPresentICE],
 	TypeStudentPresentStop:   decodeAs[StudentPresentStop],
+
+	TypeClassEnd:    decodeAs[ClassEnd],
+	TypeClassEndAck: decodeAs[ClassEndAck],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

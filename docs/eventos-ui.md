@@ -221,7 +221,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 | `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código, responde a una orden de energía (`power`) o manda un error del protocolo (`lastError`). |
 | `aula:history` | `History` | Tras cada emisión o reemisión. |
 | `aula:deliveries` | `Deliveries` | Tras cada envío, cada acuse (`code.ack`, `msg.ack`) y cada error con que un alumno contesta a un envío (`rejected`). |
-| `aula:capture` | `Capture` | Al pulsar el atajo global o «Pegar del portapapeles». |
+| `aula:capture` | `Capture` | Al pulsar el atajo global o «Pegar». |
 | `aula:class` | `View` | Al terminar el arranque automático en el canal predeterminado. Si falló, `active` es `false` y el motivo está en `Setup().startError`. |
 | `aula:frame` | `Thumb` | Por cada cuadro recibido mientras la vista de pantallas está abierta (≤ 1 por segundo y alumno). Solo cuadros del `screen.thumb.start` vigente. |
 | `aula:broadcast` | `BroadcastState` | La transmisión de tu pantalla empieza, termina o cambia su número de receptores. |
@@ -373,6 +373,7 @@ cada código tenga su enlace y que la sección exista.
 | `ResendFiles(sendId)` | `Delivery` / error | **Reenviar** de «Archivos enviados» en el Historial: a todos, leyendo los archivos otra vez. `Resend(deliveryId)` de un envío de archivos hace lo mismo solo con los que faltan. |
 | `SaveTemplate(name, files)` | `FilesView` / error | **Guardar como plantilla…**: copia los archivos a `Documentos\Aula\plantillas\<name>`. `templateExists`, `templateInvalid`. Emite `aula:files`. |
 | `OpenTemplates(name)` | error | Abre en el Explorador la carpeta de la plantilla `name`, o la de todas (`""`, se crea si falta). |
+| `DeleteTemplate(name)` | `FilesView` / error | **Eliminar** (la papelera de su fila, tras confirmar; nota de interfaz 16): borra solo la carpeta `Documentos\Aula\plantillas\<name>`, nunca algo fuera ni un enlace. Lo ya enviado sigue en el historial. `templateGone`, `templateInvalid`, `templateNotDeleted` (un archivo abierto en otro programa). Emite `aula:files`. |
 | `Collections()` | `CollectionsView` | La pestaña **Recolecciones** de Archivos. |
 | `OpenCollection({activity, patterns})` | `collect.Summary` / error | **Crear carpeta en los equipos**: con la fecha de hoy, manda `file.collect.open` a quien declaró `file.collect` (reales y simulados) y crea `Documentos\Aula\recolecciones\<fecha>\<actividad>` del profesor. `patterns` como lo escribió el profesor (`*.py, *.txt`). Quien se conecta después recibe la carpeta al llegar. Errores: `collectActivity`, `collectFolder`. |
 | `Collect(id, keys)` | `collect.Summary` / error | **Recoger** (`keys` vacío: todos los conectados que pueden), **Recoger a los que faltan** o **Recoger otra vez** de un alumno (`keys` = sus `key`). Pide una ronda nueva, de 4 en 4; el avance llega en `aula:collections`. Errores: `collectGone`, `collectNoStudents`. |

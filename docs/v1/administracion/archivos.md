@@ -47,6 +47,9 @@ clases.
 - En la tabla **Plantillas**, **Usar** la carga arriba para enviarla y **Abrir carpeta** la abre en
   el Explorador: ahí agregas, quitas o cambias archivos, también en subcarpetas. **Carpeta de
   plantillas** abre la de todas.
+- La papelera de su fila la **elimina**, después de confirmar: se borra su carpeta, con sus
+  archivos. Lo que ya enviaste no cambia y sigue en **Archivos enviados**. Si Windows no la deja
+  borrar, cierra sus archivos abiertos en otro programa y vuelve a intentarlo.
 - Al elegir una plantilla, su nombre se propone como carpeta de destino.
 
 Si una plantilla tiene más de 20 archivos, pasa del tamaño o tiene un nombre que Windows no acepta,

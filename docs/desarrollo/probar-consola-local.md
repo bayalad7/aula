@@ -217,6 +217,14 @@ fuente y otro como receptor, ambos con Windows. El aula simulada abierta sirve p
 | C-93 | Con el aula simulada abierta, abre la pantalla en grande y la ficha de un alumno simulado | En la pantalla en grande no aparece **Proyectar a la clase**; en la ficha, «Qué puede hacer su equipo» dice «Mostrar su pantalla a la clase: no» y «Ver la pantalla de un compañero: no». Al proyectar a un real, los simulados no reciben nada. A 900×600 y en oscuro la franja y la Pantalla grande se leen completas |
 | C-94 | Proyectando, desconecta la fuente (cierra su agente o su red); luego vuelve a proyectar y cierra la clase | «<equipo> se desconectó»; la vista del receptor se cierra. Al cerrar la clase, la franja se va y el receptor vuelve a su vista de código |
 
+### Notas de interfaz 014–016 (2026-11-12)
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-102 | Código: mira el pie del editor; pasa el mouse (y luego Tab) por cada botón | «Enviar a: Todos (n) · Seleccionados (n)»; una sola fila del mismo alto: **Emitir** (principal), **Agregar**, **Limpiar…** (en rojo), **Pegar**. Cada uno explica qué hace en un tooltip, también con el teclado. A 900×600 y en oscuro no se desacomodan |
+| C-103 | Ficha de un alumno › la «i» de «Qué puede hacer su equipo»; luego la «i» del canal en Ajustes y la del instalador en «¿Falta un alumno?» | La explicación sale en un globo flotante **encima** de la «i», con su flecha y «Más en el manual», sin mover nada; cerca del borde de arriba se abre abajo, y nunca se sale por los lados. Esc o un clic afuera lo cierran |
+| C-104 | Archivos › Plantillas: la papelera de una plantilla; **Volver**; otra vez y **Eliminar**. Repite con un archivo de otra plantilla abierto en Excel | Pide confirmar («Se borra su carpeta… Lo que ya enviaste no cambia»). Con **Volver** no pasa nada; con **Eliminar** desaparece de la tabla y su carpeta de `Documentos\Aula\plantillas`, y el envío sigue en «Archivos enviados». Con un archivo abierto: «No se pudo eliminar la plantilla» con qué hacer |
+
 ### Mostrar mi pantalla: a quién y en qué modo (v0.15)
 
 Con dos alumnos reales con Windows (VM o `-directo`) y el aula simulada abierta. Los A-37 a A-41

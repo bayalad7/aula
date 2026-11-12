@@ -36,9 +36,9 @@ consola abre dos alumnos de prueba para que veas todo funcionando. Más en
 
 1. Ve a **Código** en el menú.
 2. Escribe o pega tu código en el editor. También puedes copiarlo en otro programa y pulsar
-   **Pegar del portapapeles**.
+   **Pegar**.
 3. Revisa el lenguaje y, si quieres, ponle un título.
-4. Pulsa **Emitir (reemplaza lo que ven)**.
+4. Pulsa **Emitir** (reemplaza lo que ven).
 
 Los alumnos lo ven al instante, con colores y un botón para copiarlo.
 

@@ -100,7 +100,7 @@ franja «Este equipo no tiene la clave del centro», pide que la instalen en tu 
 
 ## El portapapeles no funciona
 
-Si «Pegar del portapapeles» dice que no hay texto copiado, copia el código con Ctrl+C y vuelve a
+Si «Pegar» dice que no hay texto copiado, copia el código con Ctrl+C y vuelve a
 intentarlo. Si dice que no puede leer el portapapeles, pega el código en el editor con Ctrl+V.
 Aula envía hasta 256 KiB por envío.
 

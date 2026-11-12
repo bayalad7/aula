@@ -17,7 +17,7 @@ Aquí preparas el código que verán tus alumnos y sigues quién ya lo tiene en 
 Escribe o pega tu código. Arriba eliges el **lenguaje** (para los colores) y un **título**
 opcional. Cada envío es un ejercicio numerado: Ejercicio 1, 2, 3…
 
-Para traer código de otro programa, cópialo (Ctrl+C) y pulsa **Pegar del portapapeles**. También
+Para traer código de otro programa, cópialo (Ctrl+C) y pulsa **Pegar**. También
 funciona con el atajo de teclado desde cualquier programa (lo ves en
 [Ajustes](ajustes#acerca-de)).
 
@@ -26,15 +26,18 @@ funciona con el atajo de teclado desde cualquier programa (lo ves en
 
 ## Enviar
 
-- **Emitir (reemplaza lo que ven)**: los alumnos ven solo este código.
-- **Agregar debajo de lo que ven**: se suma a lo que ya tienen.
-- **Limpiar pantallas**: borra el código que ven en Aula (lo que copiaron a su editor no se
-  toca). Pide confirmación.
+Los botones van en una fila; al pasar el mouse, cada uno explica qué hace.
 
-En **Enviar a** eliges a todos los conectados o solo a los que seleccionaste en
-[Alumnos](alumnos#seleccionar-alumnos).
+- **Emitir**: reemplaza lo que ven; los alumnos ven solo este código.
+- **Agregar**: lo agrega debajo de lo que ya tienen, sin borrar nada.
+- **Limpiar…**: borra el código que ven en Aula (lo que copiaron a su editor no se toca). Pide
+  confirmación.
+- **Pegar**: carga en el editor lo que copiaste.
 
-Si el código pasa de 256 KiB, divídelo en partes y envíalas con «Agregar debajo de lo que ven».
+En **Enviar a** eliges **Todos** (los conectados) o **Seleccionados** (los que marcaste en
+[Alumnos](alumnos#seleccionar-alumnos)); entre paréntesis, cuántos son.
+
+Si el código pasa de 256 KiB, divídelo en partes y envíalas con **Agregar**.
 
 ## Últimos envíos
 

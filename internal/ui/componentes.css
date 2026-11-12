@@ -97,6 +97,15 @@ a:hover { text-decoration-thickness: 2px; }
   animation: girar 0.8s linear infinite;
 }
 .grupo-botones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
+/* Rejilla de opciones: botones del mismo tamaño en columnas (duración del temporizador, nota de
+   interfaz 19). La elegida lleva aria-pressed="true". */
+.rejilla-opciones { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--e-1); }
+.rejilla-opciones > .btn { width: 100%; padding-left: var(--e-1); padding-right: var(--e-1); gap: 0.25rem; }
+/* La elegida no depende solo del color: borde de acento y texto en negrita. */
+.rejilla-opciones > .btn[aria-pressed="true"] {
+  background: var(--c-acento-suave); color: var(--c-acento-sobre-suave); border-color: var(--c-acento);
+  font-weight: var(--peso-fuerte);
+}
 
 /* Selector segmentado (Lista | Miniaturas) */
 .segmentado {
@@ -716,6 +725,11 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
 .info-globo--abajo::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--c-superficie);
   filter: drop-shadow(0 -1px 0 var(--c-borde)); }
 .info-globo[hidden] { display: none; }
+
+/* Indicaciones del temporizador en la ventana del alumno (nota de interfaz 18): el texto del
+   profesor respeta sus saltos de línea. */
+.tarea { margin-bottom: var(--e-3); }
+.tarea__texto { margin: 0; padding: var(--e-3) var(--e-4); white-space: pre-line; overflow-wrap: anywhere; line-height: 1.5; }
 
 /* === App del alumno (prompt 19) =================================================================
    Componentes que solo usa apps/student. La consola puede reutilizarlos; no hay copia en la app. */

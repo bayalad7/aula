@@ -170,7 +170,20 @@
   // primero. Escenas: encuesta (una de opción múltiple abierta y una de sí o no cerrada con los
   // resultados de la clase) y encuesta-texto (una abierta corta, nominal).
   const tarjeta = (pollId, kind, question, options, extra) => Object.assign({ pollId, kind, question,
-    options, named: false, open: true, choice: -1, text: "", vote: "none", results: null, at: ahora }, extra);
+    options, named: false, open: true, choice: -1, text: "", vote: "none", results: null, at: ahora,
+    questions: [], answers: [], submitted: false, result: null }, extra);
+  // Cuestionarios (prompt 10.20): las preguntas como las ve este alumno (sin la correcta). Escenas:
+  // cuestionario (abierto, la primera respondida) y cuestionario-resultado (entregado, cerrado y
+  // con su resultado personal).
+  const preguntas = [
+    { id: 0, kind: "choice", text: "¿Qué imprime print(3 // 2)?", points: 2,
+      options: [{ id: 2, text: "2" }, { id: 0, text: "1.5" }, { id: 1, text: "1" }] },
+    { id: 1, kind: "choice", text: "¿Cuáles de estas palabras empiezan un ciclo en Python?", points: 3, multi: true,
+      options: [{ id: 0, text: "for" }, { id: 1, text: "if" }, { id: 2, text: "while" }, { id: 3, text: "def" }] },
+    { id: 2, kind: "yesno", text: "¿range(3) incluye el 3?", points: 1 },
+  ];
+  const cuestionario = (extra) => tarjeta("qz-1", "quiz", "Repaso de ciclos", [], Object.assign({ named: true,
+    questions: preguntas, answers: [{ q: 0, choices: [1] }], vote: "accepted" }, extra));
   const polls = { arrived: "", cards: {
     encuesta: [
       tarjeta("pl-2", "choice", "¿Qué imprime print(3 // 2)?", ["1.5", "1", "2", "Error"]),
@@ -178,6 +191,12 @@
         at: "2026-11-11T10:05:00-06:00", results: { counts: [14, 4], voters: 18, recipients: 20 } }),
     ],
     "encuesta-texto": [tarjeta("pl-3", "open", "¿Qué fue lo que más te costó del ejercicio?", [], { named: true })],
+    cuestionario: [cuestionario()],
+    "cuestionario-resultado": [cuestionario({ open: false, submitted: true,
+      answers: [{ q: 0, choices: [1] }, { q: 1, choices: [0] }, { q: 2, choices: [1] }],
+      result: { pollId: "qz-1", score: 3, max: 6, questions: [
+        { q: 0, choices: [1], correct: [1], earned: 2 }, { q: 1, choices: [0], correct: [0, 2], earned: 0 },
+        { q: 2, choices: [1], correct: [1], earned: 1 }] } })],
   }[scene] || [] };
   const copiaPolls = () => JSON.parse(JSON.stringify(polls));
   // Una encuesta que la prueba emite (como si llegara de Go) queda también en el doble, para
@@ -194,6 +213,16 @@
     if (c.kind === "open" && !text.trim()) return new Error("aula:empty");
     Object.assign(c, { choice: c.kind === "open" ? -1 : choice, text: c.kind === "open" ? text.trim() : "", vote: "sending" });
     setTimeout(() => { c.vote = "accepted"; window.__emit("aula:polls", copiaPolls()); }, 300);
+    return copiaPolls();
+  };
+  // AnswerQuiz: guarda lo marcado; «Entregar» lo deja fijo. El acuse llega poco después.
+  const responderCuestionario = (pollId, answers, submit) => {
+    const c = polls.cards.find((x) => x.pollId === pollId);
+    if (!c) return new Error("aula:unknown");
+    if (!c.open) return new Error("aula:closed");
+    if (c.submitted) return new Error("aula:handedIn");
+    Object.assign(c, { answers: JSON.parse(JSON.stringify(answers)), vote: "sending" });
+    setTimeout(() => { c.vote = "accepted"; if (submit) c.submitted = true; window.__emit("aula:polls", copiaPolls()); }, 300);
     return copiaPolls();
   };
 
@@ -224,7 +253,7 @@
     collections: 0, opened: 0, messages: 0 } } : null;
   window.go = { main: { App: {
     View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened, polls: copiaPolls(), present, classEnd,
-      capabilities: ["code.view", "msg.show", "hand", "msg.student", "timer", "poll", "file.push", "file.collect", "screen.broadcast",
+      capabilities: ["code.view", "msg.show", "hand", "msg.student", "timer", "poll", "poll.quiz", "file.push", "file.collect", "screen.broadcast",
         "screen.present.view", "screen.thumb", "screen.snapshot", "screen.present", "remote", "power", "open.url", "open.app", "class.end"] })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
@@ -243,5 +272,6 @@
     OpenReceivedFolder: call("OpenReceivedFolder", (id) => (scene === "archivo-sin-carpeta" ? new Error("esa carpeta ya no está disponible") : null)),
     OpenCollectionFolder: call("OpenCollectionFolder"),
     AnswerPoll: call("AnswerPoll", responder),
+    AnswerQuiz: call("AnswerQuiz", responderCuestionario),
   } } };
 })();

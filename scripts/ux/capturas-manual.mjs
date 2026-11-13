@@ -28,6 +28,12 @@ const capturas = {
     await p.evaluate(() => document.getElementById("encuestas").scrollIntoView());
     await sleep(200);
   } }],
+  // Cuestionarios (prompt 10.20): la lista con el editor abierto, y los resultados en Participación.
+  "cuestionarios.webp": ["lab", { ruta: "cuestionarios", h: 1000, pasos: seq(click("#cuest-filas .editar"), async () => { await sleep(300); }) }],
+  "participacion-cuestionario.webp": ["lab-cuestionario", { ruta: "participacion", pasos: async (p) => {
+    await p.evaluate(() => document.getElementById("encuestas").scrollIntoView());
+    await sleep(200);
+  } }],
 };
 const incluir = soloCapturas();
 

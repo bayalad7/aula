@@ -410,6 +410,27 @@ await f("192-encender-uno", "lab", { pasos: seq(verApagados, click(`${fila("LAB3
 await f("193-encender-apagados-oscuro-900x600", "lab-encender", { oscuro: true, w: 900, h: 600, pasos: verApagados });
 await f("194-encender-panel-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: seq(verApagados, panelEncender) });
 
+// Cuestionarios (prompt 10.20; privacidad, reglas 87-91): la vista con los guardados (uno ilegible y
+// un equipo que no puede), el editor con una pregunta de varias correctas y otra de sí o no, un error
+// del editor, lanzar con la franja, los resultados en Participación (aciertos por pregunta y puntaje
+// por alumno), cerrado con Compartir y Exportar, y oscuro a 900×600.
+const editarCuest = seq(click("#cuest-filas .editar"), async () => { await sleep(300); });
+await f("195-cuestionarios", "lab", { ruta: "cuestionarios" });
+await f("196-cuestionario-editor", "lab", { ruta: "cuestionarios", h: 1400, pasos: editarCuest });
+await f("197-cuestionario-nuevo-error", "lab", { ruta: "cuestionarios", pasos: seq(click("#cuest-nuevo"), async (p) => {
+  await p.type("#cuest-titulo", "Repaso rápido");
+  await p.type("#cuest-preguntas .cuest-texto", "¿Qué imprime print(2 ** 3)?");
+  const ops = await p.$$("#cuest-preguntas .cuest-opcion input[type=text]");
+  await ops[0].type("6");
+  await ops[1].type("8");
+}, click("#cuest-guardar")) });
+await f("198-cuestionario-lanzado-franja", "lab", { ruta: "cuestionarios", pasos: seq(click("#cuest-filas .lanzar"), async () => { await sleep(500); }) });
+await f("199-participacion-cuestionario", "lab-cuestionario", { ruta: "participacion", pasos: aEncuestas });
+await f("200-cuestionario-cerrado-exportar", "lab-cuestionario-cerrado", { ruta: "participacion", pasos: seq(aEncuestas,
+  click("#encuesta-actual button, #encuestas-lista details[open] .grupo-botones .btn:last-child"), async () => { await sleep(300); }) });
+await f("201-cuestionarios-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, ruta: "cuestionarios", pasos: editarCuest });
+await f("202-participacion-cuestionario-oscuro-900x600", "lab-cuestionario", { oscuro: true, w: 900, h: 600, ruta: "participacion", pasos: aEncuestas });
+
 await cerrar();
 let graves = 0;
 for (const [nombre, r] of Object.entries(informe)) {

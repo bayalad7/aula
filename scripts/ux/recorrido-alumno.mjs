@@ -175,6 +175,17 @@ await f("95-fin-de-clase", "fin-clase");
 await f("96-fin-de-clase-oscuro", "fin-clase", { oscuro: true });
 await f("97-compacto-fin-de-clase", "fin-clase", { w: 380, h: 80, pasos: click("#compactar") });
 
+// Cuestionarios (prompt 10.20; privacidad, reglas 87-91): la tarjeta con una pregunta a la vez y
+// cuántas lleva, una de varias correctas, «Entregar así» con preguntas sin responder, el resultado
+// personal, oscuro y ventana mínima.
+await f("98-cuestionario", "cuestionario");
+await f("99-cuestionario-varias", "cuestionario", { pasos: seq(click("#encuestas > li:first-child .cuestionario-siguiente"),
+  click('#encuestas > li:first-child .cuestionario-opciones input[value="0"]'), async () => { await sleep(500); }) });
+await f("100-cuestionario-entregar-asi", "cuestionario", { pasos: click("#encuestas > li:first-child .cuestionario-entregar") });
+await f("101-cuestionario-resultado", "cuestionario-resultado");
+await f("102-cuestionario-oscuro", "cuestionario", { oscuro: true });
+await f("103-cuestionario-angosta", "cuestionario-resultado", { w: 480, h: 360 });
+
 // Tema y tamaño
 await f("22-oscuro-varios-codigos", "varios-codigos", { oscuro: true });
 await f("23-oscuro-aviso-y-restricciones", "restricciones", { oscuro: true, pasos: emitir("aula:notices",

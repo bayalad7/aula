@@ -606,6 +606,81 @@ await caso("encuesta-compacto", "conectado", async (p) => {
   ok(v[0] && v[1] && v[2] === "1 nuevo", "compacto: " + v.join());
 }, { w: 380, h: 80 });
 
+// Cuestionarios (prompt 10.20): llega con «Nuevo» sin quitar el foco, dice antes que es con nombre
+// (regla 87), se recorre con el teclado, guarda al marcar, pide confirmar si faltan preguntas, y el
+// resultado muestra solo lo propio (regla 90).
+const cuestionarioNuevo = { arrived: "qz-9", cards: [{ pollId: "qz-9", kind: "quiz", question: "Repaso rápido", options: [],
+  named: true, open: true, choice: -1, text: "", vote: "none", results: null, at: new Date().toISOString(), submitted: false,
+  result: null, answers: [], questions: [
+    { id: 1, kind: "yesno", text: "¿range(3) incluye el 3?", points: 1 },
+    { id: 0, kind: "choice", text: "¿Cuáles empiezan un ciclo?", points: 2, multi: true,
+      options: [{ id: 1, text: "if" }, { id: 0, text: "for" }, { id: 2, text: "while" }] }] }] };
+await caso("cuestionario", "un-codigo", async (p) => {
+  await p.focus("#snippets > li .copy");
+  await emitir(p, "aula:polls", cuestionarioNuevo);
+  await sleep(150);
+  const llego = await p.evaluate(() => {
+    const li = document.querySelector("#encuestas > li");
+    return { hay: !!li, nuevo: li && !li.querySelector(".nuevo").hidden, bandas: !!(li && li.closest(".bandas")),
+      dialogo: !!document.querySelector("dialog[open], [role=dialog]:not([hidden])"),
+      foco: document.activeElement.classList.contains("copy"),
+      privacidad: li && li.querySelector(".cuestionario-privacidad").textContent,
+      progreso: li && li.querySelector(".cuestionario-progreso").textContent,
+      radios: li && li.querySelectorAll(".cuestionario-opciones input[type=radio]").length };
+  });
+  ok(llego.hay && llego.nuevo && !llego.bandas && !llego.dialogo, "tarjeta: " + JSON.stringify(llego));
+  ok(llego.foco, "el cuestionario le quitó el foco al alumno");
+  ok(llego.privacidad.includes("verá tus respuestas y tu puntaje con tu nombre"), "no avisa que es con nombre: " + llego.privacidad);
+  ok(llego.progreso === "Pregunta 1 de 2 · Llevas 0 respondidas." && llego.radios === 2, "primera pregunta: " + JSON.stringify(llego));
+  // Teclado: marca «No» con flechas (se guarda solo), Siguiente con Enter y una casilla con Espacio.
+  await p.focus('#encuestas > li .cuestionario-opciones input[value="0"]');
+  await p.keyboard.press("ArrowDown");
+  await sleep(100);
+  await p.focus("#encuestas > li .cuestionario-siguiente");
+  await p.keyboard.press("Enter");
+  await sleep(100);
+  await p.focus('#encuestas > li .cuestionario-opciones input[value="0"]');
+  await p.keyboard.press("Space");
+  await sleep(500);
+  const r = await p.evaluate(() => ({ llamadas: window.__calls.filter((c) => c[0] === "AnswerQuiz").map((c) => c[1]),
+    casillas: document.querySelectorAll("#encuestas > li .cuestionario-opciones input[type=checkbox]").length,
+    indicacion: document.querySelector("#encuestas > li .cuestionario-indicacion").textContent,
+    progreso: document.querySelector("#encuestas > li .cuestionario-progreso").textContent,
+    voto: document.querySelector("#encuestas > li .encuesta-voto").textContent }));
+  const ultima = r.llamadas[r.llamadas.length - 1];
+  ok(r.llamadas.length === 2 && JSON.stringify(ultima) === JSON.stringify(["qz-9", [{ q: 0, choices: [0] }, { q: 1, choices: [1] }], false]),
+    "AnswerQuiz: " + JSON.stringify(r.llamadas));
+  ok(r.casillas === 3 && r.indicacion === "Elige todas las que apliquen. Vale 2 puntos.", "varias correctas: " + JSON.stringify(r));
+  ok(r.progreso === "Pregunta 2 de 2 · Llevas 2 respondidas." && r.voto.startsWith("Tus respuestas están guardadas"), "guardado: " + JSON.stringify(r));
+});
+await caso("cuestionario-entregar-asi", "cuestionario", async (p) => {
+  await p.click("#encuestas > li:first-child .cuestionario-entregar");
+  await sleep(150);
+  const a = await p.evaluate(() => ({ texto: document.querySelector("#encuestas > li .cuestionario-entregar").textContent,
+    aviso: document.querySelector("#encuestas > li .cuestionario-confirmar").textContent,
+    entrego: window.__calls.some((c) => c[0] === "AnswerQuiz" && c[1][2] === true) }));
+  ok(a.texto === "Entregar así" && a.aviso.startsWith("Te faltan 2 preguntas") && !a.entrego, "primer clic: " + JSON.stringify(a));
+  await p.click("#encuestas > li:first-child .cuestionario-entregar");
+  await sleep(500);
+  const b = await p.evaluate(() => ({ entrego: window.__calls.some((c) => c[0] === "AnswerQuiz" && c[1][2] === true),
+    insignia: document.querySelector("#encuestas > li .encuesta-estado-insignia").textContent,
+    bloqueada: [...document.querySelectorAll("#encuestas > li .cuestionario-opciones input")].every((i) => i.disabled),
+    sinEntregar: document.querySelector("#encuestas > li .cuestionario-entregar").hidden }));
+  ok(b.entrego && b.insignia === "Entregado" && b.bloqueada && b.sinEntregar, "entregado: " + JSON.stringify(b));
+});
+await caso("cuestionario-resultado", "cuestionario-resultado", async (p) => {
+  const r = await p.evaluate(() => {
+    const li = document.querySelector("#encuestas > li");
+    return { puntaje: li.querySelector(".cuestionario-puntaje").textContent,
+      filas: [...li.querySelectorAll(".cuestionario-fila")].map((f) => f.textContent),
+      pregunta: li.querySelector(".cuestionario-pregunta").hidden, otros: /alumno|LAB3|promedio|posici/i.test(li.textContent) };
+  });
+  ok(r.puntaje === "Obtuviste 3 de 6 puntos." && r.pregunta, "resultado: " + JSON.stringify(r));
+  ok(r.filas.length === 3 && r.filas[1].includes("Incorrecta") && r.filas[1].includes("La correcta: for, while")
+    && r.filas[0].includes("Correcta") && !r.filas[0].includes("La correcta"), "por pregunta: " + r.filas.join(" | "));
+  ok(!r.otros, "el resultado nombra a otros o compara con la clase");
+});
+
 // A 480×360, un solo aviso a la vista.
 await caso("avisos-angosta", "muchos-avisos", async (p) => {
   ok(await p.evaluate(() => document.querySelectorAll("#notices .toast").length === 1), "a 480 se ve más de un aviso");
@@ -737,7 +812,7 @@ await caso("capacidades", "conectado", async (p) => {
     si: document.querySelectorAll("#capacidades-lista .capacidad--si").length,
     tip: document.querySelector("#capacidades-lista .capacidad").dataset.tip }));
   ok(c.abierto, "el diálogo no se abrió");
-  ok(c.total === 19 && c.si === 17, "grilla " + JSON.stringify(c));
+  ok(c.total === 20 && c.si === 18, "grilla " + JSON.stringify(c));
   ok(c.tip === "Recibir código para copiar: sí", "tooltip: " + c.tip);
   await p.keyboard.press("Escape");
   await sleep(100);

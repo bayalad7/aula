@@ -23,6 +23,7 @@
     canSnapshot: s.capabilities.includes("screen.snapshot"),
     canHand: s.capabilities.includes("hand"), canMessage: s.capabilities.includes("msg.student"),
     canTimer: s.capabilities.includes("timer"), canPoll: s.capabilities.includes("poll"),
+    canQuiz: s.capabilities.includes("poll.quiz"),
     canFiles: s.capabilities.includes("file.push"),
     canCollect: s.capabilities.includes("file.collect"),
     canOpenUrl: s.capabilities.includes("open.url"), canOpenApp: s.capabilities.includes("open.app"),
@@ -30,7 +31,7 @@
     canPause: s.capabilities.includes("screen.freeze"), canClassEnd: s.capabilities.includes("class.end"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "screen.present", "screen.present.view", "screen.freeze", "class.end"];
+    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "poll.quiz", "screen.present", "screen.present.view", "screen.freeze", "class.end"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -277,6 +278,45 @@
         { hostname: "LAB3-PC12", username: "alumno12", simulated: false, choice: -1, text: "Cuándo usar while", at: "2026-11-11T10:13:20-06:00" }],
       missing: [{ hostname: "lab-ubuntu-02", username: "maria", simulated: false }] }), closed: [] },
   }[scene] || { current: null, closed: [] };
+  // Cuestionarios (apps/teacher/quiz.go, prompt 10.20). Guardados: dos y uno ilegible. En
+  // lab-cuestionario, uno abierto con puntajes (un simulado aparte); en lab-cuestionario-cerrado,
+  // el mismo cerrado, para compartir y exportar.
+  const preguntasCuest = [
+    { text: "¿Qué imprime print(3 // 2)?", kind: "choice", options: ["1.5", "1", "2"], correct: [1], points: 2 },
+    { text: "¿Cuáles de estas palabras empiezan un ciclo en Python?", kind: "choice", options: ["for", "if", "while", "def"], correct: [0, 2], points: 3 },
+    { text: "¿range(3) incluye el 3?", kind: "yesno", options: [], correct: [1], points: 1 },
+  ];
+  const cuestionarios = { folder: "C:\\Users\\profe\\Documents\\Aula\\cuestionarios", lastSaved: "", saved: [
+    { id: "repaso-de-ciclos", modified: "2026-11-12T18:00:00-06:00", problem: "",
+      quiz: { title: "Repaso de ciclos", questions: preguntasCuest, minutes: 10, shuffle: true } },
+    { id: "listas-y-diccionarios", modified: "2026-11-10T09:00:00-06:00", problem: "",
+      quiz: { title: "Listas y diccionarios", questions: preguntasCuest.slice(0, 2), minutes: 0, shuffle: false } },
+    { id: "roto", modified: "2026-11-01T09:00:00-06:00", problem: "unreadable", quiz: { title: "roto", questions: [], minutes: 0, shuffle: false } },
+  ] };
+  const copiaCuest = () => JSON.parse(JSON.stringify(cuestionarios));
+  const vistaCuest = (q) => ({ title: q.title, max: q.questions.reduce((n, x) => n + x.points, 0), minutes: q.minutes, shuffle: q.shuffle,
+    questions: q.questions.map((x) => Object.assign({ right: 0, answered: 0, rightSimulated: 0, answeredSimulated: 0 }, x)),
+    scores: [], submitted: 0, submittedSimulated: 0, exportable: false });
+  const conQuiz = () => list.filter((s) => s.state === "connected" && s.canQuiz);
+  if (scene === "lab-cuestionario" || scene === "lab-cuestionario-cerrado") {
+    const abierto = scene === "lab-cuestionario";
+    const q = vistaCuest(cuestionarios.saved[0].quiz);
+    Object.assign(q.questions[0], { right: 2, answered: 2 });
+    Object.assign(q.questions[1], { right: 0, answered: 2, rightSimulated: 0, answeredSimulated: 1 });
+    Object.assign(q.questions[2], { right: 1, answered: 1, rightSimulated: 1, answeredSimulated: 1 });
+    q.scores = [
+      { hostname: "LAB3-PC07", username: "alumno07", simulated: false, score: 3, answered: 3, submitted: true, earned: [2, 0, 1] },
+      { hostname: "LAB3-PC12", username: "alumno12", simulated: false, score: 2, answered: 2, submitted: false, earned: [2, 0, -1] },
+      { hostname: "SIM-01", username: "simulado", simulated: true, score: 1, answered: 2, submitted: true, earned: [-1, 0, 1] },
+    ];
+    Object.assign(q, { submitted: 1, submittedSimulated: 1, exportable: !abierto });
+    const unsupported = list.filter((s) => s.state === "connected" && !s.canQuiz).map((s) => s.hostname);
+    const p = encuestaDe({ pollId: "qz-1", kind: "quiz", question: "Repaso de ciclos", named: true, open: abierto,
+      shareable: !abierto, closedAt: abierto ? null : "2026-11-11T10:22:00-06:00", options: [], answered: 2, answeredSimulated: 1,
+      eligible: abierto ? conQuiz().length : 0, received: conQuiz().length, unsupported: abierto ? unsupported : [],
+      missing: abierto ? [{ hostname: "LAB3-PC03", username: "alumno03", simulated: false }] : [], quiz: q });
+    if (abierto) polls.current = p; else polls.closed.unshift(p);
+  }
   const emitPolls = () => window.__emit("aula:polls", JSON.parse(JSON.stringify(polls)));
   const copiaPolls = () => JSON.parse(JSON.stringify(polls));
   // Pausar pantallas (apps/teacher/pause.go): en lab-pausa, dos equipos en pausa, uno que no
@@ -605,9 +645,55 @@
       if (!polls.current) return new Error("aula:pollGone: ya no hay una encuesta abierta");
       polls.closed.unshift(Object.assign(polls.current, { open: false, closedAt: new Date().toISOString(),
         shareable: polls.current.kind !== "open", missing: [], unsupported: [] }));
+      if (polls.closed[0].quiz) polls.closed[0].quiz.exportable = polls.closed[0].quiz.scores.some((x) => !x.simulated);
       polls.current = null;
       return copiaPolls();
     }),
+    Quizzes: call("Quizzes", copiaCuest),
+    SaveQuiz: call("SaveQuiz", (id, q) => {
+      if (!q.title.trim() || !q.questions.length) return new Error("aula:invalidQuiz: cuestionario no válido");
+      const nuevo = id || q.title.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "cuestionario";
+      const i = cuestionarios.saved.findIndex((x) => x.id === nuevo);
+      const s = { id: nuevo, modified: new Date().toISOString(), problem: "", quiz: JSON.parse(JSON.stringify(q)) };
+      if (i >= 0) cuestionarios.saved[i] = s; else cuestionarios.saved.push(s);
+      cuestionarios.saved.sort((a, b) => a.quiz.title.localeCompare(b.quiz.title, "es"));
+      cuestionarios.lastSaved = nuevo;
+      return copiaCuest();
+    }),
+    DeleteQuiz: call("DeleteQuiz", (id) => {
+      const i = cuestionarios.saved.findIndex((x) => x.id === id);
+      if (i < 0) return new Error("aula:quizGone: ese cuestionario ya no está en la carpeta de cuestionarios");
+      cuestionarios.saved.splice(i, 1);
+      return copiaCuest();
+    }),
+    OpenQuiz: call("OpenQuiz", (id, hosts) => {
+      const s = cuestionarios.saved.find((x) => x.id === id);
+      if (!s || s.problem) return new Error("aula:quizGone: ese cuestionario ya no está en la carpeta de cuestionarios");
+      if (polls.current) polls.closed.unshift(Object.assign(polls.current, { open: false, closedAt: new Date().toISOString(),
+        shareable: polls.current.kind !== "open", missing: [], unsupported: [] }));
+      polls.current = encuestaDe({ pollId: "qz-" + Date.now(), kind: "quiz", question: s.quiz.title, named: true, all: !hosts.length, hosts,
+        openedAt: new Date().toISOString(), received: 0, eligible: conQuiz().length,
+        unsupported: list.filter((x) => x.state === "connected" && !x.canQuiz).map((x) => x.hostname), quiz: vistaCuest(s.quiz) });
+      // Las tarjetas llegan y el primero entrega poco después.
+      despues(() => {
+        const c = polls.current;
+        if (!c || !c.open || !c.quiz) return;
+        c.received = c.eligible;
+        c.answered = 1;
+        c.quiz.submitted = 1;
+        c.quiz.scores = [{ hostname: "LAB3-PC07", username: "alumno07", simulated: false, score: c.quiz.max, answered: c.quiz.questions.length,
+          submitted: true, earned: c.quiz.questions.map((x) => x.points) }];
+        c.quiz.questions.forEach((x) => Object.assign(x, { right: 1, answered: 1 }));
+        emitPolls();
+      });
+      return copiaPolls();
+    }),
+    ExportQuizGrades: call("ExportQuizGrades", (id) => {
+      const c = polls.closed.find((x) => x.pollId === id);
+      if (!c || !c.quiz) return new Error("aula:pollGone: ese cuestionario ya no está en la clase");
+      return "C:\\Users\\profe\\Documents\\Aula\\calificaciones\\2026-11-11\\repaso-de-ciclos.csv";
+    }),
+    OpenQuizFolder: call("OpenQuizFolder", () => null),
     SharePollResults: call("SharePollResults", (id) => {
       const c = polls.closed.find((x) => x.pollId === id);
       if (!c) return new Error("aula:pollGone: esa encuesta ya no está en la clase");

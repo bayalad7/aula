@@ -255,6 +255,18 @@ revisan a ojo en su equipo (nunca con clics sintéticos en tu escritorio).
 | A-49 | **Entendido** en la tarjeta; termina otra vez y luego emite código | La tarjeta se cierra; la segunda vez dice «Tu ventana ya estaba vacía»; al llegar código se va sola |
 | A-50 | Repite A-48 con el agente como servicio | Lo mismo; `aula-agente.log` dice «class ended» con cuántas cosas se quitaron, **nunca** el código ni los avisos |
 
+### Marca Nodo y sistema de diseño (2026-11-12)
+
+Lo que el arnés no ve: la ventana real de Wails, los iconos del sistema y la fuente servida por
+Wails (`docs/ux/DESIGN_SYSTEM.md`).
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| C-119 | Compila e instala la consola; mira el acceso directo, la barra de tareas y Alt+Tab | El icono Nodo (cuatro pantallas claras y un punto azul sobre una placa oscura) en los tres, nítido a 16, 24 y 32 px; ningún icono genérico de Wails |
+| C-120 | Abre la consola en modo claro y oscuro de Windows, sin red | Arranque con el logo Nodo y el menú con el logotipo «aula» (minúsculas) centrado; al angostar la ventana a menos de 1100 px, solo el isotipo centrado; títulos («Alumnos», «Código»…) en Plus Jakarta Sans aunque no haya internet (más redonda y ancha que el texto, igual que en las capturas del manual); el texto sigue en Segoe UI |
+| A-51 | Instala el agente; con la ventana cerrada, mira el área de notificación con la barra clara y la oscura; luego emite código | El icono Nodo se lee en las dos barras; al llegar código aparece su punto de «llegó algo» en la esquina, sin tapar el nodo central |
+| A-52 | Abre la ventana del alumno, compáctala y restáurala | El logo pequeño a la izquierda de la tira y del modo compacto, antes del punto de conexión; el código recibido se lee a 14 px |
+
 ### Notas de interfaz 014–016 (2026-11-12)
 
 | # | Pasos | Esperado |

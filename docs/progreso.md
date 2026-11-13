@@ -1208,6 +1208,21 @@ de la barra de acciones a la cabecera, y la barra, solo de botones, muestra los 
 desde 1035 px. Capturas 173–183 del arnés, mapa y manual (Alumnos) al día. Falta revisarlas en la
 ventana real.
 
+## Sistema de diseño y marca Nodo, fases 1 a 3 (2026-11-12)
+
+Sin commit. Fase 1: auditoría y `docs/ux/DESIGN_SYSTEM.md` (marca, paleta por función, tipografía,
+tokens, componentes, reglas de la cuadrícula en vivo), con su resumen en `CLAUDE.md`. Página de
+marca (artifact privado del usuario) con los SVG oficiales y la marca en JSON. Fase 2 en
+`internal/ui`: tokens `--c-marca-tinta`, `--c-marca-nodo`, `--c-sobre-solido(-texto)`,
+`--c-sombra-barra` y `--t-codigo` (14 px); Plus Jakarta Sans embebida para los títulos (D-021,
+`TestCSSURLsAreEmbedded`); `#marca` en el sprite con el componente `.logo`; sin valores sueltos en
+`componentes.css`; `contain: layout paint` en `.alumno`; `scripts/ux/marca.mjs` genera
+`internal/ui/marca/*.svg`, `appicon.png` e `icon.ico` de las dos apps. Se corrigió en la
+documentación que la raíz mide 15 px, no 16. Fase 3: el logo en la navegación y el arranque de
+la consola y en la tira y el modo compacto del alumno; manual y mapa regenerados; resumen en
+`docs/ux/historial/marca-nodo.md`. Pendiente: casos C-119, C-120, A-51 y A-52 en la ventana real
+(iconos de la barra de tareas y del área de notificación, fuente servida por Wails sin red).
+
 ## Etapa 10.21: pausar pantallas (pantalla en blanco, D-013) — notas
 
 Aprobado el 12/11/2026 (`/funcionalidad-nueva 10.21`). Ubicación elegida por el usuario: panel

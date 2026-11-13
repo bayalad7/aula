@@ -216,6 +216,33 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
   paquete). Al publicar, esa sección toma el número y la fecha de la versión
   (`docs/desarrollo/publicar.md`).
 
+## Sistema de diseño
+Referencia completa en `docs/ux/DESIGN_SYSTEM.md`; la fuente de verdad es `internal/ui/tokens.css`.
+- **Marca: Nodo** (cuatro pantallas con un punto central de acento). Solo el isotipo por debajo
+  de 24 px de alto; mínimo 16 px. El nodo nunca toma un color de estado. «aula» en minúsculas
+  en el logotipo, dibujado con trazos (no es texto). Los SVG oficiales salen de la página de marca
+  enlazada en `docs/ux/DESIGN_SYSTEM.md`.
+- **Color por función, nunca por tono:** superficies (`--c-fondo`, `--c-superficie`,
+  `--c-superficie-2`), texto, borde, acento (marca y acción, una acción primaria por zona) y
+  estados con terna texto/fondo/sólido (conectado, desconectado, advertencia, error, simulado,
+  info). Un estado siempre va con icono o texto, no solo color.
+- **Solo tokens:** ningún color, tamaño de letra, radio o sombra suelto. Un valor nuevo es un
+  token en los tres bloques de tema y su par en `contrast_test.go` (WCAG AA: 4.5:1 texto, 3:1
+  bordes, foco y marcas).
+- **Tipografía:** títulos (`--f-titulo`) en Plus Jakarta Sans **embebida** en `internal/ui/fuentes`
+  (nada se descarga; D-021); texto (`--f-texto`) y código (`--f-mono`) del sistema. La raíz mide
+  15 px (1 rem = 15 px): `--t-xs` 11.3 · `--t-sm` 12.2 · `--t-codigo` 14 · `--t-md` 14.1 ·
+  `--t-lg` 15.9 · `--t-xl` 20.6 · `--t-2xl` 26.3 px; pesos 400/600/700.
+- **Logo en las apps:** isotipo `<svg class="logo"><use href="sistema/iconos.svg#marca"/></svg>`
+  y logotipo `class="logotipo"` con `#marca-horizontal` («aula» en minúsculas; `.marca` son las
+  casillas de selección). SVG oficiales e iconos de app con `node scripts/ux/marca.mjs`.
+- **Espacio y forma:** cuartos de rem (`--e-1`…`--e-7`), separar con `gap`; radios `--r-sm` 4,
+  `--r-md` 6, `--r-lg` 10, `--r-pill`; `--sombra-1` en reposo, `--sombra-2` solo para lo que flota.
+- **Cuadrícula en vivo:** dentro de `.alumno` nada de `backdrop-filter`, `filter`, sombras o
+  transiciones animadas, ni `will-change`; selección con `box-shadow` fijo.
+- **Los nombres de tokens y clases no se renombran.** Un rediseño cambia valores y agrega; no toca
+  HTML funcional (ids, `data-*`, roles), JS, bindings ni eventos.
+
 ## Integración continua (GitHub Actions)
 - Remoto: `origin` = `https://github.com/bayalad7/aula.git`.
 - Acciones ancladas a versión mayor (`actions/checkout@v7`, `actions/setup-go@v7`,

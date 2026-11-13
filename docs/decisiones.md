@@ -756,3 +756,23 @@ salida UDP hacia `ws_port + 1` (Windows la permite por omisión; las respuestas 
 asociación) y que la consola la reciba (su regla por programa de la etapa 12 ya lo cubre).
 
 Versión: función nueva compatible → sube `y`.
+
+## D-021: Plus Jakarta Sans embebida para los títulos
+
+**Fecha:** 2026-11-12 · **Estado:** aprobada (rediseño del sistema de diseño, fase 2).
+
+**Contexto.** El logo nuevo, Nodo (`docs/ux/DESIGN_SYSTEM.md` §2), se pensó junto a Plus Jakarta
+Sans. Las apps solo usaban fuentes del sistema porque los laboratorios pueden no tener internet.
+
+**Decisión.** Los títulos (`--f-titulo`) usan Plus Jakarta Sans; el texto y el código siguen con
+las fuentes del sistema (Segoe UI dibuja mejor a tamaños pequeños en Windows). La fuente va
+**dentro del binario**: `internal/ui/fuentes/plus-jakarta-sans.woff2`, la variable 200–800 del
+subconjunto latino (27 KB, de `@fontsource-variable/plus-jakarta-sans` 5.3.0), con su licencia
+SIL OFL 1.1 en `fuentes/OFL.txt`. `tokens.css` la declara con `@font-face` y `ui.Assets` la sirve
+bajo `sistema/fuentes/`; la CSP de las dos apps ya permite fuentes de `'self'`. Los caracteres
+fuera del subconjunto caen a la pila del sistema.
+
+**Consecuencias.** Nada se descarga en tiempo de ejecución. `TestCSSURLsAreEmbedded` falla si un
+`url()` del CSS apunta a algo que no va en el binario o si falta la licencia. Los títulos ocupan un
+poco más de ancho que con Segoe UI; las capturas del arnés y del manual cambian (fase 3). El
+logotipo no depende de la fuente: «aula» está dibujado en el SVG.

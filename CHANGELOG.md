@@ -93,6 +93,9 @@ retiraron; esta es la primera.
   desde la barra de acciones y **Ficha del alumno** con lo que puede hacer su equipo.
 - **Manual y diagramas** dentro de la consola, con búsqueda y ayuda de cada pantalla.
 - Modo claro y oscuro, teclado completo y contraste WCAG AA; funciona a 900×600.
+- **Identidad nueva, Nodo:** el logo de Aula (cuatro pantallas unidas por un punto) en el icono de
+  las dos apps y de la bandeja, y títulos en Plus Jakarta Sans, incluida en Aula para que se vea
+  igual sin internet. El código que recibe el alumno se ve un poco más grande (14 px).
 
 ### Para quien instala
 

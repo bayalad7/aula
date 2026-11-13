@@ -97,6 +97,9 @@ type PollView struct {
 	Unsupported []string  `json:"unsupported"`
 	Answers     []Answer  `json:"answers"`
 	Missing     []Student `json:"missing"` // named and open: who has not answered
+	// Quiz is set for a quiz (§5.23.1): its questions with the correct
+	// options, the scores and how each question went.
+	Quiz *QuizView `json:"quiz"`
 }
 
 // View is every poll of the class.
@@ -106,9 +109,11 @@ type View struct {
 }
 
 type vote struct {
-	choice int
-	text   string
-	at     time.Time
+	choice    int
+	text      string
+	answers   []protocol.PollQuizAnswer // a quiz: every answer so far
+	submitted bool                      // a quiz: «Entregar»
+	at        time.Time
 }
 
 type poll struct {
@@ -122,6 +127,7 @@ type poll struct {
 	shared   bool
 	openedAt time.Time
 	closedAt time.Time
+	quiz     *Quiz // a quiz (§5.23.1); nil for a poll of one question
 
 	votes     map[Student]vote
 	delivered map[Student]bool // poll.open was sent to them
@@ -191,7 +197,43 @@ func (c *Class) Open(req Request) (string, error) {
 	p := &poll{id: msg.PollID, kind: msg.Kind, question: msg.Question, options: msg.Options,
 		named: msg.Named, open: true, openedAt: now,
 		votes: map[Student]vote{}, delivered: map[Student]bool{}, shown: map[Student]bool{}}
-	for _, h := range req.Hosts {
+	p.setHosts(req.Hosts)
+	c.add(p)
+	return p.id, nil
+}
+
+// OpenQuiz opens a quiz (§5.23.1) for the hosts, or the whole channel when
+// there are none, and closes the poll in force. Only the agents that
+// declared poll.quiz get it.
+func (c *Class) OpenQuiz(q Quiz, hosts []string) (string, error) {
+	q = q.Normalize()
+	if err := q.Validate(); err != nil {
+		return "", err
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	now := c.now()
+	if cur := c.current(); cur != nil {
+		cur.open, cur.closedAt = false, now
+	}
+	p := &poll{id: protocol.NewID(), kind: protocol.PollKindQuiz, question: q.Title, named: true,
+		open: true, openedAt: now, quiz: &q,
+		votes: map[Student]vote{}, delivered: map[Student]bool{}, shown: map[Student]bool{}}
+	p.setHosts(hosts)
+	c.add(p)
+	return p.id, nil
+}
+
+// add appends p and drops the oldest past MaxPolls; c.mu is held.
+func (c *Class) add(p *poll) {
+	c.polls = append(c.polls, p)
+	if len(c.polls) > MaxPolls {
+		c.polls = slices.Delete(c.polls, 0, len(c.polls)-MaxPolls)
+	}
+}
+
+func (p *poll) setHosts(hosts []string) {
+	for _, h := range hosts {
 		if h = strings.ToLower(strings.TrimSpace(h)); h != "" {
 			if p.hosts == nil {
 				p.hosts = map[string]bool{}
@@ -199,11 +241,6 @@ func (c *Class) Open(req Request) (string, error) {
 			p.hosts[h] = true
 		}
 	}
-	c.polls = append(c.polls, p)
-	if len(c.polls) > MaxPolls {
-		c.polls = slices.Delete(c.polls, 0, len(c.polls)-MaxPolls)
-	}
-	return p.id, nil
 }
 
 // Close closes the poll in force: no more answers count.
@@ -231,6 +268,7 @@ func (c *Class) Share(pollID string) error {
 	case p.kind == protocol.PollKindOpen:
 		return ErrNotShareable
 	}
+	// A quiz: each student gets only their own result (rule 90).
 	p.shared = true
 	return nil
 }
@@ -268,6 +306,17 @@ func (c *Class) Vote(sessionID string, who Student, v protocol.PollVote) (protoc
 	if err := v.ValidFor(p.kind, p.options); err != nil {
 		return "", fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
+	if p.quiz != nil {
+		if err := protocol.ValidQuizAnswers(v.Answers, p.quiz.wire("")); err != nil {
+			return "", fmt.Errorf("%w: %w", ErrInvalid, err)
+		}
+		if p.votes[who].submitted {
+			return protocol.PollVoteClosed, nil // handed in: it does not change
+		}
+		p.votes[who] = vote{choice: -1, answers: normalizeAnswers(v.Answers), submitted: v.Submitted, at: now}
+		p.delivered[who] = true
+		return protocol.PollVoteAccepted, nil
+	}
 	got := vote{choice: -1, text: strings.TrimSpace(v.Text), at: now}
 	if v.Choice != nil {
 		got.choice, got.text = *v.Choice, ""
@@ -295,7 +344,7 @@ func (c *Class) Plan(real, sims []session.Session) []Command {
 			live[s.ID] = true
 			who := Student{Hostname: s.Hostname, Username: s.Username, Simulated: simulated}
 			c.bySession[s.ID] = who
-			cmds = append(cmds, c.planFor(s.ID, who)...)
+			cmds = append(cmds, c.planFor(s.ID, who, s.Can(protocol.CapPollQuiz))...)
 		}
 	}
 	add(real, false)
@@ -310,7 +359,7 @@ func (c *Class) Plan(real, sims []session.Session) []Command {
 }
 
 // planFor brings one student up to date; c.mu is held.
-func (c *Class) planFor(sessionID string, who Student) []Command {
+func (c *Class) planFor(sessionID string, who Student, canQuiz bool) []Command {
 	st := c.students[who]
 	if st == nil {
 		st = &studentState{}
@@ -320,7 +369,7 @@ func (c *Class) planFor(sessionID string, who Student) []Command {
 		st.sessionID = sessionID
 		st.openSent, st.closeSent, st.resultsSent = false, false, false
 	}
-	last := c.latestFor(who.Hostname)
+	last := c.latestFor(who.Hostname, canQuiz)
 	if last == nil {
 		return nil
 	}
@@ -336,7 +385,7 @@ func (c *Class) planFor(sessionID string, who Student) []Command {
 	switch {
 	case last.open:
 		if !st.openSent {
-			cmds = append(cmds, Command{sessionID, last.openMsg()})
+			cmds = append(cmds, Command{sessionID, last.openMsgFor(who)})
 			st.openSent = true
 			last.delivered[who] = true
 		}
@@ -346,7 +395,12 @@ func (c *Class) planFor(sessionID string, who Student) []Command {
 			st.closeSent = true
 		}
 		if last.shared && !st.resultsAcked && !st.resultsSent {
-			cmds = append(cmds, Command{sessionID, last.results()})
+			if last.quiz != nil {
+				// Only their own result (rule 90).
+				cmds = append(cmds, Command{sessionID, last.quiz.result(last.id, last.votes[who].answers)})
+			} else {
+				cmds = append(cmds, Command{sessionID, last.results()})
+			}
 			st.resultsSent = true
 		}
 	}
@@ -373,6 +427,10 @@ func (c *Class) Failed(cmd Command) {
 			st.closeSent = false
 		}
 	case protocol.PollResults:
+		if p.PollID == st.pollID {
+			st.resultsSent = false
+		}
+	case protocol.PollQuizResult:
 		if p.PollID == st.pollID {
 			st.resultsSent = false
 		}
@@ -453,10 +511,11 @@ func (c *Class) find(id string) *poll {
 	return nil
 }
 
-// latestFor is the newest poll meant for hostname; c.mu is held.
-func (c *Class) latestFor(hostname string) *poll {
+// latestFor is the newest poll meant for hostname that its agent can show
+// (a quiz only with poll.quiz); c.mu is held.
+func (c *Class) latestFor(hostname string, canQuiz bool) *poll {
 	for i := len(c.polls) - 1; i >= 0; i-- {
-		if c.polls[i].targets(hostname) {
+		if c.polls[i].targets(hostname) && (canQuiz || c.polls[i].quiz == nil) {
 			return c.polls[i]
 		}
 	}
@@ -467,9 +526,20 @@ func (p *poll) targets(hostname string) bool {
 	return p.hosts == nil || p.hosts[strings.ToLower(hostname)]
 }
 
-func (p *poll) openMsg() protocol.PollOpen {
-	return protocol.PollOpen{PollID: p.id, Kind: p.kind, Question: p.question,
+// openMsgFor is the poll.open for one student. A quiz carries its questions
+// in that student's order, never the correct options (rule 88), and what
+// that student already had acknowledged.
+func (p *poll) openMsgFor(who Student) protocol.PollOpen {
+	m := protocol.PollOpen{PollID: p.id, Kind: p.kind, Question: p.question,
 		Options: p.options, Named: p.named}
+	if p.quiz != nil {
+		m.Questions = p.quiz.wire(seedOf(p.id, who))
+		if got, ok := p.votes[who]; ok {
+			m.Answers = slices.Clone(got.answers)
+			m.Submitted = got.submitted
+		}
+	}
+	return m
 }
 
 // results are the totals the students may see: real students only (rule 32).
@@ -497,6 +567,18 @@ func (p *poll) view() PollView {
 		Shared: p.shared, All: p.hosts == nil, Hosts: []string{}, OpenedAt: p.openedAt,
 		Options: []Option{}, Unsupported: []string{}, Answers: []Answer{}, Missing: []Student{}}
 	v.Shareable = !p.open && !p.shared && p.kind != protocol.PollKindOpen
+	if p.quiz != nil {
+		v.Quiz = p.quizView()
+		for who := range p.votes {
+			if who.Simulated {
+				v.AnsweredSimulated++
+			} else {
+				v.Answered++
+			}
+		}
+		v.Received = len(p.shown)
+		return v
+	}
 	if !p.open {
 		at := p.closedAt
 		v.ClosedAt = &at
@@ -550,7 +632,7 @@ func (p *poll) addEligible(v *PollView, list []session.Session, simulated bool) 
 		if s.State != session.StateConnected || !p.targets(s.Hostname) {
 			continue
 		}
-		if !s.Can(protocol.CapPoll) {
+		if !s.Can(protocol.CapPoll) || (p.quiz != nil && !s.Can(protocol.CapPollQuiz)) {
 			v.Unsupported = append(v.Unsupported, s.Hostname)
 			continue
 		}

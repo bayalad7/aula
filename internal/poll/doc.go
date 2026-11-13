@@ -9,8 +9,14 @@
 //     also after a reconnection.
 //   - Ballot is the agent side: the poll cards of the window, the answer
 //     waiting for its ack (sent again on reconnection) and the shared totals.
+//   - Quiz is a quiz (§5.23.1): several questions with their correct options
+//     and points, graded all or nothing by the console; the correct options
+//     never travel before the close and each student gets only their own
+//     result. Library keeps the teacher's saved quizzes and Class.Grades
+//     writes the CSV of «Exportar calificaciones» (real students only).
 //
 // It does not call the OS. The question, the options and the answers are text
 // of the teacher and the students and are never logged; in an anonymous poll
-// the console view never says who chose what (docs/privacidad.md rules 71-74).
+// the console view never says who chose what (docs/privacidad.md rules 71-74
+// and, for quizzes, 87-91).
 package poll

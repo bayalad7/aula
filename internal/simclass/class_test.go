@@ -596,3 +596,12 @@ func TestSimulatedStudentsEndTheClass(t *testing.T) {
 		t.Error("a student with the noack fault acknowledged class.end")
 	}
 }
+
+// Simulated students are never turned on (docs/protocol.md §5.15.2): they
+// report no MAC, so the console never remembers them.
+func TestSimulatedHelloHasNoMACs(t *testing.T) {
+	s := &student{name: "Simulado 1", os: protocol.OSWindows, class: &Class{version: "0.1.0"}}
+	if h := s.hello(); len(h.MACs) != 0 {
+		t.Fatalf("macs = %v", h.MACs)
+	}
+}

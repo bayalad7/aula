@@ -41,7 +41,7 @@ export function exportarManual() {
   return fs.readFileSync(archivo, "utf8");
 }
 
-const tipos = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".ttf": "font/ttf", ".svg": "image/svg+xml" };
+const tipos = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".ttf": "font/ttf", ".woff2": "font/woff2", ".svg": "image/svg+xml" };
 
 // abrir() levanta el servidor y el navegador. foto(archivo, escena, opciones)
 // abre una página nueva (contexto aislado: el tema guardado no se cuela),

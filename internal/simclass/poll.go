@@ -40,7 +40,9 @@ func (s *student) handlePoll(ctx context.Context, cl *transport.Client, env prot
 		if resend != nil {
 			s.sendVote(ctx, cl, *resend)
 		}
-		if isNew {
+		if isNew && p.Kind == protocol.PollKindQuiz {
+			time.AfterFunc(s.pollAnswerAfter(), func() { s.answerQuiz(p) })
+		} else if isNew {
 			time.AfterFunc(s.pollAnswerAfter(), func() { s.answerPoll(p) })
 		}
 	case protocol.PollClose:
@@ -49,6 +51,10 @@ func (s *student) handlePoll(ctx context.Context, cl *transport.Client, env prot
 		}
 	case protocol.PollResults:
 		if ack, ok := s.ballot.Results(env.ID, p); ok && fault != FaultNoAck {
+			s.sendPoll(ctx, cl, ack)
+		}
+	case protocol.PollQuizResult:
+		if ack, ok := s.ballot.QuizResult(env.ID, p); ok && fault != FaultNoAck {
 			s.sendPoll(ctx, cl, ack)
 		}
 	case protocol.PollVoteAck:
@@ -90,6 +96,50 @@ func (s *student) answerPoll(p protocol.PollOpen) {
 	ctx, cancel := context.WithTimeout(s.class.ctx, 5*time.Second)
 	defer cancel()
 	s.sendVote(ctx, cl, v)
+	s.class.changed()
+}
+
+// answerQuiz answers every question of a quiz by chance (docs/privacidad.md
+// rule 91: the simulated students do not know the correct options either)
+// and hands it in.
+func (s *student) answerQuiz(p protocol.PollOpen) {
+	var ans []protocol.PollQuizAnswer
+	for i, q := range p.Questions {
+		pick := (s.index*7 + i*3 + len(q.Text)) % q.OptionCount()
+		choices := []int{pick}
+		if q.Kind == protocol.PollKindChoice {
+			choices = []int{q.Options[pick].ID}
+			if q.Multi && s.index%2 == 0 {
+				other := q.Options[(pick+1)%len(q.Options)].ID
+				choices = append(choices, other)
+			}
+		}
+		ans = append(ans, protocol.PollQuizAnswer{Q: q.ID, Choices: choices})
+	}
+	if s.ballot.AnswerQuiz(p.PollID, ans, true) != nil {
+		return // closed meanwhile
+	}
+	s.flushQuiz(p.PollID)
+}
+
+// flushQuiz sends the quiz answers waiting, at the pace of the ballot.
+func (s *student) flushQuiz(pollID string) {
+	v, wait := s.ballot.NextQuizVote(pollID)
+	if wait > 0 {
+		time.AfterFunc(wait, func() { s.flushQuiz(pollID) })
+		return
+	}
+	if v == nil {
+		return
+	}
+	cl := s.connection()
+	if cl == nil {
+		s.ballot.Unsent(*v)
+		return
+	}
+	ctx, cancel := context.WithTimeout(s.class.ctx, 5*time.Second)
+	defer cancel()
+	s.sendVote(ctx, cl, *v)
 	s.class.changed()
 }
 

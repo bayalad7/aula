@@ -542,6 +542,52 @@ func TestSimulatedStudentsAnswerPolls(t *testing.T) {
 	})
 }
 
+// Simulated students answer a quiz by chance, every question, and hand it in
+// (prompt 10.20); they acknowledge their personal result.
+func TestSimulatedStudentsAnswerQuizzes(t *testing.T) {
+	c := startConsole(t)
+	cl := newClass(t, c)
+	a, _ := cl.Add(protocol.OSWindows, nil)
+	eventually(t, "connected", func() bool { return len(c.connected()) == 1 })
+	if !sessionOf(t, c, a.Name).Can(protocol.CapPollQuiz) {
+		t.Fatal("a simulated student must declare poll.quiz")
+	}
+	ctx := context.Background()
+	open := protocol.PollOpen{PollID: protocol.NewID(), Kind: protocol.PollKindQuiz, Question: "Repaso", Named: true,
+		Questions: []protocol.PollQuizQuestion{
+			{ID: 0, Kind: protocol.PollKindChoice, Text: "¿Bucles?", Points: 2, Multi: true,
+				Options: []protocol.PollQuizOption{{ID: 1, Text: "if"}, {ID: 0, Text: "for"}, {ID: 2, Text: "while"}}},
+			{ID: 1, Kind: protocol.PollKindYesNo, Text: "¿range(3) incluye el 3?", Points: 1},
+		}}
+	if _, err := c.Send(ctx, sessionOf(t, c, a.Name).ID, open); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "handed in", func() bool {
+		votes, _ := c.pollState()
+		return len(votes) == 1
+	})
+	votes, _ := c.pollState()
+	if v := votes[0]; !v.Submitted || len(v.Answers) != 2 || protocol.ValidQuizAnswers(v.Answers, open.Questions) != nil {
+		t.Fatalf("quiz vote = %+v", v)
+	}
+	eventually(t, "accepted", func() bool {
+		p := cl.Students()[0].Poll
+		return p != nil && p.Submitted
+	})
+	if _, err := c.Send(ctx, sessionOf(t, c, a.Name).ID, protocol.PollClose{PollID: open.PollID}); err != nil {
+		t.Fatal(err)
+	}
+	r := protocol.PollQuizResult{PollID: open.PollID, Score: 1, Max: 3, Questions: []protocol.PollQuizResultQuestion{
+		{Q: 0, Choices: []int{1}, Correct: []int{0, 2}, Earned: 0}, {Q: 1, Choices: []int{1}, Correct: []int{1}, Earned: 1}}}
+	if _, err := c.Send(ctx, sessionOf(t, c, a.Name).ID, r); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "result", func() bool {
+		p := cl.Students()[0].Poll
+		return p != nil && p.Result != nil && p.Result.Score == 1
+	})
+}
+
 func (c *console) endAck(refID string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()

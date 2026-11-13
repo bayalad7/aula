@@ -58,7 +58,7 @@ const (
 // collection gets their last code, from memory too (collect.go). When the
 // teacher ends the class they clear their simulated window (classend.go).
 var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect, protocol.CapPoll, protocol.CapClassEnd}
+	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect, protocol.CapPoll, protocol.CapPollQuiz, protocol.CapClassEnd}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities

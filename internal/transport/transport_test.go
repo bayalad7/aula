@@ -243,8 +243,11 @@ func TestErrorIsNeverAnsweredWithError(t *testing.T) {
 
 func TestSilentPeerIsDropped(t *testing.T) {
 	srv, url, _ := startServer(t, testOptions())
-	ws := rawDial(t, url) // never sends anything
+	// The server's idle timer starts when it accepts the upgrade, before
+	// rawDial returns here: measure from before dialing, or the handshake
+	// tail makes the drop look early (seen on macOS with -race).
 	start := time.Now()
+	ws := rawDial(t, url) // never sends anything
 	nextEvent(t, srv, EventConnect)
 	nextEvent(t, srv, EventDisconnect)
 	if d := time.Since(start); d < testOptions().IdleTimeout {

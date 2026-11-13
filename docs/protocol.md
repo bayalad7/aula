@@ -250,7 +250,8 @@ agente envía `hello` de inmediato.
   "os": "windows",
   "os_version": "10.0.19045",
   "agent_version": "0.1.0",
-  "capabilities": ["code.view", "msg.show"]
+  "capabilities": ["code.view", "msg.show"],
+  "macs": ["3c:52:82:1a:9f:07"]
 }
 ```
 
@@ -262,6 +263,7 @@ agente envía `hello` de inmediato.
 | `os_version` | string | Libre, ≤ 64 caracteres. |
 | `agent_version` | string | SemVer `x.y.z` del agente (la misma del release). |
 | `capabilities` | string[] | §4. Sin duplicados; ≤ 64 entradas. |
+| `macs` | string[] | **Opcional** (Sin publicar, §5.15.2). Direcciones físicas (MAC) de la tarjeta de red por la que el agente llega a la consola, para encenderlo con Wake-on-LAN. Formato `aa:bb:cc:dd:ee:ff` (6 bytes, hexadecimal en minúsculas); sin duplicados; ≤ 4 entradas. Ausente o vacío: un agente viejo o un alumno simulado, y su equipo no se puede encender desde la consola. |
 
 `hello` no tiene respuesta. Si es inválido, la consola responde `error` `invalid_message` y
 cierra con `1002`.
@@ -854,6 +856,35 @@ Reglas:
 Sin `force`, una app con cambios sin guardar puede detener el apagado en la pantalla de Windows
 "Esta aplicación impide…". Es intencional: no se pierde trabajo, y el profesor puede reenviar la
 orden con `force`.
+
+#### 5.15.2 Encender equipos (Wake-on-LAN)
+
+> Sin publicar (prompt 10.19). Implementación en `internal/power` (`MagicPacket`, `Machines`,
+> `Waker`); privacidad en `docs/privacidad.md` regla 31 bis.
+
+Un equipo apagado no tiene agente, así que encenderlo **no es un mensaje del protocolo**: la
+consola manda el «paquete mágico» por la red local. Solo usa de este protocolo el campo `macs`
+de `hello` (§3.3).
+
+1. **El agente informa su MAC.** Antes de enviar `hello`, elige la tarjeta de red cuya subred
+   contiene la dirección de la consola a la que se conectó y pone su MAC en `macs`. Si ninguna
+   la contiene (la consola está tras un router), pone las de sus tarjetas activas con IPv4, sin
+   la de bucle local, hasta 4. Lee las tarjetas por `platform.Interfaces` (Windows; en los demás
+   SO no manda `macs`).
+2. **La consola recuerda el equipo.** Por canal y por hostname (sin mayúsculas): las MAC, la
+   última IP y la última vez que se vio, en `equipos-conocidos.json` de su carpeta de
+   configuración. Un `hello` sin `macs` no borra las que ya tenía. Nunca guarda alumnos simulados.
+3. **«Encender» manda el paquete mágico** a cada MAC del equipo: datagrama UDP al **puerto 9**
+   con 6 bytes `FF` seguidos de **16 veces** la MAC (102 bytes). Va a la dirección de broadcast
+   de la tarjeta de la consola cuya subred contiene la última IP del equipo; si ninguna la
+   contiene, a `255.255.255.255` y la consola avisa «otra subred» (el broadcast no cruza routers).
+   Se manda 3 veces, con 1 s entre cada una; como máximo **64 equipos** por orden.
+4. **«Encendiendo…» dura hasta 3 minutos.** Termina cuando llega un `hello` de ese hostname en el
+   canal; si no llega, queda «No respondió», con el enlace al manual.
+
+No hay acuse: la tarjeta de red no contesta. La consola nunca manda otra cosa por UDP, y el
+agente nunca manda UDP. El relevo por un agente de la misma subred queda como propuesta
+(`docs/ux/PROPUESTAS.md`).
 
 ### 5.16 Control remoto (`remote.*`)
 

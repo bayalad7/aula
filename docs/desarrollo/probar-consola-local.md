@@ -267,6 +267,24 @@ Wails (`docs/ux/DESIGN_SYSTEM.md`).
 | A-51 | Instala el agente; con la ventana cerrada, mira el área de notificación con la barra clara y la oscura; luego emite código | El icono Nodo se lee en las dos barras; al llegar código aparece su punto de «llegó algo» en la esquina, sin tapar el nodo central |
 | A-52 | Abre la ventana del alumno, compáctala y restáurala | El logo pequeño a la izquierda de la tira y del modo compacto, antes del punto de conexión; el código recibido se lee a 14 px |
 
+### Encender equipos (10.19)
+
+Solo en el laboratorio (en una VM hace falta configurar el hipervisor): dos equipos con Windows,
+cable de red y Wake-on-LAN activado en la BIOS y en la tarjeta («Inicio rápido» desactivado), un
+tercero sin Wake-on-LAN y, si puedes, uno con una versión anterior del agente. La consola en la
+misma red. Lo que hace cada equipo se revisa a ojo en el equipo (nunca con clics sintéticos en tu
+escritorio).
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-121 | Conecta los tres equipos y abre la ficha de uno; luego cierra la consola y ábrela otra vez | La ficha, en «Qué puede hacer su equipo», marca **Encender desde la consola** (✗ en el de versión anterior). En `%APPDATA%\Aula\consola\equipos-conocidos.json` están los tres con su MAC, IP y hora, sin usuario. Tras reabrir, **Mostrar apagados** no aparece (todos se reconectan) |
+| C-122 | Apaga dos equipos desde **Energía** › **Apagar** | Pasan a «Desconectado» con el botón **Encender** en Notas; el de versión anterior, sin botón |
+| C-123 | Pulsa **Encender** en la fila de uno | Aviso «Señal de encendido enviada a 1 equipo»; la fila dice «Encendiendo… 2:59» y cuenta. El equipo arranca y, cuando el agente se conecta, la fila vuelve a «Conectado» |
+| C-124 | Cierra y abre la consola con el otro apagado; activa **Mostrar apagados (1)**; luego **Energía** › **Encender** sin selección | El interruptor aparece con la cuenta y se recuerda al reabrir. El grupo «Apagados (1)» muestra el equipo con «Visto hoy a las…». El panel dice «1 equipo sin conexión en este canal» y oculta el tiempo y **Forzar**. **Encender 1 equipo** lo enciende |
+| C-125 | Apaga el equipo sin Wake-on-LAN y pulsa **Encender** | «Encendiendo…» cuenta 3 minutos y queda «No respondió» con **¿Por qué?**, que abre «Un equipo no se enciende» del manual |
+| C-126 | En la fila de un apagado, el botón de la papelera › **Olvidar equipo** | Desaparece de los apagados y su MAC sale de `equipos-conocidos.json`; al conectarse otra vez, vuelve. Los alumnos simulados nunca aparecen en los apagados ni en el archivo |
+| A-53 | Al encender un equipo desde la consola, mira su pantalla al arrancar | Windows arranca como siempre; el agente se conecta solo. Su ventana no muestra nada nuevo ni se adelanta; `aula-agente.log` no registra la MAC |
+
 ### Notas de interfaz 014–016 (2026-11-12)
 
 | # | Pasos | Esperado |

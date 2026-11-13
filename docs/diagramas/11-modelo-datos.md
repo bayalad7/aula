@@ -18,6 +18,7 @@ erDiagram
     CENTRO_PUB ||--o{ CONFIG_ALUMNO : "el instalador copia console_public_key"
     CLAVE_CENTRO |o--o| IDENTIDAD_PERSONAL : "sin clave del centro se usa la personal"
     CONFIG_CONSOLA_MAQUINA ||--o| AJUSTES_CONSOLA : "canal predeterminado, si no el último"
+    AJUSTES_CONSOLA ||--o{ EQUIPOS_CONOCIDOS : "misma carpeta, por canal"
     CERTIFICADO_TLS ||--o{ CONFIG_ALUMNO : "huella anunciada por mDNS, no se guarda"
     CONFIG_ALUMNO ||--o| POLITICA_ACTIVA : "solo con filtro web aplicado"
     HISTORIAL_MEMORIA ||--o{ ENVIOS_MEMORIA : "cada emisión crea un envío"
@@ -42,6 +43,12 @@ erDiagram
         list recent_channels "hasta 8"
         string console_name
         int port "0 = 47830"
+    }
+    EQUIPOS_CONOCIDOS {
+        string hostname "AppData Aula consola equipos-conocidos.json, por canal"
+        list macs "de hello.macs, para encenderlo, máx. 4"
+        string ip "última dirección, para elegir la red"
+        datetime last_seen "máx. 512 por canal"
     }
     CONFIG_CONSOLA_MAQUINA {
         int default_channel "ProgramData Aula consola config.json"
@@ -102,6 +109,11 @@ erDiagram
 - **`politica-activa.json` existe solo mientras hay filtro web** y se escribe *antes* de tocar el
   equipo, para poder deshacerlo tras un corte de luz (diagrama 15). El bloqueo de apps no deja
   nada en disco.
+- **`equipos-conocidos.json` es lo único que la consola guarda de los alumnos** (prompt 10.19):
+  por canal, el nombre del equipo, su MAC, su última IP y cuándo se vio, para encenderlo con
+  Wake-on-LAN. Identifica el equipo, no al alumno: no guarda usuario ni nada de lo que hizo
+  (privacidad, regla 31 bis). Está en la carpeta del usuario, así que otro maestro en el mismo
+  equipo empieza con la lista vacía. **Olvidar** borra un equipo; los simulados nunca entran.
 - **Logs** (no dibujados): `LOCALAPPDATA\Aula\<app>\aula-*.log` con rotación de 1 MiB, y
   `ProgramData\Aula\alumno\logs` con el agente como servicio. Nunca contienen código, textos,
   imágenes, nonces, firmas ni claves.
@@ -114,7 +126,8 @@ erDiagram
   `internal/security/tls.go`
 - `internal/platform/paths.go`, `internal/platform/machinesecret.go`,
   `internal/platform/fileperm.go`, `internal/platform/logfile.go`
-- `apps/teacher/settings.go`, `apps/teacher/machine.go`, `apps/teacher/cli.go`
+- `apps/teacher/settings.go`, `apps/teacher/machine.go`, `apps/teacher/cli.go`, `apps/teacher/wake.go`,
+  `internal/power/machines.go`
 - `apps/student/config.go`, `internal/session/agentconfig.go`
 - `internal/policy/journal.go`, `internal/platform/policy.go` (`SavedSetting`)
 - `internal/codedist/history.go`, `internal/codedist/deliveries.go`, `internal/codedist/board.go`

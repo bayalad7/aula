@@ -87,6 +87,9 @@ La barra de abajo abre un panel a la derecha, sin tapar la lista:
   solo cuando se recupera.
 - **Sin sesión iniciada**: el equipo está encendido pero nadie inició sesión; solo puede recibir
   órdenes de energía.
+- **Apagado**: un equipo que ya se conectó alguna vez a esta consola y ahora no está; se ve con el
+  interruptor **Mostrar apagados**, con la última vez que se vio. **Encendiendo…** y **No
+  respondió** dicen cómo va su encendido: [Encender los equipos](tareas-frecuentes#encender-los-equipos).
 - **En pausa** (insignia en Notas): su pantalla está cubierta por la pausa. **Pausando…** o **Sin
   acusar la pausa** dicen que su equipo aún no la confirma; **No se pudo pausar**, que su equipo no
   pudo mostrarla.

@@ -98,6 +98,29 @@ franja «Este equipo no tiene la clave del centro», pide que la instalen en tu 
 - **«Su equipo no contestó»:** Aula no responde en su equipo (o la red se cortó). Revisa que esté
   conectado en Alumnos y vuelve a intentarlo.
 
+## Un equipo no se enciende
+
+Si un equipo se queda en **No respondió** después de **Encender**, casi siempre falta algo en el
+propio equipo o en la red. Pide al responsable de TI que revise, en cada equipo del laboratorio:
+
+1. **Wake-on-LAN activado en la BIOS o UEFI.** Suele llamarse «Wake on LAN», «Power On by PCI-E»
+   o «Resume by LAN». Si existe «ErP» o «Deep Sleep», debe estar desactivado: corta la corriente
+   de la tarjeta de red.
+2. **Wake-on-LAN activado en la tarjeta de red de Windows.** En el Administrador de dispositivos,
+   en las propiedades de la tarjeta de red: en **Opciones avanzadas**, «Wake on Magic Packet»
+   activado, y en **Administración de energía**, «Permitir que este dispositivo reactive el
+   equipo».
+3. **«Inicio rápido» de Windows desactivado.** En Opciones de energía › Elegir el comportamiento
+   de los botones de inicio/apagado. Con Inicio rápido, el equipo no queda apagado del todo y
+   muchas tarjetas no despiertan.
+4. **Cable de red.** Por Wi-Fi casi nunca se puede encender un equipo apagado.
+5. **La misma red que la consola.** La señal de encendido no cruza routers. Si la fila dice
+   **Otra red**, la consola está en otra subred o VLAN que el equipo: conéctala a la red del
+   laboratorio o pide que el switch deje pasar el broadcast hacia esa VLAN.
+
+Si el botón **Encender** no aparece, el agente del equipo es una versión que no informa su
+dirección física: actualízalo, o enciende el equipo a mano una vez después de actualizarlo.
+
 ## El portapapeles no funciona
 
 Si «Pegar» dice que no hay texto copiado, copia el código con Ctrl+C y vuelve a

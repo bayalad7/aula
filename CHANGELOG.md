@@ -74,6 +74,11 @@ retiraron; esta es la primera.
 - **Restricciones** de la clase: bloquear apps y filtrar sitios web, siempre reversibles.
 - **Energía:** apagar, reiniciar o cerrar sesión con cuenta regresiva que el alumno ve y puede
   posponer.
+- **Encender los equipos** desde la consola (Wake-on-LAN): **Energía › Encender** para todos los
+  apagados o los seleccionados, o **Encender** en la fila de uno; la fila dice «Encendiendo…» hasta
+  que el equipo se conecta, o «No respondió» con lo que hay que revisar. **Mostrar apagados** lista
+  los equipos que la consola ya conoce aunque no estén conectados. Necesita Wake-on-LAN activado
+  en cada equipo, cable de red y la consola en la misma red.
 - **Pausar pantallas** («ojos al frente»): cubre las pantallas de todos, de los seleccionados o de
   un alumno, en todos sus monitores, con un aviso que dice quién las pausó y un mensaje opcional;
   **Reanudar todo** desde la franja o con **Ctrl+Mayús+P**. Tu transmisión, la cuenta de energía y

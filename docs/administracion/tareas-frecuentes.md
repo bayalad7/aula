@@ -230,6 +230,26 @@ marcas **Forzar ahora**, no hay cuenta y las aplicaciones se cierran sin guardar
 
 {{diagrama:16-energia}}
 
+## Encender los equipos
+
+Aula recuerda cada equipo que se conectó alguna vez a esta consola, así que puedes encenderlo
+desde aquí aunque esté apagado (Wake-on-LAN). La primera vez hay que encenderlo a mano.
+
+1. Pulsa **Energía** y elige **Encender**. Sin alumnos marcados, va a todos los equipos sin
+   conexión del canal; con alumnos marcados, solo a esos.
+2. Pulsa **Encender**.
+
+También puedes encender uno solo con el botón **Encender** de su fila. Los equipos que no tienen
+sesión en esta consola aparecen con el interruptor **Mostrar apagados** de la lista de Alumnos.
+
+- Mientras arranca, la fila dice **Encendiendo…** con lo que falta de los 3 minutos que Aula
+  espera. Cuando su agente se conecta, vuelve a ser un alumno conectado.
+- Si no se conecta a tiempo, la fila dice **No respondió**. Pulsa **¿Por qué?** y revisa
+  [Un equipo no se enciende](solucion-de-problemas#un-equipo-no-se-enciende).
+- Encender no le hace nada a un equipo que ya está encendido, por eso no pide confirmación.
+- **Olvidar** (en la fila de un apagado) borra de la consola la dirección física del equipo. Si
+  su agente se vuelve a conectar, Aula lo recuerda otra vez.
+
 ## Ayudar a un alumno tomando el control
 
 1. En [Alumnos](alumnos#acciones-sobre-un-alumno) › **Miniaturas**, haz clic en la pantalla del

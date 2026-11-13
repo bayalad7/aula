@@ -1,14 +1,15 @@
 ---
-titulo: "Energía: apagar, reiniciar y cerrar sesión"
-descripcion: "Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que el equipo se apaga"
+titulo: "Energía: apagar, reiniciar, cerrar sesión y encender"
+descripcion: "Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que se apaga, y cómo la consola lo vuelve a encender"
 audiencia: [profesor, alumno, desarrollador]
 pantallas: [alumnos]
 secciones_manual: [administracion/tareas-frecuentes, privacidad, protocol]
 ---
 
-# Energía: apagar, reiniciar y cerrar sesión
+# Energía: apagar, reiniciar, cerrar sesión y encender
 
-¿Por qué estados pasa una orden `power.action` en el agente, y qué puede hacer el alumno?
+¿Por qué estados pasa una orden `power.action` en el agente, qué puede hacer el alumno, y cómo
+vuelve a encenderse un equipo apagado (Wake-on-LAN, desde la consola)?
 
 ```mermaid
 %%{init: {"htmlLabels": false}}%%
@@ -17,6 +18,9 @@ stateDiagram-v2
     state "Cuenta regresiva con aviso" as Cuenta
     state "Ejecutando" as Ejecutando
     state "Falló (el SO la rechazó)" as Fallo
+    state "Apagado, sin agente" as Apagado
+    state "Encendiendo (la consola espera 3 min)" as Encendiendo
+    state "No respondió" as NoRespondio
     state sesion <<choice>>
 
     [*] --> Libre
@@ -30,7 +34,12 @@ stateDiagram-v2
     Cuenta --> sesion: power.action nueva, ack cancelled de la vieja
     Cuenta --> Ejecutando: llega a 0
 
-    Ejecutando --> [*]: ack executing, espera 2 s y llama al SO
+    Ejecutando --> [*]: reboot o logoff, ack executing y llama al SO
+    Ejecutando --> Apagado: shutdown, ack executing y llama al SO
+    Apagado --> Encendiendo: Encender, paquete mágico UDP 9 al broadcast
+    Encendiendo --> Libre: el agente arranca y manda hello con su MAC
+    Encendiendo --> NoRespondio: 3 min sin hello
+    NoRespondio --> Encendiendo: Encender otra vez
     Ejecutando --> Fallo: error internal con el motivo del SO
     Ejecutando --> Libre: sigue encendido tras 2 min, se quita el aviso
     Fallo --> Libre: el alumno cierra el aviso
@@ -41,6 +50,7 @@ stateDiagram-v2
     classDef seguridad fill:#fee2e2,stroke:#b91c1c,color:#111827
     class Libre,Cuenta aula
     class Ejecutando,Fallo seguridad
+    class Apagado,Encendiendo,NoRespondio externo
 ```
 
 ## Lo que no es obvio
@@ -62,12 +72,21 @@ stateDiagram-v2
 - **Sin sesión iniciada** no hay a quién avisar ni trabajo que perder: `shutdown` y `reboot` se
   ejecutan de inmediato y `logoff` no tiene sentido.
 - Solo Windows declara `power`.
+- **Encender no es un mensaje del protocolo** (§5.15.2): el equipo apagado no tiene agente. La
+  consola recuerda la MAC que cada agente manda en `hello` (`equipos-conocidos.json`, por canal) y
+  manda el paquete mágico (6 × `FF` y 16 × la MAC) 3 veces, al broadcast de su tarjeta que está
+  en la subred del equipo. Si ninguna lo está, prueba con `255.255.255.255` y avisa «Otra red»: el
+  broadcast no cruza routers. No hay acuse: solo se sabe que encendió cuando llega su `hello`.
+- **Nunca a simulados:** no tienen MAC y la consola no los recuerda.
 
 ## Fuentes en el código
 
 - `internal/power/countdown.go` (`Handle`, `start`, `cancel`, `Postpone`, `execute`, `staleAfter`,
   `DefaultFlushWait`)
 - `internal/power/tracker.go` (lado de la consola)
+- `internal/power/wake.go` (`MagicPacket`, `AgentMACs`, `RoutesFor`, `PlanWake`),
+  `internal/power/machines.go` (`Machines`), `internal/power/waker.go` (`Waker`, `WakeTimeout`)
+- `internal/platform/nic.go` (`Interfaces`), `apps/teacher/wake.go`
 - `internal/platform/power.go`, `internal/platform/power_windows.go`
 - `apps/student/power.go`, `apps/teacher/power.go`
-- `docs/protocol.md` §5.15, `docs/privacidad.md` reglas 26–31, `docs/decisiones.md` D-018
+- `docs/protocol.md` §5.15 y §5.15.2, `docs/privacidad.md` reglas 26–31 bis, `docs/decisiones.md` D-018

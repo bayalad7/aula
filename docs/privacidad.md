@@ -260,6 +260,15 @@ siempre tiene tiempo de guardar.
     resultado y el equipo, **antes** de ejecutar. Nunca qué aplicaciones estaban abiertas ni su
     contenido.
 
+31 bis. **Encender (Wake-on-LAN, sin publicar, prompt 10.19).** El agente manda en `hello` la
+    dirección física (MAC) de la tarjeta de red que lo lleva a la consola. La MAC identifica al
+    **equipo**, no al alumno, y solo se guarda en la consola (`equipos-conocidos.json`, por
+    canal): nombre del equipo, MAC, última IP y cuándo se vio; nunca el usuario ni lo que hizo.
+    El equipo no guarda nada nuevo. «Olvidar» en la fila de un apagado borra su registro. El
+    agente nunca manda UDP; la consola solo manda paquetes mágicos al broadcast de su red. No hay
+    aviso en el equipo del alumno porque estaba apagado: al arrancar, el agente se conecta como
+    siempre. Los alumnos simulados no tienen MAC y nunca se recuerdan.
+
 Permisos del SO (detalle en `docs/protocol.md` §5.15.1): apagar y reiniciar usan
 `SeShutdownPrivilege`, que tienen SYSTEM y, salvo una GPO que lo quite, los usuarios de un equipo
 de escritorio; cerrar la sesión de otro usuario (con `force`, desde el servicio) requiere SYSTEM.

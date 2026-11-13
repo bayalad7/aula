@@ -46,7 +46,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.16 | Grupos guardados y equipos de trabajo | ⏳ Pendiente (prompt del 12/11/2026) |
 | 10.17 | Entregar código desde la app del alumno (`code.collect`) | ⏳ Pendiente (prompt del 12/11/2026) |
 | 10.18 | Perfiles de clase («Iniciar clase») | ⏳ Pendiente, después de `v0.1.0` |
-| 10.19 | Encender equipos (Wake-on-LAN) | ⏳ Pendiente, después de `v0.1.0` |
+| 10.19 | Encender equipos (Wake-on-LAN) | ✅ Implementado y probado en CI con dobles (sin datagramas reales); «Encender» en el Panel Energía y en la Fila del alumno, interruptor «Mostrar apagados», `hello.macs` (§5.15.2), regla 31 bis, diagramas 16 y 11. El relevo por otra subred quedó como propuesta P-04 (falta la prueba en el laboratorio, casos C-121 a C-126 y A-53) |
 | 10.20 | Cuestionario con puntaje (mejora de 10.12) | ⏳ Pendiente, después de `v0.1.0` |
 | 10.21 | Pantalla en blanco («Pausar pantallas», la parte pendiente de 09) | ✅ Implementado y probado en CI con dobles; panel «Pausar» de la barra, la acción en la Pantalla grande, la franja y Ctrl+Mayús+P (falta la prueba en VM, `docs/prueba-vms.md` §27, y los casos C-108 a C-113 y A-42 a A-47) |
 | 10.22 | Semáforo del alumno | ⏳ Pendiente, después de `v0.1.0` |
@@ -1222,6 +1222,35 @@ documentación que la raíz mide 15 px, no 16. Fase 3: el logo en la navegación
 la consola y en la tira y el modo compacto del alumno; manual y mapa regenerados; resumen en
 `docs/ux/historial/marca-nodo.md`. Pendiente: casos C-119, C-120, A-51 y A-52 en la ventana real
 (iconos de la barra de tareas y del área de notificación, fuente servida por Wails sin red).
+
+## Etapa 10.19: encender equipos (Wake-on-LAN) — notas
+
+Hecha el 12/11/2026, sin commit. Decisiones del usuario: «Encender» en el **Panel Energía** (cuarta
+opción, para los apagados de la selección o de todo el canal) **y** en la **Fila del alumno**; los
+equipos conocidos sin sesión, ocultos tras el interruptor **Mostrar apagados**; el **relevo** por
+un agente de otra subred queda como propuesta (`docs/ux/PROPUESTAS.md` P-04).
+
+- **Protocolo:** solo el campo opcional `hello.macs` (≤ 4, `aa:bb:…` en minúsculas): el agente
+  manda la MAC de la tarjeta cuya subred contiene la consola (`power.AgentMACs`, por
+  `session.Agent.MACs`). Encender no es un mensaje: la consola manda el paquete mágico por UDP 9 al
+  broadcast de su tarjeta en la subred del equipo, 3 veces; si ninguna está en esa subred,
+  `255.255.255.255` y «Otra red». Versión menor.
+- **Plataforma:** `platform.Interfaces` (`nic_windows.go` con `net.Interfaces`, fallback «no
+  soportado»). `NetworkInspector` no sirve aquí (solo lee firewall y perfiles).
+- **Lógica (`internal/power`):** `MagicPacket`, `RoutesFor`, `PlanWake`; `Machines` (registro por
+  canal y hostname en `equipos-conocidos.json` de la carpeta de la consola, escritura atómica,
+  máx. 512 por canal, nunca sin MAC); `Waker` (3 min de «Encendiendo…», luego «No respondió»).
+- **Consola:** `WakeComputers(hosts)`, `ForgetComputer(host)`; `Student.canWake`/`wake` y
+  `Students.off`. Errores `noWakeTargets`, `wakeNoMac`, `wakeFailed`. Icono nuevo `encender` en
+  `internal/ui`. Sin confirmación (no cambia un equipo encendido). El canal del registro se lee sin
+  `App.mu` (`wake.channel` atómico) porque `View` arma la lista con el candado tomado.
+- **Alumno:** nada en su ventana. **Simulados:** nunca (sin MAC; `TestSimulatedHelloHasNoMACs`).
+- **Pruebas:** `internal/power/wake_test.go` (paquete exacto, rutas, registro y archivo, límite,
+  `Waker`), `internal/platform/nic_test.go`, `TestHelloCarriesTheMACsForTheConsoleAddress`,
+  `apps/teacher/wake_test.go` (doble del emisor UDP: ningún datagrama real). Arnés: escenas 189–194.
+- **Pendiente:** la prueba en el laboratorio (C-121 a C-126, A-53); no se puede en VM sin
+  configurar el hipervisor. 10.15 (mapa) no existe aún: cuando llegue, «Encender» en el asiento
+  vacío del mapa y la clave estable del equipo en lugar del hostname.
 
 ## Etapa 10.21: pausar pantallas (pantalla en blanco, D-013) — notas
 

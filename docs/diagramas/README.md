@@ -49,7 +49,7 @@ lleve `foreignObject`.
 | 13 | [El agente como servicio de Windows](13-agente-servicio.md) | `flowchart` | instalador, desarrollador, auditor |
 | 14 | [Transmisión de la pantalla del profesor](14-transmision-pantalla.md) | `sequenceDiagram` | profesor, desarrollador |
 | 15 | [Restricciones de la clase: apps y filtro web](15-restricciones.md) | `flowchart` | profesor, desarrollador, auditor |
-| 16 | [Energía: apagar, reiniciar y cerrar sesión](16-energia.md) | `stateDiagram-v2` | profesor, alumno, desarrollador |
+| 16 | [Energía: apagar, reiniciar, cerrar sesión y encender](16-energia.md) | `stateDiagram-v2` | profesor, alumno, desarrollador |
 | 17 | [Control remoto de un alumno](17-control-remoto.md) | `sequenceDiagram` | profesor, alumno, desarrollador |
 | 18 | [Manos y mensajes del alumno](18-manos-mensajes.md) | `sequenceDiagram` | profesor, alumno, desarrollador |
 | 19 | [Enviar archivos y plantillas](19-enviar-archivos.md) | `sequenceDiagram` | profesor, alumno, desarrollador, auditor |

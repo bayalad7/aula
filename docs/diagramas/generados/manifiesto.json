@@ -174,7 +174,7 @@
       "pantallas": [
         "ayuda"
       ],
-      "hash": "sha256:2d3dfdf95816df77080064bc8a8b5265a0e8d2a2ff801c4b4dc5512351f7b4a8",
+      "hash": "sha256:5a6ea8ed0f5b3d28d2ca7cfc6edb646f6ed7adae0ecef60d766ea48413d5fd2b",
       "alt": "Modelo de datos local: Qué guarda Aula en el disco de cada equipo, qué solo vive en memoria y cómo se relacionan claves y configuración",
       "claro": "generados/11-modelo-datos.claro.svg",
       "oscuro": "generados/11-modelo-datos.oscuro.svg"
@@ -247,8 +247,8 @@
     },
     {
       "id": "16-energia",
-      "titulo": "Energía: apagar, reiniciar y cerrar sesión",
-      "descripcion": "Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que el equipo se apaga",
+      "titulo": "Energía: apagar, reiniciar, cerrar sesión y encender",
+      "descripcion": "Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que se apaga, y cómo la consola lo vuelve a encender",
       "audiencia": [
         "profesor",
         "alumno",
@@ -257,8 +257,8 @@
       "pantallas": [
         "alumnos"
       ],
-      "hash": "sha256:e1360add405e901adc63c58e3aceb49825c93a20214966abbe567da7e6fd561c",
-      "alt": "Energía: apagar, reiniciar y cerrar sesión: Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que el equipo se apaga",
+      "hash": "sha256:3dd3b51c2c9e395aee527b74ef2d71ce550f2ecd4af9e520fbb04fe007f6ca61",
+      "alt": "Energía: apagar, reiniciar, cerrar sesión y encender: Qué pasa en el equipo del alumno desde que el profesor ordena apagar hasta que se apaga, y cómo la consola lo vuelve a encender",
       "claro": "generados/16-energia.claro.svg",
       "oscuro": "generados/16-energia.oscuro.svg"
     },

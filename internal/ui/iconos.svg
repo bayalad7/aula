@@ -29,6 +29,7 @@
   <symbol id="aviso" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8.5 9.5h7M8.5 12.5h4.5"/></symbol>
   <symbol id="candado" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="energia" viewBox="0 0 24 24"><path d="M12 3v8.5"/><path d="M7 6.2a7.5 7.5 0 1 0 10 0"/></symbol>
+  <symbol id="encender" viewBox="0 0 24 24"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z"/></symbol>
   <symbol id="enviar" viewBox="0 0 24 24"><path d="M21 3 10 14"/><path d="m21 3-6.5 18-4.5-7-7-4.5z"/></symbol>
   <symbol id="reenviar" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="editar" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>

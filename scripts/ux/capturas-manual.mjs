@@ -23,6 +23,8 @@ const capturas = {
   }, click("[data-vista-de=archivos] .envio__desplegar")) }],
   "recolecciones.webp": ["lab-recolecciones", { ruta: "archivos/recolecciones", h: 800 }],
   "simulada.webp": ["simulada", { ruta: "simulada" }],
+  // El plano del salón (prompt 10.15) con un equipo elegido para ponerle su etiqueta.
+  "salon.webp": ["lab", { ruta: "salon", h: 900, pasos: seq(click('#salon-plano [data-equipo="LAB3-PC07"]'), click('#salon-plano [data-equipo="LAB3-PC07"]')) }],
   "participacion.webp": ["lab-participacion", { ruta: "participacion" }],
   "participacion-encuesta.webp": ["lab-encuesta", { ruta: "participacion", pasos: async (p) => {
     await p.evaluate(() => document.getElementById("encuestas").scrollIntoView());

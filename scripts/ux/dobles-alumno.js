@@ -254,7 +254,9 @@
   window.go = { main: { App: {
     View: call("View", () => ({ status, snippets, notices, broadcast, restrictions, power, participation: copia(), timer, files, collections, opened, polls: copiaPolls(), present, classEnd,
       capabilities: ["code.view", "msg.show", "hand", "msg.student", "timer", "poll", "poll.quiz", "file.push", "file.collect", "screen.broadcast",
-        "screen.present.view", "screen.thumb", "screen.snapshot", "screen.present", "remote", "power", "open.url", "open.app", "class.end"] })),
+        "screen.present.view", "screen.thumb", "screen.snapshot", "screen.present", "remote", "power", "open.url", "open.app", "class.end", "computer.label"],
+      // Este equipo (prompt 10.15): con etiqueta salvo en sin-etiqueta.
+      computer: { hostname: "LAB3-PC07", label: scene === "sin-etiqueta" ? "" : "Fila 2 · PC07" } })),
     Copy: call("Copy", () => (scene === "copia-falla" ? new Error("el portapapeles no está disponible en este equipo") : null)),
     DismissNotice: call("DismissNotice"),
     DismissClassEnd: call("DismissClassEnd", () => { classEnd = null; return null; }),

@@ -431,6 +431,28 @@ await f("200-cuestionario-cerrado-exportar", "lab-cuestionario-cerrado", { ruta:
 await f("201-cuestionarios-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, ruta: "cuestionarios", pasos: editarCuest });
 await f("202-participacion-cuestionario-oscuro-900x600", "lab-cuestionario", { oscuro: true, w: 900, h: 600, ruta: "participacion", pasos: aEncuestas });
 
+// Salón (prompt 10.15): la vista «Salón» de Alumnos con 30 simulados acomodados, en claro, oscuro
+// y a 900×600; el editor del módulo con un equipo tomado; la etiqueta desde la Pantalla grande,
+// la ficha con su lugar, Ajustes › Salón, importar de otro canal y el aviso de un equipo renombrado.
+const treinta = Array.from({ length: 30 }, (_, i) => "Simulado " + (i + 1));
+const salonVista = (tamano) => seq(click('[data-modo="salon"]'), cuadros(["LAB3-PC07", "LAB3-PC12", ...treinta]), async (p) => {
+  await p.select("#tamano-miniaturas-select", tamano); await sleep(200);
+});
+await f("203-salon-vista", "lab-salon", { h: 1000, pasos: salonVista("pequeno") });
+await f("204-salon-vista-fila", "lab-salon", { h: 1000, pasos: seq(salonVista("pequeno"),
+  click('#alumnos-salon-rejilla .salon__cabecera--fila:nth-of-type(n) button[aria-label$="fila 2"]')) });
+await f("205-salon-vista-oscuro-900x600", "lab-salon", { oscuro: true, w: 900, h: 600, pasos: salonVista("pequeno") });
+await f("206-salon-vista-ajustar-900x600", "lab-salon", { w: 900, h: 600, pasos: salonVista("ajustar") });
+const tomarPC07 = click('#salon-plano [data-equipo="LAB3-PC07"]');
+await f("207-salon-editor-llevando", "lab", { ruta: "salon", h: 900, pasos: tomarPC07 });
+await f("208-salon-editor-oscuro-900x600", "lab-salon", { oscuro: true, w: 900, h: 600, ruta: "salon", pasos: tomarPC07 });
+await f("209-salon-etiqueta-pantalla-grande", "lab", { pasos: seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", "LAB3-PC12"]),
+  click(".alumno__pantalla:not([disabled])"), click("#pg-etiqueta")) });
+await f("210-salon-ficha", "lab", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+await f("211-salon-ajustes", "lab", { pasos: ajustes("salon") });
+await f("212-salon-importar-otro-canal", "lab", { ruta: "salon", pasos: click("#salon-importar") });
+await f("213-salon-renombrado", "lab", { pasos: async (p) => { await p.evaluate(() => window.__renombrar("LAB3-PC03", "LAB3-03")); await sleep(200); } });
+
 await cerrar();
 let graves = 0;
 for (const [nombre, r] of Object.entries(informe)) {

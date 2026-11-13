@@ -29,9 +29,10 @@
     canOpenUrl: s.capabilities.includes("open.url"), canOpenApp: s.capabilities.includes("open.app"),
     canPresent: s.capabilities.includes("screen.present"), canPresentView: s.capabilities.includes("screen.present.view"),
     canPause: s.capabilities.includes("screen.freeze"), canClassEnd: s.capabilities.includes("class.end"),
+    canLabel: s.capabilities.includes("computer.label"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "poll.quiz", "screen.present", "screen.present.view", "screen.freeze", "class.end"];
+    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "poll.quiz", "screen.present", "screen.present.view", "screen.freeze", "class.end", "computer.label"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
@@ -75,6 +76,11 @@
   let list = scene === "simulada-sola" ? simStudents.slice() : scene === "simulada" ? [...sims.slice(0, 1), ...simStudents] : scene === "vacia" || scene.startsWith("setup") ? [] : scene.startsWith("lab") ? lab : [...sims,
     student({ hostname: "SIM-03", username: "simulado", osVersion: "simulado", agentVersion: "0.1.0-sim",
       state: "disconnected", capabilities: ["code.view", "msg.show"] })];
+  // Salón (prompt 10.15): en lab-salon, 30 alumnos simulados acomodados junto a los del laboratorio.
+  const treinta = Array.from({ length: 30 }, (_, i) => student({ hostname: "Simulado " + (i + 1), username: "Alumno de prueba",
+    osVersion: "simulado", agentVersion: "0.6.0-dev+sim", simulated: true,
+    capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "poll", "class.end", "computer.label"] }));
+  if (scene === "lab-salon") list = [...lab, ...treinta];
   if (scene === "lab-energia-pendiente") {
     lab[0].power = { action_id: "p1", action: "reboot", force: false, status: "countdown", deadline_ms: now + 24000, postpones_left: 2 };
     lab[1].power = { action_id: "p1", action: "reboot", force: false, status: "postponed", deadline_ms: now + 318000, postpones_left: 1 };
@@ -336,8 +342,39 @@
   };
   const emitPausas = () => { window.__emit("aula:pauses", resumenPausas()); window.__emit("aula:students", studentsView()); };
   const pausaDe = (hosts) => list.filter((s) => s.state === "connected" && !s.simulated && (!hosts.length || hosts.includes(s.hostname)));
+  // Salón (RoomView de apps/teacher/room.go). En las escenas lab, cuatro equipos acomodados con su
+  // etiqueta, uno apagado en su lugar y uno sin acomodar; en lab-salon, además, 30 simulados.
+  const sala = { channel: "1", rows: 5, cols: 8, places: [], computers: [],
+    file: "C:\\Users\\profe\\Documents\\Aula\\salones\\canal-1.json", problem: "", backup: "", renamed: [] };
+  const equipo = (hostname, label, row, col, simulated) => ({ hostname, label, seat: row ? { row, col } : null, simulated: !!simulated });
+  if (scene.startsWith("lab")) {
+    sala.places = [{ row: 1, col: 1, kind: "teacher" }, ...[1, 2, 3, 4, 5].map((row) => ({ row, col: 5, kind: "aisle" }))];
+    sala.computers = [equipo("LAB3-PC07", "Fila 2 · PC07", 2, 2), equipo("LAB3-PC12", "Fila 2 · PC12", 2, 3),
+      equipo("LAB3-PC15", "Junto a la puerta", 2, 4), equipo("LAB3-PC03", "Fila 3 · PC03", 3, 2),
+      equipo("LAB3-PC01", "", 3, 3), equipo("LAB3-PC02", "", null), equipo("LAB3-PC09", "", null), equipo("lab-ubuntu-02", "", null)];
+  }
+  if (scene === "lab-salon") {
+    sala.rows = 6;
+    sala.places = [{ row: 1, col: 1, kind: "teacher" }, ...[1, 2, 3, 4, 5, 6].map((row) => ({ row, col: 5, kind: "aisle" }))];
+    const libres = [];
+    for (let r = 1; r <= sala.rows; r++) for (let c = 1; c <= sala.cols; c++) {
+      if (!sala.places.some((p) => p.row === r && p.col === c) && !sala.computers.some((x) => x.seat && x.seat.row === r && x.seat.col === c)) libres.push([r, c]);
+    }
+    treinta.forEach((s, i) => sala.computers.push(equipo(s.hostname, i < 3 ? "Prueba " + (i + 1) : "", ...(libres[i] || [null]), true)));
+  }
+  const salaVista = () => JSON.parse(JSON.stringify(sala));
+  const emitSala = () => { const v = salaVista(); window.__emit("aula:room", v); sala.renamed = []; return v; };
+  const enSala = (host, sim) => sala.computers.find((x) => x.hostname.toLowerCase() === String(host).toLowerCase() && x.simulated === !!sim);
+  // Para el recorrido: un equipo vuelve con otro nombre y conserva su lugar.
+  window.__renombrar = (antes, ahora) => {
+    const x = enSala(antes, false);
+    x.hostname = ahora;
+    sala.renamed = [{ from: antes, to: ahora }];
+    emitSala();
+  };
+
   const view = () => ({
-    active: !scene.startsWith("setup"), class: cls, students: studentsView(), history, deliveries,
+    active: !scene.startsWith("setup"), class: cls, students: studentsView(), history, deliveries, room: salaVista(),
     hotkey: scene === "atajo-ocupado"
       ? { combo: "Ctrl+Alt+Shift+C", active: false, reason: "InUse", error: "" }
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
@@ -551,6 +588,48 @@
     }),
     ClassEnd: call("ClassEnd", () => (fin ? JSON.parse(JSON.stringify(fin)) : { endId: "", at: "0001-01-01T00:00:00Z", running: false, steps: [], students: [], clean: 0, missing: 0 })),
     AllowedApps: call("AllowedApps", () => allowed),
+    Room: call("Room", salaVista),
+    ResizeRoom: call("ResizeRoom", (rows, cols) => {
+      if (rows < 1 || rows > 12 || cols < 1 || cols > 12) return new Error("aula:roomInvalid: el salón no es válido: size");
+      sala.rows = rows; sala.cols = cols;
+      sala.places = sala.places.filter((p) => p.row <= rows && p.col <= cols);
+      for (const x of sala.computers) if (x.seat && (x.seat.row > rows || x.seat.col > cols)) x.seat = null;
+      return emitSala();
+    }),
+    SetRoomPlace: call("SetRoomPlace", (row, col, kind) => {
+      sala.places = sala.places.filter((p) => !(p.row === row && p.col === col));
+      if (kind) {
+        for (const x of sala.computers) if (x.seat && x.seat.row === row && x.seat.col === col) x.seat = null;
+        sala.places.push({ row, col, kind });
+      }
+      return emitSala();
+    }),
+    MoveComputer: call("MoveComputer", (host, sim, row, col) => {
+      const x = enSala(host, sim);
+      if (!x) return new Error("aula:roomComputerGone: ese equipo ya no está en el salón");
+      if (!row) { x.seat = null; return emitSala(); }
+      if (sala.places.some((p) => p.row === row && p.col === col)) return new Error("aula:roomSpecialPlace: ese lugar es el escritorio del profesor o un pasillo: quítalo primero");
+      const otro = sala.computers.find((y) => y !== x && y.seat && y.seat.row === row && y.seat.col === col);
+      if (otro) otro.seat = x.seat;
+      x.seat = { row, col };
+      return emitSala();
+    }),
+    SetComputerLabel: call("SetComputerLabel", (host, sim, label) => {
+      const x = enSala(host, sim);
+      if (!x) return new Error("aula:roomComputerGone: ese equipo ya no está en el salón");
+      if ([...label].length > 40 || /[\u0000-\u001f]/.test(label)) return new Error("aula:labelInvalid: la etiqueta pasa de 40 caracteres o tiene saltos de línea");
+      x.label = label.trim();
+      return emitSala();
+    }),
+    ForgetRoomComputer: call("ForgetRoomComputer", (host) => {
+      sala.computers = sala.computers.filter((x) => x !== enSala(host, false));
+      return emitSala();
+    }),
+    ExportRoom: call("ExportRoom", () => "C:\\Users\\profe\\Documents\\salon-canal-1.json"),
+    PreviewRoomImport: call("PreviewRoomImport", () => ({ path: "D:\\salon-canal-2.json", channel: "2", rows: 6, cols: 8,
+      computers: 32, labeled: 30, seated: 30, otherChannel: true })),
+    ImportRoom: call("ImportRoom", () => emitSala()),
+    OpenRoomFolder: call("OpenRoomFolder"),
     DefaultAllowedApps: call("DefaultAllowedApps", () => appsEjemplo.slice()),
     SaveAllowedApps: call("SaveAllowedApps", (apps) => {
       if (apps.some((a) => !a.name.trim() || !/\.exe$/i.test(a.path.trim()) || /\\(cmd|powershell)\.exe$/i.test(a.path.trim()))) {

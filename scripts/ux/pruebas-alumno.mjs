@@ -810,14 +810,25 @@ await caso("capacidades", "conectado", async (p) => {
   const c = await p.evaluate(() => ({ abierto: document.getElementById("dlg-capacidades").open,
     total: document.querySelectorAll("#capacidades-lista .capacidad").length,
     si: document.querySelectorAll("#capacidades-lista .capacidad--si").length,
-    tip: document.querySelector("#capacidades-lista .capacidad").dataset.tip }));
+    tip: document.querySelector("#capacidades-lista .capacidad").dataset.tip,
+    equipo: document.getElementById("capacidades-equipo-texto").textContent,
+    foco: document.activeElement.id }));
   ok(c.abierto, "el diálogo no se abrió");
+  // Este equipo (prompt 10.15): la etiqueta del profesor y el nombre del equipo, para el soporte.
+  ok(c.equipo === "Este equipo: Fila 2 · PC07 (LAB3-PC07)", "este equipo: " + c.equipo);
   ok(c.total === 20 && c.si === 18, "grilla " + JSON.stringify(c));
   ok(c.tip === "Recibir código para copiar: sí", "tooltip: " + c.tip);
   await p.keyboard.press("Escape");
   await sleep(100);
   const f = await p.evaluate(() => ({ abierto: document.getElementById("dlg-capacidades").open, foco: document.activeElement.id }));
   ok(!f.abierto && f.foco === "capacidades", "Esc: " + JSON.stringify(f));
+});
+// Sin etiqueta, solo el nombre del equipo (prompt 10.15).
+await caso("capacidades-sin-etiqueta", "sin-etiqueta", async (p) => {
+  await p.click("#capacidades");
+  await sleep(150);
+  const t = await p.evaluate(() => document.getElementById("capacidades-equipo-texto").textContent);
+  ok(t === "Este equipo: LAB3-PC07", "sin etiqueta: " + t);
 });
 // Mensaje al profesor en su propio diálogo (nota de interfaz 12).
 await caso("mensaje-dialogo", "conectado", async (p) => {

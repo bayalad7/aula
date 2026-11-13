@@ -19,7 +19,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 3 | **Terminar la clase** | Bajo el Selector de clase: detiene lo activo y deja limpia la ventana de cada alumno (prompt 10.14). |
 | 4 | **Cabecera de la vista** | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | 5 | **Selección** | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
-| 6 | **Selector Lista | Miniaturas** | Cambia entre la tabla y las miniaturas de pantalla. |
+| 6 | **Selector Lista | Miniaturas | Salón** | Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón. |
 | 7 | **Mostrar apagados** | Muestra en la lista los equipos que la consola conoce y no están conectados, con Encender y Olvidar; solo en Lista y se recuerda (prompt 10.19). |
 | 8 | **Lista de alumnos** | Tabla con un alumno por fila. |
 | 9 | **Fila del alumno** | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha; en un equipo sin conexión, Encender. |
@@ -31,7 +31,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tamaño de las miniaturas** | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; solo en Miniaturas y se recuerda. |
+| 1 | **Tamaño de las miniaturas** | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda. |
 | 2 | **Miniaturas** | Cuadrícula con la pantalla de cada alumno. |
 | 3 | **Tarjeta del alumno** | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
 | 4 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
@@ -52,7 +52,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Pantalla grande** | La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno. |
-| 2 | **Acciones sobre el alumno** | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Pausar pantalla y Abrir página o app (ACCIONES_ALUMNO en main.js). |
+| 2 | **Acciones sobre el alumno** | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Pausar pantalla, Abrir página o app y Etiqueta del equipo (ACCIONES_ALUMNO en main.js). |
 
 ### Consola · Franja global y un panel de la barra
 
@@ -98,7 +98,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Ajustes** | Diálogo con Clase, Apariencia, Apps permitidas y Acerca de. |
+| 1 | **Ajustes** | Diálogo con Clase, Apariencia, Apps permitidas, Salón y Acerca de. |
 | 2 | **Apps permitidas** | Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos. |
 
 ### Consola · Código
@@ -164,6 +164,28 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 |---|---|---|
 | 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
 | 2 | **Sección Encuestas** | La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones. |
+
+### Consola · Alumnos (salón)
+
+![Consola · Alumnos (salón)](mapa/consola-alumnos-salon.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Selector Lista | Miniaturas | Salón** | Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón. |
+| 2 | **Alumnos en el salón** | Las tarjetas de los alumnos en su lugar del salón; el lugar de un equipo sin conexión se ve vacío, con Encender. Los números de fila y columna seleccionan a los de esa fila o columna (prompt 10.15). |
+| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+
+### Consola · Salón
+
+![Consola · Salón](mapa/consola-salon.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Menú** | Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes. |
+| 2 | **Filas, columnas y lugar** | El tamaño del salón (hasta 12 × 12) y qué pone un clic: mover equipos, Profesor, Pasillo o Vacío. |
+| 3 | **Plano del salón** | Un botón por lugar, con el frente del salón arriba: se arrastra cada equipo a su lugar, o con el teclado (flechas, Enter y Esc). |
+| 4 | **Sin acomodar** | Los equipos sin lugar: los nuevos y los que la consola recuerda; soltar uno aquí lo saca del plano. |
+| 5 | **Equipo elegido** | El equipo elegido: su nombre, lugar y estado, su etiqueta con Guardar etiqueta, Quitar de su lugar y Quitar del salón. |
 
 ### Consola · Cuestionarios
 
@@ -291,20 +313,22 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `franja` | Franja global | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
 | `cabecera` | Cabecera de la vista | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | `avisos` | Avisos (toasts) | Mensajes breves abajo a la derecha tras una acción. |
-| `alumnos` | Vista Alumnos | Los alumnos del canal, en lista o miniaturas. |
-| `alumnos-modo` | Vista Alumnos › Selector Lista | Miniaturas | Cambia entre la tabla y las miniaturas de pantalla. |
+| `alumnos` | Vista Alumnos | Los alumnos del canal, en lista, miniaturas o como en el salón. |
+| `alumnos-modo` | Vista Alumnos › Selector Lista | Miniaturas | Salón | Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón. |
 | `alumnos-lista` | Vista Alumnos › Lista de alumnos | Tabla con un alumno por fila. |
 | `fila-alumno` | Vista Alumnos › Lista de alumnos › Fila del alumno | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha; en un equipo sin conexión, Encender. |
 | `alumnos-seleccion` | Vista Alumnos › Selección | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
 | `alumnos-apagados` | Vista Alumnos › Mostrar apagados | Muestra en la lista los equipos que la consola conoce y no están conectados, con Encender y Olvidar; solo en Lista y se recuerda (prompt 10.19). |
-| `alumnos-tamano` | Vista Alumnos › Tamaño de las miniaturas | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; solo en Miniaturas y se recuerda. |
+| `alumnos-tamano` | Vista Alumnos › Tamaño de las miniaturas | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda. |
 | `alumnos-miniaturas` | Vista Alumnos › Miniaturas | Cuadrícula con la pantalla de cada alumno. |
 | `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
+| `alumnos-salon` | Vista Alumnos › Alumnos en el salón | Las tarjetas de los alumnos en su lugar del salón; el lugar de un equipo sin conexión se ve vacío, con Encender. Los números de fila y columna seleccionan a los de esa fila o columna (prompt 10.15). |
 | `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
 | `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande. |
 | `ficha-puede` | Ficha del alumno › Qué puede hacer su equipo | Lista de capacidades del equipo del alumno. |
 | `pantalla-grande` | Pantalla grande | La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno. |
-| `pg-acciones` | Pantalla grande › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Pausar pantalla y Abrir página o app (ACCIONES_ALUMNO en main.js). |
+| `pg-acciones` | Pantalla grande › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Pausar pantalla, Abrir página o app y Etiqueta del equipo (ACCIONES_ALUMNO en main.js). |
+| `dlg-etiqueta` | Diálogo Etiqueta del equipo | Cambiar o quitar la etiqueta de un equipo; se abre desde la Pantalla grande (prompt 10.15). |
 | `dlg-privado` | Diálogo Mensaje privado | Escribir un mensaje solo para un alumno, con su tipo; se abre desde la Pantalla grande. |
 | `dlg-abrir` | Diálogo Abrir en un alumno | Abrir una página o una app permitida en el equipo de un alumno; se abre desde la Pantalla grande. |
 | `dlg-plantilla` | Diálogo Nueva plantilla | Crear una plantilla con su nombre y sus archivos; se abre desde Plantillas (nota de interfaz 17). |
@@ -336,6 +360,11 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `reco-nueva` | Vista Archivos › Recolecciones › Nueva recolección | Actividad, tipos de archivo y «Crear carpeta en los equipos». |
 | `recoleccion` | Vista Archivos › Recolecciones › Tarjeta de recolección | Una actividad: Recoger, Recoger a los que faltan, Abrir carpeta y la tabla por alumno. |
 | `reco-fila` | Vista Archivos › Recolecciones › Tarjeta de recolección › Fila de la recolección | Un alumno: estado, qué llegó, cuándo, Abrir, Guardar como… y Recoger otra vez. |
+| `salon` | Vista Salón | El plano del salón del canal: etiqueta y lugar de cada equipo, Exportar, Importar y Abrir carpeta. |
+| `salon-herramientas` | Vista Salón › Filas, columnas y lugar | El tamaño del salón (hasta 12 × 12) y qué pone un clic: mover equipos, Profesor, Pasillo o Vacío. |
+| `salon-plano` | Vista Salón › Plano del salón | Un botón por lugar, con el frente del salón arriba: se arrastra cada equipo a su lugar, o con el teclado (flechas, Enter y Esc). |
+| `salon-sin` | Vista Salón › Sin acomodar | Los equipos sin lugar: los nuevos y los que la consola recuerda; soltar uno aquí lo saca del plano. |
+| `salon-elegido` | Vista Salón › Equipo elegido | El equipo elegido: su nombre, lugar y estado, su etiqueta con Guardar etiqueta, Quitar de su lugar y Quitar del salón. |
 | `cuestionarios` | Vista Cuestionarios | Los cuestionarios guardados, su editor y Lanzar; los resultados van en Participación › Encuestas. |
 | `cuest-guardados` | Vista Cuestionarios › Cuestionarios guardados | Los de Documentos\Aula\cuestionarios con «Lanzar a» (todos o la selección), Lanzar, Editar, Eliminar, Nuevo cuestionario y Abrir carpeta. |
 | `cuest-editor` | Vista Cuestionarios › Editor de cuestionario | Título, tiempo, al azar y cada pregunta con su tipo, puntos y opciones con el interruptor Correcta; Guardar y Guardar y lanzar. |
@@ -348,8 +377,9 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `ayuda` | Vista Ayuda (manual) | El manual, con búsqueda e índice. |
 | `panel-ayuda` | Panel de ayuda contextual | La página del manual de la vista actual, al costado. |
 | `falta` | Vista ¿Falta un alumno? | Comprobar la conexión y el asistente paso a paso. |
-| `ajustes` | Ajustes | Diálogo con Clase, Apariencia, Apps permitidas y Acerca de. |
+| `ajustes` | Ajustes | Diálogo con Clase, Apariencia, Apps permitidas, Salón y Acerca de. |
 | `ajustes-apps` | Ajustes › Apps permitidas | Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos. |
+| `ajustes-salon` | Ajustes › Salón | El resumen del salón del canal, dónde se guarda, Abrir el salón, Exportar e Importar (prompt 10.15). |
 | `confirmar` | Diálogo de confirmación | «¿Seguro?» antes de una acción con consecuencias. |
 | `arranque` | Pantalla de arranque | Abrir la clase: canal y nombre. |
 

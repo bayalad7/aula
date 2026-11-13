@@ -17,22 +17,24 @@ export const zonas = {
     { id: "avisos", nombre: "Avisos (toasts)", selector: "#avisos", que: "Mensajes breves abajo a la derecha tras una acción." },
 
     // Alumnos
-    { id: "alumnos", nombre: "Vista Alumnos", selector: "[data-vista-de=alumnos]", que: "Los alumnos del canal, en lista o miniaturas." },
-    { id: "alumnos-modo", dentro: "alumnos", nombre: "Selector Lista | Miniaturas", selector: "[data-vista-de=alumnos] .segmentado", que: "Cambia entre la tabla y las miniaturas de pantalla." },
+    { id: "alumnos", nombre: "Vista Alumnos", selector: "[data-vista-de=alumnos]", que: "Los alumnos del canal, en lista, miniaturas o como en el salón." },
+    { id: "alumnos-modo", dentro: "alumnos", nombre: "Selector Lista | Miniaturas | Salón", selector: "[data-vista-de=alumnos] .segmentado", que: "Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón." },
     { id: "alumnos-lista", dentro: "alumnos", nombre: "Lista de alumnos", selector: "#alumnos-lista", que: "Tabla con un alumno por fila." },
     { id: "fila-alumno", dentro: "alumnos-lista", nombre: "Fila del alumno", selector: "#alumnos-filas > tr", que: "Un alumno: casilla, equipo, estado, insignias y el botón de su ficha; en un equipo sin conexión, Encender." },
     { id: "alumnos-seleccion", dentro: "alumnos", nombre: "Selección", selector: "#seleccion-texto", que: "A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip." },
     { id: "alumnos-apagados", dentro: "alumnos", nombre: "Mostrar apagados", selector: "#alumnos-apagados-campo", que: "Muestra en la lista los equipos que la consola conoce y no están conectados, con Encender y Olvidar; solo en Lista y se recuerda (prompt 10.19)." },
-    { id: "alumnos-tamano", dentro: "alumnos", nombre: "Tamaño de las miniaturas", selector: "#tamano-miniaturas", que: "Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; solo en Miniaturas y se recuerda." },
+    { id: "alumnos-tamano", dentro: "alumnos", nombre: "Tamaño de las miniaturas", selector: "#tamano-miniaturas", que: "Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda." },
     { id: "alumnos-miniaturas", dentro: "alumnos", nombre: "Miniaturas", selector: "#alumnos-miniaturas", que: "Cuadrícula con la pantalla de cada alumno." },
     { id: "tarjeta-alumno", dentro: "alumnos-miniaturas", nombre: "Tarjeta del alumno", selector: "#alumnos-cuadricula > li", que: "La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande." },
+    { id: "alumnos-salon", dentro: "alumnos", nombre: "Alumnos en el salón", selector: "#alumnos-salon", que: "Las tarjetas de los alumnos en su lugar del salón; el lugar de un equipo sin conexión se ve vacío, con Encender. Los números de fila y columna seleccionan a los de esa fila o columna (prompt 10.15)." },
     { id: "barra-acciones", dentro: "alumnos", nombre: "Barra de acciones", selector: ".barra-acciones", que: "Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…)." },
 
     // Paneles y diálogos que salen de Alumnos
     { id: "ficha", nombre: "Ficha del alumno", selector: "#panel-alumno", que: "Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande." },
     { id: "ficha-puede", dentro: "ficha", nombre: "Qué puede hacer su equipo", selector: "#ficha-puede", que: "Lista de capacidades del equipo del alumno." },
     { id: "pantalla-grande", nombre: "Pantalla grande", selector: "#pantalla-grande", que: "La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno." },
-    { id: "pg-acciones", dentro: "pantalla-grande", nombre: "Acciones sobre el alumno", selector: "#pg-acciones", que: "Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Pausar pantalla y Abrir página o app (ACCIONES_ALUMNO en main.js)." },
+    { id: "pg-acciones", dentro: "pantalla-grande", nombre: "Acciones sobre el alumno", selector: "#pg-acciones", que: "Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Pausar pantalla, Abrir página o app y Etiqueta del equipo (ACCIONES_ALUMNO en main.js)." },
+    { id: "dlg-etiqueta", nombre: "Diálogo Etiqueta del equipo", selector: "#dlg-etiqueta", que: "Cambiar o quitar la etiqueta de un equipo; se abre desde la Pantalla grande (prompt 10.15)." },
     { id: "dlg-privado", nombre: "Diálogo Mensaje privado", selector: "#dlg-privado", que: "Escribir un mensaje solo para un alumno, con su tipo; se abre desde la Pantalla grande." },
     { id: "dlg-abrir", nombre: "Diálogo Abrir en un alumno", selector: "#dlg-abrir", que: "Abrir una página o una app permitida en el equipo de un alumno; se abre desde la Pantalla grande." },
     { id: "dlg-plantilla", nombre: "Diálogo Nueva plantilla", selector: "#dlg-plantilla", que: "Crear una plantilla con su nombre y sus archivos; se abre desde Plantillas (nota de interfaz 17)." },
@@ -69,6 +71,13 @@ export const zonas = {
     { id: "recoleccion", dentro: "recolecciones", nombre: "Tarjeta de recolección", selector: "#reco-lista > .recoleccion", que: "Una actividad: Recoger, Recoger a los que faltan, Abrir carpeta y la tabla por alumno." },
     { id: "reco-fila", dentro: "recoleccion", nombre: "Fila de la recolección", selector: "#reco-lista .reco-filas > tr", que: "Un alumno: estado, qué llegó, cuándo, Abrir, Guardar como… y Recoger otra vez." },
 
+    // Salón (prompt 10.15): módulo propio del menú, el plano del canal
+    { id: "salon", nombre: "Vista Salón", selector: "[data-vista-de=salon]", que: "El plano del salón del canal: etiqueta y lugar de cada equipo, Exportar, Importar y Abrir carpeta." },
+    { id: "salon-herramientas", dentro: "salon", nombre: "Filas, columnas y lugar", selector: "[data-vista-de=salon] .tarjeta__cuerpo > .fila", que: "El tamaño del salón (hasta 12 × 12) y qué pone un clic: mover equipos, Profesor, Pasillo o Vacío." },
+    { id: "salon-plano", dentro: "salon", nombre: "Plano del salón", selector: "#salon-plano", que: "Un botón por lugar, con el frente del salón arriba: se arrastra cada equipo a su lugar, o con el teclado (flechas, Enter y Esc)." },
+    { id: "salon-sin", dentro: "salon", nombre: "Sin acomodar", selector: "#salon-sin", que: "Los equipos sin lugar: los nuevos y los que la consola recuerda; soltar uno aquí lo saca del plano." },
+    { id: "salon-elegido", dentro: "salon", nombre: "Equipo elegido", selector: ".salon__elegido", que: "El equipo elegido: su nombre, lugar y estado, su etiqueta con Guardar etiqueta, Quitar de su lugar y Quitar del salón." },
+
     // Cuestionarios (prompt 10.20): módulo propio del menú
     { id: "cuestionarios", nombre: "Vista Cuestionarios", selector: "[data-vista-de=cuestionarios]", que: "Los cuestionarios guardados, su editor y Lanzar; los resultados van en Participación › Encuestas." },
     { id: "cuest-guardados", dentro: "cuestionarios", nombre: "Cuestionarios guardados", selector: "#cuest-guardados", que: "Los de Documentos\\Aula\\cuestionarios con «Lanzar a» (todos o la selección), Lanzar, Editar, Eliminar, Nuevo cuestionario y Abrir carpeta." },
@@ -86,8 +95,9 @@ export const zonas = {
     { id: "ayuda", nombre: "Vista Ayuda (manual)", selector: "[data-vista-de=ayuda]", que: "El manual, con búsqueda e índice." },
     { id: "panel-ayuda", nombre: "Panel de ayuda contextual", selector: "#panel-ayuda", que: "La página del manual de la vista actual, al costado." },
     { id: "falta", nombre: "Vista ¿Falta un alumno?", selector: "[data-vista-de=falta]", que: "Comprobar la conexión y el asistente paso a paso." },
-    { id: "ajustes", nombre: "Ajustes", selector: "#ajustes", que: "Diálogo con Clase, Apariencia, Apps permitidas y Acerca de." },
+    { id: "ajustes", nombre: "Ajustes", selector: "#ajustes", que: "Diálogo con Clase, Apariencia, Apps permitidas, Salón y Acerca de." },
     { id: "ajustes-apps", dentro: "ajustes", nombre: "Apps permitidas", selector: "#aj-apps", que: "Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos." },
+    { id: "ajustes-salon", dentro: "ajustes", nombre: "Salón", selector: "#aj-salon", que: "El resumen del salón del canal, dónde se guarda, Abrir el salón, Exportar e Importar (prompt 10.15)." },
     { id: "confirmar", nombre: "Diálogo de confirmación", selector: "#confirmar", que: "«¿Seguro?» antes de una acción con consecuencias." },
     { id: "arranque", nombre: "Pantalla de arranque", selector: "#arranque", que: "Abrir la clase: canal y nombre." },
   ],

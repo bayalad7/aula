@@ -45,6 +45,22 @@ SemVer).
   por centro. Recomendación: decidirlo con 10.13 (cuentas por alumno), que separa el trabajo de
   cada grupo.
 
+## P-04 · Encender equipos de otra subred por relevo
+
+- **Pide:** prompt 10.19: que la consola pueda encender equipos aunque esté en otra subred o VLAN
+  que el laboratorio, donde su paquete mágico no llega (el broadcast no cruza routers).
+- **Hoy:** la consola manda el paquete por su propia red (§5.15.2) y avisa «Otra red» cuando no
+  está en la del equipo. Decisión del 2026-11-12: el relevo no entra en esta versión.
+- **Necesitaría:** un mensaje `power.wake` (P → A, `{macs: [...]}`) con la capacidad `power.wake`:
+  un agente ya encendido de esa subred manda los paquetes por su red. Límites: hasta 32 MAC por
+  mensaje y 64 por minuto, solo paquetes mágicos (102 bytes al puerto 9 del broadcast de su
+  propia tarjeta), nunca UDP arbitrario. Compatible si es opcional (versión menor).
+- **Seguridad y riesgo:** el agente pasaría a mandar tráfico de red por orden de la consola. Es
+  poco, pero amplía lo que una consola con la clave del centro puede hacer en la red del alumno.
+  También hace falta que quede un equipo encendido en esa subred. Recomendación: esperar a que un
+  laboratorio real lo necesite; mientras, que sistemas deje pasar el broadcast dirigido hacia la
+  VLAN del laboratorio.
+
 ## Notas (no son cambios de protocolo)
 
 - **Columna «Canal»** (Fase 3, punto 2): no se agrega a la lista porque todos los alumnos que ve la

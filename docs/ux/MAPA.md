@@ -20,9 +20,10 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 4 | **Cabecera de la vista** | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | 5 | **Selección** | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
 | 6 | **Selector Lista | Miniaturas** | Cambia entre la tabla y las miniaturas de pantalla. |
-| 7 | **Lista de alumnos** | Tabla con un alumno por fila. |
-| 8 | **Fila del alumno** | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha. |
-| 9 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 7 | **Mostrar apagados** | Muestra en la lista los equipos que la consola conoce y no están conectados, con Encender y Olvidar; solo en Lista y se recuerda (prompt 10.19). |
+| 8 | **Lista de alumnos** | Tabla con un alumno por fila. |
+| 9 | **Fila del alumno** | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha; en un equipo sin conexión, Encender. |
+| 10 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
 
 ### Consola · Alumnos (miniaturas)
 
@@ -265,8 +266,9 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `alumnos` | Vista Alumnos | Los alumnos del canal, en lista o miniaturas. |
 | `alumnos-modo` | Vista Alumnos › Selector Lista | Miniaturas | Cambia entre la tabla y las miniaturas de pantalla. |
 | `alumnos-lista` | Vista Alumnos › Lista de alumnos | Tabla con un alumno por fila. |
-| `fila-alumno` | Vista Alumnos › Lista de alumnos › Fila del alumno | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha. |
+| `fila-alumno` | Vista Alumnos › Lista de alumnos › Fila del alumno | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha; en un equipo sin conexión, Encender. |
 | `alumnos-seleccion` | Vista Alumnos › Selección | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
+| `alumnos-apagados` | Vista Alumnos › Mostrar apagados | Muestra en la lista los equipos que la consola conoce y no están conectados, con Encender y Olvidar; solo en Lista y se recuerda (prompt 10.19). |
 | `alumnos-tamano` | Vista Alumnos › Tamaño de las miniaturas | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; solo en Miniaturas y se recuerda. |
 | `alumnos-miniaturas` | Vista Alumnos › Miniaturas | Cuadrícula con la pantalla de cada alumno. |
 | `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
@@ -286,7 +288,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `panel-restricciones` | Panel Restricciones | Bloquear aplicaciones y filtrar sitios. |
 | `panel-captura` | Panel Captura | Tomar capturas de varios alumnos. |
 | `panel-temporizador` | Panel Temporizador | Lanzar un temporizador de ejercicio. |
-| `panel-energia` | Panel Energía | Apagar, reiniciar o cerrar sesión. |
+| `panel-energia` | Panel Energía | Apagar, reiniciar, cerrar sesión o encender los equipos apagados. |
 | `panel-encuesta` | Panel Encuesta | La pregunta, el tipo de respuesta, las opciones y «Ver quién respondió qué»; Lanzar a todos o a la selección. |
 | `panel-abrir` | Panel Abrir página o app | Abrir una página en el navegador o una app permitida en los equipos de la selección, y las últimas que abriste. |
 | `captura` | Vista previa de captura | La captura de un alumno, con Guardar y Descartar. |

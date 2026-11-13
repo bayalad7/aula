@@ -15,7 +15,7 @@ const miniaturas = seq(click('[data-modo="miniaturas"]'), cuadros(["LAB3-PC07", 
 // Cada pantalla: app, escena, cómo llegar y qué zonas numerar (ids de zonas.mjs).
 const pantallas = [
   { app: "profesor", archivo: "consola-alumnos", titulo: "Consola · Alumnos (lista)", escena: "lab",
-    zonas: ["menu", "menu-clase", "menu-terminar", "cabecera", "alumnos-seleccion", "alumnos-modo", "alumnos-lista", "fila-alumno", "barra-acciones"] },
+    zonas: ["menu", "menu-clase", "menu-terminar", "cabecera", "alumnos-seleccion", "alumnos-modo", "alumnos-apagados", "alumnos-lista", "fila-alumno", "barra-acciones"] },
   { app: "profesor", archivo: "consola-miniaturas", titulo: "Consola · Alumnos (miniaturas)", escena: "lab", pasos: miniaturas,
     zonas: ["alumnos-tamano", "alumnos-miniaturas", "tarjeta-alumno", "barra-acciones"] },
   { app: "profesor", archivo: "consola-ficha", titulo: "Consola · Ficha del alumno", escena: "lab", h: 900,

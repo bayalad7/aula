@@ -59,6 +59,7 @@ func TestNoBindingTurnsOffTransparency(t *testing.T) {
 		"LowerHand":          "the student lowers their own hand; no indicator involved",
 		"SendTeacherMessage": "sends a message to the teacher; no indicator involved",
 		"AnswerPoll":         "the student answers a poll (§5.23, rule 71); no indicator involved",
+		"AnswerQuiz":         "the student answers or hands in a quiz (§5.23.1, rule 87); no indicator involved",
 		"OpenReceivedFolder": "opens in Explorer the folder of a push it saved (rule 56); no indicator involved",
 		// Rule 61: only the activity folder the agent created, by its ID.
 		"OpenCollectionFolder": "opens in Explorer the activity folder of a collection (rule 61); no indicator involved",

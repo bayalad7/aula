@@ -35,16 +35,17 @@ const (
 	pollBadVote      = "badVote"
 	pollTooSoon      = "tooSoon"
 	pollUnsupported  = "unsupported" // an older console
+	pollHandedIn     = "handedIn"    // a quiz already handed in (§5.23.1)
 )
 
 // pollErrorCodes lists them all, for the texts test.
-var pollErrorCodes = []string{pollNoConnection, pollUnknown, pollClosed, pollEmpty, pollTooLong, pollBadVote, pollTooSoon, pollUnsupported}
+var pollErrorCodes = []string{pollNoConnection, pollUnknown, pollClosed, pollEmpty, pollTooLong, pollBadVote, pollTooSoon, pollUnsupported, pollHandedIn}
 
 func pollErrorOf(err error) error {
 	for target, code := range map[error]string{
 		poll.ErrUnknown: pollUnknown, poll.ErrClosed: pollClosed, poll.ErrEmpty: pollEmpty,
 		poll.ErrTooLong: pollTooLong, poll.ErrBadVote: pollBadVote, poll.ErrTooSoon: pollTooSoon,
-		poll.ErrNoAnswer: pollUnsupported,
+		poll.ErrNoAnswer: pollUnsupported, poll.ErrHandedIn: pollHandedIn,
 	} {
 		if errors.Is(err, target) {
 			return partError(code)
@@ -64,10 +65,13 @@ func (a *App) handlePoll(ctx context.Context, cl *transport.Client, env protocol
 		ack = &got
 		if isNew {
 			arrived = p.PollID
-			a.log.Info("poll arrived", "poll", p.PollID, "kind", p.Kind, "named", p.Named, "options", len(p.Options))
+			a.log.Info("poll arrived", "poll", p.PollID, "kind", p.Kind, "named", p.Named, "options", len(p.Options), "questions", len(p.Questions))
 		}
 		if resend != nil {
 			a.sendVote(ctx, cl, *resend)
+		}
+		if p.Kind == protocol.PollKindQuiz {
+			a.flushQuiz(p.PollID) // answers marked while disconnected
 		}
 	case protocol.PollClose:
 		got, ok := a.ballot.Close(env.ID, p)
@@ -83,6 +87,14 @@ func (a *App) handlePoll(ctx context.Context, cl *transport.Client, env protocol
 		}
 		ack = &got
 		a.log.Info("poll results", "poll", p.PollID, "voters", p.Voters, "recipients", p.Recipients)
+	case protocol.PollQuizResult:
+		got, ok := a.ballot.QuizResult(env.ID, p)
+		if !ok {
+			return true
+		}
+		ack = &got
+		// Never the score: only that it arrived (rule 91).
+		a.log.Info("quiz result", "poll", p.PollID)
 	case protocol.PollVoteAck:
 		if !a.ballot.VoteAck(p) {
 			return true
@@ -149,4 +161,50 @@ func (a *App) AnswerPoll(pollID string, choice int, text string) (poll.BallotVie
 	a.log.Info("poll answered", "poll", pollID, "text_len", utf8.RuneCountInString(v.Text))
 	a.emitPolls("")
 	return a.ballot.View(), nil
+}
+
+// AnswerQuiz keeps the student's answers to a quiz (all of them so far: the
+// question ID and the option IDs) and, with submit, hands it in. The window
+// calls it each time the student marks an option and with «Entregar»;
+// the answers go at most once per second, only the last (§5.23.1).
+func (a *App) AnswerQuiz(pollID string, answers []protocol.PollQuizAnswer, submit bool) (poll.BallotView, error) {
+	if a.remote != nil {
+		var v poll.BallotView
+		err := a.forward("AnswerQuiz", &v, pollID, answers, submit)
+		return v, err
+	}
+	if a.connection() == nil {
+		return a.ballot.View(), partError(pollNoConnection)
+	}
+	if err := a.ballot.AnswerQuiz(pollID, answers, submit); err != nil {
+		return a.ballot.View(), pollErrorOf(err)
+	}
+	a.flushQuiz(pollID)
+	a.log.Info("quiz answered", "poll", pollID, "answers", len(answers), "submitted", submit)
+	a.emitPolls("")
+	return a.ballot.View(), nil
+}
+
+// flushQuiz sends the quiz answers waiting, at the pace of the ballot; if
+// it is too soon it tries again when it is time.
+func (a *App) flushQuiz(pollID string) {
+	v, wait := a.ballot.NextQuizVote(pollID)
+	if wait > 0 {
+		time.AfterFunc(wait, func() {
+			a.flushQuiz(pollID)
+			a.emitPolls("")
+		})
+		return
+	}
+	if v == nil {
+		return
+	}
+	cl := a.connection()
+	if cl == nil {
+		a.ballot.Unsent(*v) // the console sends the quiz again on the next connection
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	a.sendVote(ctx, cl, *v)
 }

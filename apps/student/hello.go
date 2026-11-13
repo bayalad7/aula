@@ -49,7 +49,8 @@ func localHello() protocol.HelloInfo {
 		OSVersion:    runtime.GOOS + "/" + runtime.GOARCH,
 		AgentVersion: version,
 		// hand and msg.student: the window has the buttons (§5.18); timer:
-		// the badge of the strip (§5.19); poll: the poll cards (§5.23).
-		Capabilities: []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapPoll, protocol.CapClassEnd},
+		// the badge of the strip (§5.19); poll: the poll cards (§5.23); poll.quiz:
+		// the quiz cards of several questions (§5.23.1).
+		Capabilities: []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapPoll, protocol.CapPollQuiz, protocol.CapClassEnd},
 	}
 }

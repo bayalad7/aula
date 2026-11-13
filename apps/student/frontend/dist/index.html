@@ -322,6 +322,45 @@
     </li>
   </template>
 
+  <!-- Cuestionario (docs/protocol.md §5.23.1; privacidad, reglas 87-91): una pregunta a la vez,
+       con Anterior y Siguiente, «Entregar» y, si el profesor lo comparte, solo tu resultado. -->
+  <template id="cuestionario-template">
+    <li class="codigo-recibido encuesta cuestionario">
+      <div class="codigo-recibido__cabecera">
+        <div class="codigo-recibido__info">
+          <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cuestionario"/></svg>
+          <h2 class="codigo-recibido__titulo encuesta-titulo" data-t="cuestionario.titulo"></h2>
+          <span class="insignia insignia--conectado nuevo" hidden></span>
+          <span class="insignia encuesta-estado-insignia"></span>
+          <span class="codigo-recibido__meta encuesta-hora"></span>
+        </div>
+      </div>
+      <div class="archivo-recibido__cuerpo cuestionario-cuerpo">
+        <p class="cuestionario-nombre"></p>
+        <p class="suave cuestionario-privacidad" data-t="cuestionario.nominal"></p>
+        <p class="pequeno cuestionario-progreso"></p>
+        <fieldset class="encuesta-campo cuestionario-pregunta">
+          <legend class="encuesta-pregunta cuestionario-texto"></legend>
+          <p class="suave pequeno cuestionario-indicacion"></p>
+          <div class="encuesta-opciones cuestionario-opciones"></div>
+        </fieldset>
+        <div class="grupo-botones cuestionario-nav">
+          <button type="button" class="btn btn--sm cuestionario-anterior" data-icono="volver" data-t="cuestionario.anterior"></button>
+          <button type="button" class="btn btn--sm cuestionario-siguiente" data-icono="flecha-der" data-t="cuestionario.siguiente"></button>
+          <button type="button" class="btn btn--primario btn--sm cuestionario-entregar" data-icono="enviar" data-t="cuestionario.entregar"></button>
+        </div>
+        <p class="campo__ayuda cuestionario-confirmar" hidden></p>
+        <p class="campo__error encuesta-error" role="alert" hidden></p>
+        <p class="encuesta-voto" role="status"></p>
+        <div class="cuestionario-resultado" hidden>
+          <h3 class="encuesta-resultados__titulo" data-t="cuestionario.tuResultado"></h3>
+          <p class="cuestionario-puntaje"></p>
+          <ol class="cuestionario-detalle"></ol>
+        </div>
+      </div>
+    </li>
+  </template>
+
   <template id="notice-template">
     <div class="toast notice">
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg>

@@ -4,7 +4,7 @@
 // BroadcastFailed; los del aviso de energía: PowerPostpone, DismissPower; y los
 // de la mano y los mensajes al profesor: RaiseHand, LowerHand, SendTeacherMessage; y
 // «Abrir carpeta» de los archivos recibidos y de las recolecciones: OpenReceivedFolder,
-// OpenCollectionFolder; y la respuesta a una encuesta: AnswerPoll).
+// OpenCollectionFolder; y la respuesta a una encuesta: AnswerPoll, y a un cuestionario: AnswerQuiz).
 // Go manda estados; los textos salen de textos.es-MX.js (T) y el título de la
 // ventana lo pone esta página (docs/privacidad.md, regla 1).
 // Seguridad: todo texto recibido se inserta con textContent; el único HTML es
@@ -779,28 +779,220 @@
     caja.querySelector(".encuesta-total").textContent = T("encuesta.total", { n: total, total: c.results.recipients });
   }
 
+  // --- Cuestionarios (docs/protocol.md §5.23.1; privacidad, reglas 87-91) --------------------------
+  // La tarjeta muestra una pregunta a la vez, con Anterior y Siguiente (botones, con teclado), y
+  // cuántas lleva. Cada vez que marca algo se guarda (Go lo manda como mucho una vez por segundo,
+  // solo lo último); «Entregar» lo deja fijo. Lo marcado vive aquí hasta que llega del backend.
+  const cuestionarioTpl = $("cuestionario-template");
+  const quizIdx = new Map();    // pollId → pregunta a la vista
+  const quizMarcas = new Map(); // pollId → Map(qid → Set(opciones))
+  const quizConfirmar = new Set(); // pollId: «Entregar así» pedido con preguntas sin responder
+  const opcionesPregunta = (q) => (q.kind === "yesno"
+    ? [{ id: 0, text: T("encuesta.si") }, { id: 1, text: T("encuesta.no") }] : q.options || []);
+  const textoOpciones = (q, ids) => {
+    const por = new Map(opcionesPregunta(q).map((o) => [o.id, o.text]));
+    return ids.map((i) => por.get(i) || "").filter(Boolean).join(", ");
+  };
+  function marcasDe(c) {
+    let m = quizMarcas.get(c.pollId);
+    if (!m) {
+      m = new Map((c.answers || []).map((a) => [a.q, new Set(a.choices)]));
+      quizMarcas.set(c.pollId, m);
+    }
+    return m;
+  }
+  const respondidas = (c) => [...marcasDe(c).values()].filter((s) => s.size > 0).length;
+  const respuestasDe = (c) => [...marcasDe(c)].filter(([, s]) => s.size > 0)
+    .map(([q, s]) => ({ q, choices: [...s].sort((a, b) => a - b) })).sort((a, b) => a.q - b.q);
+  const editable = (c) => c.open && !c.submitted && c.vote !== "unsupported";
+
+  function guardarCuestionario(li, c, entregar) {
+    const error = li.querySelector(".encuesta-error");
+    error.hidden = true;
+    return api.AnswerQuiz(c.pollId, respuestasDe(c), entregar).then(renderEncuestas, (err) => {
+      error.textContent = errorEncuesta(err);
+      error.hidden = false;
+    });
+  }
+
+  function nodoCuestionario(c, nuevo) {
+    const li = cuestionarioTpl.content.firstElementChild.cloneNode(true);
+    aplicarTextos(li);
+    li.dataset.encuesta = c.pollId;
+    li.tabIndex = -1;
+    const marca = li.querySelector(".nuevo");
+    marca.textContent = T("codigo.nuevo");
+    marca.hidden = !nuevo;
+    const visto = () => { if (!marca.hidden) { marca.hidden = true; title(); pintarCompacto(); } };
+    li.addEventListener("focusin", visto);
+    li.addEventListener("pointerdown", visto);
+    // La primera sin responder; si ya respondió todas, la primera.
+    const m = marcasDe(c);
+    const primera = (c.questions || []).findIndex((q) => !(m.get(q.id) || new Set()).size);
+    quizIdx.set(c.pollId, Math.max(0, primera));
+    const mover = (d) => {
+      const actual = cartas.get(c.pollId) || c;
+      const n = (actual.questions || []).length;
+      quizIdx.set(c.pollId, Math.min(n - 1, Math.max(0, (quizIdx.get(c.pollId) || 0) + d)));
+      quizConfirmar.delete(c.pollId);
+      li.dataset.pregunta = "";
+      pintarCuestionario(li, actual);
+      li.querySelector(".cuestionario-opciones input")?.focus();
+    };
+    li.querySelector(".cuestionario-anterior").addEventListener("click", () => { visto(); mover(-1); });
+    li.querySelector(".cuestionario-siguiente").addEventListener("click", () => { visto(); mover(1); });
+    li.querySelector(".cuestionario-entregar").addEventListener("click", () => {
+      visto();
+      const actual = cartas.get(c.pollId) || c;
+      const faltan = (actual.questions || []).length - respondidas(actual);
+      if (faltan > 0 && !quizConfirmar.has(c.pollId)) {
+        quizConfirmar.add(c.pollId); // el segundo clic entrega así
+        pintarCuestionario(li, actual);
+        return;
+      }
+      quizConfirmar.delete(c.pollId);
+      const b = li.querySelector(".cuestionario-entregar");
+      b.setAttribute("aria-busy", "true");
+      guardarCuestionario(li, actual, true).finally(() => b.removeAttribute("aria-busy"));
+    });
+    return li;
+  }
+
+  // La pregunta a la vista: se arma de nuevo solo al cambiar de pregunta, para no perder el foco.
+  function pintarPregunta(li, c) {
+    const idx = quizIdx.get(c.pollId) || 0;
+    const q = (c.questions || [])[idx];
+    if (!q) return;
+    const caja = li.querySelector(".cuestionario-opciones");
+    const clave = c.pollId + ":" + q.id;
+    if (li.dataset.pregunta !== clave) {
+      li.dataset.pregunta = clave;
+      li.querySelector(".cuestionario-texto").textContent = T("cuestionario.preguntaN", { n: idx + 1, texto: q.text });
+      li.querySelector(".cuestionario-indicacion").textContent =
+        (q.multi ? T("cuestionario.varias") : q.kind === "yesno" ? T("cuestionario.siNo") : T("cuestionario.una")) + " " + P("cuestionario.puntos", q.points);
+      caja.replaceChildren();
+      for (const o of opcionesPregunta(q)) {
+        const label = document.createElement("label");
+        label.className = "opcion";
+        const input = document.createElement("input");
+        input.type = q.multi ? "checkbox" : "radio";
+        input.name = "cuestionario-" + c.pollId + "-" + q.id;
+        input.value = String(o.id);
+        input.addEventListener("change", () => {
+          const m = marcasDe(cartas.get(c.pollId) || c);
+          const sel = m.get(q.id) || new Set();
+          if (q.multi) { if (input.checked) sel.add(o.id); else sel.delete(o.id); }
+          else { sel.clear(); sel.add(o.id); }
+          m.set(q.id, sel);
+          quizConfirmar.delete(c.pollId);
+          guardarCuestionario(li, cartas.get(c.pollId) || c, false);
+          pintarCuestionario(li, cartas.get(c.pollId) || c);
+        });
+        const span = document.createElement("span");
+        span.textContent = o.text;
+        label.append(input, span);
+        caja.appendChild(label);
+      }
+    }
+    const sel = marcasDe(c).get(q.id) || new Set();
+    for (const x of caja.querySelectorAll("input")) {
+      x.checked = sel.has(Number(x.value));
+      x.disabled = !editable(c);
+    }
+  }
+
+  function pintarCuestionario(li, c) {
+    const n = (c.questions || []).length;
+    const idx = quizIdx.get(c.pollId) || 0;
+    li.querySelector(".cuestionario-nombre").textContent = c.question;
+    li.querySelector(".encuesta-hora").textContent = hora(c.at);
+    const insignia = li.querySelector(".encuesta-estado-insignia");
+    insignia.textContent = c.submitted ? T("cuestionario.entregado") : c.open ? T("encuesta.abierta") : T("encuesta.cerrada");
+    insignia.classList.toggle("insignia--conectado", c.open && !c.submitted);
+    const llevas = respondidas(c);
+    li.querySelector(".cuestionario-progreso").textContent = T("cuestionario.progreso", { n: idx + 1, total: n, llevas });
+    // Con el resultado del profesor, la pregunta y la navegación dejan su lugar al resultado.
+    const conResultado = !!c.result;
+    li.querySelector(".cuestionario-pregunta").hidden = conResultado;
+    li.querySelector(".cuestionario-progreso").hidden = conResultado;
+    if (!conResultado) pintarPregunta(li, c);
+    const nav = li.querySelector(".cuestionario-nav");
+    nav.hidden = conResultado;
+    li.querySelector(".cuestionario-anterior").disabled = idx === 0;
+    li.querySelector(".cuestionario-siguiente").disabled = idx >= n - 1;
+    const entregar = li.querySelector(".cuestionario-entregar");
+    entregar.hidden = !editable(c);
+    const confirmar = quizConfirmar.has(c.pollId) && editable(c);
+    entregar.textContent = confirmar ? T("cuestionario.entregarAsi") : T("cuestionario.entregar");
+    const aviso = li.querySelector(".cuestionario-confirmar");
+    aviso.hidden = !confirmar;
+    if (confirmar) aviso.textContent = P("cuestionario.faltan", n - llevas);
+    let voto = "";
+    if (c.submitted) voto = T("cuestionario.voto.entregado");
+    else if (!c.open && c.vote === "late") voto = T("cuestionario.voto.late");
+    else if (!c.open && llevas === 0) voto = T("cuestionario.cerradoSinRespuesta");
+    else if (!c.open) voto = T("cuestionario.cerradoGuardadas");
+    else if (c.vote === "accepted") voto = T("cuestionario.voto.accepted");
+    else if (c.vote === "sending") voto = T("cuestionario.voto.sending");
+    else if (c.vote !== "none") voto = T(EV + c.vote);
+    li.querySelector(".encuesta-voto").textContent = voto;
+    // Solo su resultado (regla 90): qué acertó y la correcta, con texto e icono, no solo color.
+    const caja = li.querySelector(".cuestionario-resultado");
+    caja.hidden = !conResultado;
+    if (!conResultado) return;
+    caja.querySelector(".cuestionario-puntaje").textContent = T("cuestionario.puntaje", { score: c.result.score, max: c.result.max });
+    // En el orden en que este alumno vio las preguntas.
+    const porId = new Map(c.result.questions.map((r) => [r.q, r]));
+    const filas = (c.questions || []).filter((q) => porId.has(q.id));
+    caja.querySelector(".cuestionario-detalle").replaceChildren(...filas.map((q, i) => {
+      const r = porId.get(q.id);
+      const fila = document.createElement("li");
+      fila.className = "cuestionario-fila";
+      const bien = r.earned > 0;
+      fila.dataset.acierto = bien ? "si" : "no";
+      const cab = document.createElement("p");
+      const ins = document.createElement("span");
+      ins.className = "insignia " + (bien ? "insignia--conectado" : "insignia--advertencia");
+      ins.append(iconoCap(bien ? "hecho" : "cerrar"), document.createTextNode(bien ? T("cuestionario.bien") : T("cuestionario.mal")));
+      const txt = document.createElement("span");
+      txt.textContent = " " + T("cuestionario.preguntaN", { n: i + 1, texto: q.text }) + " · " + P("cuestionario.puntosDe", q.points, { obtuvo: r.earned });
+      cab.append(ins, txt);
+      const det = document.createElement("p");
+      det.className = "suave pequeno";
+      const tuya = r.choices.length ? textoOpciones(q, r.choices) : T("cuestionario.sinRespuesta");
+      det.textContent = T("cuestionario.tuRespuesta", { respuesta: tuya }) + (bien ? "" : " · " + T("cuestionario.correcta", { respuesta: textoOpciones(q, r.correct) }));
+      fila.append(cab, det);
+      return fila;
+    }));
+  }
+
+  const cartas = new Map(); // pollId → la última tarjeta que mandó Go
   function renderEncuestas(v) {
     if (!v) return;
     const cards = v.cards || [];
+    cartas.clear();
+    for (const c of cards) cartas.set(c.pollId, c);
     const vivos = new Set(cards.map((c) => c.pollId));
     for (const [id, li] of nodosEncuesta) {
-      if (!vivos.has(id)) { li.remove(); nodosEncuesta.delete(id); }
+      if (!vivos.has(id)) { li.remove(); nodosEncuesta.delete(id); quizIdx.delete(id); quizMarcas.delete(id); quizConfirmar.delete(id); }
     }
     let anterior = null;
     for (const c of cards) { // lo más nuevo primero
       let li = nodosEncuesta.get(c.pollId);
       if (!li) {
-        li = nodoEncuesta(c, !encuestasPrimeraVez || v.arrived === c.pollId);
+        const nuevo = !encuestasPrimeraVez || v.arrived === c.pollId;
+        li = c.kind === "quiz" ? nodoCuestionario(c, nuevo) : nodoEncuesta(c, nuevo);
         nodosEncuesta.set(c.pollId, li);
       }
-      pintarEncuesta(li, c);
+      if (c.kind === "quiz") pintarCuestionario(li, c);
+      else pintarEncuesta(li, c);
       const lugar = anterior ? anterior.nextSibling : encuestasLista.firstChild;
       if (li !== lugar) encuestasLista.insertBefore(li, lugar);
       anterior = li;
     }
     if (v.arrived) {
       const c = cards.find((x) => x.pollId === v.arrived);
-      if (c) anunciar(T("encuesta.anuncio", { pregunta: c.question }));
+      if (c) anunciar(c.kind === "quiz" ? T("cuestionario.anuncio", { pregunta: c.question }) : T("encuesta.anuncio", { pregunta: c.question }));
     }
     encuestasPrimeraVez = false;
     nEncuestas = cards.length;
@@ -1166,6 +1358,7 @@
     ["code.view", "codigo", () => T("capacidad.codigo")], ["msg.show", "aviso", () => T("capacidad.avisos")],
     ["hand", "mano", () => T("capacidad.mano")], ["msg.student", "mensaje", () => T("capacidad.mensajes")],
     ["timer", "reloj", () => T("capacidad.temporizador")], ["poll", "encuesta", () => T("capacidad.encuestas")],
+    ["poll.quiz", "cuestionario", () => T("capacidad.cuestionarios")],
     ["file.push", "archivo", () => T("capacidad.archivos")], ["file.collect", "carpeta", () => T("capacidad.recoger")],
     ["screen.broadcast", "transmitir", () => T("capacidad.transmision")], ["screen.present.view", "ojo", () => T("capacidad.verCompanero")],
     ["screen.thumb", "miniaturas", () => T("capacidad.miniaturas")], ["screen.snapshot", "captura", () => T("capacidad.captura")],

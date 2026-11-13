@@ -92,3 +92,6 @@ body.watching #contenido { display: none; }
 .recoleccion-estado[hidden] { display: none; }
 .recoleccion-lista li[data-estado="round"], .recoleccion-lista li[data-estado="empty"] { list-style: none; margin-inline-start: calc(-1 * var(--e-5)); font-weight: var(--peso-medio); }
 .recoleccion-lista li[data-estado="skipped"] { color: var(--c-texto-suave); }
+/* Cuestionario (prompt 10.20): el resultado personal, una fila por pregunta (el número va en el texto). */
+.cuestionario-detalle { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-2); }
+.cuestionario-detalle p { margin: 0; }

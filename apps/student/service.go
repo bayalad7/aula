@@ -504,6 +504,13 @@ func (sa *serviceAgent) binding(_ context.Context, name string, data json.RawMes
 			return nil, err
 		}
 		return a.AnswerPoll(id, line, s1)
+	case "AnswerQuiz":
+		var answers []protocol.PollQuizAnswer
+		var submit bool
+		if err := errors.Join(b.Arg(0, &id), b.Arg(1, &answers), b.Arg(2, &submit)); err != nil {
+			return nil, err
+		}
+		return a.AnswerQuiz(id, answers, submit)
 	case "OpenReceivedFolder":
 		if err := b.Arg(0, &id); err != nil {
 			return nil, err

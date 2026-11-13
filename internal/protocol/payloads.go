@@ -15,6 +15,7 @@ const (
 	MaxOSVersion       = 64
 	MaxCapabilities    = 64
 	MaxCapabilityLen   = 64
+	MaxHelloMACs       = 4 // hello.macs (§5.15.2)
 	MaxErrorMessage    = 500
 	MaxExercise        = 16
 	MaxTitle           = 200
@@ -26,6 +27,7 @@ const (
 var (
 	semverPattern     = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$`)
 	capabilityPattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)*$`)
+	macPattern        = regexp.MustCompile(`^[0-9a-f]{2}(:[0-9a-f]{2}){5}$`)
 	langPattern       = regexp.MustCompile(`^[a-z0-9+#-]{1,32}$`)
 	errorCodePattern  = regexp.MustCompile(`^[a-z]+(_[a-z]+)*$`)
 )
@@ -101,6 +103,10 @@ type HelloInfo struct {
 	OSVersion    string       `json:"os_version"`
 	AgentVersion string       `json:"agent_version"` // SemVer x.y.z of the release
 	Capabilities []Capability `json:"capabilities"`
+	// MACs are the physical addresses of the network card that reaches the
+	// console, for Wake-on-LAN (§5.15.2). Optional: older agents and
+	// simulated students leave it empty.
+	MACs []string `json:"macs,omitempty"`
 }
 
 // MessageType implements Payload.
@@ -139,8 +145,25 @@ func (p HelloInfo) Validate() error {
 		}
 		seen[c] = true
 	}
+	if len(p.MACs) > MaxHelloMACs {
+		return invalid(TypeHello, "more than %d macs", MaxHelloMACs)
+	}
+	macs := make(map[string]bool, len(p.MACs))
+	for _, m := range p.MACs {
+		if !macPattern.MatchString(m) {
+			return invalid(TypeHello, "malformed mac")
+		}
+		if macs[m] {
+			return invalid(TypeHello, "duplicate mac")
+		}
+		macs[m] = true
+	}
 	return nil
 }
+
+// ValidMAC reports whether s is a MAC as hello.macs carries it:
+// "aa:bb:cc:dd:ee:ff", lowercase.
+func ValidMAC(s string) bool { return macPattern.MatchString(s) }
 
 // Heartbeat is sent by both sides every 5 s after auth.ok.
 type Heartbeat struct{}

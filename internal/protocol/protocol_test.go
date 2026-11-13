@@ -29,6 +29,7 @@ func samplePayloads() []Payload {
 			OSVersion:    "10.0.19045",
 			AgentVersion: "0.1.0",
 			Capabilities: []Capability{CapCodeView, CapMsgShow},
+			MACs:         []string{"3c:52:82:1a:9f:07"},
 		},
 		Heartbeat{},
 		NewError(testRefID, CodeUnsupportedCapability, "este agente no soporta screen.freeze"),
@@ -489,6 +490,15 @@ func TestPayloadValidation(t *testing.T) {
 		{"hello bad version", func() Payload { h := hello; h.AgentVersion = "v0.1"; return h }()},
 		{"hello empty hostname", func() Payload { h := hello; h.Hostname = ""; return h }()},
 		{"hello malformed capability", func() Payload { h := hello; h.Capabilities = []Capability{"Code.View"}; return h }()},
+		{"hello uppercase mac", func() Payload { h := hello; h.MACs = []string{"3C:52:82:1A:9F:07"}; return h }()},
+		{"hello short mac", func() Payload { h := hello; h.MACs = []string{"3c:52:82:1a:9f"}; return h }()},
+		{"hello dash mac", func() Payload { h := hello; h.MACs = []string{"3c-52-82-1a-9f-07"}; return h }()},
+		{"hello duplicate mac", func() Payload { h := hello; h.MACs = []string{"3c:52:82:1a:9f:07", "3c:52:82:1a:9f:07"}; return h }()},
+		{"hello too many macs", func() Payload {
+			h := hello
+			h.MACs = []string{"00:00:00:00:00:01", "00:00:00:00:00:02", "00:00:00:00:00:03", "00:00:00:00:00:04", "00:00:00:00:00:05"}
+			return h
+		}()},
 		{"msg.show empty text", MsgShow{Text: "", Level: LevelInfo}},
 		{"msg.show bad level", MsgShow{Text: "hola", Level: "error"}},
 		{"auth.proof short signature", AuthProof{RefID: testRefID, Signature: []byte{1}}},

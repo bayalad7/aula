@@ -141,6 +141,18 @@ Las respuestas llegan en vivo a **Participación**, con una barra por opción. C
 **Cerrar encuesta** y, si es de opción múltiple o de sí o no, **Compartir resultados**: los
 alumnos ven solo el total. Más detalles en [Participación › Encuestas](participacion#encuestas).
 
+## Hacer un cuestionario rápido
+
+1. En el menú, abre **Cuestionarios** y pulsa **Nuevo cuestionario** (o **Editar** en uno que ya
+   tengas).
+2. Escribe el título y las preguntas. En cada una marca la **correcta** y sus **puntos**. Si quieres,
+   pon un tiempo en minutos.
+3. Pulsa **Guardar y lanzar** (a todos, o a tu selección con **Lanzar a**).
+4. Sigue las respuestas en **Participación**. Al cerrar, pulsa **Compartir resultados personales**
+   para que cada alumno vea solo el suyo y **Exportar calificaciones** para guardar el CSV.
+
+Más detalles en [Cuestionarios](cuestionarios).
+
 ## Recoger el ejercicio
 
 1. En **Archivos**, abre la pestaña **Recolecciones**.

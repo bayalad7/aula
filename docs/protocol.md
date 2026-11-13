@@ -318,6 +318,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `open.url` | `open.url` | v0.12 (§5.22). Windows, en modo ventana y como servicio con su ayudante (abre en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
 | `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`. |
 | `poll` | `poll.open`, `poll.close`, `poll.results`, `poll.vote.ack`; y acepta `poll.vote` | v0.13 (§5.23). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
+| `poll.quiz` | `poll.open` con `kind: "quiz"`, `poll.quiz.result`; y acepta `poll.vote` con `answers` | Sin publicar (§5.23.1). Se declara junto con `poll` (la ventana sabe mostrar varias preguntas); también los alumnos simulados. |
 | `screen.present` | `student.present.start`, `.offer`, `.ice`, `.stop` | v0.14 (§5.24). Windows, si hay captura de monitor, codificador H.264 y la ventana se puede excluir de la captura; en modo servicio, solo con el ayudante. Nunca los alumnos simulados. Linux y macOS no la declaran. |
 | `screen.present.view` | `screen.broadcast.*` con `source` (la pantalla de un compañero) | v0.14 (§5.24). La declara quien declara `screen.broadcast` y sabe mostrar de quién es la pantalla. Nunca los alumnos simulados. |
 | `class.end` | `class.end` | Sin publicar (§5.25). Todos los SO: no toca el sistema, limpia la ventana. Se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
@@ -391,8 +392,9 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `open.url` | P → A | `open.url` | `open_id`, `url` | `open.ack` o `error` |
 | `open.app` | P → A | `open.app` | `open_id`, `app_id`, `name`, `path` | `open.ack` o `error` |
 | `open.ack` | A → P | — | `ref_id`, `open_id`, `status`, `reason`? | — |
-| `poll.open` | P → A | `poll` | `poll_id`, `kind`, `question`, `options`?, `named` | `poll.ack` (`shown`) o `error` |
-| `poll.vote` | A → P | `poll` | `poll_id`, `choice` o `text` | `poll.vote.ack` o `error` |
+| `poll.open` | P → A | `poll` (`quiz`: `poll.quiz`) | `poll_id`, `kind`, `question`, `options`?, `named`; con `quiz`, `questions`, `answers`?, `submitted`? | `poll.ack` (`shown`) o `error` |
+| `poll.vote` | A → P | `poll` | `poll_id`, `choice` o `text`, o `answers` y `submitted` (cuestionario) | `poll.vote.ack` o `error` |
+| `poll.quiz.result` | P → A | `poll.quiz` | `poll_id`, `score`, `max`, `questions` | `poll.ack` (`results`) |
 | `poll.vote.ack` | P → A | `poll` | `ref_id`, `poll_id`, `status` | — |
 | `poll.close` | P → A | `poll` | `poll_id` | `poll.ack` (`closed`) |
 | `poll.results` | P → A | `poll` | `poll_id`, `counts`, `voters`, `recipients` | `poll.ack` (`results`) |
@@ -1832,6 +1834,123 @@ Reglas del agente:
 - Si la consola responde `unknown_type` o `unsupported_capability` al voto (una consola
   anterior), la tarjeta dice que esa consola no recibe respuestas.
 
+#### 5.23.1 Cuestionarios (`kind: "quiz"`, capacidad `poll.quiz`)
+
+> Aprobado el 2026-11-13 (prompt 10.20), sin publicar. Mejora compatible de §5.23: las encuestas
+> de una pregunta no cambian. Implementación en `internal/poll` (`Quiz`, `Library`); reglas en
+> `docs/privacidad.md` 87–91. En la consola, la vista «Cuestionarios» del menú y la sección
+> «Encuestas» de «Participación».
+
+Un **cuestionario** es una encuesta de varias preguntas (opción múltiple o sí o no) con la
+respuesta correcta y los puntos de cada una, que solo conoce la consola. El alumno responde
+pregunta por pregunta, cambia sus respuestas hasta «Entregar» o el cierre, y la consola lo
+califica. Al cerrar, el profesor puede mandar a **cada alumno solo su resultado**.
+
+```
+Consola (P)                                               Agente (A)
+   |-- poll.open (kind quiz, question=título, questions) --->|  tarjeta «Cuestionario · Nuevo»
+   |<------------------------------------ poll.ack (shown) ---|
+   |<---------------- poll.vote (answers, submitted=false) ---|  al marcar una opción
+   |-- poll.vote.ack (accepted) ----------------------------->|
+   |<----------------- poll.vote (answers, submitted=true) ---|  «Entregar»
+   |-- poll.vote.ack (accepted) ----------------------------->|  «Entregado»
+   |-- poll.close (poll_id) --------------------------------->|  «Cuestionario cerrado»
+   |<----------------------------------- poll.ack (closed) ---|
+   |-- poll.quiz.result (solo el suyo) ---------------------->|  qué acertó y la correcta
+   |<---------------------------------- poll.ack (results) ---|
+```
+
+**`poll.open` con `kind: "quiz"` (P → A)**, solo a un agente que declaró `poll.quiz`:
+
+```json
+{ "poll_id": "c2d7…", "kind": "quiz", "question": "Repaso de bucles", "named": true,
+  "questions": [
+    { "id": 0, "kind": "choice", "text": "¿Qué imprime print(3 // 2)?", "points": 2, "multi": false,
+      "options": [ { "id": 2, "text": "2" }, { "id": 0, "text": "1.5" }, { "id": 1, "text": "1" } ] },
+    { "id": 1, "kind": "yesno", "text": "¿range(3) incluye el 3?", "points": 1 }
+  ],
+  "answers": [ { "q": 0, "choices": [1] } ], "submitted": false }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `question` | string | El **título** del cuestionario, 1–80 caracteres. |
+| `named` | bool | Siempre `true`: el profesor ve las respuestas y el puntaje de cada alumno, y la tarjeta lo dice antes (`docs/privacidad.md` regla 87). |
+| `options` | — | Ausente: las opciones van en cada pregunta. |
+| `questions` | arreglo | 1–30 preguntas, en el orden en que el alumno las ve. |
+| `questions[].id` | entero | 0–29: el número de la pregunta en el cuestionario guardado (los votos y el resultado lo usan). Únicos. |
+| `questions[].kind` | string | `choice` o `yesno`. |
+| `questions[].text` | string | 1–200 caracteres, texto plano. |
+| `questions[].points` | entero | 1–100. |
+| `questions[].multi` | bool | Solo `choice`: la pregunta tiene **más de una** correcta y el alumno marca casillas («Elige todas las que apliquen»). No dice cuáles ni cuántas. |
+| `questions[].options` | arreglo | Solo `choice`: 2–6 opciones `{id, text}` en el orden en que el alumno las ve; `id` 0–5 es su número original y `text` de 1–80 caracteres. Con `yesno`, ausente (0 = sí, 1 = no). |
+| `answers` | arreglo | Al reenviar (reconexión): las respuestas **de ese alumno** que la consola ya acusó, para que siga donde iba. Ausente la primera vez. |
+| `submitted` | bool | Al reenviar: si ese alumno ya entregó. |
+
+**Nunca lleva la respuesta correcta.** Si el profesor pidió orden al azar, la consola baraja las
+preguntas y las opciones **por alumno**, siempre igual para el mismo alumno (también al
+reenviar); los `id` son los originales.
+
+**`poll.vote` en un cuestionario (A → P)**
+
+```json
+{ "poll_id": "c2d7…", "answers": [ { "q": 0, "choices": [1] }, { "q": 1, "choices": [1] } ], "submitted": false }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `answers` | arreglo | Todas las respuestas del alumno hasta ahora (no solo la que cambió): `q` es el `id` de la pregunta y `choices`, los `id` de las opciones elegidas (1 si no es `multi`; 1–6 sin repetir si lo es). Una pregunta sin responder no va. Como máximo una entrada por pregunta. |
+| `submitted` | bool | `true` con «Entregar»: ya no cambia. Puede ir con `answers` vacío (entregar en blanco). |
+
+Lleva `answers` (o `submitted`) **en vez de** `choice` y `text`. Una pregunta o una opción que
+el cuestionario no tiene, varias opciones en una pregunta que no es `multi`, o `answers` a una
+encuesta que no es cuestionario → `error` `invalid_message`. El `poll.vote.ack` es el mismo:
+`accepted` (reemplaza todas las respuestas anteriores), `closed` (ya se cerró **o ese alumno ya
+había entregado**) o `unknown`.
+
+**`poll.quiz.result` (P → A)**, solo a la sesión del alumno dueño, cuando el profesor comparte
+los resultados de un cuestionario cerrado:
+
+```json
+{ "poll_id": "c2d7…", "score": 2, "max": 3,
+  "questions": [ { "q": 0, "choices": [1], "correct": [1], "earned": 2 },
+                 { "q": 1, "choices": [],  "correct": [1], "earned": 0 } ] }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `poll_id` | string | Un cuestionario **cerrado** que el agente conoce; otro se ignora. |
+| `score` / `max` | entero | Los puntos que obtuvo ese alumno y los posibles. 0–3000, `score` ≤ `max`. |
+| `questions` | arreglo | Una entrada por pregunta del cuestionario (las mismas `id`): lo que eligió (`choices`, vacío si no respondió), las correctas (`correct`) y los puntos que obtuvo (`earned`: todos los de la pregunta o 0). |
+
+Solo lo suyo: nunca el puntaje de otro, los totales de la clase ni una tabla de posiciones. El
+agente responde `poll.ack` con `results`.
+
+Reglas de la consola, además de las de §5.23:
+
+- **Calificación todo o nada:** una pregunta suma sus puntos solo si el alumno eligió
+  **exactamente** las correctas. Lo que cuenta es lo último acusado, entregado o no.
+- **Capacidad:** a un agente con `poll` y sin `poll.quiz` no se le manda el cuestionario (la
+  consola lo lista como «su equipo no lo admite»); su tarjeta anterior, si la tenía abierta, se
+  cierra como en un cambio de encuesta.
+- **Reconexión:** el `poll.open` reenviado lleva las respuestas acusadas de ese alumno y si
+  entregó; cerrado, se reenvía `poll.close` y, si se compartió, su `poll.quiz.result`.
+- **Tiempo:** si el profesor puso tiempo, la consola lanza el temporizador (§5.19) a los mismos
+  destinatarios y **cierra el cuestionario al llegar a cero**. Cerrar el cuestionario antes
+  detiene ese temporizador.
+- Los alumnos simulados responden al azar; su puntaje se cuenta aparte y **nunca** se exporta.
+- **«Exportar calificaciones»** escribe un CSV solo cuando el profesor lo pide (regla 89); nada
+  de esto viaja a los agentes.
+
+Reglas del agente, además de las de §5.23:
+
+- El alumno navega con «Anterior» y «Siguiente» (y el teclado) y ve cuántas lleva. La ventana
+  guarda sus respuestas cada vez que marca una opción y con «Entregar»; el agente las manda como
+  mucho una vez por segundo: si cambia antes, espera y manda solo la última.
+- Después de «Entregar» (o del cierre) la tarjeta ya no cambia.
+- Al reconectar, la tarjeta conserva lo que el alumno había marcado; si la app se reinició, toma
+  las respuestas que trae el `poll.open` reenviado.
+
 ### 5.24 Proyectar la pantalla de un alumno (`student.present.*`)
 
 > Aprobado el 2026-11-11 (prompt 12.1), para v0.14 (Windows). Implementación en
@@ -2119,6 +2238,9 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `poll.vote.text` | 1–140 caracteres | `error` `invalid_message` |
 | `poll.vote` por agente | ráfaga 3 y 1 por s | `error` `invalid_message`; se descarta |
 | `poll.results.voters` / `recipients` | 0–10 000 | `error` `invalid_message` |
+| Cuestionario (`poll.open` `quiz`) | título 1–80; 1–30 preguntas de 1–200 caracteres; 2–6 opciones de 1–80; 1–100 puntos por pregunta | `error` `invalid_message` |
+| `poll.vote.answers` | 0–30 entradas, una por pregunta; 1–6 opciones sin repetir | `error` `invalid_message` |
+| `poll.quiz.result.score` / `max` | 0–3000 | `error` `invalid_message` |
 | Encuestas guardadas en la consola | 20 por clase | Se descarta la cerrada más vieja |
 | `screen.freeze.message` | 0–300 caracteres | `error` `invalid_message` |
 | `screen.broadcast.offer.sdp` / `answer.sdp` | 64 KiB | `error` `message_too_large`; la sesión sigue. |
@@ -2182,7 +2304,9 @@ emisor verifica el tamaño final de la envoltura.
   `name` ni `path` (dicen qué se le pidió al alumno abrir).
 - De `poll.*` se registran `poll_id`, `kind`, `named`, `status`, el índice elegido, la longitud
   de `text` y los totales. **Nunca** `question`, `options` ni `text` (son texto del profesor y del
-  alumno), y en una encuesta anónima tampoco qué eligió cada equipo.
+  alumno), y en una encuesta anónima tampoco qué eligió cada equipo. De un cuestionario, además,
+  cuántas preguntas, cuántas respondió y si entregó; **nunca** el título, las preguntas, las
+  respuestas, las correctas ni el puntaje de un alumno.
 - De `class.end*` se registran `end_id`, `status`, `reason`, el equipo y qué se quitó (sin
   contenido: cuántas tarjetas, si había restricciones). **Nunca** el código, los avisos ni los
   nombres de los archivos que se quitaron de la ventana.

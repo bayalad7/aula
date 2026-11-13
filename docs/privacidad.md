@@ -613,8 +613,8 @@ del alumno.
     alumnos simulados se borra al cerrar el aula simulada. Los registros de la consola y del
     agente llevan `poll_id`, el tipo, si es nominal, los estados y los totales; **nunca** la
     pregunta, las opciones ni el texto de una respuesta, y en una anónima tampoco qué eligió cada
-    equipo. Exportar resultados será parte de la asistencia y bitácora (prompt 10.13), con su
-    propia regla.
+    equipo. Un cuestionario puede exportar sus calificaciones, con las reglas 87–91; exportar
+    las encuestas será parte de la asistencia y bitácora (prompt 10.13), con su propia regla.
 
 ## Proyectar la pantalla de un alumno a la clase (v0.14, Windows)
 
@@ -699,6 +699,37 @@ la consola): se detiene lo que sigue activo y la ventana de cada alumno queda co
     cuántas cosas se quitaron; nunca el código, los avisos ni los nombres de los archivos. Los
     alumnos simulados declaran `class.end` y limpian su ventana simulada: no cambia ningún equipo
     (regla 34 no aplica). Un equipo desconectado al terminar recibe el fin de clase al volver.
+
+## Cuestionarios con puntaje (sin publicar, todos los sistemas)
+
+Un cuestionario es una encuesta de varias preguntas con su respuesta correcta y sus puntos
+(`docs/protocol.md` §5.23.1), para un repaso o un examen corto. Como la encuesta, no observa ni
+controla el equipo (sin banda ni aviso fijo) y llega sin interrumpir (regla 71). Lo nuevo es que
+**califica**: por eso tiene sus propias reglas.
+
+87. **Siempre con nombre, y el alumno lo sabe antes.** Un cuestionario nunca es anónimo: el
+    profesor ve las respuestas y el puntaje de cada alumno. La tarjeta lo dice antes de la
+    primera pregunta: «Es un cuestionario: tu profesor verá tus respuestas y tu puntaje con tu
+    nombre».
+88. **La respuesta correcta no sale de la consola antes del cierre.** Ningún mensaje al equipo
+    del alumno la lleva mientras el cuestionario está abierto; solo viaja, y solo la de ese
+    alumno, en su resultado personal.
+89. **Qué se guarda y dónde.** En el equipo del profesor se guardan los **cuestionarios** (título,
+    preguntas, opciones, correctas, puntos, tiempo) en `Documentos\Aula\cuestionarios`: son su
+    material, no datos de alumnos. Las respuestas y los puntajes viven **solo en memoria**, como
+    las encuestas (regla 74), y se borran al cerrar la clase o cambiar de canal. Solo se escriben
+    en disco cuando el profesor pulsa **«Exportar calificaciones»**: un CSV con equipo, usuario,
+    puntaje, el máximo, si entregó y los puntos de cada pregunta (nunca respuestas abiertas, que
+    un cuestionario no tiene) en `Documentos\Aula\calificaciones\<fecha>\`. Aula no borra ese
+    archivo: es del profesor, que lo guarda o lo borra según las reglas de su escuela.
+90. **Cada quien ve solo lo suyo.** Con «Compartir resultados» cada alumno recibe **solo su**
+    resultado: qué acertó, la correcta y su puntaje. Nunca el de un compañero, el promedio de la
+    clase ni una tabla de posiciones; la consola tampoco muestra los puntajes en la Pantalla
+    grande ni en la lista de Alumnos (lo que se proyecta en el aula), solo en «Participación».
+91. **Registros y simulados.** Los registros llevan `poll_id`, cuántas preguntas, cuántas
+    respondió cada envío y si entregó; nunca el título, las preguntas, las respuestas, las
+    correctas ni el puntaje de un alumno. Los alumnos simulados responden al azar, se cuentan
+    aparte (regla 32) y **nunca** entran en el CSV exportado.
 
 ## Pendiente para etapas futuras
 

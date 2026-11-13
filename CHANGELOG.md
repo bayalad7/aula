@@ -51,6 +51,11 @@ retiraron; esta es la primera.
   minutos (u otra); extender y detener.
 - **Encuestas en vivo:** opción múltiple, sí o no, o respuesta corta; anónimas o nominales, con
   resultados para compartir.
+- **Cuestionarios con puntaje** (nuevo módulo «Cuestionarios»): varias preguntas con su respuesta
+  correcta y sus puntos, guardados para reutilizarlos; tiempo opcional que lo cierra solo y orden
+  al azar. Ves cuántos acertaron cada pregunta y el puntaje de cada alumno, compartes a cada uno
+  **solo su** resultado y exportas las calificaciones a un CSV para Excel. El alumno responde
+  pregunta por pregunta y entrega; la respuesta correcta no llega a su equipo antes del cierre.
 
 ### Archivos
 

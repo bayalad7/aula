@@ -1330,3 +1330,21 @@ equipo del profesor.
 | **TC-D** Energía | Programa un apagado de 10 min y termina sin marcar «Cancelar el apagado programado»; repite marcándolo. | La primera vez la cuenta sigue; la segunda, desaparece. |
 
 **Para aceptar** bastan TC-A, TC-B y TC-C en ✅.
+
+## 29. Cuestionarios con puntaje (10.20)
+
+Comprueba que un cuestionario llega sin quitar el foco, que el alumno navega, cambia y entrega, que
+la respuesta correcta no está en su equipo antes del cierre, que cada alumno ve solo su resultado y
+que el CSV abre bien (`docs/protocol.md` §5.23.1, `docs/privacidad.md` reglas 87–91). Con las dos
+VMs de §18 (el agente **como servicio** en la VM 1, en modo ventana en la VM 2), el aula simulada
+cerrada.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **CU-A** Navegar, cambiar y entregar (**aceptación**) | En la consola, **Cuestionarios** › un cuestionario de 3 preguntas (una de varias correctas, una de sí o no) › **Lanzar**. En cada VM, con el Bloc de notas al frente, responde con Anterior y Siguiente, cambia una respuesta y **Entregar**. | La tarjeta llega arriba con «Nuevo» sin quitar el foco y dice que es con nombre antes de la primera pregunta. En la consola, «Por alumno» muestra el puntaje que cambia con cada respuesta y «Sí» al entregar; ya entregado, la VM no deja cambiar nada. |
+| **CU-B** La correcta no está en el alumno (**aceptación**) | Con el cuestionario abierto, en la VM 2 recorre todas las preguntas de la tarjeta y busca en `aula-cliente.log` los textos de las opciones correctas. | Nada en la tarjeta ni en el log dice cuál es la correcta; «Elige todas las que apliquen» no dice cuántas. |
+| **CU-C** Solo su resultado (**aceptación**) | **Cerrar encuesta** › **Compartir resultados personales**. | Cada VM ve «Tu resultado» con su puntaje y sus respuestas; ninguna ve el nombre, el puntaje ni las respuestas de la otra, ni un promedio. |
+| **CU-D** Exportar (**aceptación**) | **Exportar calificaciones** y abre el CSV en Excel. | Abre con columnas separadas y acentos correctos: una fila por VM con equipo, usuario, puntaje, máximo, entregó y los puntos de cada pregunta. |
+| **CU-E** Reconexión | Con el cuestionario abierto, en la VM 1 marca dos respuestas, desconecta la red, marca otra y reconéctala; reinicia Aula en la VM 2 a mitad. | La VM 1 sigue donde iba y la consola recibe la última respuesta al reconectar. La VM 2, al volver, muestra lo que ya había marcado. |
+
+**Para aceptar** bastan CU-A a CU-D en ✅.

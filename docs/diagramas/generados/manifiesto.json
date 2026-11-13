@@ -316,8 +316,8 @@
     },
     {
       "id": "20-encuestas",
-      "titulo": "Encuestas",
-      "descripcion": "Cómo llega una encuesta del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ven al compartir los resultados",
+      "titulo": "Encuestas y cuestionarios",
+      "descripcion": "Cómo llega una encuesta o un cuestionario del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ve cada quien al compartir los resultados",
       "audiencia": [
         "profesor",
         "alumno",
@@ -325,10 +325,11 @@
         "auditor"
       ],
       "pantallas": [
-        "participacion"
+        "participacion",
+        "cuestionarios"
       ],
-      "hash": "sha256:c01b8c10de4ddbbddfcfff75a574f0e3863845cd37c3be55fceab860ebab0271",
-      "alt": "Encuestas: Cómo llega una encuesta del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ven al compartir los resultados",
+      "hash": "sha256:188e2f473df1c9ef3f24cd03ba8810d1f4b272508ffd85b8febb7070df73aeb5",
+      "alt": "Encuestas y cuestionarios: Cómo llega una encuesta o un cuestionario del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ve cada quien al compartir los resultados",
       "claro": "generados/20-encuestas.claro.svg",
       "oscuro": "generados/20-encuestas.oscuro.svg"
     },

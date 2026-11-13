@@ -1,15 +1,16 @@
 ---
-titulo: "Encuestas"
-descripcion: "Cómo llega una encuesta del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ven al compartir los resultados"
+titulo: "Encuestas y cuestionarios"
+descripcion: "Cómo llega una encuesta o un cuestionario del profesor a los alumnos, cómo vuelven sus respuestas, cómo se cierra y qué ve cada quien al compartir los resultados"
 audiencia: [profesor, alumno, desarrollador, auditor]
-pantallas: [participacion]
-secciones_manual: [administracion/participacion, protocol, privacidad]
+pantallas: [participacion, cuestionarios]
+secciones_manual: [administracion/participacion, administracion/cuestionarios, protocol, privacidad]
 ---
 
-# Encuestas
+# Encuestas y cuestionarios
 
 ¿Qué pasa desde que el profesor lanza una pregunta rápida hasta que la clase ve el resultado, y
-qué ve cada quien de las respuestas?
+qué ve cada quien de las respuestas? Un cuestionario (varias preguntas con su correcta y sus
+puntos) sigue el mismo camino, con lo que cambia en el último bloque.
 
 ```mermaid
 %%{init: {"htmlLabels": false}}%%
@@ -67,6 +68,24 @@ sequenceDiagram
         B->>C: la respuesta sin acuse, con lo mismo
         Note over B,W: si en 3 s no llega, la tarjeta queda cerrada
     end
+
+    opt un cuestionario (desde la vista Cuestionarios, solo a quien declaró poll.quiz)
+        P->>V: Lanzar (el guardado, a todos o a la selección)
+        C->>B: poll.open {kind quiz, questions}<br/>sin la correcta, en el orden de ese alumno
+        B->>W: tarjeta «Cuestionario · Nuevo», dice que es con nombre
+        E->>W: marca, Anterior y Siguiente
+        W->>B: AnswerQuiz (todas sus respuestas)
+        B->>C: poll.vote {answers} como mucho 1 por s, solo la última
+        C-->>B: poll.vote.ack {accepted}
+        E->>W: Entregar
+        B->>C: poll.vote {answers, submitted}
+        C->>V: aciertos por pregunta y puntaje por alumno
+        P->>V: Cerrar (o el temporizador llega a cero)
+        C->>B: poll.close
+        P->>V: Compartir resultados personales
+        C->>B: poll.quiz.result {score, max, questions}<br/>solo el suyo, a la sesión de ese alumno
+        B->>W: «Tu resultado»: qué acertó y la correcta
+    end
 ```
 
 ## Lo que no es obvio
@@ -89,11 +108,19 @@ sequenceDiagram
   `poll_id`, el tipo, los estados y los totales (regla 74).
 - Con el agente como servicio, la ventana es la del ayudante: «Enviar» llega al servicio por el
   canal local (`CallBinding`, diagrama 13), que es quien tiene la conexión con la consola.
+- **Cuestionarios** (`docs/privacidad.md` reglas 87–91): siempre con nombre; la correcta **no sale
+  de la consola** antes del cierre y solo viaja en el resultado personal de cada alumno. Califica
+  todo o nada. Un agente sin `poll.quiz` no lo recibe. Al reconectar, el `poll.open` reenviado trae
+  las respuestas acusadas de ese alumno. Los puntajes viven en memoria y solo se escriben con
+  «Exportar calificaciones» (CSV, sin simulados). Con tiempo, el temporizador lo cierra al llegar a
+  cero.
 
 ## Fuentes en el código
 
 - `internal/poll/class.go` (consola), `internal/poll/ballot.go` (agente)
+- `internal/poll/quiz.go` (cuestionario, calificación, CSV), `internal/poll/library.go` (guardados)
 - `apps/teacher/poll.go` (`OpenPoll`, `ClosePoll`, `SharePollResults`, `onPollMessage`)
-- `apps/student/poll.go` (`AnswerPoll`, `handlePoll`)
+- `apps/teacher/quiz.go` (`Quizzes`, `SaveQuiz`, `OpenQuiz`, `ExportQuizGrades`, cierre por tiempo)
+- `apps/student/poll.go` (`AnswerPoll`, `AnswerQuiz`, `handlePoll`)
 - `internal/simclass/poll.go` (alumnos simulados)
-- `docs/protocol.md` §5.23, `docs/eventos-ui.md`
+- `docs/protocol.md` §5.23 y §5.23.1, `docs/eventos-ui.md`

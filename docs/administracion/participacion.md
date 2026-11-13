@@ -1,6 +1,6 @@
 ---
 titulo: "La pantalla Participación"
-resumen: "Ve en orden quién levantó la mano o te escribió, respóndele, baja su mano, lanza encuestas rápidas y sigue el temporizador del ejercicio."
+resumen: "Ve en orden quién levantó la mano o te escribió, respóndele, baja su mano, lanza encuestas rápidas, sigue los cuestionarios y el temporizador del ejercicio."
 grupo: "Guía por pantalla"
 orden: 45
 pantallas: [participacion]
@@ -103,6 +103,20 @@ cada opción y su propia respuesta marcada. **Nunca quién eligió qué**, aunqu
 sido nominal. Las respuestas de los alumnos simulados no entran en ese total.
 
 Las respuestas **cortas no se comparten** con la clase: son texto de cada alumno.
+
+### Cuestionarios
+
+Un [cuestionario](cuestionarios) lanzado desde **Cuestionarios** aparece aquí igual que una
+encuesta, con la insignia **Cuestionario**. En lugar de barras por opción ves:
+
+- **Por pregunta**: cuántos acertaron de los que la respondieron (qué reforzar).
+- **Por alumno**: su puntaje y si entregó.
+
+Al cerrarlo, **Compartir resultados personales** manda a cada alumno solo su resultado, y
+**Exportar calificaciones** guarda el CSV en Documentos\Aula\calificaciones. Los puntajes solo se
+ven en esta pantalla.
+
+![Un cuestionario abierto con los aciertos por pregunta y el puntaje de cada alumno](img/participacion-cuestionario.webp)
 
 ## Temporizador
 

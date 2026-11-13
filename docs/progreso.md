@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-12 (10.14 terminar la clase implementada, falta la prueba en VM;
+Última actualización: 2026-11-13 (10.20 cuestionarios con puntaje implementados como mejora de
+10.12, sin commit, falta la prueba en VM; 10.14 terminar la clase implementada, falta la prueba en VM;
 12.2 transmisión a una selección y modos ventana y pantalla
 completa implementada, falta la prueba en VM y en la ventana real; 12.1 proyectar la pantalla de
 un alumno implementada, falta la prueba en VM; 10.12 encuestas en vivo implementadas, falta la prueba en VM;
@@ -47,7 +48,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.17 | Entregar código desde la app del alumno (`code.collect`) | ⏳ Pendiente (prompt del 12/11/2026) |
 | 10.18 | Perfiles de clase («Iniciar clase») | ⏳ Pendiente, después de `v0.1.0` |
 | 10.19 | Encender equipos (Wake-on-LAN) | ✅ Implementado y probado en CI con dobles (sin datagramas reales); «Encender» en el Panel Energía y en la Fila del alumno, interruptor «Mostrar apagados», `hello.macs` (§5.15.2), regla 31 bis, diagramas 16 y 11. El relevo por otra subred quedó como propuesta P-04 (falta la prueba en el laboratorio, casos C-121 a C-126 y A-53) |
-| 10.20 | Cuestionario con puntaje (mejora de 10.12) | ⏳ Pendiente, después de `v0.1.0` |
+| 10.20 | Cuestionario con puntaje (mejora de 10.12) | ✅ Implementado y probado en CI con dobles y alumnos simulados (13/11/2026, adelantado a petición del usuario): módulo «Cuestionarios» del menú, resultados en Participación › Encuestas, `poll.open` `quiz`, `poll.quiz.result` y capacidad `poll.quiz` (§5.23.1), reglas 87–91. Sin 10.13 ni 10.16: puntaje por equipo y usuario, sin grupos (falta la prueba en VM, `docs/prueba-vms.md` §29, y los casos C-127 a C-131 y A-54 a A-56) |
 | 10.21 | Pantalla en blanco («Pausar pantallas», la parte pendiente de 09) | ✅ Implementado y probado en CI con dobles; panel «Pausar» de la barra, la acción en la Pantalla grande, la franja y Ctrl+Mayús+P (falta la prueba en VM, `docs/prueba-vms.md` §27, y los casos C-108 a C-113 y A-42 a A-47) |
 | 10.22 | Semáforo del alumno | ⏳ Pendiente, después de `v0.1.0` |
 | 10.23 | Rebobinar la clase (código paso a paso) | ⏳ Pendiente, después de `v0.1.0` |
@@ -91,7 +92,8 @@ el que se trabajó antes; las notas de abajo lo conservan.
    asistencia y olvidar la identidad) → ~~10.14 (terminar la clase)~~ (hecha el 12/11/2026, sin
    commit) → 10.15 (nombres y mapa) →
    10.17 (entregar código); 10.16 si hay tiempo. Después: 15 (auto-actualización) y 11 (revisión).
-   10.18 a 10.25 quedan para después de `v0.1.0` (10.20 con `/funcionalidad-mejora`).
+   10.18 a 10.25 quedan para después de `v0.1.0` (~~10.20~~ se adelantó el 13/11/2026). Al hacer
+   10.13, el CSV de calificaciones agrega cuenta, nombre, grado y grupo; con 10.16, lanzar a un grupo.
 6. Menor (traído de la entrega E11, eliminada en la limpieza del 12/11/2026): el comprobador de
    conexión deja en el registro de la consola una línea `TLS handshake error … EOF` del servidor
    HTTP por cada dirección que prueba. Es inofensiva; si molesta, se silencia en `transport`.

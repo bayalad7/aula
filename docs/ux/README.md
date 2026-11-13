@@ -4,6 +4,7 @@ Lo que queda del trabajo de interfaz (UX/UI) de la consola y de la app del alumn
 
 | Ruta | Qué es |
 |---|---|
+| `DESIGN_SYSTEM.md` | El sistema de diseño: la marca Nodo, la paleta por función en claro y oscuro, la tipografía, los tokens, el catálogo de componentes y las reglas de la cuadrícula en vivo. La fuente de verdad es `internal/ui/tokens.css`. |
 | `MAPA.md`, `mapa/` | El mapa de zonas: cada pantalla con sus zonas numeradas y su nombre. Lo genera `node scripts/ux/mapa.mjs` desde `scripts/ux/zonas.mjs`. |
 | `notas/` | Las notas de interfaz del anotador (`node scripts/ux/anotar.mjs`), una carpeta por versión (`notas/v0.1.0/`, la de `notas/VERSION`), con su índice; `notas/LEEME.md` las resume. Se trabajan con `/notas-ux`. Al repositorio suben `NNN.json`, los `LEEME.md` y `VERSION`; las capturas (`*.webp`) se quedan en el equipo donde se anotó. |
 | `PROPUESTAS.md` | Cambios que tocarían el protocolo o el modelo de seguridad, para decidir aparte. |

@@ -13,7 +13,7 @@ o solo a algunos.
 
 ![La lista de alumnos con dos seleccionados](img/alumnos.webp)
 
-## Lista o miniaturas
+## Lista, miniaturas o salón
 
 - **Lista**: una fila por equipo con su estado, el código que tiene en pantalla, su sistema y
   versión de Aula, y notas (por ejemplo, «No comparte su pantalla», «Restricciones» o «No pudo: …»
@@ -23,13 +23,22 @@ o solo a algunos.
   Grande, Extra grande) o eliges **Ajustar a la pantalla** para ver a todos sin desplazarte; la
   consola recuerda tu elección.
 
-Mientras ves las miniaturas, cada alumno tiene en su pantalla el aviso «Tu pantalla está siendo
-vista por el profesor». Las imágenes no se guardan: al salir de Miniaturas se dejan de pedir.
+- **Salón**: las mismas pantallas, cada una en su lugar del salón; los lugares de los equipos sin
+  conexión se ven vacíos y apagados. Los números de las filas y las columnas seleccionan a los de
+  esa fila o columna. Para acomodar el salón, ve a [Salón](salon).
+
+Si acomodaste el salón, la lista y las miniaturas siguen su orden, y cada equipo se ve con su
+**etiqueta** («Fila 2 · PC07») y su nombre en letra pequeña (ver
+[Etiquetas de los equipos](salon#etiquetas-de-los-equipos)).
+
+Mientras ves las miniaturas o el salón, cada alumno tiene en su pantalla el aviso «Tu pantalla está
+siendo vista por el profesor». Las imágenes no se guardan: al volver a Lista se dejan de pedir.
 
 ## La ficha de un alumno
 
 El botón de información al final de cada fila abre su **ficha** a la derecha: usuario, estado,
-sistema, versión de Aula, canal, desde qué hora está conectado y sus restricciones. Abajo dice
+la etiqueta y el nombre de su equipo, su lugar en el salón, sistema, versión de Aula, canal, desde
+qué hora está conectado y sus restricciones. Abajo dice
 **qué puede hacer su equipo** (recibir código, mostrar su pantalla, energía, control remoto…), y
 arriba, si su equipo contestó con un problema, cuál fue y qué hacer.
 
@@ -54,6 +63,9 @@ acciones (al pasar el mouse, cada una dice qué hace):
   [Tareas frecuentes](tareas-frecuentes#pausar-las-pantallas)).
 - **Abrir página o app**: se abre un diálogo para abrirle una página o una app permitida (ver
   [Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos)).
+- **Etiqueta del equipo**: se abre un diálogo para cambiar la etiqueta de su equipo (ver
+  [Etiquetas de los equipos](salon#etiquetas-de-los-equipos)). Sale cuando el equipo ya está en el
+  salón.
 
 Solo salen las que su equipo permite; los alumnos simulados no tienen Tomar control, Mensaje
 privado, Proyectar, Pausar ni Abrir.

@@ -268,6 +268,14 @@ siempre tiene tiempo de guardar.
     agente nunca manda UDP; la consola solo manda paquetes mágicos al broadcast de su red. No hay
     aviso en el equipo del alumno porque estaba apagado: al arrancar, el agente se conecta como
     siempre. Los alumnos simulados no tienen MAC y nunca se recuerdan.
+31 ter. **Etiquetas y salón (sin publicar, prompt 10.15).** El salón de la consola
+    (`Documentos\Aula\salones\canal-<n>.json`, uno por canal) guarda **equipos, no alumnos**: su
+    nombre, sus MAC (para reconocerlo si lo reinstalan con otro nombre), la etiqueta que le puso el
+    profesor y su lugar; nunca el usuario ni nada de lo que hizo. Exportarlo copia lo mismo a otra
+    consola del centro. El agente recibe solo la etiqueta de **su** equipo (`computer.label`), la
+    guarda en memoria mientras dura la sesión y la muestra en «Qué puede hacer Aula en este equipo»;
+    no escribe nada, no avisa ni toma el foco porque no observa ni cambia el equipo. Los alumnos
+    simulados ocupan lugares solo en memoria y nunca entran en el archivo.
 
 Permisos del SO (detalle en `docs/protocol.md` §5.15.1): apagar y reiniciar usan
 `SeShutdownPrivilege`, que tienen SYSTEM y, salvo una GPO que lo quite, los usuarios de un equipo

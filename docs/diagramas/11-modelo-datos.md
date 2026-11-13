@@ -19,6 +19,7 @@ erDiagram
     CLAVE_CENTRO |o--o| IDENTIDAD_PERSONAL : "sin clave del centro se usa la personal"
     CONFIG_CONSOLA_MAQUINA ||--o| AJUSTES_CONSOLA : "canal predeterminado, si no el último"
     AJUSTES_CONSOLA ||--o{ EQUIPOS_CONOCIDOS : "misma carpeta, por canal"
+    EQUIPOS_CONOCIDOS }o--o{ SALON : "entran sin acomodar"
     CERTIFICADO_TLS ||--o{ CONFIG_ALUMNO : "huella anunciada por mDNS, no se guarda"
     CONFIG_ALUMNO ||--o| POLITICA_ACTIVA : "solo con filtro web aplicado"
     HISTORIAL_MEMORIA ||--o{ ENVIOS_MEMORIA : "cada emisión crea un envío"
@@ -49,6 +50,13 @@ erDiagram
         list macs "de hello.macs, para encenderlo, máx. 4"
         string ip "última dirección, para elegir la red"
         datetime last_seen "máx. 512 por canal"
+    }
+    SALON {
+        int version "Documentos Aula salones canal-n.json, uno por canal"
+        int rows "1 a 12"
+        int cols "1 a 12"
+        list places "escritorio y pasillos"
+        list computers "hostname, macs, label hasta 40, seat"
     }
     CONFIG_CONSOLA_MAQUINA {
         int default_channel "ProgramData Aula consola config.json"
@@ -114,6 +122,11 @@ erDiagram
   Wake-on-LAN. Identifica el equipo, no al alumno: no guarda usuario ni nada de lo que hizo
   (privacidad, regla 31 bis). Está en la carpeta del usuario, así que otro maestro en el mismo
   equipo empieza con la lista vacía. **Olvidar** borra un equipo; los simulados nunca entran.
+- **El salón** (`Documentos\Aula\salones\canal-<n>.json`, prompt 10.15) guarda, por canal,
+  equipos y no alumnos: nombre, MAC, etiqueta y lugar (privacidad, regla 31 ter). Está en
+  Documentos y no en la carpeta de configuración porque es material del profesor: se exporta y se
+  importa en las demás consolas del centro. Los alumnos simulados toman lugar solo en memoria.
+  Un archivo dañado se aparta con «-danado-<fecha>» y uno de una versión más nueva no se toca.
 - **Logs** (no dibujados): `LOCALAPPDATA\Aula\<app>\aula-*.log` con rotación de 1 MiB, y
   `ProgramData\Aula\alumno\logs` con el agente como servicio. Nunca contienen código, textos,
   imágenes, nonces, firmas ni claves.
@@ -127,7 +140,7 @@ erDiagram
 - `internal/platform/paths.go`, `internal/platform/machinesecret.go`,
   `internal/platform/fileperm.go`, `internal/platform/logfile.go`
 - `apps/teacher/settings.go`, `apps/teacher/machine.go`, `apps/teacher/cli.go`, `apps/teacher/wake.go`,
-  `internal/power/machines.go`
+  `internal/power/machines.go`, `apps/teacher/room.go`, `internal/roomplan/room.go`
 - `apps/student/config.go`, `internal/session/agentconfig.go`
 - `internal/policy/journal.go`, `internal/platform/policy.go` (`SavedSetting`)
 - `internal/codedist/history.go`, `internal/codedist/deliveries.go`, `internal/codedist/board.go`

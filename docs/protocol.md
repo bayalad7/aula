@@ -322,6 +322,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `screen.present` | `student.present.start`, `.offer`, `.ice`, `.stop` | v0.14 (§5.24). Windows, si hay captura de monitor, codificador H.264 y la ventana se puede excluir de la captura; en modo servicio, solo con el ayudante. Nunca los alumnos simulados. Linux y macOS no la declaran. |
 | `screen.present.view` | `screen.broadcast.*` con `source` (la pantalla de un compañero) | v0.14 (§5.24). La declara quien declara `screen.broadcast` y sabe mostrar de quién es la pantalla. Nunca los alumnos simulados. |
 | `class.end` | `class.end` | Sin publicar (§5.25). Todos los SO: no toca el sistema, limpia la ventana. Se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
+| `computer.label` | `computer.label` | Sin publicar (§5.26). Todos los SO: no toca el sistema, solo la ventana del alumno. Se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 
 `hand`, `msg.student` y `poll` habilitan mensajes que **inicia el agente**: la consola acepta
 `hand.*`, `msg.student` y `poll.vote` solo de un agente que declaró la capacidad (si no, responde
@@ -407,6 +408,7 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `student.present.stop` | P → A | `screen.present` | `present_id` | `student.present.ack` (`ended`); con otro id se ignora |
 | `class.end` | P → A | `class.end` | `end_id` | `class.end.ack` o `error` |
 | `class.end.ack` | A → P | — | `ref_id`, `end_id`, `status`, `reason`? | — |
+| `computer.label` | P → A | `computer.label` | `label` | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -2191,6 +2193,44 @@ la conexión: el agente sigue conectado al canal, listo para la siguiente clase.
   recolecciones en curso, aperturas, historial de código ni «Últimos envíos». Sigue anunciada en
   el mismo canal. Las carpetas guardadas (capturas, recolecciones, plantillas) no se tocan.
 
+### 5.26 Etiqueta del equipo (`computer.label`)
+
+> Aprobado el 2026-11-13 (prompt 10.15), sin publicar. Todos los sistemas: no toca el SO.
+> Implementación en `internal/classroom` (el salón de la consola); privacidad en
+> `docs/privacidad.md` regla 31 ter.
+
+El profesor le pone a cada equipo una **etiqueta** que se entienda («Fila 2 · PC07», «Junto a la
+puerta») en el salón de la consola (`Documentos\Aula\salones\canal-<n>.json`). La consola la
+muestra en lugar del `hostname`; el alumno la ve en «Qué puede hacer Aula en este equipo», para
+decirle al soporte dónde está sentado. El salón no viaja: solo la etiqueta de cada equipo.
+
+#### 5.26.1 `computer.label` (P → A)
+
+```json
+{ "label": "Fila 2 · PC07" }
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `label` | string | 0–40 caracteres, sin caracteres de control. `""`: el equipo no tiene etiqueta. |
+
+No tiene respuesta. El agente la guarda **solo en memoria, para esta sesión**: al cerrarse la
+conexión la olvida, y el siguiente `hello` la vuelve a recibir. No muestra aviso ni toma el foco:
+solo cambia la línea «Este equipo» de «Qué puede hacer Aula en este equipo».
+
+#### 5.26.2 Reglas de la consola
+
+- **Cuándo la manda.** A una sesión que declaró `computer.label`, real o simulada: después del
+  `hello` si el equipo tiene etiqueta, y cada vez que el profesor la cambia o la quita (con
+  `""`), en el editor del salón, en la Pantalla grande o al importar un salón.
+- **Clave del equipo.** El salón identifica cada equipo por su `hostname` sin mayúsculas, y
+  guarda también sus MAC (`hello.macs`, §3.3). Si llega un `hello` con un `hostname` que el salón
+  no conoce pero con una MAC de **un solo** equipo del salón que no está conectado, la consola lo
+  toma como el mismo equipo renombrado (lo reinstalaron): conserva su lugar y su etiqueta, cambia
+  el `hostname` en el archivo y avisa al profesor. Si la MAC está en dos o más equipos, o ese
+  equipo está conectado, el nuevo queda «Sin acomodar».
+- Nunca se manda a un agente que no la declaró; a él no le cambia nada.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -2251,6 +2291,7 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | `screen.broadcast.start.source.hostname` | 1–63 caracteres | `error` `invalid_message` |
 | Acuse de `student.present.start` | 15 s | La consola termina la proyección (`failed`, `no_answer`) |
 | Acuse de `class.end` | 10 s | La consola lo marca «sin acuse» y se lo reenvía al reconectar |
+| `computer.label.label` | 0–40 caracteres, sin caracteres de control | `error` `invalid_message` |
 | `app.block.set.apps` | 1–100 nombres de ≤ 64 caracteres | `error` `invalid_message` |
 | `web.filter.set.domains` | 1–500 dominios de ≤ 253 caracteres | `error` `invalid_message` |
 | `power.action.delay_s` | 10–600 s (0 o ausente = 30 s) | `error` `invalid_message` |

@@ -262,6 +262,29 @@ sesión en esta consola aparecen con el interruptor **Mostrar apagados** de la l
 - **Olvidar** (en la fila de un apagado) borra de la consola la dirección física del equipo. Si
   su agente se vuelve a conectar, Aula lo recuerda otra vez.
 
+## Acomodar el salón
+
+Para que la consola diga «Fila 2 · PC07» en vez de «LAB3-PC07» y muestre las pantallas como están
+en el salón:
+
+1. Abre **Salón** en el menú y elige las **Filas** y **Columnas**.
+2. Marca el escritorio del profesor y los pasillos con **Al hacer clic en un lugar**.
+3. Con **Mover equipos**, arrastra cada equipo de **Sin acomodar** a su lugar.
+4. Elige cada equipo y escribe su **Etiqueta**.
+
+Después, en **Alumnos › Salón** ves a todos en su lugar y seleccionas una fila o una columna con
+un clic. Detalles en [La pantalla Salón](salon).
+
+## Copiar el salón a otra consola
+
+Si el centro tiene varias consolas para el mismo salón, acomódalo en una y cópialo:
+
+1. En **Salón** (o **Ajustes › Salón**), pulsa **Exportar…** y guarda el archivo.
+2. En la otra consola, abre la clase en el mismo canal, pulsa **Importar…**, elige el archivo y
+   confirma. El plano y las etiquetas de esa consola se reemplazan.
+
+Ver [Exportar e importar](salon#exportar-e-importar).
+
 ## Ayudar a un alumno tomando el control
 
 1. En [Alumnos](alumnos#acciones-sobre-un-alumno) › **Miniaturas**, haz clic en la pantalla del

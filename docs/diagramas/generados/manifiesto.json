@@ -124,7 +124,7 @@
       "pantallas": [
         "alumnos"
       ],
-      "hash": "sha256:cbdb2967b2c7732c85aec866de5028aaf260d9291d808156129fe92b732897e6",
+      "hash": "sha256:04689c36acbc4e6a2ab92b11cedc98fb827366a977beabc71117fb8e7119eabd",
       "alt": "Monitoreo: miniaturas, pantalla, captura y pausa: Cómo ve el profesor las pantallas de sus alumnos, cómo toma una captura, cómo las pausa y cómo sabe cada alumno qué pasa con su equipo",
       "claro": "generados/08-monitoreo-pantalla.claro.svg",
       "oscuro": "generados/08-monitoreo-pantalla.oscuro.svg"
@@ -174,7 +174,7 @@
       "pantallas": [
         "ayuda"
       ],
-      "hash": "sha256:5a6ea8ed0f5b3d28d2ca7cfc6edb646f6ed7adae0ecef60d766ea48413d5fd2b",
+      "hash": "sha256:0814027e8f735c9e6c376c2289b767707931ee71b7d1499629c3ab10bbabd149",
       "alt": "Modelo de datos local: Qué guarda Aula en el disco de cada equipo, qué solo vive en memoria y cómo se relacionan claves y configuración",
       "claro": "generados/11-modelo-datos.claro.svg",
       "oscuro": "generados/11-modelo-datos.oscuro.svg"

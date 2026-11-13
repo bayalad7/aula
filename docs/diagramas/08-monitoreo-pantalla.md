@@ -28,7 +28,8 @@ sequenceDiagram
         participant V as Ventana de pausa (platform)
     end
 
-    P->>W: Ver pantallas (Open y Plan)
+    P->>W: Ver pantallas: Miniaturas o Salón (Open y Plan)
+    Note over P,W: En Salón (prompt 10.15) cada miniatura va en su lugar del plano<br/>y el lugar de un equipo sin conexión se ve vacío sin pedir nada
     W->>S: screen.thumb.start {1000 ms, calidad 50, 320 px}<br/>solo a quien declaró screen.thumb
     S->>I: «Tu pantalla está siendo vista por el profesor»
     Note over S,I: Si el distintivo no se puede mostrar,<br/>no se captura nada
@@ -43,7 +44,7 @@ sequenceDiagram
     P->>W: clic en una miniatura (SetDetail)
     W->>S: screen.thumb.start {1000 ms, calidad 70, 1280 px}<br/>reemplaza parámetros y reinicia seq
 
-    alt el profesor cierra la vista, cambia de canal o termina la clase
+    alt el profesor vuelve a Lista, cambia de canal o termina la clase
         W->>S: screen.thumb.stop
     else se cae la conexión
         Note over S: Streamer.Stop al desconectarse

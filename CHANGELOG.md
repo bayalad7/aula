@@ -42,6 +42,11 @@ retiraron; esta es la primera.
 - **Proyectar a la clase** la pantalla de un alumno.
 - **Captura** de la pantalla de un alumno, que solo se guarda si el profesor pulsa «Guardar».
 - **Control remoto** de un alumno, con aviso antes y pausa si el alumno usa su equipo.
+- **Salón:** cada equipo con una etiqueta que se entiende («Fila 2 · PC07») en lugar de su nombre en
+  toda la consola, y el plano del salón (hasta 12 × 12, con escritorio y pasillos) para acomodarlos
+  arrastrando o con el teclado. En Alumnos, la vista **Salón** muestra cada pantalla en su lugar y
+  selecciona una fila o una columna con un clic. Se exporta e importa para copiarlo a las demás
+  consolas del centro, y un equipo reinstalado con otro nombre conserva su lugar.
 
 ### Participación
 
@@ -96,6 +101,7 @@ retiraron; esta es la primera.
 - **Transparencia:** bandas fijas y sin botón de cerrar cuando el profesor ve, controla, pausa,
   restringe o transmite; el alumno sabe siempre quién y qué.
 - **Qué puede hacer Aula en este equipo**, levantar la mano y escribir al profesor desde la tira.
+  También dice el nombre del equipo y la etiqueta que le puso el profesor, para decírsela al soporte.
 
 ### Consola
 

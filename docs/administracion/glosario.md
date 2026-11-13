@@ -17,7 +17,7 @@ pantallas: []
 | Clave del centro | La prueba de que tu consola es de tu centro. Ver [Conceptos](conceptos#la-clave-del-centro). |
 | Ficha | Los datos de un alumno y lo que puede hacer su equipo. Ver [Alumnos](alumnos#la-ficha-de-un-alumno). |
 | Huella | Código corto que identifica la clave del centro, para compararla de palabra. |
-| Miniaturas | Las pantallas de tus alumnos, en pequeño. Ver [Alumnos](alumnos#lista-o-miniaturas). |
+| Miniaturas | Las pantallas de tus alumnos, en pequeño. Ver [Alumnos](alumnos#lista-miniaturas-o-salón). |
 | Puertos | Las «puertas» por las que los alumnos llegan a tu consola: TCP 47830 para todo y UDP 47831 para mostrar tu pantalla. El firewall debe permitirlas. |
 | Restricción | Un bloqueo de aplicaciones o de sitios web durante la clase. |
 | Simulado | Un alumno de prueba dentro de tu consola. Ver [Probar sin laboratorio](probar-sin-laboratorio). |

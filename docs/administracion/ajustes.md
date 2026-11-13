@@ -55,6 +55,12 @@ Scratch 3. Cámbialos, agrega los programas de tu laboratorio con **Agregar app*
 - Si un programa está instalado en otra carpeta en algunos equipos, en esos sale «esa app no está
   instalada en su equipo».
 
+## Salón
+
+Dice el tamaño del salón del canal abierto, cuántos equipos están acomodados y dónde se guarda.
+**Abrir el salón** lleva a [la pantalla Salón](salon); **Exportar…** e **Importar…** lo copian a
+las demás consolas del centro (ver [Exportar e importar](salon#exportar-e-importar)).
+
 ## Acerca de
 
 - **Versión** de Aula Consola.

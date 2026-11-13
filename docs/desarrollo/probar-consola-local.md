@@ -216,6 +216,24 @@ A-54 a A-56, un alumno real en otra ventana o VM (`instaladores-locales.md`).
 | C-130 | Con un alumno real y un equipo con Aula anterior en la selección › **Lanzar a: la selección** | La vista avisa cuántos no pueden; solo el real lo recibe; en Participación «No lo reciben (versión de Aula anterior): …». En la ficha del alumno real, «Responder cuestionarios con puntaje» en «Qué puede hacer su equipo» |
 | C-131 | Cerrado: **Compartir resultados personales** y **Exportar calificaciones** › «Abrir carpeta» del toast | Insignia «Resultados enviados». El CSV queda en `Documentos\Aula\calificaciones\<hoy>\repaso.csv`; abre en Excel con columnas Equipo, Usuario, Puntaje, Máximo, Entregó, P1 (n)…, sin filas de simulados. Exportar otra vez crea `repaso (2).csv`. El log de la consola dice «quiz opened/answered», «quiz grades exported» con `poll` y cuentas, **nunca** el título, las preguntas ni los puntajes. A 900×600 y en oscuro la vista y la sección se leen completas |
 
+### Etiquetas y salón (10.15)
+
+Con el aula simulada abierta (C-03) con 30 alumnos, y para C-136 a C-138 y A-57 a A-58 dos alumnos
+reales en otra ventana o VM (`instaladores-locales.md`). Lo que pasa en el equipo del alumno se
+revisa a ojo (nunca con clics sintéticos en tu escritorio).
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-132 | Menú › **Salón**: **Filas** 6, **Columnas** 8; con **Profesor** haz clic en un lugar del frente y con **Pasillo** en la columna 5 | El plano tiene el frente arriba; los lugares se ven grises con su icono. Los 30 simulados ya ocupan lugares, marcados «Simulado». Cada campo y botón lleva su icono |
+| C-133 | Con **Mover equipos**, arrastra un simulado a otro lugar; luego hazlo con el teclado: Tab al plano, flechas, Enter sobre un equipo, flechas, Enter | Cambia de lugar (si había otro, cambian entre sí). Con el teclado se anuncia «Moviendo «…»: elige su lugar…» y Esc lo suelta sin moverlo. Soltar sobre el escritorio da «Ese lugar no es para un equipo» |
+| C-134 | Alumnos › **Salón** | Cada pantalla en su lugar, con el aviso de pantalla vista. Pulsa el número de una fila: se seleccionan los de esa fila («n seleccionados»); otro clic los quita. **Tamaño** › Ajustar: cabe a lo ancho. A 900×600 y en oscuro se desplaza dentro de su recuadro y se lee completo |
+| C-135 | Cierra el aula simulada | Los simulados desaparecen del plano y del archivo nunca estuvieron: `Documentos\Aula\salones\canal-1.json` no tiene «Simulado» |
+| C-136 | Con dos alumnos reales: acomódalos y ponle a uno la etiqueta «Fila 2 · PC07» (en Salón y luego desde su Pantalla grande › **Etiqueta del equipo**) | La lista, las miniaturas, la ficha (Etiqueta, Equipo, Lugar en el salón), la Pantalla grande y los acuses de un aviso dicen «Fila 2 · PC07» con el nombre del equipo en letra pequeña. La lista sigue el orden del plano. Con 41 caracteres o un salto de línea, el error va junto al campo |
+| C-137 | Cierra la consola y ábrela otra vez; luego cambia al canal 2 y vuelve al 1 | El salón y las etiquetas se conservan; el canal 2 tiene su propio salón vacío. Los equipos que la consola recuerda (10.19) aparecen en «Sin acomodar» aunque estén apagados; en Alumnos › Salón un equipo apagado se ve vacío con **Encender** |
+| C-138 | **Exportar…** y guarda el archivo; en otra consola (o tras borrar `canal-1.json`) abre el canal 2 e **Importar…** ese archivo | La confirmación dice tamaño, equipos y etiquetas y que es del canal 1; al aceptar queda igual en el canal 2 y los alumnos conectados ven su etiqueta. Un archivo editado a mano con un lugar repetido da «Ese archivo no es un salón que Aula pueda usar» y nada cambia. Un `canal-1.json` roto al abrir la consola queda como `canal-1-danado-<fecha>.json` con el aviso arriba del plano. El log dice «room plan imported/exported» con cuentas, **nunca** usuarios |
+| A-57 | En el alumno con etiqueta, el botón ⓘ de la tira, en modo ventana y como servicio | «Este equipo: Fila 2 · PC07 (LAB3-PC07)» arriba de la grilla; sin etiqueta, «Este equipo: LAB3-PC07». Cambiar la etiqueta en la consola no muestra aviso, no saca a Aula del modo compacto ni le quita el foco a tu editor; al reabrir el diálogo ya se ve la nueva |
+| A-58 | Reinstala (o renombra y reinicia) un equipo acomodado y deja que se conecte con otro nombre | En la consola, aviso «LAB3-PC07 ahora se llama …»: conserva su lugar y su etiqueta, y el alumno la ve. Con dos equipos de la misma MAC (VM clonada sin cambiarla) no se renombra ninguno: el nuevo queda en «Sin acomodar» |
+
 ### Proyectar la pantalla de un alumno (12.1)
 
 Con dos alumnos reales (VM o la misma máquina con `-directo`, `instaladores-locales.md`), uno como

@@ -99,12 +99,16 @@ Dos aplicaciones, mismo monorepo:
   - `internal/connectcheck`: el comprobador de conexión de la consola: recorre el camino de un
     alumno (anuncio mDNS, puerto, TLS y clave del centro) y lee la red y el firewall por
     `platform`; da las mismas causas que el agente (`session.Cause`).
+  - `internal/roomplan`: el salón de la consola (prompt 10.15): el plano de filas × columnas de un
+    canal con el lugar y la etiqueta de cada equipo (`Room`), su validación, su archivo en
+    `Documentos\Aula\salones\canal-<n>.json`, exportar e importar, reconocer por su MAC un equipo
+    renombrado y los alumnos simulados solo en memoria. Guarda equipos, nunca alumnos.
   - `internal/ui`: el sistema de diseño compartido por las dos apps (tokens CSS con modo claro y
     oscuro, componentes e iconos en un sprite SVG), embebido con `go:embed` y servido a cada
     frontend Wails bajo `sistema/`. Una sola copia: ninguna app guarda la suya. Su prueba de
     contraste (WCAG AA) vive con él.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `classend`, `poll`, `filepush`, `collect`, `openapp`, `ui` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `classend`, `poll`, `filepush`, `collect`, `openapp`, `roomplan`, `ui` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

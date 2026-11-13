@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-13 (10.20 cuestionarios con puntaje implementados como mejora de
+Última actualización: 2026-11-13 (10.15 etiquetas de los equipos y salón implementados, sin commit,
+falta la prueba con alumnos reales; 10.20 cuestionarios con puntaje implementados como mejora de
 10.12, sin commit, falta la prueba en VM; 10.14 terminar la clase implementada, falta la prueba en VM;
 12.2 transmisión a una selección y modos ventana y pantalla
 completa implementada, falta la prueba en VM y en la ventana real; 12.1 proyectar la pantalla de
@@ -43,7 +44,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.12 | Encuestas en vivo | ✅ Implementado y probado en CI con dobles y alumnos simulados; panel «Encuesta» de la barra, franja y sección «Encuestas» de Participación (falta la prueba en VM, `docs/prueba-vms.md` §24, y los casos C-84 a C-88 y A-28 a A-30) |
 | 10.13 | Identidad del alumno (cuenta, nombre, grado, grupo), materias, asistencia y bitácora | ⏳ Pendiente (prompt ampliado el 12/11/2026) |
 | 10.14 | Terminar la clase | ✅ Implementado y probado en CI con dobles y alumnos simulados; «Terminar la clase» bajo el Selector de clase con su diálogo, `class.end` (§5.25), reglas 83–86, diagrama 22. Sin 10.13: la asistencia y la identidad quedan para cuando exista (falta la prueba en VM, `docs/prueba-vms.md` §28, y los casos C-114 a C-118 y A-48 a A-50) |
-| 10.15 | Nombres de los equipos y mapa del aula | ⏳ Pendiente (prompt del 12/11/2026) |
+| 10.15 | Nombres de los equipos y mapa del aula | ✅ Implementado y probado en CI con dobles y alumnos simulados; módulo «Salón» del menú, vista «Salón» en Alumnos, Ajustes › Salón y «Etiqueta del equipo» en la Pantalla grande; `computer.label` (§5.26), regla 31 ter, paquete `internal/roomplan`, diagramas 08 y 11 (falta la prueba con alumnos reales: casos C-132 a C-138 y A-57 y A-58) |
 | 10.16 | Grupos guardados y equipos de trabajo | ⏳ Pendiente (prompt del 12/11/2026) |
 | 10.17 | Entregar código desde la app del alumno (`code.collect`) | ⏳ Pendiente (prompt del 12/11/2026) |
 | 10.18 | Perfiles de clase («Iniciar clase») | ⏳ Pendiente, después de `v0.1.0` |

@@ -12,7 +12,7 @@ export const zonas = {
     { id: "menu", nombre: "Menú", selector: ".nav-lateral", que: "Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes." },
     { id: "menu-clase", dentro: "menu", nombre: "Selector de clase", selector: "#nav-clase", que: "Canal y nombre de la clase abierta; abre «Cambiar de canal»." },
     { id: "menu-terminar", dentro: "menu", nombre: "Terminar la clase", selector: "#nav-terminar", que: "Bajo el Selector de clase: detiene lo activo y deja limpia la ventana de cada alumno (prompt 10.14)." },
-    { id: "franja", nombre: "Franja global", selector: ".principal > .franja", que: "Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo." },
+    { id: "franja", nombre: "Franja global", selector: ".principal > .franja", que: "Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo." },
     { id: "cabecera", nombre: "Cabecera de la vista", selector: ".vista__cabecera", que: "Título de la vista, su resumen y el «?» de ayuda contextual." },
     { id: "avisos", nombre: "Avisos (toasts)", selector: "#avisos", que: "Mensajes breves abajo a la derecha tras una acción." },
 
@@ -69,11 +69,16 @@ export const zonas = {
     { id: "recoleccion", dentro: "recolecciones", nombre: "Tarjeta de recolección", selector: "#reco-lista > .recoleccion", que: "Una actividad: Recoger, Recoger a los que faltan, Abrir carpeta y la tabla por alumno." },
     { id: "reco-fila", dentro: "recoleccion", nombre: "Fila de la recolección", selector: "#reco-lista .reco-filas > tr", que: "Un alumno: estado, qué llegó, cuándo, Abrir, Guardar como… y Recoger otra vez." },
 
+    // Cuestionarios (prompt 10.20): módulo propio del menú
+    { id: "cuestionarios", nombre: "Vista Cuestionarios", selector: "[data-vista-de=cuestionarios]", que: "Los cuestionarios guardados, su editor y Lanzar; los resultados van en Participación › Encuestas." },
+    { id: "cuest-guardados", dentro: "cuestionarios", nombre: "Cuestionarios guardados", selector: "#cuest-guardados", que: "Los de Documentos\\Aula\\cuestionarios con «Lanzar a» (todos o la selección), Lanzar, Editar, Eliminar, Nuevo cuestionario y Abrir carpeta." },
+    { id: "cuest-editor", dentro: "cuestionarios", nombre: "Editor de cuestionario", selector: "#cuest-editor", que: "Título, tiempo, al azar y cada pregunta con su tipo, puntos y opciones con el interruptor Correcta; Guardar y Guardar y lanzar." },
+
     // Participación
     { id: "participacion", nombre: "Vista Participación", selector: "[data-vista-de=participacion]", que: "Lo que responden los alumnos en vivo." },
     { id: "manos", dentro: "participacion", nombre: "Manos levantadas", selector: "#manos", que: "La fila de manos, por orden de llegada." },
     { id: "mensajes", dentro: "participacion", nombre: "Mensajes de los alumnos", selector: "#mensajes", que: "La bandeja de mensajes con Responder." },
-    { id: "part-encuestas", dentro: "participacion", nombre: "Sección Encuestas", selector: "#encuestas", que: "La encuesta abierta con sus barras en vivo y Cerrar, y las anteriores con Compartir resultados." },
+    { id: "part-encuestas", dentro: "participacion", nombre: "Sección Encuestas", selector: "#encuestas", que: "La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones." },
     { id: "part-temporizador", dentro: "participacion", nombre: "Sección Temporizador", selector: "#temporizador-activo, #temporizador-vacio", que: "Quién ve el temporizador y quién falta." },
 
     // Otras vistas
@@ -100,7 +105,8 @@ export const zonas = {
     { id: "vacio", nombre: "Estado vacío", selector: "#empty", que: "Lo que se ve cuando no hay código ni archivos." },
     { id: "fin-clase", nombre: "Tarjeta «La clase terminó»", selector: "#fin-clase", que: "Cuándo terminó la clase y qué se quitó, con «Entendido»; no es una banda (prompt 10.14)." },
     { id: "encuestas", nombre: "Encuestas", selector: "#encuestas", que: "Una tarjeta por encuesta del profesor, arriba de la lista." },
-    { id: "tarjeta-encuesta", dentro: "encuestas", nombre: "Tarjeta de encuesta", selector: "#encuestas > li", que: "La pregunta, si es anónima, las opciones con Enviar y, si el profesor los comparte, los resultados de la clase." },
+    { id: "tarjeta-encuesta", dentro: "encuestas", nombre: "Tarjeta de encuesta", selector: "#encuestas > li:not(.cuestionario)", que: "La pregunta, si es anónima, las opciones con Enviar y, si el profesor los comparte, los resultados de la clase." },
+    { id: "tarjeta-cuestionario", dentro: "encuestas", nombre: "Tarjeta de cuestionario", selector: "#encuestas > li.cuestionario", que: "Una pregunta a la vez con Anterior, Siguiente y cuántas lleva, y Entregar; si el profesor lo comparte, solo su resultado (prompt 10.20)." },
     { id: "recolecciones", nombre: "Recolecciones", selector: "#recolecciones", que: "Una tarjeta por recolección del profesor." },
     { id: "tarjeta-recoleccion", dentro: "recolecciones", nombre: "Tarjeta de recolección", selector: "#recolecciones > li", que: "Dónde guardar el ejercicio, qué se recogió y cuándo, y Abrir carpeta." },
     { id: "archivos", nombre: "Archivos recibidos", selector: "#archivos", que: "Una tarjeta por envío de archivos." },
@@ -134,6 +140,8 @@ export const escenas = {
     "lab-temporizador-fin": "Temporizador terminado",
     "lab-archivos": "Envío de archivos con un fallo",
     "lab-terminar": "Todo activo, para terminar la clase",
+    "lab-cuestionario": "Cuestionario abierto con puntajes",
+    "lab-cuestionario-cerrado": "Cuestionario cerrado, para compartir y exportar",
     simulada: "Aula simulada abierta",
     "simulada-sola": "Solo alumnos simulados",
     "clave-personal": "Consola con clave personal",
@@ -164,6 +172,8 @@ export const escenas = {
     mostrando: "Tu pantalla se está mostrando",
     todo: "Todas las bandas",
     "fin-clase": "La clase terminó",
+    cuestionario: "Cuestionario abierto",
+    "cuestionario-resultado": "Cuestionario con su resultado",
     buscando: "Buscando la clase",
     "sin-conexion": "Sin conexión",
     "sin-configurar": "Sin configurar",
@@ -171,5 +181,5 @@ export const escenas = {
 };
 
 // Las vistas de la consola, para ir a ellas desde el anotador (ruta = hash).
-export const rutas = { alumnos: "", codigo: "codigo", archivos: "archivos", participacion: "participacion", simulada: "simulada",
+export const rutas = { alumnos: "", codigo: "codigo", archivos: "archivos", cuestionarios: "cuestionarios", participacion: "participacion", simulada: "simulada",
   ayuda: "ayuda", falta: "falta" };

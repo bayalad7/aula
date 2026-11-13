@@ -60,7 +60,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
+| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
 | 2 | **Panel Aviso** | Mandar un aviso a la selección. |
 | 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
 
@@ -70,7 +70,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
+| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
 | 2 | **Panel Pausar pantallas** | Pausar las pantallas de la selección o de todos, con un mensaje opcional, o reanudarlas (Ctrl+Mayús+P). |
 | 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
 
@@ -162,8 +162,27 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
-| 2 | **Sección Encuestas** | La encuesta abierta con sus barras en vivo y Cerrar, y las anteriores con Compartir resultados. |
+| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
+| 2 | **Sección Encuestas** | La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones. |
+
+### Consola · Cuestionarios
+
+![Consola · Cuestionarios](mapa/consola-cuestionarios.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Menú** | Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes. |
+| 2 | **Cuestionarios guardados** | Los de Documentos\Aula\cuestionarios con «Lanzar a» (todos o la selección), Lanzar, Editar, Eliminar, Nuevo cuestionario y Abrir carpeta. |
+| 3 | **Editor de cuestionario** | Título, tiempo, al azar y cada pregunta con su tipo, puntos y opciones con el interruptor Correcta; Guardar y Guardar y lanzar. |
+
+### Consola · Participación › Encuestas (cuestionario)
+
+![Consola · Participación › Encuestas (cuestionario)](mapa/consola-participacion-cuestionario.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
+| 2 | **Sección Encuestas** | La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones. |
 
 
 ## App del alumno
@@ -220,6 +239,15 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 2 | **Encuestas** | Una tarjeta por encuesta del profesor, arriba de la lista. |
 | 3 | **Tarjeta de encuesta** | La pregunta, si es anónima, las opciones con Enviar y, si el profesor los comparte, los resultados de la clase. |
 
+### Alumno · Cuestionario
+
+![Alumno · Cuestionario](mapa/alumno-cuestionario.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 2 | **Tarjeta de cuestionario** | Una pregunta a la vez con Anterior, Siguiente y cuántas lleva, y Entregar; si el profesor lo comparte, solo su resultado (prompt 10.20). |
+
 ### Alumno · Recolección
 
 ![Alumno · Recolección](mapa/alumno-recolecciones.webp)
@@ -260,7 +288,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `menu` | Menú | Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes. |
 | `menu-clase` | Menú › Selector de clase | Canal y nombre de la clase abierta; abre «Cambiar de canal». |
 | `menu-terminar` | Menú › Terminar la clase | Bajo el Selector de clase: detiene lo activo y deja limpia la ventana de cada alumno (prompt 10.14). |
-| `franja` | Franja global | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta abierta, aula simulada), con su botón para detenerlo. |
+| `franja` | Franja global | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
 | `cabecera` | Cabecera de la vista | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | `avisos` | Avisos (toasts) | Mensajes breves abajo a la derecha tras una acción. |
 | `alumnos` | Vista Alumnos | Los alumnos del canal, en lista o miniaturas. |
@@ -308,10 +336,13 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `reco-nueva` | Vista Archivos › Recolecciones › Nueva recolección | Actividad, tipos de archivo y «Crear carpeta en los equipos». |
 | `recoleccion` | Vista Archivos › Recolecciones › Tarjeta de recolección | Una actividad: Recoger, Recoger a los que faltan, Abrir carpeta y la tabla por alumno. |
 | `reco-fila` | Vista Archivos › Recolecciones › Tarjeta de recolección › Fila de la recolección | Un alumno: estado, qué llegó, cuándo, Abrir, Guardar como… y Recoger otra vez. |
+| `cuestionarios` | Vista Cuestionarios | Los cuestionarios guardados, su editor y Lanzar; los resultados van en Participación › Encuestas. |
+| `cuest-guardados` | Vista Cuestionarios › Cuestionarios guardados | Los de Documentos\Aula\cuestionarios con «Lanzar a» (todos o la selección), Lanzar, Editar, Eliminar, Nuevo cuestionario y Abrir carpeta. |
+| `cuest-editor` | Vista Cuestionarios › Editor de cuestionario | Título, tiempo, al azar y cada pregunta con su tipo, puntos y opciones con el interruptor Correcta; Guardar y Guardar y lanzar. |
 | `participacion` | Vista Participación | Lo que responden los alumnos en vivo. |
 | `manos` | Vista Participación › Manos levantadas | La fila de manos, por orden de llegada. |
 | `mensajes` | Vista Participación › Mensajes de los alumnos | La bandeja de mensajes con Responder. |
-| `part-encuestas` | Vista Participación › Sección Encuestas | La encuesta abierta con sus barras en vivo y Cerrar, y las anteriores con Compartir resultados. |
+| `part-encuestas` | Vista Participación › Sección Encuestas | La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones. |
 | `part-temporizador` | Vista Participación › Sección Temporizador | Quién ve el temporizador y quién falta. |
 | `simulada` | Vista Aula simulada | Alumnos de prueba y sus fallas. |
 | `ayuda` | Vista Ayuda (manual) | El manual, con búsqueda e índice. |
@@ -339,6 +370,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `fin-clase` | Tarjeta «La clase terminó» | Cuándo terminó la clase y qué se quitó, con «Entendido»; no es una banda (prompt 10.14). |
 | `encuestas` | Encuestas | Una tarjeta por encuesta del profesor, arriba de la lista. |
 | `tarjeta-encuesta` | Encuestas › Tarjeta de encuesta | La pregunta, si es anónima, las opciones con Enviar y, si el profesor los comparte, los resultados de la clase. |
+| `tarjeta-cuestionario` | Encuestas › Tarjeta de cuestionario | Una pregunta a la vez con Anterior, Siguiente y cuántas lleva, y Entregar; si el profesor lo comparte, solo su resultado (prompt 10.20). |
 | `recolecciones` | Recolecciones | Una tarjeta por recolección del profesor. |
 | `tarjeta-recoleccion` | Recolecciones › Tarjeta de recolección | Dónde guardar el ejercicio, qué se recogió y cuándo, y Abrir carpeta. |
 | `archivos` | Archivos recibidos | Una tarjeta por envío de archivos. |

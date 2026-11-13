@@ -35,7 +35,7 @@
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
     lastCodeAck: "", ackedAt: "", simulated: false, connectedAt: "10:31", lastError: null, hand: 0, newMessages: 0,
-    pause: "", pauseUnacked: false,
+    pause: "", pauseUnacked: false, canWake: false, wake: null,
   }, o, caps(o));
 
   // muchos_alumnos -n 2: SIM-01, SIM-02 (code.view y msg.show).
@@ -53,8 +53,21 @@
     student({ hostname: "lab-ubuntu-02", username: "maria", os: "linux", osVersion: "Ubuntu 24.04",
       capabilities: ["code.view", "msg.show", "hand", "msg.student", "timer", "poll"], lastCodeAck: "sn-2", ackedAt: "10:39:50",
       lastError: scene === "lab-errores" ? { code: "unsupported_capability", at: "10:43:12" } : null }),
-    student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL }),
+    student({ hostname: "LAB3-PC03", username: "alumno03", state: "disconnected", capabilities: ALL, canWake: true }),
   ];
+  for (const s of lab) if (s.os === "windows") s.canWake = true;
+  // Encender (apps/teacher/wake.go): equipos que la consola conoce y no tienen sesión. En
+  // lab-encender, uno está «Encendiendo…» y otro «No respondió» (y fuera de la red de la consola).
+  const haceHoras = (h) => new Date(now - h * 3600000).toISOString();
+  let off = scene.startsWith("lab") ? [
+    { hostname: "LAB3-PC01", lastSeen: haceHoras(2), wake: null },
+    { hostname: "LAB3-PC02", lastSeen: haceHoras(26), wake: null },
+    { hostname: "LAB3-PC09", lastSeen: haceHoras(3), wake: null },
+  ] : [];
+  if (scene === "lab-encender") {
+    off[1].wake = { state: "waking", deadline_ms: now + 142000, other_subnet: false };
+    off[2].wake = { state: "noresponse", deadline_ms: now - 1000, other_subnet: true };
+  }
   const simStudents = [1, 2].map((i) => student({ hostname: "Simulado " + i, username: "Alumno de prueba", osVersion: "simulado",
     agentVersion: "0.6.0-dev+sim", capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "file.push", "file.collect", "poll", "class.end"], simulated: true,
     lastCodeAck: i === 1 ? "sn-3" : "", ackedAt: i === 1 ? "10:42:09" : "" }));
@@ -113,7 +126,7 @@
       canCode: n("canCode"), canNotice: n("canNotice"), canThumb: n("canThumb"),
       canBroadcast: r("canBroadcast"), canAppBlock: r("canAppBlock"), canWebFilter: r("canWebFilter"), canPower: r("canPower"),
       canSnapshot: n("canSnapshot"), canTimer: n("canTimer"), canPoll: n("canPoll"), canCollect: n("canCollect"),
-      canOpenUrl: r("canOpenUrl"), canOpenApp: r("canOpenApp"), canPause: r("canPause") };
+      canOpenUrl: r("canOpenUrl"), canOpenApp: r("canOpenApp"), canPause: r("canPause"), off };
   };
 
   // Abrir página o app (apps/teacher/open.go): el catálogo de Ajustes y las últimas órdenes.
@@ -400,6 +413,27 @@
     PresentViewFailed: call("PresentViewFailed"),
     PowerAction: call("PowerAction", { sent: 3, unsupported: ["lab-ubuntu-02"], failed: [] }),
     PowerCancel: call("PowerCancel", { sent: 3, unsupported: [], failed: [] }),
+    WakeComputers: call("WakeComputers", (hosts) => {
+      const quiere = (h) => !hosts.length || hosts.some((x) => x.toLowerCase() === h.toLowerCase());
+      const res = { sent: 0, noMac: [], failed: [], otherSubnet: [] };
+      const marcar = (x) => { x.wake = { state: "waking", deadline_ms: Date.now() + 180000, other_subnet: false }; res.sent++; };
+      for (const s of list) {
+        if (s.simulated || s.state === "connected" || !quiere(s.hostname)) continue;
+        if (s.canWake) marcar(s); else res.noMac.push(s.hostname);
+      }
+      for (const o of off) if (quiere(o.hostname)) marcar(o);
+      if (!res.sent) {
+        return res.noMac.length ? new Error("aula:wakeNoMac: ninguno de esos equipos informó su dirección física")
+          : new Error("aula:noWakeTargets: no hay equipos apagados conocidos en este canal");
+      }
+      window.__emit("aula:students", studentsView());
+      return res;
+    }),
+    ForgetComputer: call("ForgetComputer", (host) => {
+      off = off.filter((o) => o.hostname.toLowerCase() !== String(host).toLowerCase());
+      window.__emit("aula:students", studentsView());
+      return null;
+    }),
     PauseScreens: call("PauseScreens", (req) => {
       if ((req.message || "").length > 300) return new Error("aula:invalidPauseMessage: el mensaje de la pausa tiene más de 300 caracteres");
       const objetivo = pausaDe(req.hosts || []);

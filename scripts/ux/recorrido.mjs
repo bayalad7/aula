@@ -395,6 +395,21 @@ await f("186-terminar-oscuro-900x600", "lab-terminar", { oscuro: true, w: 900, h
 await f("187-terminar-resultado-oscuro-900x600", "lab-terminar", { oscuro: true, w: 900, h: 600, pasos: terminarYa });
 await f("188-terminar-nada-activo", "datos", { pasos: terminar });
 
+// Encender (prompt 10.19): «Mostrar apagados» con «Encendiendo…», «No respondió» y Encender en
+// la fila; la opción Encender del Panel Energía, para todos o para la selección; el aviso tras
+// encender uno. El interruptor se enciende por código: se recuerda entre escenas.
+const verApagados = async (p) => {
+  await p.evaluate(() => { const i = document.getElementById("alumnos-apagados"); if (!i.checked) i.click(); });
+  await sleep(150);
+};
+const panelEncender = seq(click('[data-panel="energia"]'), click('#panel-energia label:has(input[value="wake"])'), async () => { await sleep(150); });
+await f("189-encender-apagados", "lab-encender", { pasos: verApagados });
+await f("190-encender-panel-todos", "lab", { pasos: seq(verApagados, panelEncender) });
+await f("191-encender-panel-seleccion", "lab", { pasos: seq(verApagados, click(fila("LAB3-PC01")), click(fila("LAB3-PC03")), panelEncender) });
+await f("192-encender-uno", "lab", { pasos: seq(verApagados, click(`${fila("LAB3-PC03")} .encender`), async () => { await sleep(300); }) });
+await f("193-encender-apagados-oscuro-900x600", "lab-encender", { oscuro: true, w: 900, h: 600, pasos: verApagados });
+await f("194-encender-panel-oscuro-900x600", "lab", { oscuro: true, w: 900, h: 600, pasos: seq(verApagados, panelEncender) });
+
 await cerrar();
 let graves = 0;
 for (const [nombre, r] of Object.entries(informe)) {

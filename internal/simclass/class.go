@@ -57,8 +57,11 @@ const (
 // (filepush with an in-memory folder that keeps only the names). And a
 // collection gets their last code, from memory too (collect.go). When the
 // teacher ends the class they clear their simulated window (classend.go).
+// The label of their computer in the room plan they keep for the session
+// (computer.label, §5.26).
 var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
-	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect, protocol.CapPoll, protocol.CapPollQuiz, protocol.CapClassEnd}
+	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect, protocol.CapPoll, protocol.CapPollQuiz, protocol.CapClassEnd,
+	protocol.CapComputerLabel}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities
@@ -116,6 +119,8 @@ type Student struct {
 	Timer classtimer.View `json:"timer"`
 	// Poll is the newest poll it shows and what it answered, if any (§5.23).
 	Poll *poll.Card `json:"poll"`
+	// Label is the label of its computer the console sent (§5.26), "" if none.
+	Label string `json:"label"`
 }
 
 // Class is a set of simulated students connected to one console. It is safe
@@ -294,6 +299,7 @@ type student struct {
 	notices    int
 	private    int
 	lastNotice string
+	label      string // computer.label of this session (§5.26)
 	snapshots  int
 	cancel     context.CancelFunc // stops the running agent; nil while disconnected
 	done       chan struct{}
@@ -379,7 +385,7 @@ func (s *student) start() {
 			s.mu.Lock()
 			s.connected = st == session.AgentConnected
 			if !s.connected {
-				s.cl = nil
+				s.cl, s.label = nil, "" // the label is only for the session
 			}
 			s.mu.Unlock()
 			if st != session.AgentConnected {
@@ -448,6 +454,13 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 			return
 		}
 		if s.handleClassEnd(ctx, cl, env, fault) {
+			return
+		}
+		if p, ok := env.Payload.(protocol.ComputerLabel); ok {
+			s.mu.Lock()
+			s.label = p.Label // no answer (§5.26.1)
+			s.mu.Unlock()
+			s.class.changed()
 			return
 		}
 		if s.handleFile(ctx, send, env) {
@@ -522,7 +535,7 @@ func (s *student) snapshot() Student {
 	out := Student{
 		ID: s.id, Name: s.name, OS: s.os, Capabilities: slices.Clone(s.caps), Connected: s.connected,
 		Fault: s.fault, Viewed: s.viewed, Notices: s.notices, Private: s.private, LastNotice: s.lastNotice, Snapshots: s.snapshots, Files: s.received, Snippets: []Snippet{},
-		Hand: s.desk.View().Hand, Sent: s.sent, Timer: s.countdown.View(), Poll: s.pollView(),
+		Hand: s.desk.View().Hand, Sent: s.sent, Timer: s.countdown.View(), Poll: s.pollView(), Label: s.label,
 	}
 	if s.fault == FaultSlow {
 		out.DelayMs = int(s.delay / time.Millisecond)

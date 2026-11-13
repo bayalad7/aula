@@ -141,6 +141,11 @@ func samplePayloads() []Payload {
 		PollResults{PollID: testRefID, Counts: []int{0, 0}, Voters: 0, Recipients: 0},
 		PollAck{RefID: testSnippetID, PollID: testRefID, Status: PollAckShown},
 		PollAck{RefID: testSnippetID, PollID: testRefID, Status: PollAckResults},
+		sampleQuizOpen(),
+		PollVote{PollID: testRefID, Answers: []PollQuizAnswer{{Q: 0, Choices: []int{1}}, {Q: 1, Choices: []int{0, 2}}}},
+		PollVote{PollID: testRefID, Submitted: true},
+		PollQuizResult{PollID: testRefID, Score: 2, Max: 5, Questions: []PollQuizResultQuestion{
+			{Q: 0, Choices: []int{1}, Correct: []int{1}, Earned: 2}, {Q: 1, Choices: []int{}, Correct: []int{0, 2}, Earned: 0}}},
 		StudentPresentStart{PresentID: testRefID, MaxWidth: 1920, FPS: 15, MaxKbps: 2500},
 		StudentPresentAck{RefID: testSnippetID, PresentID: testRefID, Status: PresentAccepted, Width: 1920, Height: 1080},
 		StudentPresentAck{RefID: testSnippetID, PresentID: testRefID, Status: PresentFailed, Reason: PresentCaptureUnavailable},
@@ -595,6 +600,7 @@ func TestRequiredCapability(t *testing.T) {
 		TypeTimerStart: CapTimer, TypeTimerExtend: CapTimer, TypeTimerStop: CapTimer,
 		TypeOpenURL: CapOpenURL, TypeOpenApp: CapOpenApp,
 		TypePollOpen: CapPoll, TypePollVoteAck: CapPoll, TypePollClose: CapPoll, TypePollResults: CapPoll,
+		TypePollQuizResult:      CapPollQuiz,
 		TypeStudentPresentStart: CapScreenPresent, TypeStudentPresentOffer: CapScreenPresent,
 		TypeStudentPresentICE: CapScreenPresent, TypeStudentPresentStop: CapScreenPresent,
 		TypeClassEnd: CapClassEnd,
@@ -906,6 +912,29 @@ func TestPollLimits(t *testing.T) {
 		PollResults{PollID: testRefID, Counts: []int{1, -1}, Voters: 0, Recipients: 0},
 		PollResults{PollID: testRefID, Counts: []int{1, 2}, Voters: 3, Recipients: 2},
 		PollAck{RefID: testRefID, PollID: testRefID, Status: "voted"},
+		// Quizzes (§5.23.1).
+		withQuiz(func(p *PollOpen) { p.Named = false }),
+		withQuiz(func(p *PollOpen) { p.Question = strings.Repeat("ñ", MaxQuizTitle+1) }),
+		withQuiz(func(p *PollOpen) { p.Questions = nil }),
+		withQuiz(func(p *PollOpen) { p.Options = []string{"a", "b"} }),
+		withQuiz(func(p *PollOpen) { p.Questions[1].ID = p.Questions[0].ID }),
+		withQuiz(func(p *PollOpen) { p.Questions[0].Points = 0 }),
+		withQuiz(func(p *PollOpen) { p.Questions[0].Points = MaxQuizPoints + 1 }),
+		withQuiz(func(p *PollOpen) { p.Questions[0].Kind = PollKindOpen }),
+		withQuiz(func(p *PollOpen) { p.Questions[0].Options[0].ID = 7 }),
+		withQuiz(func(p *PollOpen) { p.Questions[2].Multi = true }),
+		withQuiz(func(p *PollOpen) { p.Answers = []PollQuizAnswer{{Q: 0, Choices: []int{0, 1}}} }),
+		withQuiz(func(p *PollOpen) { p.Answers = []PollQuizAnswer{{Q: 9, Choices: []int{0}}} }),
+		PollOpen{PollID: testRefID, Kind: PollKindYesNo, Question: "¿?", Submitted: true},
+		PollVote{PollID: testRefID, Choice: intp(1), Submitted: true},
+		PollVote{PollID: testRefID, Answers: []PollQuizAnswer{{Q: 0, Choices: []int{}}}},
+		PollVote{PollID: testRefID, Answers: []PollQuizAnswer{{Q: 0, Choices: []int{1, 1}}}},
+		PollVote{PollID: testRefID, Answers: []PollQuizAnswer{{Q: 0, Choices: []int{1}}, {Q: 0, Choices: []int{2}}}},
+		PollVote{PollID: testRefID, Answers: []PollQuizAnswer{{Q: MaxQuizQuestions, Choices: []int{1}}}},
+		PollQuizResult{PollID: testRefID, Score: 3, Max: 2, Questions: []PollQuizResultQuestion{{Q: 0, Correct: []int{1}, Earned: 3}}},
+		PollQuizResult{PollID: testRefID, Score: 1, Max: 2, Questions: []PollQuizResultQuestion{{Q: 0, Correct: []int{1}, Earned: 2}}},
+		PollQuizResult{PollID: testRefID, Score: 0, Max: 2, Questions: []PollQuizResultQuestion{{Q: 0, Earned: 0}}},
+		PollQuizResult{PollID: testRefID, Score: 0, Max: 2},
 	} {
 		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
 			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
@@ -921,6 +950,54 @@ func TestPollLimits(t *testing.T) {
 		if err := p.Validate(); err != nil {
 			t.Errorf("%T: the limits must be valid: %v", p, err)
 		}
+	}
+}
+
+func sampleQuizOpen() PollOpen {
+	return PollOpen{PollID: testRefID, Kind: PollKindQuiz, Question: "Repaso de bucles", Named: true,
+		Questions: []PollQuizQuestion{
+			{ID: 0, Kind: PollKindChoice, Text: "¿Qué imprime print(3 // 2)?", Points: 2,
+				Options: []PollQuizOption{{ID: 2, Text: "2"}, {ID: 0, Text: "1.5"}, {ID: 1, Text: "1"}}},
+			{ID: 1, Kind: PollKindChoice, Text: "¿Cuáles son bucles?", Points: 2, Multi: true,
+				Options: []PollQuizOption{{ID: 0, Text: "for"}, {ID: 1, Text: "if"}, {ID: 2, Text: "while"}}},
+			{ID: 2, Kind: PollKindYesNo, Text: "¿range(3) incluye el 3?", Points: 1},
+		}}
+}
+
+func withQuiz(change func(*PollOpen)) PollOpen {
+	p := sampleQuizOpen()
+	change(&p)
+	return p
+}
+
+func TestQuizAnswersFit(t *testing.T) {
+	qs := sampleQuizOpen().Questions
+	for _, c := range []struct {
+		answers []PollQuizAnswer
+		ok      bool
+	}{
+		{nil, true},
+		{[]PollQuizAnswer{{Q: 0, Choices: []int{2}}, {Q: 1, Choices: []int{0, 2}}, {Q: 2, Choices: []int{1}}}, true},
+		{[]PollQuizAnswer{{Q: 0, Choices: []int{0, 1}}}, false}, // not multi
+		{[]PollQuizAnswer{{Q: 2, Choices: []int{2}}}, false},    // yes/no has two
+		{[]PollQuizAnswer{{Q: 0, Choices: []int{3}}}, false},
+		{[]PollQuizAnswer{{Q: 5, Choices: []int{0}}}, false},
+	} {
+		if err := ValidQuizAnswers(c.answers, qs); (err == nil) != c.ok {
+			t.Errorf("%+v: %v, want ok %v", c.answers, err, c.ok)
+		}
+	}
+	quiz := PollVote{PollID: testRefID, Submitted: true}
+	if quiz.ValidFor(PollKindChoice, []string{"a", "b"}) == nil || quiz.ValidFor(PollKindQuiz, nil) != nil {
+		t.Error("answers fit only a quiz")
+	}
+	if (PollVote{PollID: testRefID, Choice: intp(0)}).ValidFor(PollKindQuiz, nil) == nil {
+		t.Error("a quiz takes answers, not a choice")
+	}
+	q := sampleQuizOpen().Questions[0]
+	q.Points = MaxQuizPoints
+	if err := q.Validate(); err != nil {
+		t.Errorf("the limit must be valid: %v", err)
 	}
 }
 

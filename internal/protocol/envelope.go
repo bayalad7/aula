@@ -88,12 +88,13 @@ const (
 	TypeOpenApp Type = "open.app"
 	TypeOpenAck Type = "open.ack"
 	// Live polls (docs/protocol.md §5.23).
-	TypePollOpen    Type = "poll.open"
-	TypePollVote    Type = "poll.vote"
-	TypePollVoteAck Type = "poll.vote.ack"
-	TypePollClose   Type = "poll.close"
-	TypePollResults Type = "poll.results"
-	TypePollAck     Type = "poll.ack"
+	TypePollOpen       Type = "poll.open"
+	TypePollVote       Type = "poll.vote"
+	TypePollVoteAck    Type = "poll.vote.ack"
+	TypePollClose      Type = "poll.close"
+	TypePollResults    Type = "poll.results"
+	TypePollAck        Type = "poll.ack"
+	TypePollQuizResult Type = "poll.quiz.result" // §5.23.1
 	// Showing a student's screen to the class (docs/protocol.md §5.24).
 	TypeStudentPresentStart  Type = "student.present.start"
 	TypeStudentPresentAck    Type = "student.present.ack"
@@ -330,12 +331,13 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeOpenApp: decodeAs[OpenApp],
 	TypeOpenAck: decodeAs[OpenAck],
 
-	TypePollOpen:    decodeAs[PollOpen],
-	TypePollVote:    decodeAs[PollVote],
-	TypePollVoteAck: decodeAs[PollVoteAck],
-	TypePollClose:   decodeAs[PollClose],
-	TypePollResults: decodeAs[PollResults],
-	TypePollAck:     decodeAs[PollAck],
+	TypePollOpen:       decodeAs[PollOpen],
+	TypePollVote:       decodeAs[PollVote],
+	TypePollVoteAck:    decodeAs[PollVoteAck],
+	TypePollClose:      decodeAs[PollClose],
+	TypePollResults:    decodeAs[PollResults],
+	TypePollAck:        decodeAs[PollAck],
+	TypePollQuizResult: decodeAs[PollQuizResult],
 
 	TypeStudentPresentStart:  decodeAs[StudentPresentStart],
 	TypeStudentPresentAck:    decodeAs[StudentPresentAck],

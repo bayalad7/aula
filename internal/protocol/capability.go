@@ -43,6 +43,9 @@ const (
 	// CapPoll shows the teacher's polls in the window and lets the student
 	// answer (§5.23). Every OS, whenever the agent has a window.
 	CapPoll Capability = "poll"
+	// CapPollQuiz shows quizzes (several questions, graded by the console)
+	// and their personal result (docs/protocol.md §5.23.1). Declared with poll.
+	CapPollQuiz Capability = "poll.quiz"
 	// CapScreenPresent publishes the student's own screen to the class
 	// (§5.24): Windows, with display capture, an H.264 encoder and the window
 	// excluded from the capture; never the simulated students.
@@ -112,10 +115,11 @@ var requiredCapability = map[Type]Capability{
 	TypeOpenURL: CapOpenURL,
 	TypeOpenApp: CapOpenApp,
 
-	TypePollOpen:    CapPoll,
-	TypePollVoteAck: CapPoll,
-	TypePollClose:   CapPoll,
-	TypePollResults: CapPoll,
+	TypePollOpen:       CapPoll,
+	TypePollVoteAck:    CapPoll,
+	TypePollClose:      CapPoll,
+	TypePollResults:    CapPoll,
+	TypePollQuizResult: CapPollQuiz,
 
 	TypeStudentPresentStart: CapScreenPresent,
 	TypeStudentPresentOffer: CapScreenPresent,

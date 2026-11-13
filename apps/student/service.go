@@ -342,6 +342,8 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	h.Capabilities = append(h.Capabilities, protocol.CapPoll)
 	// And it can leave its window as freshly opened (§5.25).
 	h.Capabilities = append(h.Capabilities, protocol.CapClassEnd)
+	// And it shows the label of its computer in the capabilities dialog (§5.26).
+	h.Capabilities = append(h.Capabilities, protocol.CapComputerLabel)
 	if sa.ready.Capture {
 		h.Capabilities = append(h.Capabilities, protocol.CapScreenThumb, protocol.CapScreenSnapshot)
 	}

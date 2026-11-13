@@ -162,6 +162,8 @@ type View struct {
 	Present broadcast.PresentView `json:"present"`
 	// ClassEnd is the «La clase terminó» card, if any (§5.25).
 	ClassEnd *classend.Card `json:"classEnd"`
+	// Computer is its hostname and the label the teacher gave it (§5.26).
+	Computer Computer `json:"computer"`
 	// Capabilities are what this computer lets the teacher do (the hello's),
 	// for «Qué puede hacer Aula en este equipo» (nota de interfaz 13).
 	Capabilities []string `json:"capabilities"`

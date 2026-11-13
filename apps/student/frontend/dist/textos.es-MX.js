@@ -284,6 +284,8 @@ window.AulaTextos = Object.freeze({
   "capacidades.boton": "Qué puede hacer Aula en este equipo",
   "capacidades.titulo": "Qué puede hacer Aula en este equipo",
   "capacidades.texto": "Lo que tu profesor puede hacer con este equipo durante la clase. Cada vez que lo hace, Aula te lo dice en pantalla.",
+  "capacidades.equipo": "Este equipo: {equipo}",
+  "capacidades.equipoEtiqueta": "Este equipo: {etiqueta} ({equipo})",
   "capacidades.nota": "Verde con ✓: este equipo lo permite. Gris con ✗: no. Pasa el mouse por cada icono para ver qué es.",
   "capacidades.cerrar": "Cerrar",
   "capacidades.si": "{accion}: sí",

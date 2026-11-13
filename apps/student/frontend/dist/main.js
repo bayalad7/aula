@@ -1393,9 +1393,17 @@
       return li;
     }));
   }
+  // Este equipo: su nombre y, si el profesor se la puso en su salón, su etiqueta (§5.26).
+  function pintarEquipo(c) {
+    $("capacidades-equipo").hidden = !(c && c.hostname);
+    if (!c || !c.hostname) return;
+    $("capacidades-equipo-texto").textContent = c.label
+      ? T("capacidades.equipoEtiqueta", { etiqueta: c.label, equipo: c.hostname })
+      : T("capacidades.equipo", { equipo: c.hostname });
+  }
   const dlgCapacidades = $("dlg-capacidades");
   $("capacidades").addEventListener("click", () => {
-    api.View().then((v) => pintarCapacidades(v.capabilities), () => pintarCapacidades([]));
+    api.View().then((v) => { pintarCapacidades(v.capabilities); pintarEquipo(v.computer); }, () => { pintarCapacidades([]); pintarEquipo(null); });
     dlgCapacidades.showModal();
     $("capacidades-entendido").focus();
   });

@@ -274,3 +274,29 @@ func TestStatusCarriesTheCause(t *testing.T) {
 		t.Fatalf("cause shown while connected: %+v", s)
 	}
 }
+
+// The label of the computer (computer.label, §5.26) only changes the line
+// «Este equipo» of the capabilities dialog: no notice, no focus, and it is
+// forgotten with the session.
+func TestComputerLabelIsOnlyForTheSession(t *testing.T) {
+	a := NewApp(Config{Channel: "1"}, nil, nil, protocol.HelloInfo{Hostname: "LAB3-PC07"}, nil, nil, quiet)
+	var events []string
+	a.emit = func(name string, _ any) { events = append(events, name) }
+	if !a.handleComputerLabel(protocol.Envelope{Payload: protocol.ComputerLabel{Label: "Fila 2 · PC07"}}) {
+		t.Fatal("computer.label not handled")
+	}
+	if got := a.View().Computer; got != (Computer{Hostname: "LAB3-PC07", Label: "Fila 2 · PC07"}) {
+		t.Errorf("view: %+v", got)
+	}
+	if len(events) != 0 {
+		t.Errorf("the label shows no notice: %v", events)
+	}
+	a.emit = func(string, any) {}
+	a.onState(session.AgentDisconnected, discovery.Console{})
+	if got := a.View().Computer.Label; got != "" {
+		t.Errorf("label after the session: %q", got)
+	}
+	if a.handleComputerLabel(protocol.Envelope{Payload: protocol.ClassEnd{}}) {
+		t.Error("another message is not a label")
+	}
+}

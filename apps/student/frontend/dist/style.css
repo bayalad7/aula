@@ -95,3 +95,6 @@ body.watching #contenido { display: none; }
 /* Cuestionario (prompt 10.20): el resultado personal, una fila por pregunta (el número va en el texto). */
 .cuestionario-detalle { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-2); }
 .cuestionario-detalle p { margin: 0; }
+
+/* Este equipo (prompt 10.15): su nombre y su etiqueta en «Qué puede hacer Aula en este equipo». */
+.capacidades__equipo { display: flex; align-items: center; gap: var(--e-2); margin: 0; font-weight: var(--peso-medio); }

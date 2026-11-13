@@ -44,6 +44,7 @@ type App struct {
 	cfgErr    error
 	pub       ed25519.PublicKey
 	hello     protocol.HelloInfo
+	label     string // computer.label of this session (§5.26); guarded by mu
 	board     *codedist.Board
 	recv      *codedist.Receiver
 	screen    *screen.Streamer        // screen thumbnails; inert until enableScreen
@@ -393,7 +394,8 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 	}
 	if s != session.AgentConnected {
 		a.mu.Lock()
-		a.cl = nil // a raised hand waits, up, for the next connection
+		a.cl = nil   // a raised hand waits, up, for the next connection
+		a.label = "" // the label is only for the session (§5.26.1)
 		a.mu.Unlock()
 		// The streams belong to the connection: no console, no capture and
 		// no broadcast view, and no restrictions.
@@ -468,7 +470,8 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		_, err := cl.Send(ctx, p)
 		return err
 	}
-	if a.handleParticipation(env) || a.handleTimer(ctx, cl, env) || a.handlePoll(ctx, cl, env) || a.handleClassEnd(ctx, cl, env) {
+	if a.handleParticipation(env) || a.handleTimer(ctx, cl, env) || a.handlePoll(ctx, cl, env) || a.handleClassEnd(ctx, cl, env) ||
+		a.handleComputerLabel(env) {
 		return
 	}
 	var reply protocol.Payload
@@ -584,7 +587,7 @@ func (a *App) View() View {
 		return v
 	}
 	bc := a.viewer.Current() // before a.mu: the viewer calls into the app with its lock held
-	caps := a.capabilities()
+	caps, computer := a.capabilities(), a.computer()
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	snippets := a.board.Snippets()
@@ -595,7 +598,8 @@ func (a *App) View() View {
 		Broadcast: a.broadcastView(bc, a.status), Restrictions: a.restrict, Power: a.powerV,
 		Participation: a.desk.View(), Timer: a.countdown.View(), Files: a.filesView(a.inbox.List()),
 		Collections: a.collectionsView(), Opened: Opened{List: append([]openapp.Opened{}, a.opened...)},
-		Polls: a.ballot.View(), Present: a.present.Current(), Capabilities: caps, ClassEnd: a.endCard}
+		Polls: a.ballot.View(), Present: a.present.Current(), Capabilities: caps, ClassEnd: a.endCard,
+		Computer: computer}
 }
 
 // Copy puts a snippet on the system clipboard. The text comes from the Go

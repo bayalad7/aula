@@ -54,6 +54,8 @@
       <button type="button" class="nav-lateral__boton nav-lateral__terminar" id="nav-terminar" data-t-title="terminar.ayudaBoton"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salir"/></svg><span class="nav-lateral__texto" data-t="terminar.boton"></span></button>
       <p class="nav-lateral__grupo" data-t="nav.grupoClase"></p>
       <a href="#alumnos" data-vista="alumnos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span class="nav-lateral__texto" data-t="nav.alumnos"></span></a>
+      <!-- Salón (prompt 10.15): el plano del salón, material propio, junto a Alumnos. -->
+      <a href="#salon" data-vista="salon"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salon"/></svg><span class="nav-lateral__texto" data-t="nav.salon"></span></a>
       <a href="#codigo" data-vista="codigo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#codigo"/></svg><span class="nav-lateral__texto" data-t="nav.codigo"></span></a>
       <a href="#archivos" data-vista="archivos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#archivo"/></svg><span class="nav-lateral__texto" data-t="nav.archivos"></span></a>
       <a href="#cuestionarios" data-vista="cuestionarios"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cuestionario"/></svg><span class="nav-lateral__texto" data-t="nav.cuestionarios"></span></a>
@@ -142,6 +144,7 @@
               <div class="segmentado" role="group" data-t-aria-label="alumnos.modo">
                 <button type="button" data-modo="lista"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#lista"/></svg><span data-t="alumnos.lista"></span></button>
                 <button type="button" data-modo="miniaturas"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#miniaturas"/></svg><span data-t="alumnos.miniaturas"></span></button>
+                <button type="button" data-modo="salon"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#salon"/></svg><span data-t="alumnos.salon"></span></button>
               </div>
               <!-- Tamaño de las miniaturas (nota de interfaz v0.1.0 004): solo en Miniaturas; se recuerda. -->
               <label class="tamano-miniaturas" id="tamano-miniaturas" hidden><span data-t="alumnos.tamano"></span>
@@ -183,6 +186,20 @@
                 <p class="aviso-en-linea aviso-en-linea--advertencia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="alumnos.avisoMiniaturas"></span></p>
                 <ul class="cuadricula-alumnos" id="alumnos-cuadricula"></ul>
               </div>
+              <!-- Como en el salón (prompt 10.15): las tarjetas en su asiento; los asientos sin conexión,
+                   vacíos; las cabeceras de fila y columna seleccionan a los de esa fila o columna. -->
+              <div id="alumnos-salon" class="pila" hidden>
+                <p class="aviso-en-linea aviso-en-linea--advertencia"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="alumnos.avisoMiniaturas"></span></p>
+                <p class="aviso-en-linea" id="alumnos-salon-vacio" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salon"/></svg><span data-t="salon.vistaVacia"></span> <a href="#salon" data-t="salon.irAcomodar"></a></p>
+                <div class="salon">
+                  <p class="salon__frente" data-t="salon.frente"></p>
+                  <ul class="salon__rejilla" id="alumnos-salon-rejilla" data-t-aria-label="salon.rejillaEtiqueta"></ul>
+                </div>
+                <section class="pila" id="alumnos-salon-sin" aria-labelledby="alumnos-salon-sin-titulo" hidden>
+                  <h2 class="salon__subtitulo" id="alumnos-salon-sin-titulo"></h2>
+                  <ul class="cuadricula-alumnos" id="alumnos-salon-sin-lista"></ul>
+                </section>
+              </div>
             </div>
             <div class="barra-acciones" role="toolbar" data-t-aria-label="alumnos.barraEtiqueta">
               <div class="barra-acciones__dentro">
@@ -196,6 +213,73 @@
                 <button type="button" class="btn" data-panel="encuesta" aria-expanded="false" data-t-tip="panel.encuesta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg><span class="btn__texto" data-t="panel.encuesta"></span></button>
                 <button type="button" class="btn" data-panel="abrir" aria-expanded="false" data-t-tip="panel.abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#externo"/></svg><span class="btn__texto" data-t="panel.abrirCorto"></span></button>
               </div>
+            </div>
+          </section>
+
+          <!-- ============ Salón (prompt 10.15) ============ -->
+          <section data-vista-de="salon" aria-labelledby="h-salon" class="vista__seccion" hidden>
+            <header class="vista__cabecera">
+              <h1 id="h-salon" data-t="salon.titulo"></h1>
+              <div class="resumen" id="salon-resumen" aria-live="polite"></div>
+              <div class="grupo-botones">
+                <button type="button" class="btn btn--sm" id="salon-exportar" data-icono="guardar" data-t="salon.exportar"></button>
+                <button type="button" class="btn btn--sm" id="salon-importar" data-icono="archivo" data-t="salon.importar"></button>
+                <button type="button" class="btn btn--sm btn--fantasma" id="salon-carpeta" data-icono="carpeta" data-t="salon.abrirCarpeta"></button>
+              </div>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
+            </header>
+            <div class="vista__cuerpo pila">
+              <p class="aviso-en-linea aviso-en-linea--advertencia" id="salon-problema" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg><span id="salon-problema-texto"></span></p>
+              <section class="tarjeta" aria-labelledby="h-salon-plano">
+                <div class="tarjeta__cabecera"><h2 id="h-salon-plano" data-t="salon.plano"></h2></div>
+                <div class="tarjeta__cuerpo pila">
+                  <div class="fila">
+                    <label class="campo"><span class="campo__etiqueta" data-t="salon.filas"></span>
+                      <select id="salon-filas" class="control" data-icono="flecha-abajo"></select></label>
+                    <label class="campo"><span class="campo__etiqueta" data-t="salon.columnas"></span>
+                      <select id="salon-columnas" class="control" data-icono="flecha-der"></select></label>
+                    <fieldset class="campo crece"><legend class="campo__etiqueta" data-t="salon.herramienta"></legend>
+                      <div class="opciones-seg">
+                        <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="equipo" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pantalla"/></svg> <span data-t="salon.herramientaEquipo"></span></label>
+                        <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="teacher"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#escritorio"/></svg> <span data-t="salon.lugar.teacher"></span></label>
+                        <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="aisle"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pasillo"/></svg> <span data-t="salon.lugar.aisle"></span></label>
+                        <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="vacio"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg> <span data-t="salon.herramientaVacio"></span></label>
+                      </div>
+                    </fieldset>
+                  </div>
+                  <p class="pequeno suave" id="salon-ayuda-teclado" data-t="salon.ayudaTeclado"></p>
+                  <p class="aviso-en-linea" id="salon-llevando" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="salon-llevando-texto"></span></p>
+                  <div class="salon-editor">
+                    <div class="salon">
+                      <p class="salon__frente" data-t="salon.frente"></p>
+                      <div class="salon__plano" id="salon-plano" role="group" data-t-aria-label="salon.planoEtiqueta" aria-describedby="salon-ayuda-teclado"></div>
+                    </div>
+                    <div class="pila">
+                      <section class="salon__sin" id="salon-sin" aria-labelledby="salon-sin-titulo">
+                        <h3 id="salon-sin-titulo"></h3>
+                        <p class="pequeno suave" id="salon-sin-vacio" data-t="salon.sinAcomodarVacio"></p>
+                        <ul class="lista-limpia" id="salon-sin-lista"></ul>
+                      </section>
+                      <section class="salon__elegido" aria-labelledby="salon-elegido-titulo">
+                        <h3 id="salon-elegido-titulo" data-t="salon.elegido"></h3>
+                        <p class="pequeno suave" id="salon-elegido-nada" data-t="salon.elegidoNada"></p>
+                        <form id="salon-elegido-form" class="pila" hidden novalidate>
+                          <dl class="desglose" id="salon-elegido-datos"></dl>
+                          <label class="campo"><span class="campo__etiqueta" data-t="salon.etiqueta"></span>
+                            <input id="salon-etiqueta" maxlength="40" data-t-placeholder="salon.etiquetaEjemplo" aria-describedby="salon-etiqueta-ayuda salon-etiqueta-error" data-icono="etiqueta">
+                            <span class="campo__ayuda" id="salon-etiqueta-ayuda"></span>
+                            <span class="campo__error" id="salon-etiqueta-error" role="alert" hidden></span></label>
+                          <div class="grupo-botones">
+                            <button type="submit" class="btn btn--primario btn--sm" id="salon-etiqueta-guardar" data-icono="guardar" data-t="salon.guardarEtiqueta"></button>
+                            <button type="button" class="btn btn--sm" id="salon-desacomodar" data-icono="cerrar" data-t="salon.desacomodar"></button>
+                            <button type="button" class="btn btn--sm btn--fantasma" id="salon-olvidar" data-icono="limpiar" data-t="salon.olvidar"></button>
+                          </div>
+                        </form>
+                      </section>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
           </section>
 
@@ -1118,6 +1202,25 @@
     </div>
   </dialog>
 
+  <!-- Etiqueta del equipo (prompt 10.15): desde la Pantalla grande, en su propio diálogo. -->
+  <dialog class="dialogo dialogo--form" id="dlg-etiqueta" aria-labelledby="dlg-etiqueta-titulo">
+    <div class="dialogo__cuerpo pila">
+      <div class="dialogo__titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#etiqueta"/></svg><h2 id="dlg-etiqueta-titulo" class="crece"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+        <form id="dlg-etiqueta-form" class="pila" novalidate>
+          <label class="campo"><span class="campo__etiqueta" data-t="salon.etiqueta"></span>
+            <input id="dlg-etiqueta-texto" maxlength="40" data-t-placeholder="salon.etiquetaEjemplo" aria-describedby="dlg-etiqueta-ayuda dlg-etiqueta-error" data-icono="etiqueta">
+            <span class="campo__ayuda" id="dlg-etiqueta-ayuda"></span>
+            <span class="campo__error" id="dlg-etiqueta-error" role="alert" hidden></span></label>
+          <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+            <button type="button" class="btn" id="dlg-etiqueta-cancelar" data-t="comun.cancelar" data-icono="cerrar"></button>
+            <button type="button" class="btn" id="dlg-etiqueta-quitar" data-t="etiqueta.quitar" data-icono="limpiar"></button>
+            <button type="submit" class="btn btn--primario" id="dlg-etiqueta-guardar" data-icono="guardar" data-t="salon.guardarEtiqueta"></button>
+          </div>
+        </form>
+    </div>
+  </dialog>
+
   <!-- Nueva plantilla (nota de interfaz 17): su nombre y sus archivos, en su propio diálogo. -->
   <dialog class="dialogo dialogo--form" id="dlg-plantilla" aria-labelledby="dlg-plantilla-titulo">
     <div class="dialogo__cuerpo pila">
@@ -1187,6 +1290,7 @@
         <button type="button" role="tab" id="tab-clase" aria-controls="aj-clase" aria-selected="true"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span data-t="ajustes.clase"></span></button>
         <button type="button" role="tab" id="tab-apariencia" aria-controls="aj-apariencia" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#sol"/></svg><span data-t="ajustes.apariencia"></span></button>
         <button type="button" role="tab" id="tab-apps" aria-controls="aj-apps" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#app"/></svg><span data-t="ajustes.apps"></span></button>
+        <button type="button" role="tab" id="tab-salon" aria-controls="aj-salon" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salon"/></svg><span data-t="ajustes.salon"></span></button>
         <button type="button" role="tab" id="tab-acerca" aria-controls="aj-acerca" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="ajustes.acerca"></span></button>
       </div>
     </div>
@@ -1230,6 +1334,21 @@
           <button type="button" class="btn" id="aj-apps-agregar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mas"/></svg><span data-t="ajustes.appsAgregar"></span></button>
           <button type="button" class="btn btn--fantasma" id="aj-apps-ejemplos" data-t="ajustes.appsEjemplos" data-icono="mas"></button>
           <button type="button" class="btn btn--primario" id="aj-apps-guardar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span data-t="ajustes.appsGuardar"></span></button>
+        </div>
+      </section>
+      <!-- Salón (prompt 10.15): el resumen y copiarlo a otra consola; el plano se edita en su módulo. -->
+      <section role="tabpanel" id="aj-salon" aria-labelledby="tab-salon" hidden>
+        <h3 data-t="ajustes.salon"></h3>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong id="aj-salon-resumen"></strong><span id="aj-salon-archivo"></span></div>
+          <a class="btn" href="#salon" id="aj-salon-editar" data-icono="editar" data-t="salon.abrirEditor"></a>
+        </div>
+        <div class="ajuste">
+          <div class="ajuste__texto"><strong data-t="salon.copiarTitulo"></strong><span data-t="salon.copiarAyuda"></span></div>
+          <div class="grupo-botones">
+            <button type="button" class="btn" id="aj-salon-exportar" data-icono="guardar" data-t="salon.exportar"></button>
+            <button type="button" class="btn" id="aj-salon-importar" data-icono="archivo" data-t="salon.importar"></button>
+          </div>
         </div>
       </section>
       <section role="tabpanel" id="aj-acerca" aria-labelledby="tab-acerca" hidden>

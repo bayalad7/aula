@@ -102,6 +102,12 @@ const (
 	codePresentUnsupported   = "presentUnsupported"
 	codePresentFailed        = "presentFailed"
 	codeEndBusy              = "endBusy"
+	codeRoomInvalid          = "roomInvalid"
+	codeRoomOtherChannel     = "roomOtherChannel"
+	codeRoomNotSaved         = "roomNotSaved"
+	codeRoomComputerGone     = "roomComputerGone"
+	codeRoomSpecialPlace     = "roomSpecialPlace"
+	codeLabelInvalid         = "labelInvalid"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -123,6 +129,7 @@ var errorCodes = []string{
 	codeCollectActivity, codeCollectFolder, codeCollectGone, codeCollectNoStudents, codeCollectNothing,
 	codeInvalidURL, codeNoOpenTargets, codeOpenAppGone, codeAllowedAppInvalid, codeAllowedAppsNotSaved,
 	codePresentUnsupported, codePresentFailed, codeEndBusy,
+	codeRoomInvalid, codeRoomOtherChannel, codeRoomNotSaved, codeRoomComputerGone, codeRoomSpecialPlace, codeLabelInvalid,
 }
 
 // errorHelp is the section of the manual (docs/administracion) that each
@@ -218,6 +225,12 @@ var errorHelp = map[string]string{
 	codeAllowedAppInvalid:    "ajustes#apps-permitidas",
 	codeAllowedAppsNotSaved:  "ajustes#apps-permitidas",
 	codeEndBusy:              "tareas-frecuentes#terminar-la-clase",
+	codeRoomInvalid:          "salon#exportar-e-importar",
+	codeRoomOtherChannel:     "salon#exportar-e-importar",
+	codeRoomNotSaved:         "salon#si-el-archivo-del-salón-no-se-puede-leer",
+	codeRoomComputerGone:     "salon#acomodar-el-salón",
+	codeRoomSpecialPlace:     "salon#lugares-especiales",
+	codeLabelInvalid:         "salon#etiquetas-de-los-equipos",
 }
 
 // codedError is an error the UI can explain by its code.

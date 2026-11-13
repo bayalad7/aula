@@ -138,7 +138,10 @@ func TestSimulatedStudentsOnlyDeclareHarmlessCapabilities(t *testing.T) {
 		// prompt 10.20).
 		protocol.CapPollQuiz,
 		// class.end only clears their simulated window (rule 86; prompt 10.14).
-		protocol.CapClassEnd}
+		protocol.CapClassEnd,
+		// computer.label only names their seat in the room, in memory (rule
+		// 31 ter; prompt 10.15).
+		protocol.CapComputerLabel}
 	for _, c := range simclass.Capabilities {
 		if !slices.Contains(allowed, c) {
 			t.Errorf("simulated students may declare %q; review docs/privacidad.md (rules 32–35) before allowing it", c)

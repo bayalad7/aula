@@ -76,6 +76,10 @@ const (
 	// EventClassEnd carries a classend.View whenever a step of «Terminar la
 	// clase» ends or a student answers (§5.25).
 	EventClassEnd = "aula:class-end"
+	// EventRoom carries a RoomView whenever the plan of the room changes: a
+	// label, a seat, the size, an import, a new or renamed computer, or the
+	// simulated students taking seats (prompt 10.15).
+	EventRoom = "aula:room"
 )
 
 // Setup is what the channel selection screen needs.
@@ -136,6 +140,7 @@ type Student struct {
 	CanPresentView bool `json:"canPresentView"`
 	CanPause       bool `json:"canPause"`    // screen.freeze (Windows agents; never simulated students)
 	CanClassEnd    bool `json:"canClassEnd"` // class.end: leaves its window clean when the class ends (§5.25)
+	CanLabel       bool `json:"canLabel"`    // computer.label: shows its label to the student (§5.26)
 	// Pause is this student's pause (screen.Pause*: sent, paused, resuming,
 	// failed; "" without one) and PauseUnacked whether the agent has not
 	// answered within screen.AckWait.
@@ -292,6 +297,8 @@ type View struct {
 	Polls poll.View `json:"polls"`
 	// Pauses are the paused screens of the class (§5.9).
 	Pauses screen.PauseSummary `json:"pauses"`
+	// Room is the plan of the room: labels and seats (prompt 10.15).
+	Room RoomView `json:"room"`
 }
 
 // Snapshots is the list of screenshots in memory, oldest request first.

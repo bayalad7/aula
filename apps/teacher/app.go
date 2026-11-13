@@ -125,10 +125,21 @@ type App struct {
 
 	checks *connectChecks // the connection checker (CheckConnection)
 
+	// roomSt is the plan of the open channel (prompt 10.15); guarded by mu.
+	// chooseSave and chooseOpen are the system dialogs of Exportar and
+	// Importar (replaced in tests).
+	roomSt     roomState
+	chooseSave func(title, name string) (string, error)
+	chooseOpen func(title string) (string, error)
+
 	// sendMu makes a broadcast and the registration of its envelope IDs atomic
 	// with respect to acks, so a fast agent's ack is never counted as unknown.
 	sendMu sync.Mutex
 }
+
+// documentsDir is the teacher's Documents folder; the tests replace it so no
+// test ever writes in the real one (the room plan saves on every hello).
+var documentsDir = platform.DocumentsDir
 
 // NewApp builds the console. dir holds the identity and settings.
 func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform.Hotkeys, log *slog.Logger) *App {
@@ -160,11 +171,12 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.collector = &collect.Collector{Send: a.sendToSession, Root: a.collectRoot, Logger: log,
 		OnChange: func(string) { a.emitCollections() }}
 	a.chooseFolder = a.openFolderDialog
-	a.documents, a.openFolder = platform.DocumentsDir, platform.OpenFolder
+	a.documents, a.openFolder = documentsDir, platform.OpenFolder
 	a.bc = a.newBroadcaster(broadcastKbps(m))
 	a.proj = a.newProjector(broadcastKbps(m))
 	a.checks = newConnectChecks(log)
 	a.ends = classend.NewClass(func() time.Time { return a.now() })
+	a.chooseSave, a.chooseOpen = a.saveFileDialog, a.openFileDialog
 	return a
 }
 
@@ -276,6 +288,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	a.emit(EventOpens, a.OpenOrders())
 	a.resetTimer() // nor its timer
 	a.resetPolls() // nor its polls
+	a.openRoom(info.Channel)
 
 	s := loadSettings(a.dir)
 	s.remember(channel, consoleName)
@@ -332,6 +345,7 @@ func (a *App) View() View {
 	v.Remote = a.desk.Current()
 	v.Snapshots = a.snaps.List()
 	v.Participation = a.participation(a.class, nil)
+	v.Room = a.roomSt.roomViewLocked()
 	if a.class != nil {
 		v.Timer = a.timer.Snapshot(a.class.Sessions(), simSessionsOf(a.class))
 		v.Polls = a.polls.Snapshot(a.class.Sessions(), simSessionsOf(a.class))
@@ -632,6 +646,7 @@ func (a *App) onChange() {
 		return
 	}
 	a.recordMachines(class) // before the list: who just woke up is not «Encendiendo…»
+	a.syncRoom(class)       // and the room, so the list shows each computer's label
 	a.emit(EventStudents, a.studentsIn(class))
 	a.syncClassEnd(class) // first: who reconnects is cleaned before anything is resent (§5.25.3)
 	a.syncScreens()
@@ -694,6 +709,7 @@ func studentsOf(list []session.Session) Students {
 			CanOpenURL: s.Can(protocol.CapOpenURL), CanOpenApp: s.Can(protocol.CapOpenApp),
 			CanPresent: s.Can(protocol.CapScreenPresent), CanPresentView: s.Can(protocol.CapScreenPresentView),
 			CanPause: s.Can(protocol.CapScreenFreeze), CanClassEnd: s.Can(protocol.CapClassEnd),
+			CanLabel: s.Can(protocol.CapComputerLabel),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))

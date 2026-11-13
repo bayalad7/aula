@@ -243,6 +243,32 @@
   const seleccion = new Set();
   const clave = (s) => (s.simulated ? "s:" : "r:") + s.hostname;
 
+  // --- Nombre visible de un equipo (prompt 10.15) ------------------------------------------
+  // La etiqueta del salón («Fila 2 · PC07») o, sin ella, el hostname. Toda la consola muestra un
+  // equipo con nombreEquipo; el hostname queda como texto secundario (hostSecundario) y sigue
+  // siendo su identidad (clave, data-equipo y lo que se manda a Go). Acepta un alumno, cualquier
+  // objeto con hostname (y simulated) o el hostname solo.
+  let salon = { channel: "", rows: 5, cols: 8, places: [], computers: [], file: "", problem: "", backup: "", renamed: [] };
+  const etiquetas = new Map(); // "r:"|"s:" + hostname en minúsculas → etiqueta
+  const asientos = new Map(); // la misma clave → {row, col}
+  const claveEquipo = (host, sim) => (sim ? "s:" : "r:") + String(host || "").toLowerCase();
+  const hostDe = (x) => (typeof x === "string" ? x : (x && x.hostname) || "");
+  const simDe = (x, sim) => (typeof x === "string" ? !!sim : !!(x && x.simulated));
+  function nombreEquipo(x, sim) {
+    const host = hostDe(x);
+    return etiquetas.get(claveEquipo(host, simDe(x, sim))) || host;
+  }
+  const hostSecundario = (x, sim) => (nombreEquipo(x, sim) !== hostDe(x) ? hostDe(x) : "");
+  const listaEquipos = (l) => (l || []).map((x) => nombreEquipo(x)).join(", ");
+  const asientoDe = (x, sim) => asientos.get(claveEquipo(hostDe(x), simDe(x, sim))) || null;
+  // Lista y miniaturas siguen el acomodo del salón: por fila y columna, luego los sin acomodar.
+  function porSalon(a, b) {
+    const pa = asientoDe(a), pb = asientoDe(b);
+    if (pa && pb) return pa.row - pb.row || pa.col - pb.col;
+    if (pa || pb) return pa ? -1 : 1;
+    return nombreEquipo(a).localeCompare(nombreEquipo(b), "es", { numeric: true });
+  }
+
   const conectados = () => alumnos.students.filter((s) => s.state === "connected");
   const seleccionados = () => conectados().filter((s) => seleccion.has(clave(s)));
   // Destino de código y avisos: la selección, o nadie en particular (todos).
@@ -251,7 +277,7 @@
   const equiposReales = () => seleccionados().filter((s) => !s.simulated).map((s) => s.hostname);
 
   // --- Navegación ------------------------------------------------------------------------
-  const VISTAS = ["alumnos", "codigo", "archivos", "cuestionarios", "participacion", "simulada", "ayuda", "falta"];
+  const VISTAS = ["alumnos", "salon", "codigo", "archivos", "cuestionarios", "participacion", "simulada", "ayuda", "falta"];
   function irA(ruta) {
     // «ayuda/pagina/seccion» abre una página del manual en una sección.
     const [base, pagina, seccion] = ruta.split("/");
@@ -267,8 +293,9 @@
     }
     if (nueva !== "alumnos") cerrarPanel();
     // Las miniaturas solo se piden mientras se ven (docs/privacidad.md regla 8).
-    if (antes === "alumnos" && nueva !== "alumnos" && modo === "miniaturas") api.CloseScreens();
-    if (nueva === "alumnos" && antes !== "alumnos" && modo === "miniaturas") abrirMiniaturas();
+    if (antes === "alumnos" && nueva !== "alumnos" && modo !== "lista") api.CloseScreens();
+    if (nueva === "alumnos" && antes !== "alumnos" && modo !== "lista") abrirMiniaturas();
+    if (nueva === "salon") pintarEditorSalon();
     if (nueva === "codigo" && editor) editor.layout();
     if (nueva === "falta") pintarFalta();
     if (nueva === "simulada") pintarSimulada();
@@ -348,6 +375,7 @@
     $("nav-clase-compacta").textContent = clase.channel;
     $("nav-clase-compacta").setAttribute("aria-label", T("nav.claseCompacta", { canal: clase.channel }));
     $("f-clave").hidden = clase.keySource === "centro";
+    if (v.room) alSalon(v.room); // antes que la lista: sus nombres son las etiquetas
     pintarAlumnos(v.students);
     pintarTransmision(v.broadcast);
     if (v.present) pintarProyeccion(v.present);
@@ -421,7 +449,7 @@
     if (s.canWake && !(s.wake && s.wake.state === "waking")) {
       const b = boton(T("encender.boton"), "btn--sm encender", "encender");
       b.dataset.equipo = s.hostname;
-      b.setAttribute("aria-label", T("encender.botonAria", { equipo: s.hostname }));
+      b.setAttribute("aria-label", T("encender.botonAria", { equipo: nombreEquipo(s) }));
       n.push(b);
     }
     return n;
@@ -453,8 +481,9 @@
     const presentes = new Set([...st.students, ...(verApagados ? apagados : [])].map(clave));
     for (const k of [...seleccion]) if (!presentes.has(k)) seleccion.delete(k);
 
-    const reales = st.students.filter((s) => !s.simulated);
-    const sims = st.students.filter((s) => s.simulated);
+    const reales = st.students.filter((s) => !s.simulated).sort(porSalon);
+    const sims = st.students.filter((s) => s.simulated).sort(porSalon);
+    apagados.sort(porSalon);
     const desc = reales.filter((s) => s.state !== "connected").length;
     const res = [insignia("conectado", "conectado", P("alumnos.conectados", st.connected))];
     if (desc) res.push(insignia("desconectado", "desconectado", P("alumnos.desconectados", desc)));
@@ -468,7 +497,10 @@
     $("alumnos-vacio-titulo").textContent = T("alumnos.vacioTitulo", { canal: clase.channel });
     $("alumnos-lista").hidden = vacio || modo !== "lista";
     $("alumnos-miniaturas").hidden = vacio || modo !== "miniaturas";
-    $("tamano-miniaturas").hidden = vacio || modo !== "miniaturas";
+    // El salón se ve aunque no haya nadie: sus asientos vacíos dicen quién falta.
+    $("alumnos-salon").hidden = modo !== "salon";
+    if (modo === "salon") $("alumnos-vacio").hidden = true;
+    $("tamano-miniaturas").hidden = (vacio && modo !== "salon") || modo === "lista";
 
     const tplFila = $("t-fila-alumno").content.firstElementChild;
     const filas = [];
@@ -480,8 +512,9 @@
       tr.dataset.ficha = String(panel === "alumno" && clave(s) === fichaClave);
       const m = tr.querySelector(".marca");
       m.checked = marcado;
-      m.setAttribute("aria-label", T("alumnos.seleccionar", { equipo: s.hostname }));
-      tr.querySelector(".equipo").textContent = s.hostname;
+      m.setAttribute("aria-label", T("alumnos.seleccionar", { equipo: nombreEquipo(s) }));
+      const host = hostSecundario(s);
+      tr.querySelector(".equipo").replaceChildren(document.createTextNode(nombreEquipo(s)), ...(host ? [el("span", "suave pequeno equipo__host", " · " + host)] : []));
       tr.querySelector(".usuario").textContent = s.state === "off" ? vistoDe(s.lastSeen) : s.username || T("alumnos.sinSesion");
       tr.querySelector(".estado").append(estadoDe(s));
       tr.querySelector(".codigo").append(...codigoDe(s));
@@ -493,11 +526,11 @@
         f.classList.replace("ficha", "olvidar");
         f.querySelector("use").setAttribute("href", "sistema/iconos.svg#limpiar");
         f.dataset.equipo = s.hostname;
-        f.setAttribute("aria-label", T("encender.olvidar", { equipo: s.hostname }));
-        f.title = T("encender.olvidar", { equipo: s.hostname });
+        f.setAttribute("aria-label", T("encender.olvidar", { equipo: nombreEquipo(s) }));
+        f.title = T("encender.olvidar", { equipo: nombreEquipo(s) });
       } else {
-        f.setAttribute("aria-label", T("alumnos.verFicha", { equipo: s.hostname }));
-        f.title = T("alumnos.verFicha", { equipo: s.hostname });
+        f.setAttribute("aria-label", T("alumnos.verFicha", { equipo: nombreEquipo(s) }));
+        f.title = T("alumnos.verFicha", { equipo: nombreEquipo(s) });
       }
       const notas = [...notasDe(s), ...encenderDe(s)];
       tr.querySelector(".notas").append(...(notas.length ? notas : [el("span", "suave", "—")]));
@@ -555,9 +588,12 @@
       cerrarPanel();
       return;
     }
-    $("h-panel-alumno").textContent = s.hostname + (s.username ? " · " + s.username : "");
+    $("h-panel-alumno").textContent = nombreEquipo(s) + (s.username ? " · " + s.username : "");
     const filas = [
       ["ficha.usuario", s.username || T("alumnos.sinSesion")],
+      ["ficha.etiqueta", etiquetas.get(claveEquipo(s.hostname, s.simulated)) || T("ficha.sinEtiqueta")],
+      ["ficha.equipo", s.hostname],
+      ["ficha.lugar", lugarTexto(asientoDe(s))],
       ["ficha.estado", estadoDe(s)],
       ["ficha.sistema", sistemaDe(s)],
       ["ficha.version", s.agentVersion || "—"],
@@ -580,7 +616,7 @@
       ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"],
       ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"],
       ["canPresent", "ficha.proyectar", "transmitir"], ["canPresentView", "ficha.verCompanero", "ojo"], ["canPause", "ficha.pausa", "pausa"],
-      ["canClassEnd", "ficha.terminar", "salir"], ["canWake", "ficha.encender", "encender"]];
+      ["canClassEnd", "ficha.terminar", "salir"], ["canWake", "ficha.encender", "encender"], ["canLabel", "ficha.verEtiqueta", "etiqueta"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
       const si = !!s[c];
       const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
@@ -638,6 +674,12 @@
     { id: "abrir", icono: "externo", boton: "pg-abrir1-abrir", dialogo: "dlg-abrir", nota: "abrir.fichaNota",
       texto: () => T("abrir.boton"),
       visible: (s) => abrir1Grande.pintar(s), hacer: null },
+    // Etiqueta del equipo (prompt 10.15): reales y simulados que ya están en el salón; la ficha
+    // solo la muestra. Se edita en su propio diálogo.
+    { id: "etiqueta", icono: "etiqueta", boton: "pg-etiqueta", dialogo: "dlg-etiqueta", nota: "etiqueta.fichaNota",
+      texto: () => T("etiqueta.boton"),
+      visible: (s) => salon.computers.some((c) => claveEquipo(c.hostname, c.simulated) === claveEquipo(s.hostname, s.simulated)),
+      hacer: (s, b) => abrirEtiqueta(s, b) },
   ];
   // Arma los botones una sola vez y devuelve cómo pintarlos para un alumno.
   function montarAcciones(contenedor, alumnoActual) {
@@ -678,7 +720,7 @@
       if (!d || !s) return;
       const fallo = (d.rejected || []).length > 0;
       $p("-acuse").textContent = fallo ? T("privado.fallo")
-        : d.acked + d.simAcked > 0 ? T("privado.visto", { equipo: s.hostname }) : T("privado.enviando", { equipo: s.hostname });
+        : d.acked + d.simAcked > 0 ? T("privado.visto", { equipo: nombreEquipo(s) }) : T("privado.enviando", { equipo: nombreEquipo(s) });
     };
     const cerrar = (foco) => {
       limpiarCampo(texto, error);
@@ -691,8 +733,8 @@
         cerrar(false);
         texto.value = "";
       }
-      $p("-etiqueta").textContent = T("privado.etiqueta", { equipo: s.hostname });
-      $("dlg-privado-titulo").textContent = T("privado.titulo", { equipo: s.hostname });
+      $p("-etiqueta").textContent = T("privado.etiqueta", { equipo: nombreEquipo(s) });
+      $("dlg-privado-titulo").textContent = T("privado.titulo", { equipo: nombreEquipo(s) });
       conectar();
       acuse();
       return s.state === "connected" && s.canNotice;
@@ -727,7 +769,7 @@
         estado.envio = d.id;
         cerrar(true);
         acuse();
-        toast("exito", T("privado.enviado", { equipo: s.hostname }), T("privado.enviadoTexto"));
+        toast("exito", T("privado.enviado", { equipo: nombreEquipo(s) }), T("privado.enviadoTexto"));
       }, (err) => {
         const m = amable(err);
         if (m.codigo === "invalidNotice") errorEnCampo(texto, error, m.texto);
@@ -860,7 +902,7 @@
       revisar = setTimeout(() => {
         api.CheckOpenPage(u, objetivo().hosts).then((c) => {
           filtrada.hidden = c.filtered.length === 0;
-          filtradaTexto.textContent = T("abrir.filtrada", { lista: c.filtered.join(", ") });
+          filtradaTexto.textContent = T("abrir.filtrada", { lista: listaEquipos(c.filtered) });
         }, () => { filtrada.hidden = true; });
       }, 300);
     };
@@ -877,8 +919,8 @@
       acuse.hidden = !t;
       if (!t) return;
       acuse.textContent = t.status === "failed"
-        ? T("abrir.acuse.failed", { equipo: s.hostname, motivo: T(MOTIVO_ABRIR + camel(t.reason)) })
-        : T(ACUSE_ABRIR + t.status, { equipo: s.hostname });
+        ? T("abrir.acuse.failed", { equipo: nombreEquipo(s), motivo: T(MOTIVO_ABRIR + camel(t.reason)) })
+        : T(ACUSE_ABRIR + t.status, { equipo: nombreEquipo(s) });
     };
     const abridor = () => $(id("-abrir"));
     const cerrar = (foco) => {
@@ -903,8 +945,8 @@
       ocupado(enviar, true);
       p.then((r) => {
         let texto = "";
-        if (r.unsupported.length) texto += T("abrir.noLaSoportan", { lista: r.unsupported.join(", ") }) + " ";
-        if (r.failed.length) texto += T("abrir.noLlego", { lista: r.failed.join(", ") });
+        if (r.unsupported.length) texto += T("abrir.noLaSoportan", { lista: listaEquipos(r.unsupported) }) + " ";
+        if (r.failed.length) texto += T("abrir.noLlego", { lista: listaEquipos(r.failed) });
         toast(r.failed.length ? "advertencia" : "exito", P("abrir.enviado", r.sent), texto.trim() || T("abrir.transparencia"));
         url.value = "";
         filtrada.hidden = true;
@@ -938,7 +980,7 @@
           url.value = "";
         }
         pintarAcuse();
-        $("dlg-abrir-titulo").textContent = T("abrir.tituloUno", { equipo: s.hostname });
+        $("dlg-abrir-titulo").textContent = T("abrir.tituloUno", { equipo: nombreEquipo(s) });
         if (dialogo.open) pintar();
         return !s.simulated && s.state === "connected" && (s.canOpenUrl || s.canOpenApp);
       },
@@ -970,8 +1012,8 @@
       li.append(titulo, el("span", "pequeno suave", partes.join(" · ")));
       for (const t of o.targets.filter((x) => x.status === "failed" || x.status === "error")) {
         li.append(el("span", "pequeno", t.status === "failed"
-          ? T("abrir.acuse.failed", { equipo: t.hostname, motivo: T(MOTIVO_ABRIR + camel(t.reason)) })
-          : T("abrir.acuse.error", { equipo: t.hostname })));
+          ? T("abrir.acuse.failed", { equipo: nombreEquipo(t), motivo: T(MOTIVO_ABRIR + camel(t.reason)) })
+          : T("abrir.acuse.error", { equipo: nombreEquipo(t) })));
       }
       return li;
     }));
@@ -985,42 +1027,51 @@
 
   // Miniaturas: las imágenes solo viven aquí, en memoria.
   const tarjetas = new Map(); // clave → <li>
-  function pintarMiniaturas() {
+  // La tarjeta de un alumno, la misma en Miniaturas y en el Salón: conserva su imagen.
+  function tarjetaAlumno(s) {
     const tpl = $("t-tarjeta-alumno").content.firstElementChild;
-    const reales = alumnos.students.filter((s) => !s.simulated);
-    const sims = alumnos.students.filter((s) => s.simulated);
-    const tarjeta = (s) => {
-      const k = clave(s);
-      let li = tarjetas.get(k);
-      if (!li) {
-        li = tpl.cloneNode(true);
-        tarjetas.set(k, li);
-        li.querySelector(".alumno__pantalla").addEventListener("click", () => verEnGrande(k));
-      }
-      li.dataset.clave = k;
-      li.dataset.seleccionado = String(seleccion.has(k));
-      li.classList.toggle("alumno--desconectado", s.state !== "connected");
-      const m = li.querySelector(".marca");
-      m.checked = seleccion.has(k);
-      m.setAttribute("aria-label", T("alumnos.seleccionar", { equipo: s.hostname }));
-      li.querySelector(".alumno__nombre").textContent = s.hostname;
-      li.querySelector(".estado").replaceChildren(s.simulated ? insignia("simulado", "simulado", T("alumnos.simulado")) : estadoDe(s));
-      li.querySelector(".alumno__sub").textContent = s.username || T("alumnos.sinSesion");
-      const img = li.querySelector("img");
-      const texto = li.querySelector(".alumno__pantalla-texto");
-      const puede = s.state === "connected" && s.canThumb;
-      const pantalla = li.querySelector(".alumno__pantalla");
-      pantalla.disabled = !puede;
-      img.alt = T("alumnos.pantallaDe", { equipo: s.hostname });
-      if (!puede) img.removeAttribute("src");
-      texto.textContent = s.state !== "connected" ? T("alumnos.desconectado")
-        : !s.canThumb ? (s.canCode ? T("alumnos.noComparte") : T("alumnos.sinSesion"))
-          : img.getAttribute("src") ? "" : T("alumnos.esperandoImagen");
-      // Solo se nombra como acción cuando lo es; si no, su texto dice por qué.
-      if (puede) nombrarPantalla(pantalla, s.hostname);
-      else pantalla.removeAttribute("aria-label");
-      return li;
-    };
+    const k = clave(s);
+    let li = tarjetas.get(k);
+    if (!li) {
+      li = tpl.cloneNode(true);
+      tarjetas.set(k, li);
+      li.querySelector(".alumno__pantalla").addEventListener("click", () => verEnGrande(k));
+    }
+    li.dataset.clave = k;
+    li.dataset.seleccionado = String(seleccion.has(k));
+    li.classList.toggle("alumno--desconectado", s.state !== "connected");
+    const m = li.querySelector(".marca");
+    m.checked = seleccion.has(k);
+    m.setAttribute("aria-label", T("alumnos.seleccionar", { equipo: nombreEquipo(s) }));
+    li.querySelector(".alumno__nombre").textContent = nombreEquipo(s);
+    li.querySelector(".estado").replaceChildren(s.simulated ? insignia("simulado", "simulado", T("alumnos.simulado")) : estadoDe(s));
+    const host = hostSecundario(s);
+    li.querySelector(".alumno__sub").textContent = (s.username || T("alumnos.sinSesion")) + (host ? " · " + host : "");
+    const img = li.querySelector("img");
+    const texto = li.querySelector(".alumno__pantalla-texto");
+    const puede = s.state === "connected" && s.canThumb;
+    const pantalla = li.querySelector(".alumno__pantalla");
+    pantalla.disabled = !puede;
+    img.alt = T("alumnos.pantallaDe", { equipo: nombreEquipo(s) });
+    if (!puede) img.removeAttribute("src");
+    texto.textContent = s.state !== "connected" ? T("alumnos.desconectado")
+      : !s.canThumb ? (s.canCode ? T("alumnos.noComparte") : T("alumnos.sinSesion"))
+        : img.getAttribute("src") ? "" : T("alumnos.esperandoImagen");
+    // Solo se nombra como acción cuando lo es; si no, su texto dice por qué.
+    if (puede) nombrarPantalla(pantalla, nombreEquipo(s));
+    else pantalla.removeAttribute("aria-label");
+    li.style.removeProperty("grid-row");
+    li.style.removeProperty("grid-column");
+    return li;
+  }
+  function pintarMiniaturas() {
+    if (modo === "salon") {
+      pintarSalonAlumnos();
+      return;
+    }
+    const reales = alumnos.students.filter((s) => !s.simulated).sort(porSalon);
+    const sims = alumnos.students.filter((s) => s.simulated).sort(porSalon);
+    const tarjeta = tarjetaAlumno;
     const items = reales.map(tarjeta);
     if (sims.length) {
       const g = el("li", "cuadricula-alumnos__grupo");
@@ -1072,6 +1123,459 @@
   }
   window.addEventListener("resize", () => { if (modo === "miniaturas" && tamanoMiniaturas === "ajustar") ajustarMiniaturas(); });
 
+  // --- Salón (prompt 10.15) ------------------------------------------------------------------
+  // El plano del canal vive en Go (aula:room). La vista «Salón» de Alumnos lo dibuja con las
+  // mismas tarjetas de Miniaturas; el módulo «Salón» del menú lo edita; Ajustes › Salón lo resume
+  // y lo copia a otra consola. Nada aquí guarda el plano: cada cambio es un binding.
+  const LUGAR = { teacher: ["escritorio", "salon.lugar.teacher"], aisle: ["pasillo", "salon.lugar.aisle"] };
+  const mismoEquipo = (a, b) => !!a && !!b && claveEquipo(a.hostname, a.simulated) === claveEquipo(b.hostname, b.simulated);
+  const lugarEn = (f, c) => salon.places.find((p) => p.row === f && p.col === c) || null;
+  const equipoEn = (f, c) => salon.computers.find((x) => x.seat && x.seat.row === f && x.seat.col === c) || null;
+  const alumnoDeEquipo = (x) => alumnos.students.find((s) => claveEquipo(s.hostname, s.simulated) === claveEquipo(x.hostname, x.simulated)) || null;
+  const conectadoEquipo = (x) => { const s = alumnoDeEquipo(x); return !!s && s.state === "connected"; };
+  const lugarTexto = (seat) => (seat ? T("salon.lugarDe", { f: seat.row, c: seat.col }) : T("salon.sinAcomodar"));
+  const enRejilla = (li, f, c) => { li.style.gridRow = String(f); li.style.gridColumn = String(c); return li; };
+
+  function alSalon(v) {
+    salon = v;
+    etiquetas.clear();
+    asientos.clear();
+    for (const c of v.computers) {
+      const k = claveEquipo(c.hostname, c.simulated);
+      if (c.label) etiquetas.set(k, c.label);
+      if (c.seat) asientos.set(k, c.seat);
+    }
+    for (const r of v.renamed || []) toast("info", T("salon.renombrado", { antes: r.from, ahora: r.to }), T("salon.renombradoTexto"));
+    if (elegido && !salon.computers.some((c) => mismoEquipo(c, elegido))) elegido = null;
+    if (llevando && !salon.computers.some((c) => mismoEquipo(c, llevando))) llevando = null;
+    pintarAlumnos(alumnos);
+    pintarEditorSalon();
+    pintarAjustesSalon();
+  }
+
+  // Vista «Salón» de Alumnos: cada tarjeta en su asiento; los asientos de los equipos sin
+  // conexión, vacíos y apagados (con Encender si se puede); el escritorio y los pasillos, en gris.
+  function seleccionarZona(pred) {
+    const ks = conectados().filter((s) => { const p = asientoDe(s); return p && pred(p); }).map(clave);
+    if (!ks.length) {
+      toast("info", T("salon.zonaVacia"), T("salon.zonaVaciaTexto"));
+      return;
+    }
+    const todos = ks.every((k) => seleccion.has(k));
+    for (const k of ks) {
+      if (todos) seleccion.delete(k); else seleccion.add(k);
+    }
+    pintarAlumnos(alumnos);
+  }
+  function pintarSalonAlumnos() {
+    const porClave = new Map(alumnos.students.map((s) => [claveEquipo(s.hostname, s.simulated), s]));
+    const apagados = new Map((alumnos.off || []).map((o) => [claveEquipo(o.hostname, false), aApagado(o)]));
+    const items = [];
+    const cabecera = (texto, aria, ic, f, c, accion) => {
+      const li = enRejilla(el("li", "salon__cabecera" + (c === 1 ? " salon__cabecera--fila" : "")), f, c);
+      const b = boton(texto, "btn--fantasma btn--sm", ic);
+      b.setAttribute("aria-label", aria);
+      b.dataset.tip = aria;
+      b.addEventListener("click", accion);
+      li.append(b);
+      return li;
+    };
+    for (let c = 1; c <= salon.cols; c++) items.push(cabecera(String(c), T("salon.seleccionarColumna", { n: c }), "flecha-abajo", 1, c + 1, () => seleccionarZona((p) => p.col === c)));
+    for (let f = 1; f <= salon.rows; f++) items.push(cabecera(String(f), T("salon.seleccionarFila", { n: f }), "flecha-der", f + 1, 1, () => seleccionarZona((p) => p.row === f)));
+    for (const p of salon.places) {
+      const [ic, k] = LUGAR[p.kind] || LUGAR.aisle;
+      const li = enRejilla(el("li", "salon__lugar"), p.row + 1, p.col + 1);
+      li.append(icono(ic), el("span", "", T(k)));
+      items.push(li);
+    }
+    const sentados = new Set();
+    for (const c of salon.computers) {
+      if (!c.seat) continue;
+      const k = claveEquipo(c.hostname, c.simulated);
+      const s = porClave.get(k);
+      let li;
+      if (s && s.state === "connected") {
+        li = tarjetaAlumno(s);
+        sentados.add(clave(s));
+      } else {
+        li = el("li", "salon__asiento");
+        const o = s || apagados.get(k) || { hostname: c.hostname, simulated: c.simulated, state: "off" };
+        li.append(icono("energia", "salon__asiento-icono"), el("strong", "salon__asiento-nombre", nombreEquipo(c)));
+        const host = hostSecundario(c);
+        if (host) li.append(el("span", "suave pequeno", host));
+        li.append(el("span", "suave pequeno", c.simulated ? T("alumnos.desconectado") : T("salon.sinConexion")), ...encenderDe(o));
+      }
+      items.push(enRejilla(li, c.seat.row + 1, c.seat.col + 1));
+    }
+    const ul = $("alumnos-salon-rejilla");
+    ul.style.setProperty("--salon-columnas", String(salon.cols));
+    ul.replaceChildren(...items);
+    const sin = alumnos.students.filter((s) => s.state === "connected" && !sentados.has(clave(s))).sort(porSalon);
+    $("alumnos-salon-sin").hidden = sin.length === 0;
+    $("alumnos-salon-sin-titulo").textContent = P("salon.sinAcomodarN", sin.length);
+    $("alumnos-salon-sin-lista").replaceChildren(...sin.map(tarjetaAlumno));
+    $("alumnos-salon-vacio").hidden = salon.computers.some((c) => c.seat);
+    const vivos = new Set(alumnos.students.map(clave));
+    for (const k of [...tarjetas.keys()]) if (!vivos.has(k)) tarjetas.delete(k);
+    ajustarSalon();
+  }
+  // El tamaño de las miniaturas también vale aquí: el ancho de cada asiento; con «Ajustar», todas
+  // las columnas caben en el ancho de la vista.
+  // Un asiento es más angosto que una miniatura: así un salón de 8 columnas cabe en Pequeño.
+  const ANCHO_ASIENTO = { pequeno: "7rem", mediano: "10rem", grande: "14rem", extra: "19rem" };
+  function ajustarSalon() {
+    const ul = $("alumnos-salon-rejilla");
+    if (tamanoMiniaturas === "ajustar") ul.style.setProperty("--ancho-asiento", "0px");
+    else ul.style.setProperty("--ancho-asiento", ANCHO_ASIENTO[tamanoMiniaturas]);
+  }
+  $("tamano-miniaturas-select").addEventListener("change", () => { if (modo === "salon") ajustarSalon(); });
+
+  // Módulo «Salón»: el editor del plano. Un clic (o Enter) en un equipo lo toma; otro clic (o
+  // Enter) en un asiento lo deja ahí, y si había otro equipo, cambian de lugar. Las flechas
+  // recorren el plano; Esc suelta lo que se lleva. También se arrastra con el mouse.
+  let herramienta = "equipo"; // equipo | teacher | aisle | vacio
+  let elegido = null; // {hostname, simulated}: el del panel «Equipo elegido»
+  let llevando = null; // el que se está moviendo
+  let elegidoPintado = "";
+  let focoSalon = { row: 1, col: 1 };
+  for (const sel of [$("salon-filas"), $("salon-columnas")]) {
+    for (let n = 1; n <= 12; n++) sel.append(Object.assign(el("option", "", String(n)), { value: String(n) }));
+  }
+  const opSalon = (p) => p.then(alSalon, fallo);
+
+  function cambiarTamano() {
+    const filas = Number($("salon-filas").value), cols = Number($("salon-columnas").value);
+    const fuera = salon.computers.filter((c) => c.seat && !c.simulated && (c.seat.row > filas || c.seat.col > cols)).length;
+    const hacer = () => opSalon(api.ResizeRoom(filas, cols));
+    if (!fuera) { hacer(); return; }
+    confirmar({ titulo: T("salon.achicarTitulo", { filas, cols }), consecuencia: P("salon.achicarConsecuencia", fuera), si: T("salon.achicarSi") })
+      .then((si) => (si ? hacer() : pintarEditorSalon()));
+  }
+  $("salon-filas").addEventListener("change", cambiarTamano);
+  $("salon-columnas").addEventListener("change", cambiarTamano);
+  for (const r of $$('input[name="salon-herramienta"]')) {
+    r.addEventListener("change", () => {
+      herramienta = r.value;
+      llevando = null;
+      pintarEditorSalon();
+    });
+  }
+
+  function anunciarLlevando() {
+    $("salon-llevando").hidden = !llevando;
+    if (llevando) $("salon-llevando-texto").textContent = T("salon.llevando", { equipo: nombreEquipo(llevando) });
+  }
+  function celdaSalon(f, c) {
+    const b = el("button", "salon__celda");
+    b.type = "button";
+    b.dataset.row = String(f);
+    b.dataset.col = String(c);
+    b.tabIndex = f === focoSalon.row && c === focoSalon.col ? 0 : -1;
+    const p = lugarEn(f, c), x = equipoEn(f, c);
+    let aria;
+    if (p) {
+      const [ic, k] = LUGAR[p.kind] || LUGAR.aisle;
+      b.classList.add("salon__celda--lugar");
+      b.append(icono(ic), el("span", "salon__celda-nombre", T(k)));
+      aria = T("salon.celdaLugar", { f, c, lugar: T(k) });
+    } else if (x) {
+      const vivo = conectadoEquipo(x);
+      b.classList.add("salon__celda--equipo");
+      b.draggable = true;
+      b.dataset.equipo = x.hostname;
+      b.dataset.sim = x.simulated ? "1" : "";
+      b.append(icono(vivo ? "conectado" : "desconectado", "icono--sm"), el("span", "salon__celda-nombre", nombreEquipo(x)));
+      const host = hostSecundario(x);
+      if (host) b.append(el("span", "salon__celda-host", host));
+      if (x.simulated) b.append(insignia("simulado", "", T("alumnos.simulado")));
+      // El nombre del botón es lo que se ve; dónde está y su estado, solo para el lector.
+      b.append(el("span", "solo-lector", T("salon.celdaEquipo", { f, c, estado: T(x.simulated ? "alumnos.simulado" : vivo ? "alumnos.conectado" : "salon.sinConexion") })));
+      aria = "";
+      if (mismoEquipo(x, elegido)) b.dataset.elegido = "true";
+      if (mismoEquipo(x, llevando)) b.dataset.llevando = "true";
+    } else {
+      b.classList.add("salon__celda--libre");
+      b.append(icono("mas", "icono--sm"));
+      aria = T("salon.celdaLibre", { f, c });
+    }
+    if (aria) b.setAttribute("aria-label", aria);
+    return b;
+  }
+  function itemSinAcomodar(x) {
+    const li = el("li");
+    const b = el("button", "salon__suelto");
+    b.type = "button";
+    b.draggable = true;
+    b.dataset.equipo = x.hostname;
+    b.dataset.sim = x.simulated ? "1" : "";
+    const vivo = conectadoEquipo(x);
+    b.append(icono(vivo ? "conectado" : "desconectado", "icono--sm"), el("span", "salon__celda-nombre", nombreEquipo(x)));
+    const host = hostSecundario(x);
+    if (host) b.append(el("span", "salon__celda-host", host));
+    if (x.simulated) b.append(insignia("simulado", "", T("alumnos.simulado")));
+    b.append(el("span", "solo-lector", T("salon.suelto", { estado: T(x.simulated ? "alumnos.simulado" : vivo ? "alumnos.conectado" : "salon.sinConexion") })));
+    if (mismoEquipo(x, elegido)) b.dataset.elegido = "true";
+    if (mismoEquipo(x, llevando)) b.dataset.llevando = "true";
+    li.append(b);
+    return li;
+  }
+  function pintarEditorSalon() {
+    $("salon-filas").value = String(salon.rows);
+    $("salon-columnas").value = String(salon.cols);
+    const reales = salon.computers.filter((c) => !c.simulated);
+    const acomodados = reales.filter((c) => c.seat).length;
+    const res = [insignia("conectado", "salon", P("salon.acomodados", acomodados))];
+    if (reales.length - acomodados) res.push(insignia("advertencia", "pendiente", P("salon.porAcomodar", reales.length - acomodados)));
+    if (salon.computers.length > reales.length) res.push(insignia("simulado", "simulado", P("alumnos.simulados", salon.computers.length - reales.length)));
+    $("salon-resumen").replaceChildren(...res);
+    $("salon-problema").hidden = !salon.problem;
+    if (salon.problem) $("salon-problema-texto").textContent = salon.problem === "newer" ? T("salon.problema.newer") : T("salon.problema.damaged", { copia: salon.backup });
+    focoSalon = { row: Math.min(focoSalon.row, salon.rows), col: Math.min(focoSalon.col, salon.cols) };
+    const plano = $("salon-plano");
+    plano.style.setProperty("--salon-columnas", String(salon.cols));
+    plano.dataset.herramienta = herramienta;
+    const tenia = plano.contains(document.activeElement);
+    const celdas = [];
+    for (let f = 1; f <= salon.rows; f++) for (let c = 1; c <= salon.cols; c++) celdas.push(celdaSalon(f, c));
+    plano.replaceChildren(...celdas);
+    if (tenia) enfocarCelda();
+    const sueltos = salon.computers.filter((c) => !c.seat).sort(porSalon);
+    $("salon-sin-titulo").textContent = P("salon.sinAcomodarN", sueltos.length);
+    $("salon-sin-vacio").hidden = sueltos.length > 0;
+    $("salon-sin-lista").replaceChildren(...sueltos.map(itemSinAcomodar));
+    $("salon-sin").dataset.soltar = String(!!llevando);
+    anunciarLlevando();
+    pintarElegido();
+  }
+  function enfocarCelda() {
+    const b = $("salon-plano").querySelector('[data-row="' + focoSalon.row + '"][data-col="' + focoSalon.col + '"]');
+    if (b) b.focus();
+  }
+  function pintarElegido() {
+    const x = elegido && salon.computers.find((c) => mismoEquipo(c, elegido));
+    $("salon-elegido-nada").hidden = !!x;
+    $("salon-elegido-form").hidden = !x;
+    if (!x) { elegidoPintado = ""; return; }
+    const s = alumnoDeEquipo(x);
+    const estado = x.simulated ? T("alumnos.simulado") : s && s.state === "connected" ? T("alumnos.conectado") : T("salon.sinConexion");
+    $("salon-elegido-datos").replaceChildren(...[["salon.equipo", x.hostname], ["salon.lugar", lugarTexto(x.seat)], ["salon.estado", estado]]
+      .flatMap(([k, v]) => [el("dt", "", T(k)), el("dd", "", v)]));
+    const k = claveEquipo(x.hostname, x.simulated);
+    if (elegidoPintado !== k) { // no se pisa lo que se está escribiendo
+      elegidoPintado = k;
+      $("salon-etiqueta").value = x.label || "";
+      limpiarCampo($("salon-etiqueta"), $("salon-etiqueta-error"));
+    }
+    cuentaEtiqueta($("salon-etiqueta"), $("salon-etiqueta-ayuda"));
+    $("salon-desacomodar").hidden = !x.seat;
+    $("salon-olvidar").hidden = !!x.simulated || (!!s && s.state === "connected");
+  }
+  const cuentaEtiqueta = (campo, ayuda) => { ayuda.textContent = T("salon.etiquetaAyuda", { n: [...campo.value].length }); };
+
+  function mover(x, f, c) {
+    elegido = { hostname: x.hostname, simulated: !!x.simulated };
+    return opSalon(api.MoveComputer(x.hostname, !!x.simulated, f, c));
+  }
+  function accionCelda(f, c) {
+    focoSalon = { row: f, col: c };
+    const p = lugarEn(f, c), x = equipoEn(f, c);
+    if (herramienta !== "equipo") {
+      if (herramienta === "vacio") {
+        if (x) mover(x, 0, 0);
+        else if (p) opSalon(api.SetRoomPlace(f, c, ""));
+        return;
+      }
+      opSalon(api.SetRoomPlace(f, c, p && p.kind === herramienta ? "" : herramienta));
+      return;
+    }
+    if (llevando) {
+      const l = llevando;
+      llevando = null;
+      if (x && mismoEquipo(x, l)) { pintarEditorSalon(); return; }
+      mover(l, f, c);
+      return;
+    }
+    if (x) {
+      elegido = { hostname: x.hostname, simulated: !!x.simulated };
+      llevando = elegido;
+    } else {
+      elegido = null;
+    }
+    pintarEditorSalon();
+  }
+  $("salon-plano").addEventListener("click", (e) => {
+    const b = e.target.closest(".salon__celda");
+    if (b) accionCelda(Number(b.dataset.row), Number(b.dataset.col));
+  });
+  $("salon-plano").addEventListener("keydown", (e) => {
+    const paso = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
+    if (paso) {
+      e.preventDefault();
+      focoSalon = { row: Math.min(salon.rows, Math.max(1, focoSalon.row + paso[0])), col: Math.min(salon.cols, Math.max(1, focoSalon.col + paso[1])) };
+      for (const b of $$(".salon__celda", $("salon-plano"))) b.tabIndex = -1;
+      const b = $("salon-plano").querySelector('[data-row="' + focoSalon.row + '"][data-col="' + focoSalon.col + '"]');
+      if (b) { b.tabIndex = 0; b.focus(); }
+      return;
+    }
+    if (e.key === "Escape" && llevando) {
+      e.preventDefault();
+      llevando = null;
+      pintarEditorSalon();
+    }
+  });
+  $("salon-plano").addEventListener("focusin", (e) => {
+    const b = e.target.closest(".salon__celda");
+    if (b) focoSalon = { row: Number(b.dataset.row), col: Number(b.dataset.col) };
+  });
+  $("salon-sin-lista").addEventListener("click", (e) => {
+    const b = e.target.closest(".salon__suelto");
+    if (!b) return;
+    const x = { hostname: b.dataset.equipo, simulated: b.dataset.sim === "1" };
+    if (llevando && mismoEquipo(x, llevando)) llevando = null;
+    else { elegido = x; llevando = herramienta === "equipo" ? x : null; }
+    pintarEditorSalon();
+    if (llevando) enfocarCelda();
+  });
+  // Soltar en «Sin acomodar» lo saca de su asiento.
+  $("salon-sin").addEventListener("click", (e) => {
+    if (!llevando || e.target.closest(".salon__suelto")) return;
+    const l = llevando;
+    llevando = null;
+    mover(l, 0, 0);
+  });
+  // Arrastrar con el mouse: de un asiento o de «Sin acomodar» a otro asiento o a «Sin acomodar».
+  for (const zona of [$("salon-plano"), $("salon-sin")]) {
+    zona.addEventListener("dragstart", (e) => {
+      const b = e.target.closest("[data-equipo]");
+      if (!b) return;
+      e.dataTransfer.setData("text/plain", JSON.stringify({ hostname: b.dataset.equipo, simulated: b.dataset.sim === "1" }));
+      e.dataTransfer.effectAllowed = "move";
+    });
+    zona.addEventListener("dragover", (e) => {
+      const b = e.target.closest(".salon__celda");
+      if (zona === $("salon-sin") || (b && !b.classList.contains("salon__celda--lugar"))) e.preventDefault();
+    });
+    zona.addEventListener("drop", (e) => {
+      e.preventDefault();
+      let x;
+      try { x = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { return; }
+      if (!x || !x.hostname) return;
+      llevando = null;
+      const b = e.target.closest(".salon__celda");
+      if (b) mover(x, Number(b.dataset.row), Number(b.dataset.col));
+      else if (zona === $("salon-sin")) mover(x, 0, 0);
+    });
+  }
+
+  $("salon-etiqueta").addEventListener("input", () => {
+    limpiarCampo($("salon-etiqueta"), $("salon-etiqueta-error"));
+    cuentaEtiqueta($("salon-etiqueta"), $("salon-etiqueta-ayuda"));
+  });
+  $("salon-elegido-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!elegido) return;
+    const b = $("salon-etiqueta-guardar");
+    ocupado(b, true);
+    const x = elegido;
+    api.SetComputerLabel(x.hostname, !!x.simulated, $("salon-etiqueta").value.trim()).then((v) => {
+      elegidoPintado = "";
+      alSalon(v);
+      toast("exito", T("etiqueta.guardada", { equipo: x.hostname }), T("etiqueta.guardadaTexto"));
+    }, (err) => {
+      const m = amable(err);
+      if (m.codigo === "labelInvalid") errorEnCampo($("salon-etiqueta"), $("salon-etiqueta-error"), m.texto);
+      else fallo(err);
+    }).finally(() => ocupado(b, false));
+  });
+  $("salon-desacomodar").addEventListener("click", () => { if (elegido) mover(elegido, 0, 0); });
+  $("salon-olvidar").addEventListener("click", () => {
+    if (!elegido) return;
+    const x = elegido;
+    confirmar({ titulo: T("salon.olvidarTitulo", { equipo: nombreEquipo(x) }), texto: T("salon.olvidarTexto"), si: T("salon.olvidarSi"), peligro: true })
+      .then((si) => {
+        if (!si) return;
+        elegido = null;
+        opSalon(api.ForgetRoomComputer(x.hostname));
+      });
+  });
+
+  // Exportar e importar: para armarlo una vez y copiarlo a las demás consolas del centro.
+  function exportarSalon() {
+    api.ExportRoom().then((ruta) => {
+      if (ruta) toast("exito", T("salon.exportado"), T("salon.exportadoTexto", { ruta }));
+    }, fallo);
+  }
+  function importarSalon() {
+    api.PreviewRoomImport().then((pre) => {
+      if (!pre.path) return null;
+      return confirmar({
+        titulo: T("salon.importarTitulo", { canal: clase.channel }),
+        texto: T("salon.importarTexto", { filas: pre.rows, cols: pre.cols, n: pre.computers, etiquetas: pre.labeled, acomodados: pre.seated }),
+        consecuencia: pre.otherChannel ? T("salon.importarOtroCanal", { otro: pre.channel, canal: clase.channel }) : T("salon.importarReemplaza"),
+        si: T("salon.importarSi"),
+      }).then((si) => (si ? api.ImportRoom(pre.path, pre.otherChannel).then((v) => {
+        alSalon(v);
+        toast("exito", T("salon.importado"), P("salon.importadoTexto", v.computers.filter((c) => !c.simulated).length));
+      }) : null));
+    }).catch(fallo);
+  }
+  $("salon-exportar").addEventListener("click", exportarSalon);
+  $("salon-importar").addEventListener("click", importarSalon);
+  $("salon-carpeta").addEventListener("click", () => api.OpenRoomFolder().catch(fallo));
+  $("aj-salon-exportar").addEventListener("click", exportarSalon);
+  $("aj-salon-importar").addEventListener("click", importarSalon);
+  $("aj-salon-editar").addEventListener("click", () => $("ajustes").close());
+  function pintarAjustesSalon() {
+    const reales = salon.computers.filter((c) => !c.simulated);
+    $("aj-salon-resumen").textContent = T("salon.ajustesResumen", { filas: salon.rows, cols: salon.cols,
+      acomodados: reales.filter((c) => c.seat).length, sin: reales.filter((c) => !c.seat).length });
+    $("aj-salon-archivo").textContent = salon.file ? T("salon.archivo", { ruta: salon.file }) : T("salon.sinArchivo");
+  }
+
+  // Etiqueta del equipo desde la Pantalla grande (acción «etiqueta»), en su propio diálogo.
+  const dlgEtiqueta = $("dlg-etiqueta");
+  let etiquetaDe = null;
+  let etiquetaBoton = null;
+  function abrirEtiqueta(s, b) {
+    etiquetaDe = { hostname: s.hostname, simulated: !!s.simulated };
+    etiquetaBoton = b;
+    const actual = etiquetas.get(claveEquipo(s.hostname, s.simulated)) || "";
+    $("dlg-etiqueta-titulo").textContent = T("etiqueta.titulo", { equipo: s.hostname });
+    $("dlg-etiqueta-texto").value = actual;
+    $("dlg-etiqueta-quitar").hidden = !actual;
+    cuentaEtiqueta($("dlg-etiqueta-texto"), $("dlg-etiqueta-ayuda"));
+    dlgEtiqueta.showModal();
+    $("dlg-etiqueta-texto").select();
+  }
+  $("dlg-etiqueta-texto").addEventListener("input", () => {
+    limpiarCampo($("dlg-etiqueta-texto"), $("dlg-etiqueta-error"));
+    cuentaEtiqueta($("dlg-etiqueta-texto"), $("dlg-etiqueta-ayuda"));
+  });
+  $("dlg-etiqueta-cancelar").addEventListener("click", () => dlgEtiqueta.close());
+  dlgEtiqueta.addEventListener("close", () => {
+    limpiarCampo($("dlg-etiqueta-texto"), $("dlg-etiqueta-error"));
+    if (etiquetaBoton && !etiquetaBoton.hidden) etiquetaBoton.focus();
+  });
+  function guardarEtiqueta(texto, b) {
+    if (!etiquetaDe) return;
+    const x = etiquetaDe;
+    ocupado(b, true);
+    api.SetComputerLabel(x.hostname, x.simulated, texto).then((v) => {
+      dlgEtiqueta.close();
+      alSalon(v);
+      toast("exito", T(texto ? "etiqueta.guardada" : "etiqueta.quitada", { equipo: x.hostname }), texto ? T("etiqueta.guardadaTexto") : "");
+    }, (err) => {
+      const m = amable(err);
+      if (m.codigo === "labelInvalid") errorEnCampo($("dlg-etiqueta-texto"), $("dlg-etiqueta-error"), m.texto);
+      else fallo(err);
+    }).finally(() => ocupado(b, false));
+  }
+  $("dlg-etiqueta-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    guardarEtiqueta($("dlg-etiqueta-texto").value.trim(), $("dlg-etiqueta-guardar"));
+  });
+  $("dlg-etiqueta-quitar").addEventListener("click", () => guardarEtiqueta("", $("dlg-etiqueta-quitar")));
+
   function alumnoPorSesion(id) { return alumnos.students.find((s) => s.id === id); }
   let enGrande = "";
   function verEnGrande(k) {
@@ -1083,11 +1587,11 @@
     // Aquí es donde el profesor ve si el alumno está en la actividad: puede tomar el control
     // sin ir a la ficha (solo reales cuyo equipo lo permite).
     pintarAccionesGrande();
-    $("pg-titulo").textContent = s.hostname + (s.username ? " · " + s.username : "");
+    $("pg-titulo").textContent = nombreEquipo(s) + (s.username ? " · " + s.username : "");
     const li = tarjetas.get(k);
     const src = li && li.querySelector("img").getAttribute("src");
     if (src) $("pg-imagen").src = src; else $("pg-imagen").removeAttribute("src");
-    $("pg-imagen").alt = T("alumnos.pantallaDe", { equipo: s.hostname });
+    $("pg-imagen").alt = T("alumnos.pantallaDe", { equipo: nombreEquipo(s) });
     $("pantalla-grande").showModal();
     api.ViewScreen(s.id);
   }
@@ -1141,9 +1645,9 @@
     if (enGrande) api.ViewScreen("");
     enGrande = "";
     modoControl(true);
-    $("pg-titulo").textContent = T("control.titulo", { equipo: control.hostname }) + (s && s.username ? " · " + s.username : "");
+    $("pg-titulo").textContent = T("control.titulo", { equipo: nombreEquipo(control) }) + (s && s.username ? " · " + s.username : "");
     $("pg-imagen").removeAttribute("src");
-    $("pg-imagen").alt = T("control.imagen", { equipo: control.hostname });
+    $("pg-imagen").alt = T("control.imagen", { equipo: nombreEquipo(control) });
     pintarEstadoControl();
     const d = $("pantalla-grande");
     if (!d.open) d.showModal();
@@ -1152,7 +1656,7 @@
   }
   const CONTROL_ESTADO = "control.estado."; // + status de remote.ack o de la consola
   function pintarEstadoControl() {
-    $("pg-control-estado-texto").textContent = T(CONTROL_ESTADO + (control.status === "resumed" ? "active" : control.status), { equipo: control.hostname });
+    $("pg-control-estado-texto").textContent = T(CONTROL_ESTADO + (control.status === "resumed" ? "active" : control.status), { equipo: nombreEquipo(control) });
     $("pg-control-estado").classList.toggle("aviso-en-linea--advertencia", control.status === "paused");
   }
   const CONTROL_FIN = "control.fin."; // + motivo (remote.ack reason o estado de la consola)
@@ -1161,14 +1665,14 @@
     control = Object.assign({}, c, { live: VIVO.includes(c.status) });
     $("f-control").hidden = !control.live;
     if (control.live) {
-      $("f-control-texto").textContent = T("control.franja", { equipo: control.hostname }) +
+      $("f-control-texto").textContent = T("control.franja", { equipo: nombreEquipo(control) }) +
         (control.status === "paused" ? " · " + T("control.franjaPausa") : "");
     }
     if (enControl) pintarEstadoControl();
     if (antes && !control.live) {
       const motivo = control.reason || control.status; // teacher, idle, session, error, replaced; gone, failed
       toast(control.status === "failed" || control.reason === "error" ? "advertencia" : "info",
-        T("control.terminado", { equipo: control.hostname }), T(CONTROL_FIN + motivo, { equipo: control.hostname }));
+        T("control.terminado", { equipo: nombreEquipo(control) }), T(CONTROL_FIN + motivo, { equipo: nombreEquipo(control) }));
       if (enControl) $("pantalla-grande").close();
     }
     if (panel === "alumno") pintarFicha();
@@ -1327,22 +1831,22 @@
   function pintarCaptura() {
     const c = capturas.get(capturaActual);
     if (!c) return;
-    const quien = c.hostname + (c.username ? " · " + c.username : "");
+    const quien = nombreEquipo(c) + (c.username ? " · " + c.username : "");
     $("cap-titulo").textContent = T("captura.titulo", { equipo: quien });
     $("cap-simulado").replaceChildren(...(c.simulated ? [insignia("simulado", "simulado", T("alumnos.simulado"))] : []));
     $("cap-simulado-nota").hidden = !c.simulated;
     const lista = c.status === "ready", fallida = c.status === "failed";
     $("cap-estado").hidden = c.status !== "pending";
-    $("cap-estado-texto").textContent = T("captura.tomando", { equipo: c.hostname });
+    $("cap-estado-texto").textContent = T("captura.tomando", { equipo: nombreEquipo(c) });
     $("cap-error").hidden = !fallida;
     if (fallida) {
       $("cap-error-titulo").textContent = T(CAP_FALLO + c.reason + ".titulo");
-      $("cap-error-texto").textContent = T(CAP_FALLO + c.reason + ".texto", { equipo: c.hostname });
+      $("cap-error-texto").textContent = T(CAP_FALLO + c.reason + ".texto", { equipo: nombreEquipo(c) });
     }
     $("cap-marco").hidden = !lista;
     $("cap-meta").hidden = !lista;
     if (lista) {
-      $("cap-imagen").alt = T("captura.imagen", { equipo: c.hostname });
+      $("cap-imagen").alt = T("captura.imagen", { equipo: nombreEquipo(c) });
       $("cap-meta").textContent = T("captura.meta", { ancho: c.width, alto: c.height, hora: horaDe(c.takenAt), tamano: kb(c.size) });
       if (!$("cap-imagen").getAttribute("src")) {
         imagenDe(c.id).then((src) => { if (capturaActual === c.id) $("cap-imagen").src = src; }, fallo);
@@ -1414,18 +1918,18 @@
       const lista = c.status === "ready" && !c.path;
       m.disabled = !lista;
       m.checked = lista && marcadasLote.has(id);
-      m.setAttribute("aria-label", T("captura.lote.marcar", { equipo: c.hostname }));
+      m.setAttribute("aria-label", T("captura.lote.marcar", { equipo: nombreEquipo(c) }));
       m.addEventListener("change", () => { if (m.checked) marcadasLote.add(id); else marcadasLote.delete(id); pintarPieLote(); });
-      li.querySelector(".equipo").textContent = c.hostname + (c.simulated ? " · " + T("alumnos.simulado") : "");
+      li.querySelector(".equipo").textContent = nombreEquipo(c) + (c.simulated ? " · " + T("alumnos.simulado") : "");
       const estado = c.path ? T("captura.lote.guardada") : c.status === "failed" ? T(CAP_FALLO + c.reason + ".titulo") : T(CAP_ESTADO + c.status);
       li.querySelector(".estado").textContent = estado;
       const img = li.querySelector("img");
-      img.alt = T("captura.imagen", { equipo: c.hostname });
+      img.alt = T("captura.imagen", { equipo: nombreEquipo(c) });
       if (c.status === "ready") imagenDe(id).then((src) => { img.src = src; }, () => {});
       const ver = li.querySelector(".ver");
       ver.hidden = c.status !== "ready";
       ver.textContent = T("captura.lote.ver");
-      ver.setAttribute("aria-label", T("captura.lote.verDe", { equipo: c.hostname }));
+      ver.setAttribute("aria-label", T("captura.lote.verDe", { equipo: nombreEquipo(c) }));
       ver.addEventListener("click", () => abrirCapturaDeLote(id));
       return li;
     }));
@@ -1459,7 +1963,7 @@
         lote.push(c.id);
         marcadasLote.add(c.id);
       }
-      if (r.skipped.length) toast("info", T("captura.lote.omitidos"), r.skipped.join(", "));
+      if (r.skipped.length) toast("info", T("captura.lote.omitidos"), listaEquipos(r.skipped));
       pintarLote();
     }, fallo).finally(() => ocupado(b, false));
   });
@@ -1514,7 +2018,7 @@
     if (li) {
       li.querySelector("img").src = src;
       li.querySelector(".alumno__pantalla-texto").textContent = "";
-      nombrarPantalla(li.querySelector(".alumno__pantalla"), s.hostname);
+      nombrarPantalla(li.querySelector(".alumno__pantalla"), nombreEquipo(s));
     }
     if (t.sessionId === enGrande) $("pg-imagen").src = src;
   }
@@ -1524,10 +2028,12 @@
   }
   function ponerModo(m) {
     if (m === modo) return;
+    const antes = modo;
     modo = m;
     for (const b of $$("[data-modo]")) b.setAttribute("aria-pressed", String(b.dataset.modo === m));
-    if (m === "miniaturas") abrirMiniaturas();
-    else {
+    // Miniaturas y Salón muestran las pantallas: se piden al entrar a una y se sueltan en Lista.
+    if (m !== "lista" && antes === "lista") abrirMiniaturas();
+    else if (m === "lista") {
       api.CloseScreens();
       for (const li of tarjetas.values()) li.querySelector("img").removeAttribute("src");
     }
@@ -1540,7 +2046,7 @@
     if (seleccion.has(k)) seleccion.delete(k); else seleccion.add(k);
     pintarAlumnos(alumnos);
   }
-  for (const cont of [$("alumnos-filas"), $("alumnos-cuadricula")]) {
+  for (const cont of [$("alumnos-filas"), $("alumnos-cuadricula"), $("alumnos-salon")]) {
     cont.addEventListener("click", (e) => {
       if (e.target.closest(".alumno__pantalla")) return;
       const f = e.target.closest("[data-clave]");
@@ -1752,8 +2258,8 @@
     const b = $("pantalla-empezar");
     // Mostrar tu pantalla termina la proyección de un alumno: se confirma (misma vista, mismo puerto).
     const seguir = bc.active || !proy.active ? Promise.resolve(true) : confirmar({
-      titulo: T("transmitir.reemplazaTitulo", { equipo: proy.hostname }),
-      texto: T("transmitir.reemplazaTexto", { equipo: proy.hostname }), si: T("transmitir.reemplazaSi") });
+      titulo: T("transmitir.reemplazaTitulo", { equipo: nombreEquipo(proy) }),
+      texto: T("transmitir.reemplazaTexto", { equipo: nombreEquipo(proy) }), si: T("transmitir.reemplazaSi") });
     seguir.then((si) => {
       if (!si) return;
       b.setAttribute("aria-busy", "true");
@@ -1776,14 +2282,14 @@
     proy = p;
     $("f-proyectando").hidden = !p.active;
     if (p.active) {
-      const v = { equipo: p.hostname, r: p.receivers, n: p.eligible };
+      const v = { equipo: nombreEquipo(p), r: p.receivers, n: p.eligible };
       $("f-proyectando-texto").textContent = T(PROY_FRANJA + p.phase, v);
       $("f-proyectando-detener").textContent = T("proyectar.detener");
       if (enProyeccion) pintarVideoProyeccion();
     }
     // Cómo terminó, si no lo detuvo el profesor (el alumno no puede: lo decide el profesor).
     if (!p.active && p.ended && p.ended !== "stopped") {
-      const v = { equipo: p.hostname };
+      const v = { equipo: nombreEquipo(p) };
       let texto = T(PROY_FIN + camel(p.ended), v);
       if (p.ended === "failed" && ["capture_unavailable", "encoder_unavailable", "busy", "no_answer"].includes(p.reason)) texto += " " + T(PROY_FALLO + camel(p.reason));
       toast(p.ended === "failed" ? "advertencia" : "info", T("proyectar.terminado", v), texto);
@@ -1794,8 +2300,8 @@
   }
   function proyectar(s, b) {
     const seguir = !bc.active ? Promise.resolve(true) : confirmar({
-      titulo: T("proyectar.reemplazaTitulo"), texto: T("proyectar.reemplazaTexto", { equipo: s.hostname }),
-      si: T("proyectar.reemplazaSi", { equipo: s.hostname }) });
+      titulo: T("proyectar.reemplazaTitulo"), texto: T("proyectar.reemplazaTexto", { equipo: nombreEquipo(s) }),
+      si: T("proyectar.reemplazaSi", { equipo: nombreEquipo(s) }) });
     seguir.then((si) => {
       if (!si) return;
       ocupado(b, true);
@@ -1814,7 +2320,7 @@
     answer: (...a) => api.PresentViewAnswer(...a), candidate: (...a) => api.PresentViewCandidate(...a),
     failed: (...a) => api.PresentViewFailed(...a) });
   function pintarVideoProyeccion() {
-    $("pg-video-espera").textContent = T("proyectar.espera", { equipo: proy.hostname });
+    $("pg-video-espera").textContent = T("proyectar.espera", { equipo: nombreEquipo(proy) });
   }
   function modoProyeccion(on) {
     enProyeccion = on;
@@ -1830,8 +2336,8 @@
     enGrande = proy.sessionId; // sus acciones (Detener, Tomar control…) siguen arriba
     modoProyeccion(true);
     pintarAccionesGrande();
-    $("pg-titulo").textContent = T("proyectar.titulo", { equipo: proy.hostname });
-    $("pg-video").setAttribute("aria-label", T("proyectar.imagen", { equipo: proy.hostname }));
+    $("pg-titulo").textContent = T("proyectar.titulo", { equipo: nombreEquipo(proy) });
+    $("pg-video").setAttribute("aria-label", T("proyectar.imagen", { equipo: nombreEquipo(proy) }));
     pintarVideoProyeccion();
     const d = $("pantalla-grande");
     if (!d.open) d.showModal();
@@ -1975,9 +2481,9 @@
   function encender(hosts) {
     api.WakeComputers(hosts).then((r) => {
       const partes = [];
-      if (r.otherSubnet.length) partes.push(T("encender.otraSubred", { lista: r.otherSubnet.join(", ") }));
-      if (r.noMac.length) partes.push(T("encender.sinMacLista", { lista: r.noMac.join(", ") }));
-      if (r.failed.length) partes.push(T("encender.noSalio", { lista: r.failed.join(", ") }));
+      if (r.otherSubnet.length) partes.push(T("encender.otraSubred", { lista: listaEquipos(r.otherSubnet) }));
+      if (r.noMac.length) partes.push(T("encender.sinMacLista", { lista: listaEquipos(r.noMac) }));
+      if (r.failed.length) partes.push(T("encender.noSalio", { lista: listaEquipos(r.failed) }));
       toast(partes.length ? "advertencia" : "exito", P("encender.enviada", r.sent), partes.join(" "));
     }, fallo);
   }
@@ -2022,7 +2528,7 @@
     const forzar = $("energia-forzar").checked;
     const espera = Number($("energia-espera").value);
     const objetivo = (seleccion.size ? seleccionados() : conectados()).filter((s) => !s.simulated && s.canPower);
-    const nombres = objetivo.map((s) => s.hostname);
+    const nombres = objetivo.map((s) => nombreEquipo(s));
     const lista = nombres.length <= 3 ? nombres.join(", ") : P("energia.equipos", nombres.length);
     confirmar({
       titulo: T("energia.confirmarTitulo", { accion: T(ACCION[accion]).toLowerCase(), equipos: P("energia.equipos", nombres.length) }),
@@ -2035,8 +2541,8 @@
       api.PowerAction({ action: accion, hosts: equiposReales(), delayS: espera, force: forzar }).then((r) => {
         cerrarPanel();
         let texto = "";
-        if (r.unsupported.length) texto += T("energia.noLaSoportan", { lista: r.unsupported.join(", ") }) + " ";
-        if (r.failed.length) texto += T("energia.noLlego", { lista: r.failed.join(", ") });
+        if (r.unsupported.length) texto += T("energia.noLaSoportan", { lista: listaEquipos(r.unsupported) }) + " ";
+        if (r.failed.length) texto += T("energia.noLlego", { lista: listaEquipos(r.failed) });
         toast(r.failed.length ? "advertencia" : "exito", P("energia.enviada", r.sent), texto.trim());
       }, fallo);
     });
@@ -2101,9 +2607,9 @@
   // Qué pasó con una pausa: a cuántos llegó y quién se quedó igual.
   function avisoPausa(r, titulo) {
     let texto = "";
-    if (r.unsupported.length) texto += T("pausa.noLaSoportan", { lista: r.unsupported.join(", ") }) + " ";
-    if (r.presenting.length) texto += T("pausa.proyectando", { lista: r.presenting.join(", ") }) + " ";
-    if (r.failed.length) texto += T("pausa.noLlego", { lista: r.failed.join(", ") });
+    if (r.unsupported.length) texto += T("pausa.noLaSoportan", { lista: listaEquipos(r.unsupported) }) + " ";
+    if (r.presenting.length) texto += T("pausa.proyectando", { lista: listaEquipos(r.presenting) }) + " ";
+    if (r.failed.length) texto += T("pausa.noLlego", { lista: listaEquipos(r.failed) });
     toast(r.failed.length ? "advertencia" : "exito", titulo, texto.trim() || T("pausa.pausadasTexto"));
   }
   function pausar(hosts, mensaje, b, campo, caja) {
@@ -2235,10 +2741,10 @@
     $("temporizador-cuenta").textContent = termino ? "0:00" : tiempo;
     $("temporizador-nombre").textContent = nombre;
     $("temporizador-para").textContent = t.all ? T("temporizador.paraTodos") : P("temporizador.paraSeleccion", t.hosts.length);
-    const faltan = t.receivers.filter((r) => r.status === "sent").map((r) => r.hostname);
-    $("temporizador-confirman").textContent = faltan.length ? T("temporizador.sinConfirmar", { lista: faltan.join(", ") }) : T("temporizador.todosLoVen");
+    const faltan = t.receivers.filter((r) => r.status === "sent");
+    $("temporizador-confirman").textContent = faltan.length ? T("temporizador.sinConfirmar", { lista: listaEquipos(faltan) }) : T("temporizador.todosLoVen");
     $("temporizador-no-pueden").hidden = !t.unsupported.length;
-    $("temporizador-no-pueden").textContent = T("temporizador.noPueden", { lista: t.unsupported.join(", ") });
+    $("temporizador-no-pueden").textContent = T("temporizador.noPueden", { lista: listaEquipos(t.unsupported) });
     for (const b of $$("[data-extender]")) b.disabled = Number(b.dataset.extender) > t.maxExtendS;
   }
   setInterval(() => { if (temporizador.active && !temporizador.ended) pintarCuentaTemporizador(); }, 1000);
@@ -2420,7 +2926,7 @@
       const ul = el("ul", "lista-limpia pila-mini encuesta-respuestas");
       for (const a of p.answers) {
         const li = el("li", "pequeno");
-        const quien = a.hostname ? T("encuesta.quien", { equipo: a.hostname, usuario: a.username }) : "";
+        const quien = a.hostname ? T("encuesta.quien", { equipo: nombreEquipo(a), usuario: a.username }) : "";
         const que = a.choice >= 0 ? opcionesEncuesta(p)[a.choice] || "" : a.text;
         li.append(document.createTextNode(quien ? T("encuesta.respuestaDe", { quien, respuesta: que }) : que));
         if (a.simulated) li.append(document.createTextNode(" "), insignia("simulado", "", T("alumnos.simulado")));
@@ -2430,8 +2936,8 @@
       out.push(h, ul);
     }
     out.push(el("p", "pequeno", notaRespondieron(p)));
-    if (p.open && p.missing.length) out.push(el("p", "pequeno suave", T("encuesta.faltan", { lista: p.missing.map((m) => m.hostname).join(", ") })));
-    if (p.open && p.unsupported.length) out.push(el("p", "pequeno suave", T("encuesta.noPueden", { lista: p.unsupported.join(", ") })));
+    if (p.open && p.missing.length) out.push(el("p", "pequeno suave", T("encuesta.faltan", { lista: listaEquipos(p.missing) })));
+    if (p.open && p.unsupported.length) out.push(el("p", "pequeno suave", T("encuesta.noPueden", { lista: listaEquipos(p.unsupported) })));
     const botones = el("div", "grupo-botones");
     if (p.open) {
       const b = boton(T("encuesta.cerrar"), "btn--sm", "detener");
@@ -2926,7 +3432,7 @@
       const tbody = el("tbody");
       for (const s of q.scores) {
         const tr = el("tr");
-        const eq = el("td", "celda-principal", s.hostname);
+        const eq = el("td", "celda-principal", nombreEquipo(s));
         if (s.simulated) eq.append(document.createTextNode(" "), insignia("simulado", "", T("alumnos.simulado")));
         tr.append(eq, el("td", "", s.username || "—"), el("td", "", T("cuest.puntajeDe", { n: s.score, max: q.max })),
           el("td", "", s.submitted ? T("cuest.si") : P("cuest.respondio", s.answered, { total: q.questions.length })));
@@ -2941,8 +3447,8 @@
     let nota = p.open ? T("cuest.entregaron", { n: q.submitted + q.submittedSimulated, total: p.eligible }) : P("cuest.entregadosN", q.submitted + q.submittedSimulated);
     if (q.submittedSimulated) nota += " " + P("cuest.deEllosSimulados", q.submittedSimulated);
     out.push(el("p", "pequeno", nota + "."));
-    if (p.open && p.missing.length) out.push(el("p", "pequeno suave", T("encuesta.faltan", { lista: p.missing.map((m) => m.hostname).join(", ") })));
-    if (p.open && p.unsupported.length) out.push(el("p", "pequeno suave", T("cuest.noPueden", { lista: p.unsupported.join(", ") })));
+    if (p.open && p.missing.length) out.push(el("p", "pequeno suave", T("encuesta.faltan", { lista: listaEquipos(p.missing) })));
+    if (p.open && p.unsupported.length) out.push(el("p", "pequeno suave", T("cuest.noPueden", { lista: listaEquipos(p.unsupported) })));
     const botones = el("div", "grupo-botones");
     if (p.open) {
       const b = boton(T("encuesta.cerrar"), "btn--sm", "detener");
@@ -3071,7 +3577,7 @@
   // Envíos: quién lo tiene y quién falta.
   const nombreDe = (id) => {
     const s = alumnoPorSesion(id);
-    return s ? s.hostname + (s.username ? " · " + s.username : "") : T("codigo.yaNoEsta");
+    return s ? nombreEquipo(s) + (s.username ? " · " + s.username : "") : T("codigo.yaNoEsta");
   };
   const abiertos = new Set(); // envíos con el desglose abierto
   // Código muestra el código y los avisos; Archivos, sus envíos de archivos (kind «file»).
@@ -3399,7 +3905,7 @@
   const INSIGNIA_RECO = { waiting: "", ready: "info", queued: "", collecting: "info", collected: "conectado", empty: "advertencia", failed: "error" };
   const motivoReco = (r) => (typeof TX[MOTIVO_RECO + camel(r)] === "string" ? T(MOTIVO_RECO + camel(r)) : errorAlumno(r).titulo);
   const rutaWin = (partes) => partes.filter(Boolean).join("\\");
-  const nombreAlumno = (s) => (s.username ? T("reco.alumno", { equipo: s.hostname, usuario: s.username }) : s.hostname);
+  const nombreAlumno = (s) => (s.username ? T("reco.alumno", { equipo: nombreEquipo(s), usuario: s.username }) : nombreEquipo(s));
 
   function ponerPestanaArchivos(p) {
     pestanaArchivos = p;
@@ -3550,7 +4056,8 @@
   const FALLAS =[["none", "simulada.fallaNinguna"], ["slow", "simulada.fallaLenta"], ["noack", "simulada.fallaNoAcusa"], ["disconnected", "simulada.fallaDesconectado"]];
   const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla", "screen.snapshot": "simulada.capCaptura",
     "hand": "simulada.capMano", "msg.student": "simulada.capMensajes", "file.push": "simulada.capArchivos",
-    "file.collect": "simulada.capRecoger", "poll": "simulada.capEncuestas", "poll.quiz": "simulada.capCuestionarios" };
+    "file.collect": "simulada.capRecoger", "poll": "simulada.capEncuestas", "poll.quiz": "simulada.capCuestionarios",
+    "computer.label": "simulada.capEtiqueta" };
   function pintarSimulacion(v) {
     simulada = v;
     $("f-simulada").hidden = !v.active;
@@ -3649,7 +4156,7 @@
     pintarParticipacion(p);
     if (p.arrival) {
       const a = p.arrival;
-      const titulo = T(a.kind === "hand" ? "participacion.llegoMano" : "participacion.llegoMensaje", { equipo: a.hostname });
+      const titulo = T(a.kind === "hand" ? "participacion.llegoMano" : "participacion.llegoMensaje", { equipo: nombreEquipo(a) });
       toast("info", titulo, T("participacion.llegoTexto"), "", "",
         vista === "participacion" ? null : { texto: T("participacion.ver"), href: "#participacion" });
     }
@@ -3694,7 +4201,7 @@
       orden.textContent = String(x.position);
       orden.title = T("participacion.orden", { n: x.position });
     }
-    li.querySelector(".equipo").textContent = x.hostname;
+    li.querySelector(".equipo").textContent = nombreEquipo(x);
     li.querySelector(".usuario").textContent = x.username || "";
     const estado = li.querySelector(".participa__estado");
     if (x.simulated) estado.append(insignia("simulado", "simulado", T("alumnos.simulado")));
@@ -3733,7 +4240,7 @@
     const form = li.querySelector(".participa__respuesta");
     const area = li.querySelector(".respuesta-texto");
     const caja = li.querySelector(".respuesta-error");
-    li.querySelector(".respuesta-etiqueta").textContent = T("participacion.respuestaA", { equipo: x.hostname });
+    li.querySelector(".respuesta-etiqueta").textContent = T("participacion.respuestaA", { equipo: nombreEquipo(x) });
     li.querySelector(".bajar-tambien").hidden = !esMano;
     area.value = borradores.get(k) || "";
     area.addEventListener("input", () => { borradores.set(k, area.value); limpiarCampo(area, caja); });
@@ -3752,7 +4259,7 @@
       api.ReplyToStudent(Object.assign(quienDe(x), { messageId: esMano ? "" : x.messageId, text: txt })).then(() => {
         borradores.delete(k);
         respondiendo = "";
-        toast("exito", T("participacion.enviada", { equipo: x.hostname }), T("participacion.enviadaTexto"));
+        toast("exito", T("participacion.enviada", { equipo: nombreEquipo(x) }), T("participacion.enviadaTexto"));
         if (bajarTambien) return api.LowerHand(quien);
         pintarParticipacion(participacion);
         return null;
@@ -4441,7 +4948,7 @@
       T(TE_PASO + s.kind + "." + s.status, { n: s.count }), s.status)));
     const filas = (v.students || []).map((s) => {
       const tr = el("tr");
-      const nombre = el("td", "celda-principal", s.hostname);
+      const nombre = el("td", "celda-principal", nombreEquipo(s));
       if (s.simulated) nombre.append(" ", insignia("simulado", "simulado", T("alumnos.simulado")));
       const [ic, tipo] = ESTADO_TERMINAR[s.state] || ESTADO_TERMINAR.waiting;
       const estado = el("td");
@@ -4548,7 +5055,7 @@
   function reabrir(canal, nombre, dialogo, campo, caja) {
     const b = dialogo.querySelector('button[type="submit"]');
     ocupado(b, true);
-    if (modo === "miniaturas") ponerModo("lista");
+    if (modo !== "lista") ponerModo("lista");
     api.StartClass(canal, nombre).then((v) => {
       dialogo.close();
       mostrarConsola(v);
@@ -4577,6 +5084,7 @@
   rt.EventsOn(ev.PARTICIPATION, alParticipar);
   rt.EventsOn(ev.TIMER, alTemporizador);
   rt.EventsOn(ev.CLASS_END, pintarTerminar);
+  rt.EventsOn(ev.ROOM, alSalon);
   rt.EventsOn(ev.POLLS, pintarEncuestas);
   rt.EventsOn(ev.FILES, pintarArchivos);
   rt.EventsOn(ev.COLLECTIONS, pintarRecolecciones);

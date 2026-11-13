@@ -189,3 +189,60 @@ a.insignia:hover { text-decoration: underline; }
 .terminar__tabla { max-height: 14rem; overflow: auto; }
 .terminar__tabla .tabla thead th:first-child, .terminar__tabla .tabla td:first-child { text-align: left; }
 @media (max-height: 700px) { .terminar__tabla { max-height: 8rem; } }
+
+/* --- Salón (prompt 10.15) -----------------------------------------------------------------
+   La vista «Salón» de Alumnos reusa la tarjeta del alumno en una rejilla de filas × columnas con
+   sus cabeceras; el editor del módulo «Salón» es una rejilla de botones. El ancho de un asiento
+   sale del Tamaño de las miniaturas (--ancho-asiento); a 900×600 la rejilla se desplaza dentro de
+   su contenedor y la cabecera de las filas queda fija. */
+.salon { display: grid; gap: var(--e-2); overflow: auto; max-width: 100%; padding-bottom: var(--e-1); }
+.salon__frente {
+  margin: 0; padding: var(--e-1) var(--e-3);
+  text-align: center; font-size: var(--t-sm); color: var(--c-texto-suave);
+  background: var(--c-superficie-2); border: 1px dashed var(--c-borde-fuerte); border-radius: var(--r-md);
+}
+.salon__rejilla {
+  display: grid; gap: var(--e-2); margin: 0; padding: 0; list-style: none;
+  grid-template-columns: auto repeat(var(--salon-columnas, 8), minmax(var(--ancho-asiento, 9rem), 1fr));
+}
+.salon__cabecera { display: grid; place-items: center; }
+/* En un asiento, el nombre va en su propia línea y el estado debajo: la etiqueta no se corta. */
+.salon__rejilla .alumno__pie { flex-wrap: wrap; gap: var(--e-1); }
+.salon__rejilla .alumno__nombre { flex-basis: 100%; }
+.salon__cabecera--fila { position: sticky; left: 0; z-index: 2; background: var(--c-fondo); }
+.salon__lugar, .salon__asiento {
+  display: grid; justify-items: center; align-content: center; gap: var(--e-1);
+  min-width: 0; min-height: 5rem; padding: var(--e-2);
+  text-align: center; font-size: var(--t-sm); color: var(--c-texto-suave);
+  border-radius: var(--r-lg);
+}
+.salon__lugar { background: var(--c-superficie-2); }
+.salon__asiento { background: var(--c-desconectado-fondo); border: 1px dashed var(--c-borde-fuerte); }
+.salon__asiento-nombre { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-texto); }
+.salon__subtitulo { font-size: var(--t-md); }
+
+.salon-editor { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: var(--e-4); align-items: start; }
+@media (max-width: 1100px) { .salon-editor { grid-template-columns: minmax(0, 1fr); } }
+.salon__plano { display: grid; gap: var(--e-1); grid-template-columns: repeat(var(--salon-columnas, 8), minmax(5.5rem, 1fr)); }
+.salon__celda, .salon__suelto {
+  min-width: 0; padding: var(--e-1) var(--e-2);
+  font: inherit; font-size: var(--t-sm); color: var(--c-texto);
+  background: var(--c-superficie); border: 1px solid var(--c-borde); border-radius: var(--r-md);
+  cursor: pointer;
+}
+.salon__celda { display: grid; justify-items: center; align-content: center; gap: var(--e-1); min-height: 4.25rem; text-align: center; }
+.salon__celda--libre { border-style: dashed; border-color: var(--c-borde-fuerte); color: var(--c-texto-suave); background: transparent; }
+.salon__celda--lugar { color: var(--c-texto-suave); background: var(--c-superficie-2); }
+.salon__celda--equipo, .salon__suelto { cursor: grab; }
+.salon__plano:not([data-herramienta="equipo"]) .salon__celda { cursor: copy; }
+.salon__celda[data-elegido="true"], .salon__suelto[data-elegido="true"] { border-color: var(--c-acento); box-shadow: 0 0 0 2px var(--c-acento); }
+.salon__celda[data-llevando="true"], .salon__suelto[data-llevando="true"] { background: var(--c-acento-suave); color: var(--c-acento-sobre-suave); }
+.salon__celda-nombre { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--peso-medio); }
+.salon__celda-host { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-xs); color: var(--c-texto-suave); }
+.salon__suelto { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-1) var(--e-2); width: 100%; text-align: left; }
+.salon__sin, .salon__elegido {
+  display: grid; gap: var(--e-2); padding: var(--e-3);
+  background: var(--c-superficie); border: 1px solid var(--c-borde); border-radius: var(--r-lg);
+}
+.salon__sin h3, .salon__elegido h3 { font-size: var(--t-md); }
+.salon__sin[data-soltar="true"] { border-style: dashed; border-color: var(--c-acento); cursor: pointer; }

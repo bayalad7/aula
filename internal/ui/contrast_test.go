@@ -85,6 +85,7 @@ func TestTokensContrast(t *testing.T) {
 		{"c-advertencia", "c-advertencia-fondo"}, {"c-advertencia", "c-superficie"},
 		{"c-error", "c-error-fondo"}, {"c-error", "c-superficie"},
 		{"c-error-solido-texto", "c-error-solido"},
+		{"c-sobre-solido-texto", "c-sobre-solido"},
 		{"c-simulado", "c-simulado-fondo"}, {"c-simulado", "c-superficie"},
 		{"c-info", "c-info-fondo"},
 		{"c-vista-solido-texto", "c-vista-solido"},
@@ -102,6 +103,10 @@ func TestTokensContrast(t *testing.T) {
 		{"c-advertencia-solido", "c-superficie"}, {"c-error-solido", "c-superficie"},
 		{"c-simulado-solido", "c-superficie"}, {"c-acento", "c-superficie"},
 		{"c-vista-solido", "c-superficie"},
+		// The Nodo logo on the window and on a card, and a button on a solid band.
+		{"c-marca-tinta", "c-fondo"}, {"c-marca-tinta", "c-superficie"},
+		{"c-marca-nodo", "c-fondo"}, {"c-marca-nodo", "c-superficie"},
+		{"c-sobre-solido", "c-error-solido"},
 	}
 	light, darkAuto, darkManual := themeBlocks(t)
 	for name, theme := range map[string]map[string]string{"claro": light, "oscuro": darkManual} {

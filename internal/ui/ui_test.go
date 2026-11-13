@@ -2,6 +2,8 @@ package ui
 
 import (
 	"io/fs"
+	"regexp"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -32,6 +34,35 @@ func TestAssetsMountsTheDesignSystem(t *testing.T) {
 		if _, err := a.Open(bad); err == nil {
 			t.Errorf("Open(%q) succeeded", bad)
 		}
+	}
+}
+
+// Every url() of the design system's CSS (the embedded title font) is served
+// by Files, so the apps never need the internet to draw it.
+func TestCSSURLsAreEmbedded(t *testing.T) {
+	urlRe := regexp.MustCompile(`url\("?([^")]+)"?\)`)
+	found := 0
+	for _, css := range []string{"tokens.css", "componentes.css"} {
+		data, err := fs.ReadFile(Files(), css)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, m := range urlRe.FindAllSubmatch(data, -1) {
+			ref := string(m[1])
+			if strings.HasPrefix(ref, "data:") || strings.HasPrefix(ref, "#") {
+				continue
+			}
+			found++
+			if _, err := fs.Stat(Files(), ref); err != nil {
+				t.Errorf("%s: url(%s) is not embedded: %v", css, ref, err)
+			}
+		}
+	}
+	if found == 0 {
+		t.Error("tokens.css no longer loads the title font")
+	}
+	if _, err := fs.Stat(Files(), "fuentes/OFL.txt"); err != nil {
+		t.Errorf("the font ships without its license: %v", err)
 	}
 }
 

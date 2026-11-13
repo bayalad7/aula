@@ -17,7 +17,7 @@ import (
 // Dir is where the design system appears in each frontend.
 const Dir = "sistema"
 
-//go:embed tokens.css componentes.css iconos.svg receptor-video.js iconos.js
+//go:embed tokens.css componentes.css iconos.svg receptor-video.js iconos.js fuentes
 var files embed.FS
 
 // Files returns the design system, with its files at the root.

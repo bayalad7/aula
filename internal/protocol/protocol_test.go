@@ -155,6 +155,8 @@ func samplePayloads() []Payload {
 		StudentPresentStop{PresentID: testRefID},
 		ClassEnd{EndID: testRefID},
 		ClassEndAck{RefID: testRefID, EndID: testRefID, Status: ClassEndFailed, Reason: ClassEndRestrictions},
+		ComputerLabel{Label: "Fila 2 · PC07"},
+		ComputerLabel{Label: ""},
 		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15,
 			Source: &BroadcastSource{Kind: BroadcastSourceStudent, Hostname: "LAB3-PC07"}},
 		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15, Mode: BroadcastWindow},
@@ -603,7 +605,7 @@ func TestRequiredCapability(t *testing.T) {
 		TypePollQuizResult:      CapPollQuiz,
 		TypeStudentPresentStart: CapScreenPresent, TypeStudentPresentOffer: CapScreenPresent,
 		TypeStudentPresentICE: CapScreenPresent, TypeStudentPresentStop: CapScreenPresent,
-		TypeClassEnd: CapClassEnd,
+		TypeClassEnd: CapClassEnd, TypeComputerLabel: CapComputerLabel,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
@@ -1092,6 +1094,19 @@ func TestClassEndAckValidation(t *testing.T) {
 	} {
 		if err := c.ack.Validate(); (err == nil) != c.ok {
 			t.Errorf("%+v: err = %v, want ok %v", c.ack, err, c.ok)
+		}
+	}
+}
+
+func TestComputerLabelLimits(t *testing.T) {
+	for _, ok := range []string{"", "Fila 2 · PC07", strings.Repeat("ñ", MaxComputerLabel)} {
+		if err := (ComputerLabel{Label: ok}).Validate(); err != nil {
+			t.Errorf("%q: %v", ok, err)
+		}
+	}
+	for _, bad := range []string{strings.Repeat("a", MaxComputerLabel+1), "Fila\t2", "PC07\x00", "\xff"} {
+		if err := (ComputerLabel{Label: bad}).Validate(); !errors.Is(err, ErrInvalidMessage) {
+			t.Errorf("%q: got %v, want invalid_message", bad, err)
 		}
 	}
 }

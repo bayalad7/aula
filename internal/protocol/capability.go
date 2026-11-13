@@ -60,6 +60,9 @@ const (
 	// CapClassEnd leaves the window as freshly opened when the teacher ends
 	// the class (§5.25). Every OS, whenever the agent has a window.
 	CapClassEnd Capability = "class.end"
+	// CapComputerLabel shows the label of the computer in the capabilities
+	// dialog (§5.26). Every OS, whenever the agent has a window.
+	CapComputerLabel Capability = "computer.label"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -127,6 +130,8 @@ var requiredCapability = map[Type]Capability{
 	TypeStudentPresentStop:  CapScreenPresent,
 
 	TypeClassEnd: CapClassEnd,
+
+	TypeComputerLabel: CapComputerLabel,
 }
 
 // agentCapability lists the capability an agent must have declared before the

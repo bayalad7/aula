@@ -105,6 +105,8 @@ const (
 	// Ending the class (docs/protocol.md §5.25).
 	TypeClassEnd    Type = "class.end"
 	TypeClassEndAck Type = "class.end.ack"
+	// The label of the computer in the classroom plan (docs/protocol.md §5.26).
+	TypeComputerLabel Type = "computer.label"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -348,6 +350,8 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 
 	TypeClassEnd:    decodeAs[ClassEnd],
 	TypeClassEndAck: decodeAs[ClassEndAck],
+
+	TypeComputerLabel: decodeAs[ComputerLabel],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

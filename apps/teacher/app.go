@@ -85,6 +85,7 @@ type App struct {
 
 	restr  *policy.ClassPolicy  // class restrictions: who has what (D-017)
 	power  *power.Tracker       // power orders and each agent's answer (§5.15)
+	wake   wakeState            // known computers and who is being turned on (§5.15.2)
 	pauses *screen.Pauses       // paused screens and each agent's answer (§5.9)
 	opens  *openapp.Tracker     // pages and apps opened, and each agent's answer (§5.22)
 	desk   *remote.Desk         // remote control: one computer at a time (§5.16)
@@ -142,6 +143,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.broadcastUDPPort = a.port + 1
 	a.restr = policy.NewClassPolicy()
 	a.power = &power.Tracker{Now: func() time.Time { return a.now() }}
+	a.wake = newWakeState(dir, log)
 	a.pauses = &screen.Pauses{}
 	a.opens = &openapp.Tracker{}
 	a.desk = &remote.Desk{Now: func() time.Time { return a.now() }}
@@ -263,6 +265,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	// The history and the deliveries are the teacher's, not the channel's:
 	// they survive a change of channel or name (docs/ux/historial/consola-analisis.md, C2).
 	a.class, a.info, a.startErr = class, info, ""
+	a.wake.channel.Store(info.Channel)
 	a.mu.Unlock()
 	a.power.Reset()  // orders of another class are not followed
 	a.pauses.Reset() // nor its pauses
@@ -625,6 +628,7 @@ func (a *App) onChange() {
 	if class == nil {
 		return
 	}
+	a.recordMachines(class) // before the list: who just woke up is not «Encendiendo…»
 	a.emit(EventStudents, a.studentsIn(class))
 	a.syncClassEnd(class) // first: who reconnects is cleaned before anything is resent (§5.25.3)
 	a.syncScreens()

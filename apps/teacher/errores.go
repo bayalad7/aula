@@ -37,6 +37,9 @@ const (
 	codeBroadcastFailed      = "broadcastFailed"
 	codeInvalidPower         = "invalidPower"
 	codeNoPowerTargets       = "noPowerTargets"
+	codeNoWakeTargets        = "noWakeTargets"
+	codeWakeNoMAC            = "wakeNoMac"
+	codeWakeFailed           = "wakeFailed"
 	codeNoPauseTargets       = "noPauseTargets"
 	codeInvalidPauseMessage  = "invalidPauseMessage"
 	codeInvalidRestriction   = "invalidRestriction"
@@ -102,7 +105,7 @@ var errorCodes = []string{
 	codeInvalidName, codeInvalidMode, codeEmptyCode, codeTitleTooLong, codeCodeTooLarge, codeInvalidNotice,
 	codeUnknownLanguage, codeSnippetGone, codeDeliveryGone, codeClipboardUnavailable, codeClipboardEmpty,
 	codeClipboardTooLarge, codeNoH264, codeHideConsole, codeAlreadyBroadcasting, codeBroadcastFailed,
-	codeInvalidPower, codeNoPowerTargets, codeNoPauseTargets, codeInvalidPauseMessage, codeInvalidRestriction, codeInvalidApp, codeInvalidDomain,
+	codeInvalidPower, codeNoPowerTargets, codeNoWakeTargets, codeWakeNoMAC, codeWakeFailed, codeNoPauseTargets, codeInvalidPauseMessage, codeInvalidRestriction, codeInvalidApp, codeInvalidDomain,
 	codeSimUnavailable, codeSimClosed, codeSimFull, codeSimCapability, codeSimGone, codeSimFault, codeSimFailed, codeManualFailed,
 	codeCheckRunning, codeAlreadyControlling, codeRemoteUnsupported, codeRemoteGone,
 	codeSnapshotUnsupported, codeSnapshotTooMany, codeSnapshotGone, codeSnapshotSaveFailed, codeSnapshotFolder,
@@ -146,6 +149,9 @@ var errorHelp = map[string]string{
 	codePresentFailed:        "solucion-de-problemas#no-se-puede-proyectar-a-un-alumno",
 	codeInvalidPower:         "tareas-frecuentes#apagar-o-reiniciar-los-equipos",
 	codeNoPowerTargets:       "tareas-frecuentes#apagar-o-reiniciar-los-equipos",
+	codeNoWakeTargets:        "tareas-frecuentes#encender-los-equipos",
+	codeWakeNoMAC:            "solucion-de-problemas#un-equipo-no-se-enciende",
+	codeWakeFailed:           "solucion-de-problemas#un-equipo-no-se-enciende",
 	codeNoPauseTargets:       "tareas-frecuentes#pausar-las-pantallas",
 	codeInvalidPauseMessage:  "tareas-frecuentes#pausar-las-pantallas",
 	codeInvalidRestriction:   "tareas-frecuentes#bloquear-aplicaciones-o-sitios",

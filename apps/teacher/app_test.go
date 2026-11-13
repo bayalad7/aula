@@ -138,6 +138,8 @@ type harness struct {
 	keys  *fakeHotkeys
 	rec   *recorder
 	hooks classHooks
+	// packets records the Wake-on-LAN datagrams: a test never sends one.
+	packets *packetLog
 }
 
 func newHarness(t *testing.T, sessions ...session.Session) *harness {
@@ -145,6 +147,10 @@ func newHarness(t *testing.T, sessions ...session.Session) *harness {
 	h := &harness{class: &fakeClass{sessions: sessions}, clip: &fakeClipboard{}, keys: &fakeHotkeys{}, rec: &recorder{}}
 	h.app = NewApp(t.TempDir(), h.clip, nil, h.keys, quiet)
 	h.app.emit = h.rec.emit
+	h.packets = &packetLog{}
+	h.app.wake.send = h.packets.send
+	h.app.wake.nics = func() ([]platform.NIC, error) { return nil, platform.ErrNotSupported }
+	h.app.wake.gap = time.Millisecond
 	h.app.start = func(_ context.Context, cfg classConfig, hooks classHooks, _ *slog.Logger) (classroom, ClassInfo, error) {
 		h.hooks = hooks
 		return h.class, ClassInfo{Channel: cfg.Channel, ConsoleName: cfg.ConsoleName, PublicKey: "aula-ed25519:x", Port: cfg.Port}, nil

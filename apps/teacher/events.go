@@ -145,11 +145,15 @@ type Student struct {
 	Hand        int `json:"hand"`
 	NewMessages int `json:"newMessages"`
 	// Power is the last power order sent to this session and its state.
-	Power       *power.Entry `json:"power"`
-	AppsActive  bool         `json:"appsActive"`  // acknowledged the class's app policy
-	WebActive   bool         `json:"webActive"`   // acknowledged the class's web filter
-	LastCodeAck string       `json:"lastCodeAck"` // snippet_id; "" after a clear
-	AckedAt     string       `json:"ackedAt"`     // "" if nothing acknowledged yet
+	Power *power.Entry `json:"power"`
+	// CanWake: its MAC is known, so it can be turned on while off (§5.15.2);
+	// Wake, the state of a disconnected one the teacher asked to turn on.
+	CanWake     bool            `json:"canWake"`
+	Wake        *power.WakeView `json:"wake"`
+	AppsActive  bool            `json:"appsActive"`  // acknowledged the class's app policy
+	WebActive   bool            `json:"webActive"`   // acknowledged the class's web filter
+	LastCodeAck string          `json:"lastCodeAck"` // snippet_id; "" after a clear
+	AckedAt     string          `json:"ackedAt"`     // "" if nothing acknowledged yet
 	// Simulated marks a student of the aula simulada: shown with its badge
 	// and never counted as real.
 	Simulated bool `json:"simulated"`
@@ -192,6 +196,9 @@ type Students struct {
 	// Connected counts real students only; Simulated counts the connected
 	// simulated ones. CanCode, CanNotice and CanThumb include both.
 	Simulated int `json:"simulated"`
+	// Off are the known computers of the channel with no session here
+	// («Mostrar apagados», §5.15.2).
+	Off []OffMachine `json:"off"`
 }
 
 // DisplayInfo is a monitor the teacher can broadcast.

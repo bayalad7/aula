@@ -396,14 +396,56 @@
     const h = historial.find((e) => e.snippetId === s.lastCodeAck);
     return [document.createTextNode(h ? T("codigo.ejercicio", { n: h.number }) : T("alumnos.codigoRecibido")), el("span", "suave pequeno", " " + s.ackedAt)];
   }
-  const estadoDe = (s) => (s.state === "connected"
-    ? insignia("conectado", "conectado", T("alumnos.conectado"))
-    : insignia("desconectado", "desconectado", T("alumnos.desconectado")));
+  const estadoDe = (s) => {
+    if (s.state === "connected") return insignia("conectado", "conectado", T("alumnos.conectado"));
+    // Encender (prompt 10.19): «Encendiendo…» hasta que su agente se conecta, o «No respondió».
+    if (s.wake && s.wake.state === "waking") return insignia("info", "pendiente", T("encender.encendiendo", { tiempo: mmss(s.wake.deadline_ms - Date.now()) }));
+    if (s.wake && s.wake.state === "noresponse") return insignia("advertencia", "advertencia", T("encender.noRespondio"));
+    return s.state === "off" ? insignia("desconectado", "energia", T("alumnos.apagado"))
+      : insignia("desconectado", "desconectado", T("alumnos.desconectado"));
+  };
+  // Lo que se puede hacer con un equipo sin sesión: Encender y, si no respondió, el porqué.
+  const AYUDA_ENCENDER = "solucion-de-problemas#un-equipo-no-se-enciende";
+  function encenderDe(s) {
+    if (s.simulated || s.state === "connected") return [];
+    const n = [];
+    if (s.wake && s.wake.other_subnet) n.push(insignia("advertencia", "red", T("encender.otraRed")));
+    if (s.wake && s.wake.state === "noresponse") {
+      n.push(Object.assign(el("a", "pequeno", T("encender.porQue")), { href: rutaManual(AYUDA_ENCENDER), title: T("encender.porQueAyuda") }));
+    }
+    if (s.canWake && !(s.wake && s.wake.state === "waking")) {
+      const b = boton(T("encender.boton"), "btn--sm encender", "encender");
+      b.dataset.equipo = s.hostname;
+      b.setAttribute("aria-label", T("encender.botonAria", { equipo: s.hostname }));
+      n.push(b);
+    }
+    return n;
+  }
+  // Los equipos conocidos sin sesión, como filas de la lista («Mostrar apagados»).
+  const aApagado = (o) => ({ id: "", hostname: o.hostname, username: "", state: "off", lastSeen: o.lastSeen, wake: o.wake,
+    canWake: true, capabilities: [], os: "", osVersion: "", agentVersion: "" });
+  function vistoDe(iso) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const hora = d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+    if (d.toDateString() === new Date().toDateString()) return T("alumnos.vistoHoy", { hora });
+    return T("alumnos.vistoDia", { dia: d.toLocaleDateString("es-MX", { day: "numeric", month: "short" }), hora });
+  }
+  let mostrarApagados = false;
+  try { mostrarApagados = localStorage.getItem("aula-apagados") === "1"; } catch { /* sin almacenamiento */ }
+  $("alumnos-apagados").checked = mostrarApagados;
+  $("alumnos-apagados").addEventListener("change", (e) => {
+    mostrarApagados = e.target.checked;
+    try { localStorage.setItem("aula-apagados", mostrarApagados ? "1" : "0"); } catch { /* sin almacenamiento */ }
+    pintarAlumnos(alumnos);
+  });
 
   function pintarAlumnos(st) {
     alumnos = st;
+    const apagados = (st.off || []).map(aApagado);
+    const verApagados = mostrarApagados && modo === "lista";
     // La selección olvida a quien ya no está en la lista.
-    const presentes = new Set(st.students.map(clave));
+    const presentes = new Set([...st.students, ...(verApagados ? apagados : [])].map(clave));
     for (const k of [...seleccion]) if (!presentes.has(k)) seleccion.delete(k);
 
     const reales = st.students.filter((s) => !s.simulated);
@@ -414,7 +456,9 @@
     if (st.simulated) res.push(insignia("simulado", "simulado", P("alumnos.simulados", st.simulated)));
     $("alumnos-resumen").replaceChildren(...res);
 
-    const vacio = st.students.length === 0;
+    $("alumnos-apagados-campo").hidden = apagados.length === 0 || modo !== "lista";
+    $("alumnos-apagados-texto").textContent = T("alumnos.mostrarApagados", { n: apagados.length });
+    const vacio = st.students.length === 0 && !(verApagados && apagados.length);
     $("alumnos-vacio").hidden = !vacio;
     $("alumnos-vacio-titulo").textContent = T("alumnos.vacioTitulo", { canal: clase.channel });
     $("alumnos-lista").hidden = vacio || modo !== "lista";
@@ -433,15 +477,24 @@
       m.checked = marcado;
       m.setAttribute("aria-label", T("alumnos.seleccionar", { equipo: s.hostname }));
       tr.querySelector(".equipo").textContent = s.hostname;
-      tr.querySelector(".usuario").textContent = s.username || T("alumnos.sinSesion");
+      tr.querySelector(".usuario").textContent = s.state === "off" ? vistoDe(s.lastSeen) : s.username || T("alumnos.sinSesion");
       tr.querySelector(".estado").append(estadoDe(s));
       tr.querySelector(".codigo").append(...codigoDe(s));
       tr.querySelector(".so").textContent = sistemaDe(s);
       tr.querySelector(".version").textContent = s.agentVersion ? T("alumnos.versionAula", { v: s.agentVersion }) : "";
       const f = tr.querySelector(".ficha");
-      f.setAttribute("aria-label", T("alumnos.verFicha", { equipo: s.hostname }));
-      f.title = T("alumnos.verFicha", { equipo: s.hostname });
-      const notas = notasDe(s);
+      if (s.state === "off") {
+        // Sin sesión no hay ficha: el botón olvida el equipo (borra su dirección física).
+        f.classList.replace("ficha", "olvidar");
+        f.querySelector("use").setAttribute("href", "sistema/iconos.svg#limpiar");
+        f.dataset.equipo = s.hostname;
+        f.setAttribute("aria-label", T("encender.olvidar", { equipo: s.hostname }));
+        f.title = T("encender.olvidar", { equipo: s.hostname });
+      } else {
+        f.setAttribute("aria-label", T("alumnos.verFicha", { equipo: s.hostname }));
+        f.title = T("alumnos.verFicha", { equipo: s.hostname });
+      }
+      const notas = [...notasDe(s), ...encenderDe(s)];
       tr.querySelector(".notas").append(...(notas.length ? notas : [el("span", "suave", "—")]));
       return tr;
     };
@@ -454,6 +507,15 @@
       th.append(icono("simulado"), document.createTextNode(" " + T("alumnos.grupoSimulados")), insignia("simulado", "", T("alumnos.grupoSimuladosNota")));
       g.append(th);
       filas.push(g, ...sims.map(fila));
+    }
+    if (verApagados && apagados.length) {
+      const g = el("tr", "tabla__grupo");
+      const th = el("th");
+      th.colSpan = 7;
+      th.scope = "rowgroup";
+      th.append(icono("energia"), document.createTextNode(" " + T("alumnos.grupoApagados", { n: apagados.length })));
+      g.append(th);
+      filas.push(g, ...apagados.map(fila));
     }
     $("alumnos-filas").replaceChildren(...filas);
     pintarMiniaturas();
@@ -513,7 +575,7 @@
       ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"],
       ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"],
       ["canPresent", "ficha.proyectar", "transmitir"], ["canPresentView", "ficha.verCompanero", "ojo"], ["canPause", "ficha.pausa", "pausa"],
-      ["canClassEnd", "ficha.terminar", "salir"]];
+      ["canClassEnd", "ficha.terminar", "salir"], ["canWake", "ficha.encender", "encender"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
       const si = !!s[c];
       const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
@@ -1477,6 +1539,16 @@
     cont.addEventListener("click", (e) => {
       if (e.target.closest(".alumno__pantalla")) return;
       const f = e.target.closest("[data-clave]");
+      const enc = e.target.closest(".encender");
+      if (enc) {
+        encender([enc.dataset.equipo]);
+        return;
+      }
+      const olv = e.target.closest(".olvidar");
+      if (olv) {
+        olvidar(olv.dataset.equipo);
+        return;
+      }
       if (f && e.target.closest(".ficha")) {
         abrirFicha(f.dataset.clave);
         return;
@@ -1876,8 +1948,53 @@
 
   // Energía
   const ACCION = { shutdown: "energia.apagar", reboot: "energia.reiniciar", logoff: "energia.cerrarSesion" };
+  // Encender: los equipos sin sesión de la selección o, sin selección, los del canal.
+  function encendibles() {
+    const sin = alumnos.students.filter((s) => !s.simulated && s.state !== "connected");
+    const todos = [...sin, ...(alumnos.off || []).map(aApagado)];
+    return seleccion.size ? todos.filter((s) => seleccion.has(clave(s))) : todos;
+  }
+  function pintarPanelEncender() {
+    const objetivo = encendibles();
+    const pueden = objetivo.filter((s) => s.canWake).length;
+    const sinMac = objetivo.length - pueden;
+    $("energia-encender-texto").textContent = objetivo.length === 0 ? T("encender.ninguno")
+      : P(seleccion.size ? "encender.deSeleccion" : "encender.deTodos", objetivo.length);
+    $("energia-encender-aviso").hidden = sinMac === 0;
+    $("energia-encender-aviso-texto").textContent = P("encender.sinMac", sinMac);
+    $("energia-ejecutar").textContent = P("encender.botonN", pueden);
+    $("energia-ejecutar").disabled = pueden === 0;
+    $("energia-ejecutar").classList.replace("btn--peligro", "btn--primario");
+    $("energia-ejecutar").dataset.icono = "encender";
+  }
+  function encender(hosts) {
+    api.WakeComputers(hosts).then((r) => {
+      const partes = [];
+      if (r.otherSubnet.length) partes.push(T("encender.otraSubred", { lista: r.otherSubnet.join(", ") }));
+      if (r.noMac.length) partes.push(T("encender.sinMacLista", { lista: r.noMac.join(", ") }));
+      if (r.failed.length) partes.push(T("encender.noSalio", { lista: r.failed.join(", ") }));
+      toast(partes.length ? "advertencia" : "exito", P("encender.enviada", r.sent), partes.join(" "));
+    }, fallo);
+  }
+  function olvidar(equipo) {
+    confirmar({ titulo: T("encender.olvidarTitulo", { equipo }), texto: T("encender.olvidarTexto"), si: T("encender.olvidarSi") }).then((si) => {
+      if (si) api.ForgetComputer(equipo).then(() => toast("info", T("encender.olvidado", { equipo })), fallo);
+    });
+  }
   function pintarPanelEnergia() {
     const accion = document.querySelector('input[name="energia-accion"]:checked').value;
+    const despertar = accion === "wake";
+    $("energia-encender").hidden = !despertar;
+    $("energia-tiempo-campo").hidden = $("energia-forzar-campo").hidden = despertar;
+    // «Para n equipos» cuenta a los conectados; Encender dice los suyos en su propio texto.
+    $("panel-energia").querySelector("[data-destino-hosts]").hidden = despertar;
+    if (despertar) {
+      $("energia-sin-soporte").hidden = true;
+      pintarPanelEncender();
+      return;
+    }
+    $("energia-ejecutar").classList.replace("btn--primario", "btn--peligro");
+    $("energia-ejecutar").dataset.icono = "energia";
     const forzar = $("energia-forzar").checked;
     $("energia-espera").disabled = forzar;
     const objetivo = seleccion.size ? seleccionados().filter((s) => !s.simulated) : conectados().filter((s) => !s.simulated);
@@ -1890,6 +2007,13 @@
   for (const i of $$('input[name="energia-accion"], #energia-forzar')) i.addEventListener("change", pintarPanelEnergia);
   $("energia-ejecutar").addEventListener("click", () => {
     const accion = document.querySelector('input[name="energia-accion"]:checked').value;
+    if (accion === "wake") {
+      // Encender no cambia nada en un equipo encendido: sin confirmación.
+      const hosts = seleccion.size ? encendibles().filter((s) => s.canWake).map((s) => s.hostname) : [];
+      cerrarPanel();
+      encender(hosts);
+      return;
+    }
     const forzar = $("energia-forzar").checked;
     const espera = Number($("energia-espera").value);
     const objetivo = (seleccion.size ? seleccionados() : conectados()).filter((s) => !s.simulated && s.canPower);
@@ -1941,6 +2065,9 @@
     if (panel === "energia") pintarPanelEnergia();
   }
   setInterval(() => { if (pendientes().length) { pintarEnergia(); pintarAlumnos(alumnos); } }, 1000);
+  // «Encendiendo… m:ss» cuenta sola; Go avisa cuando se acaba.
+  const encendiendo = () => [...alumnos.students, ...(alumnos.off || [])].some((s) => s.wake && s.wake.state === "waking");
+  setInterval(() => { if (alumnos && encendiendo()) pintarAlumnos(alumnos); }, 1000);
   $("f-energia-cancelar").addEventListener("click", () => {
     api.PowerCancel([]).then((r) => toast("info", P("energia.canceladaEn", r.sent)), fallo);
   });

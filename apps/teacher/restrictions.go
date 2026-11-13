@@ -150,6 +150,7 @@ func (a *App) studentsIn(class classroom) Students {
 		s.LastError = a.agentErrs.get(s.ID)
 	}
 	a.agentErrs.keep(present)
+	a.markWake(a.wakeChannel(), &st, class.Sessions())
 	return st
 }
 

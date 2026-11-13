@@ -151,6 +151,8 @@
                   <option value="extra" data-t="alumnos.tamano.extra"></option>
                   <option value="ajustar" data-t="alumnos.tamano.ajustar"></option>
                 </select></label>
+              <!-- Equipos conocidos sin sesión (prompt 10.19): ocultos hasta que se piden; se recuerda. -->
+              <label class="opcion" id="alumnos-apagados-campo" hidden><input type="checkbox" class="interruptor" id="alumnos-apagados" role="switch"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg> <span id="alumnos-apagados-texto"></span></label>
               <button type="button" class="btn" id="seleccionar-todos" data-t-title="alumnos.ctrlA"><svg class="icono" aria-hidden="true"><use id="seleccionar-todos-icono" href="sistema/iconos.svg#hecho"/></svg><span class="btn__texto" id="seleccionar-todos-texto"></span></button>
               <a class="btn btn--fantasma" href="#falta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#persona-buscar"/></svg><span data-t="falta.titulo"></span></a>
               <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
@@ -859,12 +861,19 @@
               <label class="opcion-seg"><input type="radio" name="energia-accion" value="reboot" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reiniciar"/></svg> <span data-t="energia.reiniciar"></span></label>
               <label class="opcion-seg"><input type="radio" name="energia-accion" value="shutdown"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg> <span data-t="energia.apagar"></span></label>
               <label class="opcion-seg"><input type="radio" name="energia-accion" value="logoff"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#volver"/></svg> <span data-t="energia.cerrarSesion"></span></label>
+              <label class="opcion-seg"><input type="radio" name="energia-accion" value="wake"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encender"/></svg> <span data-t="energia.encender"></span></label>
               </div>
             </fieldset>
-            <label class="campo"><span class="campo__etiqueta" data-t="energia.tiempo"></span>
+            <!-- Encender (prompt 10.19): los apagados de la selección o de todo el canal; sin cuenta ni forzar. -->
+            <div class="pila" id="energia-encender" hidden>
+              <p id="energia-encender-texto"></p>
+              <p class="aviso-en-linea" id="energia-encender-aviso" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="energia-encender-aviso-texto"></span></p>
+              <p class="campo__ayuda" data-t="encender.ayuda"></p>
+            </div>
+            <label class="campo" id="energia-tiempo-campo"><span class="campo__etiqueta" data-t="energia.tiempo"></span>
               <select id="energia-espera" data-icono="reloj"><option value="30" data-t="energia.s30"></option><option value="60" selected data-t="energia.m1"></option><option value="120" data-t="energia.m2"></option><option value="300" data-t="energia.m5"></option></select>
               <span class="campo__ayuda" data-t="energia.tiempoAyuda"></span></label>
-            <label class="opcion"><input type="checkbox" class="interruptor" id="energia-forzar" role="switch"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg> <span data-t="energia.forzar"></span></label>
+            <label class="opcion" id="energia-forzar-campo"><input type="checkbox" class="interruptor" id="energia-forzar" role="switch"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg> <span data-t="energia.forzar"></span></label>
           </div>
           <div class="panel-lateral__pie">
             <button type="button" class="btn" data-cerrar-panel data-t="comun.cancelar" data-icono="cerrar"></button>

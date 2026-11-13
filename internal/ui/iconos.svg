@@ -83,5 +83,8 @@
   <symbol id="reloj" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M10 2.5h4M12 2.5v3"/></symbol>
   <symbol id="app" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol>
   <symbol id="encuesta" viewBox="0 0 24 24"><path d="M4 20h16M7 20v-6M12 20V6M17 20v-10"/></symbol>
+  <symbol id="cuestionario" viewBox="0 0 24 24"><path d="M9 3.5h6v3H9z"/><path d="M8 5H5.5v15.5h13V5H16"/><path d="m8.5 13.5 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="estrella" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+  <symbol id="azar" viewBox="0 0 24 24"><path d="M3.5 7H7l10 10h3.5M3.5 17H7l3-3M14 10l3-3h3.5"/><path d="m18.5 5 2 2-2 2M18.5 15l2 2-2 2"/></symbol>
   <symbol id="archivo" viewBox="0 0 24 24"><path d="M6.5 3h7.5l4.5 4.5v12a1.5 1.5 0 0 1-1.5 1.5h-10.5A1.5 1.5 0 0 1 5 19.5v-15A1.5 1.5 0 0 1 6.5 3z"/><path d="M13.5 3v4.5h5M8.5 12.5h7M8.5 16h5"/></symbol>
 </svg>

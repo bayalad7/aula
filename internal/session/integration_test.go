@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -116,6 +117,7 @@ type agentOpts struct {
 	onState   func(AgentState, discovery.Console)
 	onConnect func(context.Context, *transport.Client)
 	caps      []protocol.Capability // nil: code.view and msg.show
+	macs      func(net.IP) []string
 }
 
 func startAgent(t *testing.T, host string, src ConsoleSource, o agentOpts) context.CancelFunc {
@@ -135,6 +137,7 @@ func startAgent(t *testing.T, host string, src ConsoleSource, o agentOpts) conte
 		OnMessage:        o.onMessage,
 		OnState:          o.onState,
 		OnConnect:        o.onConnect,
+		MACs:             o.macs,
 		Logger:           o.log,
 	}
 	done := make(chan struct{})
@@ -250,6 +253,34 @@ func TestTwoAgentsAppearAndOneLeaves(t *testing.T) {
 	time.Sleep(3 * 600 * time.Millisecond)
 	if s := states(tc.reg.List(testChannel)); s["PC01"] != StateConnected {
 		t.Fatalf("PC01 dropped despite heartbeats: %v", s)
+	}
+}
+
+func TestHelloCarriesTheMACsForTheConsoleAddress(t *testing.T) {
+	tc := startTeacher(t, "127.0.0.1:0", newKeys(t), quiet)
+	pub := tc.keys.id.Public()
+	var asked atomic.Value
+	startAgent(t, "PC01", tc.source(), agentOpts{pub: pub, macs: func(ip net.IP) []string {
+		asked.Store(ip.String())
+		return []string{"3c:52:82:1a:9f:07"}
+	}})
+	// A broken answer never costs the session: hello goes without macs.
+	startAgent(t, "PC02", tc.source(), agentOpts{pub: pub, macs: func(net.IP) []string { return []string{"MALA"} }})
+	waitFor(t, tc.reg, "both connected", func(l []Session) bool { return len(l) == 2 })
+	for _, s := range tc.reg.List(testChannel) {
+		switch s.Hostname {
+		case "PC01":
+			if len(s.MACs) != 1 || s.MACs[0] != "3c:52:82:1a:9f:07" {
+				t.Fatalf("PC01 macs = %v", s.MACs)
+			}
+		case "PC02":
+			if len(s.MACs) != 0 {
+				t.Fatalf("PC02 macs = %v, want none", s.MACs)
+			}
+		}
+	}
+	if got, _ := asked.Load().(string); got != "127.0.0.1" {
+		t.Fatalf("asked for %q, want the console address 127.0.0.1", got)
 	}
 }
 

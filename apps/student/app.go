@@ -244,6 +244,7 @@ func (a *App) runAgent(ctx context.Context) (stop func()) {
 		Channel:          a.cfg.Channel,
 		ConsolePublicKey: a.pub,
 		Hello:            a.currentHello(),
+		MACs:             agentMACs,
 		Source:           a.source(),
 		OnMessage:        a.onMessage,
 		OnConnect:        a.onConnect,

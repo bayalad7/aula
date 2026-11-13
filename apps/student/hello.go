@@ -1,13 +1,28 @@
 package main
 
 import (
+	"net"
 	"os"
 	"os/user"
 	"runtime"
 	"strings"
 
+	"github.com/bayalad7/aula/internal/platform"
+	"github.com/bayalad7/aula/internal/power"
 	"github.com/bayalad7/aula/internal/protocol"
 )
+
+// agentMACs gives hello.macs: the MAC of the network card that reaches the
+// console, so the teacher can turn this computer on with Wake-on-LAN
+// (docs/protocol.md §5.15.2). It identifies the computer, not the student
+// (docs/privacidad.md rule 31 bis). Where the cards cannot be read, none.
+func agentMACs(console net.IP) []string {
+	nics, err := platform.Interfaces()
+	if err != nil {
+		return nil
+	}
+	return power.AgentMACs(nics, console)
+}
 
 // version is the agent's SemVer, sent in hello. Releases set it with
 // -ldflags "-X main.version=x.y.z".

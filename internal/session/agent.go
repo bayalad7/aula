@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/url"
 	"strings"
 	"time"
 
@@ -77,9 +79,13 @@ type Agent struct {
 	ConsolePublicKey ed25519.PublicKey
 	HandshakeTimeout time.Duration // 0 means DefaultHelloTimeout
 	Hello            protocol.HelloInfo
-	Source           ConsoleSource
-	Backoff          Backoff
-	Conn             transport.Options
+	// MACs, if set, gives the hello.macs for a connection to the console at
+	// this address (docs/protocol.md §5.15.2): the agent reads its network
+	// cards through platform. Nil: hello goes without macs.
+	MACs    func(console net.IP) []string
+	Source  ConsoleSource
+	Backoff Backoff
+	Conn    transport.Options
 	// OnMessage receives every message from the console except heartbeat. It
 	// runs on the agent goroutine: keep it short.
 	OnMessage func(ctx context.Context, c *transport.Client, env protocol.Envelope)
@@ -212,6 +218,24 @@ func (a *Agent) Run(ctx context.Context) error {
 	}
 }
 
+// helloFor is the hello for a connection to remote (the URL dialed), with the
+// MACs of the card that reaches it.
+func (a *Agent) helloFor(remote string) protocol.HelloInfo {
+	h := a.Hello
+	if a.MACs == nil {
+		return h
+	}
+	var ip net.IP
+	if u, err := url.Parse(remote); err == nil {
+		ip = net.ParseIP(u.Hostname())
+	}
+	h.MACs = a.MACs(ip)
+	if h.Validate() != nil { // never lose the session over the optional field
+		h.MACs = nil
+	}
+	return h
+}
+
 // session connects to target, authenticates it and serves the session until
 // it ends. It reports whether the session was established (hello sent) and
 // whether the console failed authentication.
@@ -220,7 +244,7 @@ func (a *Agent) session(ctx context.Context, log *slog.Logger, target discovery.
 	if cl == nil {
 		return false, cause == CauseCertMismatch || cause == CauseWrongKey
 	}
-	if _, err := cl.Send(ctx, a.Hello); err != nil {
+	if _, err := cl.Send(ctx, a.helloFor(cl.RemoteAddr())); err != nil {
 		log.Warn("cannot send hello", "err", err)
 		cl.Close(transport.CloseNormal, "")
 		<-cl.Done()

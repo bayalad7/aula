@@ -44,9 +44,11 @@ type Session struct {
 	OSVersion    string
 	AgentVersion string
 	Capabilities []protocol.Capability
-	ConnectedAt  time.Time
-	LastSeen     time.Time
-	State        State
+	// MACs are the hello.macs, to wake the computer later (§5.15.2).
+	MACs        []string
+	ConnectedAt time.Time
+	LastSeen    time.Time
+	State       State
 	// LastCodeAck is the snippet_id of the last code.ack ("" after code.clear);
 	// LastCodeAckAt is zero until the agent acknowledges something.
 	LastCodeAck   string
@@ -97,6 +99,7 @@ func (r *Registry) Connect(id, channel, remote string, h protocol.HelloInfo) Ses
 		OSVersion:    h.OSVersion,
 		AgentVersion: h.AgentVersion,
 		Capabilities: slices.Clone(h.Capabilities),
+		MACs:         slices.Clone(h.MACs),
 		ConnectedAt:  now,
 		LastSeen:     now,
 		State:        StateConnected,

@@ -220,7 +220,8 @@ console.log(`
 Anotador abierto (${origen}). En la barra de abajo a la izquierda:
   · elige app, escena, vista y tema;
   · «Anotar» o la tecla A, señala algo y escribe tu nota (Ctrl+Enter guarda);
-  · «Nota de la pantalla» para algo general; H esconde la barra.
+  · «Nota de la pantalla» para algo general; H esconde la barra;
+  · arrastra la barra por «⠿ Anotador» si tapa algo (M la pasa arriba o abajo; doble clic la regresa).
 Las notas quedan en docs/ux/notas/ (índice en LEEME.md). Cierra la ventana para terminar.`);
 nav.on("disconnected", () => { srv.close(); process.exit(0); });
 
@@ -300,6 +301,25 @@ async function autoprueba() {
   await new Promise((r) => setTimeout(r, 200));
   ok(await p.evaluate(() => document.getElementById("anotador-host").parentElement === document.documentElement),
     "al cerrar el diálogo, el anotador no volvió a su lugar");
+
+  // La barra se arrastra por su asa, se queda donde la dejan al cambiar de escena y el doble clic la regresa.
+  const rectBarra = () => p.evaluate(() => { const r = document.getElementById("anotador-host").shadowRoot.querySelector(".barra").getBoundingClientRect(); return { x: r.left, y: r.top, abajo: innerHeight - r.bottom }; });
+  const asa = await (await shadow("#asa")).boundingBox();
+  await p.mouse.move(asa.x + 10, asa.y + asa.height / 2);
+  await p.mouse.down();
+  await p.mouse.move(asa.x + 210, 40, { steps: 8 });
+  await p.mouse.up();
+  let rb = await rectBarra();
+  ok(rb.y < 60, "la barra no se movió al arrastrarla: " + JSON.stringify(rb));
+  await ir({ app: "profesor", escena: "lab", ruta: "" });
+  const rb2 = await rectBarra();
+  ok(Math.abs(rb2.x - rb.x) < 2 && Math.abs(rb2.y - rb.y) < 2, "la barra no recordó su lugar: " + JSON.stringify([rb, rb2]));
+  const asa2 = await (await shadow("#asa")).boundingBox();
+  await p.mouse.click(asa2.x + 10, asa2.y + asa2.height / 2);
+  await p.mouse.click(asa2.x + 10, asa2.y + asa2.height / 2);
+  await new Promise((r) => setTimeout(r, 100));
+  rb = await rectBarra();
+  ok(Math.abs(rb.abajo - 12) < 2 && Math.abs(rb.x - 12) < 2, "el doble clic no regresó la barra abajo: " + JSON.stringify(rb));
 
   const notas = leerNotas();
   ok(notas.length === 4, "notas guardadas: " + notas.length);

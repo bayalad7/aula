@@ -5,7 +5,7 @@
 // muestra su cadena de zonas (zonas.mjs): «Consola › Vista Alumnos › Ficha del alumno › …». Cada
 // nivel es un botón para elegir de qué es la nota (el botón o toda la sección). N abre la nota de
 // la selección. A es el modo de señalar sin que el clic llegue a la app; Z muestra el nombre de la
-// zona al pasar el mouse. Guardar, listar, borrar y cambiar de escena los hace Node por funciones
+// zona al pasar el mouse. La barra se arrastra por su asa (M la pasa arriba o abajo). Guardar, listar, borrar y cambiar de escena los hace Node por funciones
 // expuestas (__anotador*).
 (function () {
   if (window.top !== window || window.__anotadorListo) return;
@@ -32,6 +32,12 @@
     color: #f2f4f8; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
   .fila { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .barra strong { margin-right: 4px; }
+  .asa { cursor: grab; touch-action: none; user-select: none; display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 6px 2px 2px; border-radius: 6px; }
+  .asa:hover { background: #2b3245; }
+  .asa .puntos { color: #9aa3b8; font-size: 16px; line-height: 1; letter-spacing: -2px; }
+  .arrastrando, .arrastrando * { cursor: grabbing !important; }
+  .ventana h2.asa { display: block; padding: 2px 4px; margin: -2px -4px 6px; }
   select, button, textarea { border-radius: 6px; border: 1px solid #4a5268; background: #2b3245; color: #f2f4f8; padding: 4px 8px; }
   button { cursor: pointer; }
   button:disabled { opacity: .45; cursor: default; }
@@ -71,7 +77,7 @@
 <div class="ok"></div>
 <div class="barra" role="toolbar" aria-label="Anotador de interfaz">
   <div class="fila">
-    <strong>Anotador</strong>
+    <span class="asa" id="asa" title="Arrastra para mover la barra a cualquier parte · doble clic la regresa abajo a la izquierda (tecla M la pasa arriba o abajo)"><span class="puntos" aria-hidden="true">⠿</span><strong>Anotador</strong></span>
     <select id="app" title="App"></select>
     <select id="escena" title="Escena (datos de demostración)"></select>
     <select id="ruta" title="Vista de la consola"></select>
@@ -86,17 +92,82 @@
   <div class="fila"><span>Selección:</span><span class="niveles" id="niveles-barra"><span class="vacio">haz clic en la interfaz para seleccionar</span></span></div>
 </div>
 <form class="ventana" id="form">
-  <h2>Nueva nota</h2>
+  <h2 class="asa" id="asa-form" title="Arrastra para mover la ventana de la nota">Nueva nota</h2>
   <div class="sobre">Sobre: <span class="niveles" id="niveles-form"></span></div>
   <div class="tipos" id="tipos"></div>
   <textarea id="texto" placeholder="¿Qué quieres? Por ejemplo: «Esto debería ser un módulo propio en el menú» o «una grilla de iconos con tooltip»."></textarea>
   <p class="ayuda">Elige arriba si la nota es del elemento o de toda una sección. Ctrl+Enter guarda · Esc cancela. Se guarda con una captura de la sección y de la pantalla.</p>
   <div class="acciones"><button type="button" id="cancelar">Cancelar</button><button type="submit" class="primario">Guardar nota</button></div>
 </form>
-<div class="ventana" id="lista"><h2>Notas guardadas</h2><ol id="notas"></ol>
+<div class="ventana" id="lista"><h2 class="asa" title="Arrastra para mover la lista">Notas guardadas</h2><ol id="notas"></ol>
   <div class="acciones"><button type="button" id="cerrar-lista">Cerrar</button></div></div>`;
     const $ = (s) => raiz.querySelector(s);
     const caja = $(".caja"), selCaja = $(".sel"), etiqueta = $(".etiqueta"), barra = $(".barra"), form = $("#form"), lista = $("#lista");
+
+    // --- Mover la barra y las ventanas ---------------------------------------------------------
+    // La barra se arrastra por su asa a cualquier parte, para ver o señalar lo que tapa; su lugar
+    // se recuerda al cambiar de app, escena, vista o tema (la página se recarga). Doble clic en el
+    // asa la regresa abajo a la izquierda; M la pasa arriba o abajo. La nota y la lista se mueven
+    // por su título mientras están abiertas.
+    const GUARDA = "anotador-barra";
+    function colocar(el, x, y) {
+      x = Math.max(0, Math.min(x, innerWidth - el.offsetWidth));
+      y = Math.max(0, Math.min(y, innerHeight - el.offsetHeight));
+      Object.assign(el.style, { left: x + "px", top: y + "px", right: "auto", bottom: "auto" });
+    }
+    // Con el puntero capturado el navegador no da «dblclick»: dos toques sin arrastrar llaman alDobleToque.
+    function arrastrable(el, asa, alSoltar, alDobleToque) {
+      let ultimoToque = 0;
+      asa.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        const r = el.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, x0 = e.clientX, y0 = e.clientY;
+        let arrastro = false;
+        asa.setPointerCapture(e.pointerId);
+        el.classList.add("arrastrando");
+        const mover = (ev) => {
+          if (!arrastro && Math.abs(ev.clientX - x0) + Math.abs(ev.clientY - y0) < 4) return;
+          arrastro = true;
+          colocar(el, ev.clientX - dx, ev.clientY - dy);
+        };
+        const soltar = () => {
+          asa.removeEventListener("pointermove", mover);
+          asa.removeEventListener("pointerup", soltar);
+          asa.removeEventListener("pointercancel", soltar);
+          el.classList.remove("arrastrando");
+          if (arrastro) { ultimoToque = 0; if (alSoltar) alSoltar(); return; }
+          const ahora = Date.now();
+          if (alDobleToque && ahora - ultimoToque < 400) { ultimoToque = 0; alDobleToque(); } else ultimoToque = ahora;
+        };
+        asa.addEventListener("pointermove", mover);
+        asa.addEventListener("pointerup", soltar);
+        asa.addEventListener("pointercancel", soltar);
+      });
+    }
+    const movida = () => barra.style.top !== "";
+    function guardarBarra() {
+      try {
+        if (movida()) localStorage.setItem(GUARDA, JSON.stringify({ x: barra.offsetLeft, y: barra.offsetTop }));
+        else localStorage.removeItem(GUARDA);
+      } catch { /* sin almacenamiento: solo no se recuerda */ }
+    }
+    // Si la barra cambia de tamaño (la cadena de la selección) o la ventana se achica, sigue entera a la vista.
+    function ajustarBarra() { if (movida() && !barra.hidden) colocar(barra, barra.offsetLeft, barra.offsetTop); }
+    function barraAbajo() { Object.assign(barra.style, { left: "", top: "", right: "", bottom: "" }); guardarBarra(); }
+    function barraArribaAbajo() {
+      const arriba = barra.getBoundingClientRect().top < innerHeight / 2;
+      colocar(barra, barra.offsetLeft, arriba ? innerHeight - barra.offsetHeight - 12 : 12);
+      guardarBarra();
+    }
+    arrastrable(barra, $("#asa"), guardarBarra, barraAbajo);
+    arrastrable(form, $("#asa-form"));
+    arrastrable(lista, lista.querySelector("h2"));
+    try {
+      const pos = JSON.parse(localStorage.getItem(GUARDA) || "null");
+      if (pos) colocar(barra, pos.x, pos.y);
+    } catch { /* posición por omisión */ }
+    new ResizeObserver(ajustarBarra).observe(barra);
+    addEventListener("resize", ajustarBarra);
 
     // Un <dialog> modal (Pantalla grande, Ajustes, confirmaciones) se pone en una capa por encima de
     // todo y deja inerte el resto de la página: el anotador se mete en el diálogo abierto mientras
@@ -275,6 +346,8 @@
     $("#anotar-sel").onclick = () => { if (seleccion) abrirForm(); };
     $("#general").onclick = () => { modo(false); abrirForm(true); };
     $("#ocultar").onclick = () => { barra.hidden = !barra.hidden; dibujarSeleccion(); };
+    // Al volver a mostrarla, sigue a la vista aunque la ventana haya cambiado mientras estaba oculta.
+    new MutationObserver(ajustarBarra).observe(barra, { attributes: true, attributeFilter: ["hidden"] });
     document.addEventListener("keydown", (e) => {
       if (propio(e) && e.key !== "Escape") return;
       const escribiendo = /input|textarea|select/i.test((e.composedPath()[0] || {}).tagName || "") || document.activeElement?.isContentEditable;
@@ -286,6 +359,7 @@
       if (k === "z") { explorar(!explorando); e.preventDefault(); }
       if (k === "n" && seleccion) { abrirForm(); e.preventDefault(); }
       if (k === "h") { barra.hidden = !barra.hidden; dibujarSeleccion(); e.preventDefault(); }
+      if (k === "m" && !barra.hidden) { barraArribaAbajo(); e.preventDefault(); }
     }, true);
 
     // --- Formulario -------------------------------------------------------------------------
@@ -312,6 +386,7 @@
       const derecha = !r || r.left + r.width / 2 < innerWidth / 2;
       form.style.left = derecha ? "auto" : "16px";
       form.style.right = derecha ? "16px" : "auto";
+      form.style.top = "16px"; form.style.bottom = "auto"; // aunque la hayan movido la vez anterior
       form.style.display = "block";
       lista.style.display = "none";
       $("#texto").focus({ preventScroll: true });
@@ -374,6 +449,7 @@
       }));
       if (!notas.length) $("#notas").textContent = "Todavía no hay notas.";
       form.style.display = "none";
+      Object.assign(lista.style, { left: "auto", right: "16px", top: "16px", bottom: "auto" });
       lista.style.display = "block";
     };
     $("#cerrar-lista").onclick = () => { lista.style.display = "none"; };

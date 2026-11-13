@@ -35,10 +35,15 @@ demostración.
 
 ## 2. La barra del anotador
 
-Abajo a la izquierda:
+Empieza abajo a la izquierda, pero se mueve: si tapa lo que quieres señalar (por ejemplo, algo
+en la parte de abajo de la pantalla), arrástrala por su asa **⠿ Anotador** a cualquier parte. Se
+queda donde la dejas aunque cambies de app, escena, vista o tema; un doble clic en el asa la regresa
+abajo a la izquierda y la tecla **M** la pasa de abajo arriba y al revés. La ventana de la nota y
+la de «Notas» también se arrastran por su título.
 
 | Control | Qué hace |
 |---|---|
+| **⠿ Anotador** (asa) | Arrastra la barra; doble clic la regresa a su lugar. **M** la pasa arriba o abajo |
 | **Consola / Alumno** | Cambia de app |
 | **Escena** | Los datos de demostración: «Laboratorio: 5 equipos reales», «Controlando un alumno», «Envío de archivos con un fallo», «Mano levantada»… Elige la que muestre lo que quieres comentar |
 | **Vista** | (Consola) Alumnos, Código, Archivos, Participación, Aula simulada, Ayuda… |

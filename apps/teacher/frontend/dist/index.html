@@ -56,6 +56,7 @@
       <a href="#alumnos" data-vista="alumnos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span class="nav-lateral__texto" data-t="nav.alumnos"></span></a>
       <a href="#codigo" data-vista="codigo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#codigo"/></svg><span class="nav-lateral__texto" data-t="nav.codigo"></span></a>
       <a href="#archivos" data-vista="archivos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#archivo"/></svg><span class="nav-lateral__texto" data-t="nav.archivos"></span></a>
+      <a href="#cuestionarios" data-vista="cuestionarios"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cuestionario"/></svg><span class="nav-lateral__texto" data-t="nav.cuestionarios"></span></a>
       <a href="#participacion" data-vista="participacion"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#participacion"/></svg><span class="nav-lateral__texto"><span data-t="nav.participacion"></span><span class="solo-lector" id="nav-participacion-lector"></span></span><span class="nav-lateral__contador" id="nav-participacion-contador" aria-hidden="true"></span></a>
       <p class="nav-lateral__grupo" data-t="nav.grupoPruebas"></p>
       <a href="#simulada" data-vista="simulada"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg><span class="nav-lateral__texto" data-t="nav.simulada"></span></a>
@@ -389,6 +390,74 @@
               </section>
               <p class="suave" id="reco-vacio" data-t="reco.vacio"></p>
               <div class="pila" id="reco-lista"></div>
+            </div>
+          </section>
+
+          <!-- ============ Cuestionarios (prompt 10.20): módulo propio del menú ============ -->
+          <!-- Los guardados (Documentos\Aula\cuestionarios), su editor y «Lanzar». Lanzado, sus
+               resultados van en la sección Encuestas de Participación (privacidad, reglas 87-91). -->
+          <section data-vista-de="cuestionarios" aria-labelledby="h-cuestionarios" class="vista__seccion" hidden>
+            <header class="vista__cabecera"><h1 id="h-cuestionarios" data-t="cuest.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
+            <div class="vista__cuerpo pila">
+              <p class="aviso-en-linea" id="cuest-abierto" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="cuest-abierto-texto"></span> <a href="#participacion" data-t="cuest.verResultados"></a></p>
+              <section class="tarjeta" id="cuest-guardados" aria-labelledby="h-cuest-guardados">
+                <div class="tarjeta__cabecera"><h2 id="h-cuest-guardados" data-t="cuest.guardados"></h2>
+                  <div class="grupo-botones">
+                    <button type="button" class="btn btn--sm" id="cuest-nuevo" data-icono="mas" data-t="cuest.nuevo"></button>
+                    <button type="button" class="btn btn--sm btn--fantasma" id="cuest-carpeta" data-icono="carpeta" data-t="cuest.abrirCarpeta"></button>
+                  </div></div>
+                <div class="tarjeta__cuerpo pila">
+                  <fieldset class="campo"><legend class="campo__etiqueta" data-t="cuest.lanzarA"></legend>
+                    <div class="opciones-seg">
+                      <label class="opcion-seg"><input type="radio" name="cuest-destino" value="todos" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg> <span id="cuest-destino-todos"></span></label>
+                      <label class="opcion-seg"><input type="radio" name="cuest-destino" value="seleccion" id="cuest-destino-seleccion-radio"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#filtro"/></svg> <span id="cuest-destino-seleccion"></span></label>
+                    </div>
+                  </fieldset>
+                  <p class="aviso-en-linea" id="cuest-sin-soporte" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="cuest-sin-soporte-texto"></span></p>
+                  <div id="cuest-vacio" class="vacio">
+                    <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#cuestionario"/></svg>
+                    <p data-t="cuest.vacio"></p>
+                    <p class="pequeno suave" data-t="cuest.vacioNota"></p>
+                  </div>
+                  <div class="tabla-adaptable" id="cuest-tabla" hidden>
+                    <table class="tabla" aria-labelledby="h-cuest-guardados">
+                      <thead><tr>
+                        <th data-t="cuest.colTitulo"></th><th data-t="cuest.colPreguntas"></th><th data-t="cuest.colPuntos"></th><th data-t="cuest.colTiempo"></th>
+                        <th><span class="solo-lector" data-t="comun.acciones"></span></th>
+                      </tr></thead>
+                      <tbody id="cuest-filas"></tbody>
+                    </table>
+                  </div>
+                  <p class="pequeno suave" id="cuest-donde"></p>
+                </div>
+              </section>
+
+              <section class="tarjeta" id="cuest-editor" aria-labelledby="h-cuest-editor" hidden>
+                <div class="tarjeta__cabecera"><h2 id="h-cuest-editor" tabindex="-1"></h2></div>
+                <div class="tarjeta__cuerpo pila">
+                  <div class="fila">
+                    <label class="campo crece"><span class="campo__etiqueta" data-t="cuest.tituloCampo"></span>
+                      <input type="text" id="cuest-titulo" maxlength="80" autocomplete="off" data-t-placeholder="cuest.tituloEjemplo" data-icono="cuestionario" aria-describedby="cuest-titulo-error">
+                      <span class="campo__error" id="cuest-titulo-error" hidden></span></label>
+                    <label class="campo"><span class="campo__etiqueta"><span data-t="cuest.minutos"></span> <span class="suave" data-t="comun.opcional"></span></span>
+                      <input type="number" id="cuest-minutos" min="0" max="120" step="1" value="0" data-icono="reloj" aria-describedby="cuest-minutos-ayuda">
+                      <span class="campo__ayuda" id="cuest-minutos-ayuda" data-t="cuest.minutosAyuda"></span></label>
+                  </div>
+                  <div class="campo">
+                    <label class="opcion"><input type="checkbox" class="interruptor" id="cuest-azar" role="switch" aria-describedby="cuest-azar-ayuda"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#azar"/></svg> <span data-t="cuest.azar"></span></label>
+                    <span class="campo__ayuda" id="cuest-azar-ayuda" data-t="cuest.azarAyuda"></span>
+                  </div>
+                  <ol class="lista-limpia pila" id="cuest-preguntas" data-t-aria-label="cuest.preguntas"></ol>
+                  <div><button type="button" class="btn btn--sm" id="cuest-agregar" data-icono="mas" data-t="cuest.agregarPregunta"></button></div>
+                  <p class="pequeno suave" id="cuest-total" aria-live="polite"></p>
+                  <p class="campo__error" id="cuest-error" role="alert" hidden></p>
+                  <div class="grupo-botones">
+                    <button type="button" class="btn btn--primario" id="cuest-guardar" data-icono="guardar" data-t="cuest.guardar"></button>
+                    <button type="button" class="btn" id="cuest-guardar-lanzar" data-icono="enviar" data-t="cuest.guardarLanzar"></button>
+                    <button type="button" class="btn btn--fantasma" id="cuest-cancelar" data-icono="cerrar" data-t="cuest.cancelar"></button>
+                  </div>
+                </div>
+              </section>
             </div>
           </section>
 
@@ -1242,6 +1311,16 @@
       <span class="crece nombre"></span><span class="suave pequeno tamano"></span>
       <button type="button" class="btn btn--fantasma btn--icono btn--sm quitar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button>
     </li>
+  </template>
+  <!-- Una fila de Cuestionarios guardados (prompt 10.20). -->
+  <template id="t-cuestionario">
+    <tr>
+      <td class="celda-principal titulo"></td><td class="preguntas"></td><td class="puntos"></td><td class="tiempo"></td>
+      <td><div class="grupo-botones grupo-botones--fin">
+        <button type="button" class="btn btn--sm lanzar" data-icono="enviar"></button>
+        <button type="button" class="btn btn--sm btn--fantasma editar" data-icono="editar"></button>
+        <button type="button" class="btn btn--sm btn--fantasma btn--icono btn--peligro-texto eliminar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg></button></div></td>
+    </tr>
   </template>
   <template id="t-plantilla">
     <tr>

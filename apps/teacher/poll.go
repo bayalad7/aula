@@ -53,6 +53,12 @@ func (a *App) ClosePoll() (poll.View, error) {
 		return poll.View{}, codedf(codePollGone, "ya no hay una encuesta abierta")
 	}
 	a.log.Info("poll closed", "poll", id)
+	a.mu.Lock()
+	ownTimer := a.quizPoll == id
+	a.mu.Unlock()
+	if ownTimer {
+		a.stopQuizTimer() // closing a quiz stops its timer (§5.23.1)
+	}
 	return a.pollsChanged(class), nil
 }
 
@@ -105,8 +111,13 @@ func (a *App) onPollMessage(sessionID string, env protocol.Envelope) {
 			log.Debug("cannot answer a vote", "err", err)
 		}
 		if err == nil {
-			// The poll, the status and whether it was a text; never what was chosen.
-			log.Info("poll answered", "poll", p.PollID, "status", status, "text", p.Choice == nil)
+			// The poll, the status and whether it was a text; never what was
+			// chosen. A quiz: how many answered and whether handed in (rule 91).
+			if p.IsQuiz() {
+				log.Info("quiz answered", "poll", p.PollID, "status", status, "answers", len(p.Answers), "submitted", p.Submitted)
+			} else {
+				log.Info("poll answered", "poll", p.PollID, "status", status, "text", p.Choice == nil)
+			}
 			a.emitPolls(class)
 		}
 	}
@@ -150,6 +161,9 @@ func (a *App) pollsSnapshot(class classroom) poll.View {
 // agents close their cards by themselves when no console sends them again
 // (poll.ReconnectGrace).
 func (a *App) resetPolls() {
+	a.mu.Lock()
+	a.quizPoll, a.quizTimerID = "", ""
+	a.mu.Unlock()
 	a.polls.Reset()
 	a.emit(EventPolls, a.polls.Snapshot(nil, nil))
 }

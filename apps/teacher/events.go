@@ -126,6 +126,7 @@ type Student struct {
 	CanMessage   bool     `json:"canMessage"`   // msg.student (the same)
 	CanTimer     bool     `json:"canTimer"`     // timer (every OS with a window, simulated students)
 	CanPoll      bool     `json:"canPoll"`      // poll (the same)
+	CanQuiz      bool     `json:"canQuiz"`      // poll.quiz (the same, newer agents)
 	CanFiles     bool     `json:"canFiles"`     // file.push (Windows agents, simulated students)
 	CanCollect   bool     `json:"canCollect"`   // file.collect (Windows agents, simulated students)
 	CanOpenURL   bool     `json:"canOpenUrl"`   // open.url (Windows agents; never simulated students)

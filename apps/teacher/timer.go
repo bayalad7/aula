@@ -132,6 +132,7 @@ func (a *App) armTimerEnd() {
 		a.timerEnd = time.AfterFunc(left, func() {
 			a.log.Info("timer ended")
 			a.emitTimer(a.currentClass())
+			a.closeQuizAtZero() // a quiz with time closes at zero (§5.23.1)
 		})
 	}
 }

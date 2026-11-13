@@ -134,6 +134,9 @@ func TestSimulatedStudentsOnlyDeclareHarmlessCapabilities(t *testing.T) {
 		protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect,
 		// poll only shows a question and answers it (rules 71-74; prompt 10.12).
 		protocol.CapPoll,
+		// poll.quiz answers a quiz by chance and is never exported (rule 91;
+		// prompt 10.20).
+		protocol.CapPollQuiz,
 		// class.end only clears their simulated window (rule 86; prompt 10.14).
 		protocol.CapClassEnd}
 	for _, c := range simclass.Capabilities {

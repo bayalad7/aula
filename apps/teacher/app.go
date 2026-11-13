@@ -105,6 +105,9 @@ type App struct {
 	chooseFolder func(title string) (string, error)
 	// timerEnd tells the window when the timer reaches zero; guarded by mu.
 	timerEnd *time.Timer
+	// quizPoll and quizTimerID are the open quiz and the timer that closes
+	// it at zero (§5.23.1); guarded by mu.
+	quizPoll, quizTimerID string
 	// documents is the teacher's Documents folder and openFolder shows a
 	// folder in Explorer (replaced in tests: never a window on the desktop).
 	documents  func() (string, error)
@@ -686,7 +689,7 @@ func studentsOf(list []session.Session) Students {
 			CanAppBlock: s.Can(protocol.CapAppBlock), CanWebFilter: s.Can(protocol.CapWebFilter),
 			CanPower: s.Can(protocol.CapPower), CanRemote: s.Can(protocol.CapRemote),
 			CanSnapshot: s.Can(protocol.CapScreenSnapshot), LastCodeAck: s.LastCodeAck,
-			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer), CanPoll: s.Can(protocol.CapPoll),
+			CanHand: s.Can(protocol.CapHand), CanMessage: s.Can(protocol.CapMsgStudent), CanTimer: s.Can(protocol.CapTimer), CanPoll: s.Can(protocol.CapPoll), CanQuiz: s.Can(protocol.CapPollQuiz),
 			CanFiles: s.Can(protocol.CapFilePush), CanCollect: s.Can(protocol.CapFileCollect),
 			CanOpenURL: s.Can(protocol.CapOpenURL), CanOpenApp: s.Can(protocol.CapOpenApp),
 			CanPresent: s.Can(protocol.CapScreenPresent), CanPresentView: s.Can(protocol.CapScreenPresentView),

@@ -58,6 +58,11 @@ const (
 	codeRemoteUnsupported    = "remoteUnsupported"
 	codeRemoteGone           = "remoteGone"
 	codeSnapshotUnsupported  = "snapshotUnsupported"
+	codeInvalidQuiz          = "invalidQuiz"
+	codeQuizGone             = "quizGone"
+	codeQuizNotSaved         = "quizNotSaved"
+	codeNoQuizTargets        = "noQuizTargets"
+	codeGradesNotExported    = "gradesNotExported"
 	codeSnapshotTooMany      = "snapshotTooMany"
 	codeSnapshotGone         = "snapshotGone"
 	codeSnapshotSaveFailed   = "snapshotSaveFailed"
@@ -112,6 +117,7 @@ var errorCodes = []string{
 	codeHandGone, codeMessageGone, codeStudentGone, codeSimTooSoon, codeNoticeUnsupported,
 	codeInvalidTimer, codeNoTimerTargets, codeTimerGone, codeTimerTooLong,
 	codeInvalidPoll, codeNoPollTargets, codePollGone, codePollNotShareable,
+	codeInvalidQuiz, codeQuizGone, codeQuizNotSaved, codeNoQuizTargets, codeGradesNotExported,
 	codePushNoFiles, codePushTooLarge, codePushPathInvalid, codePushFileGone, codePushUnsupported,
 	codeTemplateExists, codeTemplateInvalid, codeTemplateGone, codeTemplateNotDeleted,
 	codeCollectActivity, codeCollectFolder, codeCollectGone, codeCollectNoStudents, codeCollectNothing,
@@ -187,6 +193,11 @@ var errorHelp = map[string]string{
 	codeNoPollTargets:        "participacion#encuestas",
 	codePollGone:             "participacion#encuestas",
 	codePollNotShareable:     "participacion#compartir-los-resultados",
+	codeInvalidQuiz:          "cuestionarios#crear-un-cuestionario",
+	codeQuizGone:             "cuestionarios#cuestionarios-guardados",
+	codeQuizNotSaved:         "cuestionarios#cuestionarios-guardados",
+	codeNoQuizTargets:        "cuestionarios#lanzar-un-cuestionario",
+	codeGradesNotExported:    "cuestionarios#exportar-calificaciones",
 	codePushNoFiles:          "archivos#enviar-archivos-y-plantillas",
 	codePushTooLarge:         "archivos#enviar-archivos-y-plantillas",
 	codePushPathInvalid:      "archivos#enviar-archivos-y-plantillas",

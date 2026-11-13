@@ -148,6 +148,11 @@ a.insignia:hover { text-decoration: underline; }
    anteriores plegables en Participación. */
 .encuesta-opcion { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto; gap: var(--e-2); align-items: center; }
 .encuesta-opcion button[hidden] { display: none; }
+/* Cuestionarios (prompt 10.20): cada opción con su interruptor «Correcta»; la pregunta es una tarjeta sin el borde del fieldset. */
+.cuest-opcion { grid-template-columns: 1.25rem minmax(0, 1fr) auto auto; }
+.cuest-pregunta > fieldset { margin: 0; border: 0; min-width: 0; }
+.cuest-pregunta > fieldset > legend { float: left; width: 100%; padding: 0; font-weight: var(--peso-medio); }
+.cuest-pregunta [hidden] { display: none; }
 .encuesta-cabecera { align-items: center; }
 .encuesta-anterior > summary { cursor: pointer; }
 .encuesta-anterior__cuerpo { padding: var(--e-2) 0 var(--e-2) var(--e-4); }

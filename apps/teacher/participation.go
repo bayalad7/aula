@@ -31,6 +31,13 @@ type ParticipationMessage struct {
 	SessionID string `json:"sessionId"` // "" while the student is not connected
 }
 
+// ParticipationConversation is one student's conversation with the session
+// it can be answered on (prompt 10.26).
+type ParticipationConversation struct {
+	participation.Conversation
+	SessionID string `json:"sessionId"` // "" while the student is not connected
+}
+
 // Arrival tells the window that a hand or a message just arrived, for the
 // floating notice. Never the text (rule 52).
 type Arrival struct {
@@ -42,8 +49,10 @@ type Arrival struct {
 type Participation struct {
 	Hands    []ParticipationHand    `json:"hands"`
 	Messages []ParticipationMessage `json:"messages"`
-	Pending  int                    `json:"pending"` // the number next to «Participación» in the menu
-	Arrival  *Arrival               `json:"arrival"` // set only in the event that announces it
+	// Conversations: one per student, the most recent first (the inbox).
+	Conversations []ParticipationConversation `json:"conversations"`
+	Pending       int                         `json:"pending"` // the number next to «Participación» in the menu
+	Arrival       *Arrival                    `json:"arrival"` // set only in the event that announces it
 }
 
 // ReplyRequest answers a student from «Participación»: a message (MessageID
@@ -62,13 +71,18 @@ func (a *App) Participation() Participation {
 func (a *App) participation(class classroom, arrival *Arrival) Participation {
 	in := a.board.Inbox()
 	out := Participation{Hands: make([]ParticipationHand, 0, len(in.Hands)),
-		Messages: make([]ParticipationMessage, 0, len(in.Messages)), Pending: in.Pending, Arrival: arrival}
+		Messages:      make([]ParticipationMessage, 0, len(in.Messages)),
+		Conversations: make([]ParticipationConversation, 0, len(in.Conversations)),
+		Pending:       in.Pending, Arrival: arrival}
 	sessions := participants(class)
 	for _, h := range in.Hands {
 		out.Hands = append(out.Hands, ParticipationHand{Hand: h, SessionID: sessions[h.Student].ID})
 	}
 	for _, m := range in.Messages {
 		out.Messages = append(out.Messages, ParticipationMessage{Message: m, SessionID: sessions[m.Student].ID})
+	}
+	for _, c := range in.Conversations {
+		out.Conversations = append(out.Conversations, ParticipationConversation{Conversation: c, SessionID: sessions[c.Student].ID})
 	}
 	return out
 }
@@ -221,9 +235,10 @@ func (a *App) sendLower(class classroom, who participation.Student, handID strin
 	}
 }
 
-// ReplyToStudent answers one student («Responder»): a notice (msg.show) to
-// that student only, with reply_to when it answers a message. The delivery is
-// tracked like any other notice.
+// ReplyToStudent answers one student from their conversation or a raised
+// hand: a notice (msg.show) to that student only, with reply_to when it
+// answers a message. The answer goes into the conversation (prompt 10.26).
+// The delivery is tracked like any other notice.
 func (a *App) ReplyToStudent(req ReplyRequest) (codedist.Delivery, error) {
 	class := a.currentClass()
 	if class == nil {
@@ -253,6 +268,8 @@ func (a *App) ReplyToStudent(req ReplyRequest) (codedist.Delivery, error) {
 	}
 	if req.MessageID != "" {
 		a.board.Replied(req.Student, req.MessageID, text)
+	} else {
+		a.board.Said(req.Student, text)
 	}
 	a.log.Info("reply to a student", "host", req.Hostname, "message", req.MessageID, "len", utf8.RuneCountInString(text))
 	a.emitParticipation(class, nil)
@@ -267,6 +284,18 @@ func (a *App) MarkMessageDone(who participation.Student, messageID string) error
 	}
 	a.emitParticipation(a.currentClass(), nil)
 	return nil
+}
+
+// MarkConversationDone marks every waiting message of a student as seen
+// without an answer («Marcar como atendida» of the conversation). It returns
+// how many it marked.
+func (a *App) MarkConversationDone(who participation.Student) (int, error) {
+	n, ok := a.board.DoneAll(who)
+	if !ok {
+		return 0, codedf(codeMessageGone, "esa conversación ya no está en la bandeja")
+	}
+	a.emitParticipation(a.currentClass(), nil)
+	return n, nil
 }
 
 // markParticipation puts each student's place in line and new messages on

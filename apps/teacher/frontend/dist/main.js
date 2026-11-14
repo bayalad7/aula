@@ -233,7 +233,7 @@
   let bc = { active: false, display: -1, receivers: 0, eligible: 0, available: false };
   let restricciones = { apps: null, web: null };
   let simulada = { active: false, students: [], capabilities: [] };
-  let participacion = { hands: [], messages: [], pending: 0 };
+  let participacion = { hands: [], messages: [], conversations: [], pending: 0 };
   // El temporizador de la clase: Go manda lo que faltaba al enviarlo (remainingMs)
   // y aquí se cuenta con el reloj monotónico de la página (performance.now).
   let temporizador = { active: false, receivers: [], unsupported: [] };
@@ -4232,14 +4232,15 @@
 
     const activo = document.activeElement;
     const enRespuesta = !!(activo && activo.classList && activo.classList.contains("respuesta-texto"));
-    $("participacion-vacio").hidden = p.hands.length + p.messages.length > 0;
+    const convs = p.conversations || [];
+    $("participacion-vacio").hidden = p.hands.length + convs.length > 0;
     $("manos").hidden = !p.hands.length;
-    $("mensajes").hidden = !p.messages.length;
+    $("mensajes").hidden = !convs.length;
     $("bajar-todas").hidden = !p.hands.length;
     $("h-manos").textContent = P("participacion.manos", p.hands.length);
     $("h-mensajes").textContent = T("participacion.mensajesTitulo");
     $("manos-lista").replaceChildren(...p.hands.map((h) => tarjetaParticipa(h, true)));
-    $("mensajes-lista").replaceChildren(...p.messages.map((m) => tarjetaParticipa(m, false)));
+    pintarBandeja(convs);
     if (enRespuesta && respondiendo) {
       const t = document.querySelector('[data-clave="' + CSS.escape(respondiendo) + '"] .respuesta-texto');
       if (t) t.focus();
@@ -4289,9 +4290,10 @@
       ocupado(bajar, true);
       api.LowerHand(quien).catch(fallo).finally(() => ocupado(bajar, false));
     });
-    const atendido = li.querySelector(".atendido");
-    atendido.hidden = esMano || x.status !== "new";
-    atendido.addEventListener("click", () => api.MarkMessageDone(quien, x.messageId).catch(fallo));
+    // La mano de alguien que ya escribió: su conversación está en la bandeja.
+    const ver = li.querySelector(".ver-conversacion");
+    ver.hidden = !conversacionDe(claveDe(x));
+    ver.addEventListener("click", () => abrirConversacion(claveDe(x)));
 
     const form = li.querySelector(".participa__respuesta");
     const area = li.querySelector(".respuesta-texto");
@@ -4346,6 +4348,219 @@
   $("bajar-todas").addEventListener("click", () => confirmar({
     titulo: T("participacion.bajarTodasTitulo"), texto: T("participacion.bajarTodasTexto"), si: T("participacion.bajarTodas"),
   }).then((si) => { if (si) api.LowerAllHands().catch(fallo); }));
+
+  // --- Bandeja tipo chat (prompt 10.26) ----------------------------------------------------
+  // Una conversación por alumno, la más reciente arriba; al abrirla, su hilo ocupa el lugar
+  // de la bandeja. Un mensaje que llega no reordena la lista mientras el foco está en ella
+  // (aparece «N conversaciones con novedades · Mostrar») ni toca lo escrito en la respuesta.
+  let filtroBandeja = "pending";
+  let buscarBandeja = "";
+  let abierta = "";             // claveDe del alumno con la conversación abierta
+  let ordenVisto = [];          // claves en el orden en que se pintó la bandeja
+  let enEspera = 0;             // novedades que esperan a que el foco salga de la lista
+  const conversacionDe = (k) => (participacion.conversations || []).find((c) => claveDe(c) === k);
+  const porAtender = (c) => c.unread > 0;
+  const enFiltro = (c) => filtroBandeja === "all" || (filtroBandeja === "pending") === porAtender(c);
+  const coincide = (c) => {
+    if (!buscarBandeja) return true;
+    const t = buscarBandeja.toLocaleLowerCase("es-MX");
+    return [nombreEquipo(c), c.hostname, c.username].some((x) => (x || "").toLocaleLowerCase("es-MX").includes(t));
+  };
+  const focoEnBandeja = () => $("bandeja-lista").contains(document.activeElement);
+
+  function pintarBandeja(convs) {
+    const pend = convs.filter(porAtender).length;
+    $("bandeja-filtro-pending").textContent = T("participacion.bandeja.porAtender", { n: pend });
+    $("bandeja-filtro-done").textContent = T("participacion.bandeja.atendidas", { n: convs.length - pend });
+    $("bandeja-filtro-all").textContent = T("participacion.bandeja.todas", { n: convs.length });
+    if (abierta && !conversacionDe(abierta)) abierta = ""; // la clase terminó o se fue el simulado
+    $("bandeja").hidden = !!abierta;
+    $("hilo").hidden = !abierta;
+    if (abierta) pintarHilo(conversacionDe(abierta));
+
+    let visibles = convs.filter((c) => enFiltro(c) && coincide(c));
+    if (focoEnBandeja()) {
+      // Las mismas filas en el mismo orden que ya ve el profesor (con sus datos al día, aunque
+      // una deje el filtro); las conversaciones que entran esperan a que el foco salga.
+      const vistas = new Set(ordenVisto);
+      enEspera = visibles.filter((c) => !vistas.has(claveDe(c))).length;
+      visibles = ordenVisto.map(conversacionDe).filter((c) => c && coincide(c));
+    } else {
+      enEspera = 0;
+    }
+    $("bandeja-nuevas").hidden = !enEspera;
+    $("bandeja-nuevas-texto").textContent = enEspera ? P("participacion.bandeja.nuevas", enEspera) : "";
+
+    const enfocada = focoEnBandeja() ? document.activeElement.closest("li")?.dataset.clave : "";
+    ordenVisto = visibles.map((c) => claveDe(c));
+    $("bandeja-lista").replaceChildren(...visibles.map(filaConversacion));
+    if (enfocada) {
+      const b = filaDe(enfocada) || $("bandeja-lista").querySelector(".conversacion-fila");
+      if (b) b.focus();
+    }
+    const vacia = $("bandeja-vacia");
+    vacia.hidden = visibles.length > 0;
+    vacia.textContent = buscarBandeja ? T("participacion.bandeja.sinResultados")
+      : filtroBandeja === "pending" ? T("participacion.bandeja.nadaPorAtender") : T("participacion.bandeja.vacia");
+  }
+  const filaDe = (k) => $("bandeja-lista").querySelector('[data-clave="' + CSS.escape(k) + '"] .conversacion-fila');
+
+  // El texto de la última línea: lo del alumno tal cual; lo tuyo con «Tú: ».
+  const ultimoDe = (c) => {
+    const e = c.entries[c.entries.length - 1];
+    return e.from === "teacher" ? T("participacion.bandeja.tuUltimo", { texto: e.text }) : e.text;
+  };
+
+  function filaConversacion(c) {
+    const li = $("t-conversacion").content.firstElementChild.cloneNode(true);
+    const k = claveDe(c);
+    li.dataset.clave = k;
+    const b = li.querySelector(".conversacion-fila");
+    b.dataset.sinLeer = String(c.unread > 0);
+    li.querySelector(".equipo").textContent = nombreEquipo(c);
+    li.querySelector(".usuario").textContent = c.username || "";
+    const estado = li.querySelector(".participa__estado");
+    if (c.simulated) estado.append(insignia("simulado", "simulado", T("alumnos.simulado")));
+    if (!c.sessionId) estado.append(insignia("desconectado", "desconectado", T("participacion.desconectado")));
+    li.querySelector(".conversacion-fila__ultimo").textContent = ultimoDe(c);
+    li.querySelector(".hora").textContent = horaCorta(c.lastAt);
+    if (c.unread) li.querySelector(".sin-leer").append(insignia("info", "mensaje", P("participacion.nuevos", c.unread)));
+    else li.querySelector(".sin-leer").append(insignia("", "hecho", T("participacion.atendidaEstado")));
+    b.addEventListener("click", () => abrirConversacion(k));
+    return li;
+  }
+
+  function abrirConversacion(k) {
+    if (!conversacionDe(k)) return;
+    if (vista !== "participacion") { location.hash = "#participacion"; }
+    abierta = k;
+    pintarBandeja(participacion.conversations || []);
+    const lista = $("hilo-lista");
+    lista.scrollTop = lista.scrollHeight;
+    const t = $("hilo-texto");
+    if (!t.disabled) t.focus(); else $("hilo-volver").focus();
+  }
+  function cerrarConversacion() {
+    const k = abierta;
+    abierta = "";
+    pintarBandeja(participacion.conversations || []);
+    const f = filaDe(k) || $("bandeja-lista").querySelector(".conversacion-fila");
+    if (f) f.focus(); else $("bandeja-buscar").focus();
+  }
+
+  let hiloPintado = "";
+  function pintarHilo(c) {
+    const k = claveDe(c);
+    const lista = $("hilo-lista");
+    const alFinal = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 24;
+    $("hilo-equipo").textContent = nombreEquipo(c);
+    $("hilo-usuario").textContent = c.username || "";
+    const estado = [];
+    if (c.simulated) estado.push(insignia("simulado", "simulado", T("alumnos.simulado")));
+    if (!c.sessionId) estado.push(insignia("desconectado", "desconectado", T("participacion.desconectado")));
+    $("hilo-estado").replaceChildren(...estado);
+    const propias = new Map(c.entries.filter((e) => e.from === "student").map((e) => [e.messageId, e.text]));
+    lista.replaceChildren(...c.entries.map((e, i) => burbuja(e, propias, c.entries[i - 1])));
+    if (hiloPintado !== k || alFinal) lista.scrollTop = lista.scrollHeight;
+    const area = $("hilo-texto");
+    if (hiloPintado !== k) {
+      area.value = borradores.get("c:" + k) || "";
+      limpiarCampo(area, $("hilo-error"));
+    }
+    hiloPintado = k;
+    $("hilo-etiqueta").textContent = T("participacion.respuestaA", { equipo: nombreEquipo(c) });
+    const conectado = !!c.sessionId;
+    area.disabled = !conectado;
+    $("hilo-enviar").disabled = !conectado;
+    $("hilo-atendida").disabled = !c.unread;
+  }
+
+  // La cita del mensaje respondido, solo si no va justo arriba.
+  function burbuja(e, propias, antes) {
+    const li = el("li", "burbuja" + (e.from === "teacher" ? " burbuja--propia" : ""));
+    if (e.from === "teacher" && e.replyTo && propias.has(e.replyTo) && !(antes && antes.messageId === e.replyTo)) {
+      const cita = el("p", "burbuja__cita");
+      cita.textContent = propias.get(e.replyTo);
+      li.append(cita);
+    }
+    const texto = el("p", "burbuja__texto");
+    texto.textContent = e.text;
+    const meta = el("span", "burbuja__meta");
+    const hora = el("span");
+    hora.textContent = e.from === "teacher" ? T("participacion.hilo.tuHora", { hora: horaCorta(e.at) }) : horaCorta(e.at);
+    meta.append(hora);
+    if (e.from === "student" && e.status === "new") meta.append(insignia("info", "mensaje", T("participacion.nuevo")));
+    li.append(texto, meta);
+    return li;
+  }
+
+  // Responder desde el hilo: reply_to va al último mensaje que espera; si no hay, es un
+  // mensaje privado. Go lo pone en la conversación.
+  $("hilo-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const c = conversacionDe(abierta);
+    const area = $("hilo-texto"), caja = $("hilo-error");
+    if (!c) return;
+    const txt = area.value.trim();
+    if (!txt) { errorEnCampo(area, caja, T("participacion.respuestaVacia")); area.focus(); return; }
+    const espera = c.entries.filter((x) => x.from === "student" && x.status === "new");
+    const b = $("hilo-enviar");
+    ocupado(b, true);
+    const k = abierta;
+    api.ReplyToStudent(Object.assign(quienDe(c), { messageId: espera.length ? espera[espera.length - 1].messageId : "", text: txt })).then(() => {
+      borradores.delete("c:" + k);
+      if (abierta === k) { area.value = ""; area.focus(); }
+      toast("exito", T("participacion.enviada", { equipo: nombreEquipo(c) }), T("participacion.enviadaTexto"));
+    }).catch((err) => {
+      const m = amable(err);
+      if (m.codigo === "invalidNotice") errorEnCampo(area, caja, m.texto);
+      else fallo(err);
+    }).finally(() => ocupado(b, false));
+  });
+  $("hilo-texto").addEventListener("input", () => { borradores.set("c:" + abierta, $("hilo-texto").value); limpiarCampo($("hilo-texto"), $("hilo-error")); });
+  $("hilo-texto").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("hilo-form").requestSubmit(); }
+  });
+  $("hilo").addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.querySelector("dialog[open]")) { e.preventDefault(); e.stopPropagation(); cerrarConversacion(); }
+  });
+  $("hilo-volver").addEventListener("click", cerrarConversacion);
+  $("hilo-atendida").addEventListener("click", () => {
+    const c = conversacionDe(abierta);
+    if (!c) return;
+    api.MarkConversationDone(quienDe(c)).then(() => toast("exito", T("participacion.hilo.atendidaHecho", { equipo: nombreEquipo(c) }), ""), fallo);
+  });
+
+  // Flechas, Inicio y Fin recorren la bandeja; Enter abre (es un botón).
+  $("bandeja-lista").addEventListener("keydown", (e) => {
+    const filas = [...$("bandeja-lista").querySelectorAll(".conversacion-fila")];
+    const i = filas.indexOf(document.activeElement);
+    if (i < 0) return;
+    const j = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: filas.length - 1 }[e.key];
+    if (j === undefined) return;
+    e.preventDefault();
+    filas[Math.max(0, Math.min(filas.length - 1, j))].focus();
+  });
+  // Al salir el foco de la lista, lo que esperaba toma su lugar.
+  $("bandeja-lista").addEventListener("focusout", (e) => {
+    if ($("bandeja-lista").contains(e.relatedTarget)) return;
+    setTimeout(() => { if (!focoEnBandeja() && !abierta) pintarBandeja(participacion.conversations || []); }, 0);
+  });
+  $("bandeja-mostrar").addEventListener("click", () => {
+    const k = focoEnBandeja() ? document.activeElement.closest("li")?.dataset.clave : "";
+    $("bandeja-mostrar").focus();
+    pintarBandeja(participacion.conversations || []);
+    const f = (k && filaDe(k)) || $("bandeja-lista").querySelector(".conversacion-fila");
+    if (f) f.focus();
+  });
+  document.querySelectorAll('input[name="bandeja-filtro"]').forEach((r) => r.addEventListener("change", () => {
+    filtroBandeja = r.value;
+    pintarBandeja(participacion.conversations || []);
+  }));
+  $("bandeja-buscar").addEventListener("input", (e) => {
+    buscarBandeja = e.target.value.trim();
+    pintarBandeja(participacion.conversations || []);
+  });
 
 
   // --- Manual (docs/administracion) --------------------------------------------------------

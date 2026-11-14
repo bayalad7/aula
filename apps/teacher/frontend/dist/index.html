@@ -546,9 +546,46 @@
                     <h3 id="h-manos"></h3>
                     <ol class="lista-limpia" id="manos-lista" aria-labelledby="h-manos"></ol>
                   </div>
+                  <!-- Mensajes como chat (prompt 10.26): la bandeja con una conversación por alumno y,
+                       al abrir una, su hilo en lugar de la bandeja («Volver» o Esc regresa). -->
                   <div id="mensajes" class="pila-mini" hidden>
-                    <h3 id="h-mensajes"></h3>
-                    <ul class="lista-limpia" id="mensajes-lista" aria-labelledby="h-mensajes"></ul>
+                    <div id="bandeja" class="bandeja pila-mini">
+                      <h3 id="h-mensajes"></h3>
+                      <div class="bandeja__filtros">
+                        <fieldset class="campo"><legend class="solo-lector" data-t="participacion.bandeja.filtro"></legend>
+                          <div class="opciones-seg">
+                            <label class="opcion-seg"><input type="radio" name="bandeja-filtro" value="pending" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pendiente"/></svg> <span id="bandeja-filtro-pending"></span></label>
+                            <label class="opcion-seg"><input type="radio" name="bandeja-filtro" value="done"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#hecho"/></svg> <span id="bandeja-filtro-done"></span></label>
+                            <label class="opcion-seg"><input type="radio" name="bandeja-filtro" value="all"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg> <span id="bandeja-filtro-all"></span></label>
+                          </div>
+                        </fieldset>
+                        <label class="buscador bandeja__buscar"><span class="solo-lector" data-t="participacion.bandeja.buscar"></span>
+                          <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#buscar"/></svg><input type="search" id="bandeja-buscar" data-icono="buscar" data-t-placeholder="participacion.bandeja.buscar" autocomplete="off"></label>
+                      </div>
+                      <p class="aviso-en-linea" id="bandeja-nuevas" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="bandeja-nuevas-texto"></span>
+                        <button type="button" class="btn btn--sm btn--fantasma" id="bandeja-mostrar" data-icono="reenviar" data-t="participacion.bandeja.mostrar"></button></p>
+                      <ul class="lista-limpia bandeja__lista" id="bandeja-lista" aria-labelledby="h-mensajes"></ul>
+                      <p class="pequeno suave" id="bandeja-vacia" hidden></p>
+                      <p class="pequeno suave" data-t="participacion.bandeja.teclado"></p>
+                    </div>
+                    <section id="hilo" class="conversacion pila-mini" aria-labelledby="hilo-equipo" hidden>
+                      <div class="conversacion__cabecera">
+                        <button type="button" class="btn btn--sm btn--fantasma" id="hilo-volver"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#volver"/></svg><span data-t="participacion.hilo.volver"></span></button>
+                        <h3 class="conversacion__quien"><span id="hilo-equipo"></span> <span class="celda-sub" id="hilo-usuario"></span></h3>
+                        <span class="participa__estado" id="hilo-estado"></span>
+                      </div>
+                      <ol class="hilo conversacion__lista" id="hilo-lista" tabindex="0" data-t-aria-label="participacion.hilo.lista"></ol>
+                      <form id="hilo-form" class="pila-mini" novalidate>
+                        <label class="campo"><span class="campo__etiqueta" id="hilo-etiqueta"></span>
+                          <textarea id="hilo-texto" rows="2" maxlength="2000" data-icono="mensaje"></textarea>
+                          <span class="campo__ayuda" data-t="participacion.hilo.ayuda"></span>
+                          <span class="campo__error" id="hilo-error" role="alert" hidden></span></label>
+                        <div class="grupo-botones">
+                          <button type="submit" class="btn btn--sm btn--primario" id="hilo-enviar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="participacion.enviar"></span></button>
+                          <button type="button" class="btn btn--sm btn--fantasma" id="hilo-atendida"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#hecho"/></svg><span data-t="participacion.hilo.atendida"></span></button>
+                        </div>
+                      </form>
+                    </section>
                   </div>
                 </div>
               </section>
@@ -1521,6 +1558,20 @@
         <button type="button" class="btn btn--sm btn--fantasma quitar" data-icono="cerrar"></button></div></td>
     </tr>
   </template>
+  <!-- Una conversación de la bandeja (prompt 10.26). -->
+  <template id="t-conversacion">
+    <li>
+      <button type="button" class="conversacion-fila">
+        <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg>
+        <span class="conversacion-fila__centro">
+          <span class="conversacion-fila__quien"><strong class="equipo"></strong><span class="celda-sub usuario"></span><span class="participa__estado"></span></span>
+          <span class="conversacion-fila__ultimo"></span>
+        </span>
+        <span class="conversacion-fila__lado"><span class="suave pequeno hora"></span><span class="sin-leer"></span></span>
+      </button>
+    </li>
+  </template>
+
   <template id="t-participa">
     <li class="participa">
       <div class="participa__cabecera">
@@ -1534,7 +1585,7 @@
       <div class="grupo-botones participa__acciones">
         <button type="button" class="btn btn--sm responder"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#aviso"/></svg><span data-t="participacion.responder"></span></button>
         <button type="button" class="btn btn--sm bajar" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span data-t="participacion.bajar"></span></button>
-        <button type="button" class="btn btn--sm btn--fantasma atendido" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#hecho"/></svg><span data-t="participacion.atendido"></span></button>
+        <button type="button" class="btn btn--sm btn--fantasma ver-conversacion" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg><span data-t="participacion.verConversacion"></span></button>
       </div>
       <form class="participa__respuesta pila-mini" hidden>
         <label class="campo"><span class="campo__etiqueta respuesta-etiqueta"></span>

@@ -133,6 +133,34 @@ body[data-panel] .col-sistema { display: none; }
 .participa__estado { display: flex; flex-wrap: wrap; gap: var(--e-1); }
 .participa__texto, .participa__respondido { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .participa .campo textarea, .campo textarea.privado-texto { font-family: inherit; }
+
+/* Bandeja tipo chat (prompt 10.26): una fila por conversación y, al abrirla, su hilo en su
+   lugar. La lista y el hilo se desplazan por dentro; con 30 conversaciones la sección no crece. */
+.bandeja__filtros { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2) var(--e-3); }
+.bandeja__filtros .campo { margin: 0; border: 0; padding: 0; }
+.bandeja__buscar { flex: 1; min-width: 12rem; }
+.bandeja__buscar input { min-height: 2.25rem; }
+.bandeja__lista { display: grid; gap: var(--e-1); max-height: 26rem; overflow-y: auto; }
+#bandeja-nuevas[hidden], #bandeja-vacia[hidden], #hilo[hidden], #bandeja[hidden] { display: none; }
+.conversacion-fila {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--e-1) var(--e-3);
+  width: 100%; padding: var(--e-2) var(--e-3); text-align: start;
+  border: 1px solid var(--c-borde); border-radius: var(--r-md); background: var(--c-superficie); color: var(--c-texto);
+  font: inherit; cursor: pointer;
+}
+.conversacion-fila:hover { background: var(--c-superficie-2); }
+.conversacion-fila:focus-visible { outline: 2px solid var(--c-foco); outline-offset: 1px; }
+.conversacion-fila[data-sin-leer="true"] { border-color: var(--c-acento); }
+.conversacion-fila[data-sin-leer="true"] .equipo { font-weight: var(--peso-fuerte); }
+.conversacion-fila__centro { display: grid; min-width: 0; }
+.conversacion-fila__quien { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--e-2); }
+.conversacion-fila__ultimo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-texto-suave); font-size: var(--t-sm); }
+.conversacion-fila__lado { display: grid; justify-items: end; gap: var(--e-1); }
+.conversacion__cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-1) var(--e-3); }
+.conversacion__quien { flex: 1; min-width: 10rem; margin: 0; font-size: var(--t-md); }
+.conversacion__lista { max-height: 22rem; overflow-y: auto; padding: var(--e-2); border: 1px solid var(--c-borde); border-radius: var(--r-md); background: var(--c-superficie); }
+.conversacion__lista:focus-visible { outline: 2px solid var(--c-foco); outline-offset: 1px; }
+#hilo-texto { font-family: inherit; }
 a.insignia { text-decoration: none; }
 a.insignia:hover { text-decoration: underline; }
 
@@ -280,6 +308,21 @@ a.insignia:hover { text-decoration: underline; }
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start;
 }
 [data-vista-de=participacion] > .vista__cuerpo > section:first-of-type { grid-row: span 2; }
+/* Las tarjetas llenan el alto de la ventana: Manos y mensajes completa a la izquierda; Encuestas
+   y Temporizador mitad y mitad a la derecha. Lo que no cabe se desplaza dentro de cada tarjeta
+   (la bandeja y la conversación, dentro de su lista, con el cuadro de respuesta siempre a la
+   vista). Con muy poco alto (menos de 30 rem) se desplaza la vista. */
+@media (min-width: 1101px) {
+  [data-vista-de=participacion] { height: 100%; }
+  [data-vista-de=participacion] > .vista__cuerpo {
+    flex: 1 1 0; min-height: 30rem; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch;
+  }
+  [data-vista-de=participacion] > .vista__cuerpo > .tarjeta { display: flex; flex-direction: column; min-height: 0; }
+  [data-vista-de=participacion] > .vista__cuerpo > .tarjeta > .tarjeta__cuerpo { flex: 1; min-height: 0; overflow-y: auto; }
+  [data-vista-de=participacion] > .vista__cuerpo > section:first-of-type > .tarjeta__cuerpo { display: flex; flex-direction: column; }
+  #mensajes:not([hidden]), #bandeja:not([hidden]), #hilo:not([hidden]) { display: flex; flex-direction: column; flex: 1; min-height: 12rem; }
+  #mensajes .bandeja__lista, #hilo .conversacion__lista { flex: 1; min-height: 6rem; max-height: none; }
+}
 @media (max-width: 1100px) {
   [data-vista-de=participacion] > .vista__cuerpo { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
   [data-vista-de=participacion] > .vista__cuerpo > section:first-of-type { grid-row: auto; }

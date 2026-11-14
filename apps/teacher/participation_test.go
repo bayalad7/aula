@@ -152,13 +152,63 @@ func TestStudentMessagesArePacedAndMarkedDone(t *testing.T) {
 	}
 }
 
+// Each student is one conversation (prompt 10.26): their messages, the
+// answers and the private messages from the Pantalla grande, in order; and
+// «Marcar como atendida» moves it out of «Por atender».
+func TestConversationGathersTheThread(t *testing.T) {
+	h, logs := participationHarness(t)
+	m := protocol.MsgStudent{MessageID: protocol.NewID(), Text: "no me compila"}
+	h.hooks.onClassroom("s1", envOf(m))
+	if _, err := h.app.ReplyToStudent(ReplyRequest{Student: key("PC01"), MessageID: m.MessageID, Text: "revisa la línea 4"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.app.SendPrivateNotice("s1", "pasa al pizarrón", "info"); err != nil {
+		t.Fatal(err)
+	}
+	// An answer to a raised hand (no message) goes in too.
+	if _, err := h.app.ReplyToStudent(ReplyRequest{Student: key("PC01"), Text: "ya voy"}); err != nil {
+		t.Fatal(err)
+	}
+	p := h.rec.last(EventParticipation).(Participation)
+	if len(p.Conversations) != 1 || p.Conversations[0].SessionID != "s1" {
+		t.Fatalf("conversations %+v", p.Conversations)
+	}
+	var got []string
+	for _, e := range p.Conversations[0].Entries {
+		got = append(got, string(e.From)+":"+e.Text)
+	}
+	want := "student:no me compila|teacher:revisa la línea 4|teacher:pasa al pizarrón|teacher:ya voy"
+	if strings.Join(got, "|") != want {
+		t.Errorf("thread %v", got)
+	}
+
+	h.hooks.onClassroom("s1", envOf(protocol.MsgStudent{MessageID: protocol.NewID(), Text: "otra duda"}))
+	if p := h.app.Participation(); p.Conversations[0].Unread != 1 || p.Pending != 1 {
+		t.Fatalf("unread %d, pending %d", p.Conversations[0].Unread, p.Pending)
+	}
+	if n, err := h.app.MarkConversationDone(key("PC01")); err != nil || n != 1 {
+		t.Fatalf("MarkConversationDone = %d, %v", n, err)
+	}
+	if p := h.app.Participation(); p.Conversations[0].Unread != 0 || p.Pending != 0 {
+		t.Errorf("after done: unread %d, pending %d", p.Conversations[0].Unread, p.Pending)
+	}
+	if _, err := h.app.MarkConversationDone(key("PC09")); errorCode(err) != codeMessageGone {
+		t.Errorf("unknown conversation = %v", err)
+	}
+	for _, secret := range []string{"compila", "línea 4", "pizarrón", "ya voy", "otra duda"} {
+		if strings.Contains(logs.String(), secret) {
+			t.Errorf("%q reached the log", secret)
+		}
+	}
+}
+
 // Closing the class forgets everything (docs/privacidad.md rule 51).
 func TestParticipationEndsWithTheClass(t *testing.T) {
 	h, _ := participationHarness(t)
 	h.hooks.onClassroom("s1", envOf(protocol.HandRaise{HandID: protocol.NewID()}))
 	h.hooks.onClassroom("s1", envOf(protocol.MsgStudent{MessageID: protocol.NewID(), Text: "x"}))
 	h.app.EndClass()
-	if p := h.rec.last(EventParticipation).(Participation); len(p.Hands)+len(p.Messages) != 0 {
+	if p := h.rec.last(EventParticipation).(Participation); len(p.Hands)+len(p.Messages)+len(p.Conversations) != 0 {
 		t.Errorf("after EndClass: %+v", p)
 	}
 	// Someone unknown (not connected) is ignored.

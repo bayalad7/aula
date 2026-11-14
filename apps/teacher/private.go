@@ -24,7 +24,7 @@ func (a *App) SendPrivateNotice(sessionID, text, level string) (codedist.Deliver
 	if err := p.Validate(); err != nil {
 		return codedist.Delivery{}, friendly(err)
 	}
-	_, s, ok := participant(class, sessionID)
+	who, s, ok := participant(class, sessionID)
 	if !ok {
 		return codedist.Delivery{}, codedf(codeStudentGone, "ese alumno no está conectado")
 	}
@@ -36,6 +36,10 @@ func (a *App) SendPrivateNotice(sessionID, text, level string) (codedist.Deliver
 		return d, err
 	}
 	a.log.Info("private notice", "conn", s.ID, "host", s.Hostname, "len", utf8.RuneCountInString(text))
+	// It also goes into that student's conversation in «Participación»
+	// (prompt 10.26).
+	a.board.Said(who, text)
+	a.emitParticipation(class, nil)
 	return d, nil
 }
 

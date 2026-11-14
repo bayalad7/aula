@@ -277,6 +277,14 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
 .tabla tbody tr:hover td { background: var(--c-superficie-2); }
 .tabla tbody tr[data-seleccionado="true"] td { background: var(--c-acento-suave); }
 .tabla .col-marca { width: 2.5rem; }
+/* Alineación por tipo de dato (formato de tablas, 2026-11-13): el texto a la izquierda; «#» y los
+   datos de longitud fija (número de ejercicio, hora) centrados; las cantidades (líneas, veces,
+   tamaño, puntos) a la derecha. Todos con dígitos del mismo ancho, y el encabezado como su columna. */
+.tabla .col-num { width: 3rem; text-align: center; color: var(--c-texto-suave); font-variant-numeric: tabular-nums; }
+.tabla .col-fija { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tabla .col-cantidad { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tabla th.col-accion, .tabla td.col-accion { text-align: right; white-space: nowrap; }
+.tabla .marca-grupo { margin-right: var(--e-1); vertical-align: middle; }
 .tabla .celda-principal { font-weight: var(--peso-medio); }
 .tabla .celda-sub { display: block; font-size: var(--t-sm); font-weight: var(--peso-normal); color: var(--c-texto-suave); }
 @container (max-width: 40rem) {
@@ -292,6 +300,8 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
   .tabla tbody tr[data-seleccionado="true"] { border-color: var(--c-acento); box-shadow: 0 0 0 1px var(--c-acento); background: var(--c-acento-suave); }
   .tabla tbody tr[data-seleccionado="true"] td, .tabla tbody tr:hover td { background: transparent; }
   .tabla td.col-marca { grid-row: span 3; }
+  .tabla td.col-num { display: none; } /* en tarjetas no hace falta numerar */
+  .tabla .col-fija, .tabla .col-cantidad, .tabla td.col-accion { text-align: left; }
   .tabla td[data-etiqueta]:not(.celda-principal)::before {
     content: attr(data-etiqueta) ": "; color: var(--c-texto-suave); font-size: var(--t-sm);
   }
@@ -546,13 +556,24 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
    con menos relleno para que quepan con su texto. */
 .barra-acciones__dentro { padding-left: var(--e-4); padding-right: var(--e-4); }
 .barra-acciones .btn { padding: 0 var(--e-2); }
+/* Nota de interfaz 008: todos los botones iguales, con el icono arriba y su texto debajo (hasta dos
+   líneas); mientras se ve el texto no hace falta el tooltip. */
+.barra-acciones__dentro { justify-content: center; }
+.barra-acciones .btn {
+  flex-direction: column; justify-content: center; gap: var(--e-1);
+  width: 5.5rem; height: auto; min-height: 3.6rem; padding: var(--e-1);
+  font-size: var(--t-xs); line-height: 1.2; text-align: center; white-space: normal;
+}
+.barra-acciones .btn .btn__texto { display: block; }
+.barra-acciones .btn[data-tip]:hover::after, .barra-acciones .btn[data-tip]:focus-visible::after { display: none; }
 .tamano-miniaturas { display: inline-flex; align-items: center; gap: var(--e-2); font-size: var(--t-sm); }
 .tamano-miniaturas .control { width: auto; }
-/* 69rem: con la raíz de 15 px son 1035 px, lo que piden los nueve botones con su texto (nota de
-   interfaz 2, y Pausar de 10.21); debajo, solo iconos con su tooltip (data-tip). */
-@container (max-width: 69rem) {
+/* 61rem: lo que piden los diez botones de 5.5rem (nota 008); debajo, solo iconos cuadrados con su
+   tooltip (data-tip). */
+@container (max-width: 61rem) {
   .barra-acciones .btn__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .barra-acciones .btn { width: var(--alto-control); padding: 0; }
+  .barra-acciones .btn { width: var(--alto-control); min-height: var(--alto-control); padding: 0; }
+  .barra-acciones .btn[data-tip]:hover::after, .barra-acciones .btn[data-tip]:focus-visible::after { display: block; }
   .barra-acciones__dentro { padding-left: var(--e-4); padding-right: var(--e-4); }
 }
 

@@ -86,7 +86,9 @@ export const zonas = {
     // Participación
     { id: "participacion", nombre: "Vista Participación", selector: "[data-vista-de=participacion]", que: "Lo que responden los alumnos en vivo." },
     { id: "manos", dentro: "participacion", nombre: "Manos levantadas", selector: "#manos", que: "La fila de manos, por orden de llegada." },
-    { id: "mensajes", dentro: "participacion", nombre: "Mensajes de los alumnos", selector: "#mensajes", que: "La bandeja de mensajes con Responder." },
+    { id: "mensajes", dentro: "participacion", nombre: "Mensajes de los alumnos", selector: "#mensajes", que: "Los mensajes como chat: la bandeja o, al abrir una, su conversación." },
+    { id: "bandeja", dentro: "mensajes", nombre: "Bandeja de conversaciones", selector: "#bandeja", que: "Una fila por alumno (la más reciente arriba) con Por atender, Atendidas y Todas, y la búsqueda." },
+    { id: "hilo", dentro: "mensajes", nombre: "Conversación", selector: "#hilo", que: "El hilo de un alumno (sus mensajes y lo que le mandaste) con Volver, el cuadro para responder y Marcar como atendida." },
     { id: "part-encuestas", dentro: "participacion", nombre: "Sección Encuestas", selector: "#encuestas", que: "La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones." },
     { id: "part-temporizador", dentro: "participacion", nombre: "Sección Temporizador", selector: "#temporizador-activo, #temporizador-vacio", que: "Quién ve el temporizador y quién falta." },
 
@@ -111,7 +113,7 @@ export const zonas = {
     { id: "mano-estado", nombre: "Estado de la mano", selector: "#mano-estado", que: "«Tu mano está levantada» y el motivo." },
     { id: "redactar", nombre: "Diálogo Mensaje al profesor", selector: "#dlg-mensaje", que: "El diálogo para escribirle al profesor." },
     { id: "capacidades", nombre: "Qué puede hacer Aula en este equipo", selector: "#dlg-capacidades", que: "La grilla de lo que el profesor puede hacer con este equipo, como la ficha de la consola." },
-    { id: "enviados", nombre: "Tus mensajes", selector: "#enviados", que: "Los mensajes enviados y si llegaron." },
+    { id: "enviados", nombre: "Tus mensajes", selector: "#enviados", que: "El hilo con el profesor: lo que el alumno escribió (y si llegó) y lo que el profesor le mandó solo a él." },
     { id: "vacio", nombre: "Estado vacío", selector: "#empty", que: "Lo que se ve cuando no hay código ni archivos." },
     { id: "fin-clase", nombre: "Tarjeta «La clase terminó»", selector: "#fin-clase", que: "Cuándo terminó la clase y qué se quitó, con «Entendido»; no es una banda (prompt 10.14)." },
     { id: "encuestas", nombre: "Encuestas", selector: "#encuestas", que: "Una tarjeta por encuesta del profesor, arriba de la lista." },

@@ -80,29 +80,70 @@
   const treinta = Array.from({ length: 30 }, (_, i) => student({ hostname: "Simulado " + (i + 1), username: "Alumno de prueba",
     osVersion: "simulado", agentVersion: "0.6.0-dev+sim", simulated: true,
     capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "poll", "class.end", "computer.label"] }));
-  if (scene === "lab-salon") list = [...lab, ...treinta];
+  if (scene === "lab-salon" || scene === "lab-bandeja") list = [...lab, ...treinta];
   if (scene === "lab-energia-pendiente") {
     lab[0].power = { action_id: "p1", action: "reboot", force: false, status: "countdown", deadline_ms: now + 24000, postpones_left: 2 };
     lab[1].power = { action_id: "p1", action: "reboot", force: false, status: "postponed", deadline_ms: now + 318000, postpones_left: 1 };
     lab[2].power = { action_id: "p1", action: "reboot", force: false, status: "executing", deadline_ms: 0, postpones_left: 2 };
   }
   // Participación (apps/teacher/participation.go): en lab-participacion, dos manos en la
-  // fila y dos mensajes, uno nuevo y uno respondido. Los alumnos llevan su insignia.
+  // fila y tres conversaciones (prompt 10.26): una por atender, una respondida y una con un
+  // mensaje privado. En lab-bandeja, 30 conversaciones, varias sin leer. Los alumnos llevan su
+  // insignia. Las conversaciones son la fuente; los mensajes sueltos se derivan como en Go.
   const quien = (s) => ({ hostname: s.hostname, username: s.username, simulated: !!s.simulated });
   const minutos = (m) => new Date(now - m * 60000).toISOString();
-  let part = { hands: [], messages: [], pending: 0, arrival: null };
+  let part = { hands: [], messages: [], conversations: [], pending: 0, arrival: null };
+  let convs = [];
+  const del = (m, id, text, status) => ({ from: "student", messageId: id, text, at: minutos(m), status });
+  const tuyo = (m, text, replyTo) => ({ from: "teacher", text, at: minutos(m), replyTo: replyTo || "" });
+  const conv = (s, entries) => Object.assign(quien(s), { sessionId: s.id, entries });
   if (scene === "lab-participacion") {
     part.hands = [
       Object.assign(quien(lab[1]), { handId: "h1", note: "No me compila el for de la línea 12", raisedAt: minutos(3), position: 1, sessionId: lab[1].id }),
       Object.assign(quien(lab[0]), { handId: "h2", note: "", raisedAt: minutos(1), position: 2, sessionId: lab[0].id }),
     ];
-    part.messages = [
-      Object.assign(quien(lab[3]), { messageId: "m2", text: "¿El ejercicio 3 es para hoy o para la próxima clase?", at: minutos(2), status: "new", sessionId: lab[3].id }),
-      Object.assign(quien(lab[0]), { messageId: "m1", text: "Ya terminé el ejercicio 2", at: minutos(9), status: "replied",
-        reply: "¡Bien! Sigue con el 3.", repliedAt: minutos(8), sessionId: lab[0].id }),
+    convs = [
+      conv(lab[3], [del(2, "m2", "¿El ejercicio 3 es para hoy o para la próxima clase?", "new")]),
+      conv(lab[0], [del(9, "m1", "Ya terminé el ejercicio 2", "replied"), tuyo(8, "¡Bien! Sigue con el 3.", "m1")]),
+      conv(lab[2], [tuyo(14, "Pasa al pizarrón cuando termines, por favor.")]),
     ];
   }
+  if (scene === "lab-bandeja") {
+    const dudas = ["No me compila el for", "¿Se entrega hoy?", "Ya terminé", "¿Puedo usar while?", "Me marca error en la línea 8",
+      "¿Cómo se declara un arreglo?", "Gracias, ya quedó"];
+    convs = list.map((s, i) => {
+      const nuevo = i % 3 === 0;
+      const e = [del(40 - i, "b" + i + "a", dudas[i % dudas.length], nuevo ? "new" : "replied")];
+      if (!nuevo) e.push(tuyo(39 - i, "Revisa los paréntesis y vuelve a intentar.", "b" + i + "a"));
+      if (i % 6 === 0) e.push(del(38 - i, "b" + i + "b", "Sigue sin salir, ¿me ayudas?", "new"));
+      return conv(s, e);
+    });
+  }
+  const derivarPart = () => {
+    part.messages = [];
+    part.conversations = convs.filter((c) => c.entries.length).map((c) => {
+      c.entries.forEach((e, i) => {
+        if (e.from !== "student") return;
+        const r = c.entries.slice(i + 1).filter((x) => x.from === "teacher" && x.replyTo === e.messageId).pop();
+        part.messages.push(Object.assign(quien(c), { messageId: e.messageId, text: e.text, at: e.at, status: e.status, sessionId: c.sessionId },
+          r ? { reply: r.text, repliedAt: r.at } : {}));
+      });
+      return Object.assign({}, c, { entries: c.entries.map((e) => Object.assign({}, e)),
+        unread: c.entries.filter((e) => e.status === "new").length, lastAt: c.entries[c.entries.length - 1].at });
+    }).sort((a, b) => b.lastAt.localeCompare(a.lastAt));
+    part.messages.sort((a, b) => b.at.localeCompare(a.at));
+  };
+  const convDe = (w, crear) => {
+    let c = convs.find((x) => mismo(x, w));
+    if (!c && crear) {
+      const s = list.find((x) => mismo(x, w)) || w;
+      c = conv(s, []);
+      convs.push(c);
+    }
+    return c;
+  };
   const marcarParticipacion = () => {
+    derivarPart();
     part.pending = part.hands.length + part.messages.filter((m) => m.status === "new").length;
     for (const s of list) {
       const h = part.hands.find((x) => x.hostname === s.hostname && x.simulated === !!s.simulated);
@@ -122,6 +163,12 @@
     const s = list.find((x) => x.hostname === host);
     part.hands.push(Object.assign(quien(s), { handId: "h" + Date.now(), note: "", raisedAt: new Date().toISOString(), position: 0, sessionId: s.id }));
     emitPart(Object.assign({ kind: "hand" }, quien(s)));
+  };
+  // Para el recorrido: llega un mensaje (prompt 10.26: no mueve la lista ni quita el foco).
+  window.__llegaMensaje = (host, text) => {
+    const s = list.find((x) => x.hostname === host);
+    convDe(quien(s), true).entries.push({ from: "student", messageId: "m" + Date.now(), text, at: new Date().toISOString(), status: "new" });
+    emitPart(Object.assign({ kind: "message" }, quien(s)));
   };
   const mismo = (a, b) => a.hostname === b.hostname && a.username === b.username && !!a.simulated === !!b.simulated;
   const studentsView = () => {
@@ -676,14 +723,31 @@
     LowerHand: call("LowerHand", (w) => { part.hands = part.hands.filter((h) => !mismo(h, w)); despues(() => emitPart()); return null; }),
     LowerAllHands: call("LowerAllHands", () => { const n = part.hands.length; part.hands = []; despues(() => emitPart()); return n; }),
     MarkMessageDone: call("MarkMessageDone", (w, id) => {
-      const m = part.messages.find((x) => x.messageId === id);
-      if (m) m.status = "done";
+      const c = convDe(w);
+      const m = c && c.entries.find((x) => x.messageId === id);
+      if (!m) return new Error("aula:messageGone: ese mensaje ya no está en la lista");
+      if (m.status === "new") m.status = "done";
       despues(() => emitPart());
       return null;
     }),
+    MarkConversationDone: call("MarkConversationDone", (w) => {
+      const c = convDe(w);
+      if (!c) return new Error("aula:messageGone: esa conversación ya no está en la bandeja");
+      let n = 0;
+      c.entries.forEach((e) => { if (e.status === "new") { e.status = "done"; n++; } });
+      despues(() => emitPart());
+      return n;
+    }),
     ReplyToStudent: call("ReplyToStudent", (r) => {
-      const m = part.messages.find((x) => x.messageId === r.messageId);
-      if (m) Object.assign(m, { status: "replied", reply: r.text, repliedAt: new Date().toISOString() });
+      const c = convDe(r, true);
+      const at = new Date().toISOString();
+      if (r.messageId) {
+        const i = c.entries.findIndex((x) => x.messageId === r.messageId);
+        if (i < 0) return new Error("aula:messageGone: ese mensaje ya no está en la lista");
+        c.entries.slice(0, i + 1).forEach((e) => { if (e.status === "new") e.status = "replied"; });
+        c.entries[i].status = "replied";
+      }
+      c.entries.push({ from: "teacher", text: r.text, at, replyTo: r.messageId || "" });
       despues(() => emitPart());
       return Object.assign({}, deliveries[1], { id: "d-r", label: "Respuesta a " + r.hostname, sent: 1, acked: 0 });
     }),
@@ -780,8 +844,9 @@
       return copiaPolls();
     }),
     // Mensaje privado (prompt 10.7): la etiqueta no lleva el texto; el alumno lo ve poco después.
-    SendPrivateNotice: call("SendPrivateNotice", (id) => {
+    SendPrivateNotice: call("SendPrivateNotice", (id, texto) => {
       const s = list.find((x) => x.id === id) || {};
+      if (s.hostname) { convDe(quien(s), true).entries.push({ from: "teacher", text: texto || "", at: new Date().toISOString() }); despues(() => emitPart()); }
       const d = { id: "d-p" + Date.now(), kind: "notice", label: "Mensaje privado a " + s.hostname, sent: s.simulated ? 0 : 1, acked: 0,
         failed: 0, noCapability: 0, simSent: s.simulated ? 1 : 0, simAcked: 0, pending: [id], rejected: [], at: new Date().toISOString() };
       deliveries.unshift(d);

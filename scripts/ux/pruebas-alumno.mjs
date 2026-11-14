@@ -391,6 +391,29 @@ await caso("mensaje-enter-y-esc", "conectado", async (p) => {
   await sleep(600);
   ok(await p.evaluate(() => document.querySelector("#enviados-lista .insignia").textContent === "Recibido"), "no pasó a «Recibido»");
 });
+// El hilo de «Tus mensajes» (prompt 10.26): la respuesta del profesor entra al hilo sin quitarle el
+// foco al alumno, a la izquierda, y mientras su pantalla se proyecta su texto no se muestra.
+const hiloCon = () => ({ hand: "down", note: "", unsupported: false,
+  messages: [{ messageId: "pm-1", text: "¿Es para hoy?", status: "received", at: new Date(Date.now() - 60000).toISOString() }],
+  replies: [{ id: "n-9", text: "Sí, antes de las 12.", at: new Date().toISOString(), replyTo: "pm-1" }] });
+await caso("hilo-respuesta", "conectado", async (p) => {
+  await p.focus("#escribir");
+  await emitir(p, "aula:participation", hiloCon());
+  await sleep(150);
+  const h = await p.evaluate(() => {
+    const b = [...document.querySelectorAll("#enviados-lista > li")];
+    return { n: b.length, propia: b[0] && b[0].classList.contains("burbuja--propia"), profe: b[1] && !b[1].classList.contains("burbuja--propia"),
+      texto: b[1] && b[1].querySelector(".burbuja__texto").textContent, foco: document.activeElement.id,
+      bandas: !!document.querySelector(".bandas #enviados") };
+  });
+  ok(h.n === 2 && h.propia && h.profe && h.texto === "Sí, antes de las 12.", "hilo: " + JSON.stringify(h));
+  ok(h.foco === "escribir", "la respuesta le quitó el foco al alumno: " + h.foco);
+  ok(!h.bandas, "el hilo quedó en las bandas");
+});
+await caso("hilo-proyectando", "mensajes-proyectando", async (p) => {
+  const t = await p.evaluate(() => [...document.querySelectorAll("#enviados-lista > li:not(.burbuja--propia) .burbuja__texto")].map((x) => x.textContent));
+  ok(t.length > 0 && t.every((x) => x.startsWith("Mensaje de tu profesor: oculto")), "se ve lo del profesor al proyectar: " + JSON.stringify(t));
+});
 await caso("mensaje-vacio", "conectado", async (p) => {
   await p.click("#escribir");
   await p.keyboard.press("Enter");

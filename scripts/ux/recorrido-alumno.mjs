@@ -82,6 +82,9 @@ await f("49-mensaje-enviado", "conectado", { pasos: seq(escribe("¿Puede repetir
 }) });
 await f("50-mensaje-vacio", "conectado", { pasos: seq(click("#escribir"), async (p) => { await p.keyboard.press("Enter"); await sleep(200); }) });
 await f("51-respuesta-del-profesor", "mensajes");
+// «Tus mensajes» como hilo (prompt 10.26), y oculto lo del profesor mientras se proyecta.
+await f("104-hilo-tus-mensajes", "mensajes");
+await f("105-hilo-proyectando", "mensajes-proyectando");
 await f("52-sin-conexion-botones", "buscando");
 await f("53-consola-sin-soporte", "sin-soporte");
 await f("54-mano-oscuro", "mano", { oscuro: true });

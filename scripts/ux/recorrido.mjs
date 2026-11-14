@@ -75,7 +75,9 @@ await f("71-ajustes-carpeta-capturas", "datos", { pasos: seq(ajustes("acerca"), 
 
 // Participación: manos y mensajes (docs/protocol.md §5.18): la fila, la insignia en Alumnos,
 // responder, el aviso al llegar una mano, la ventana angosta y oscura, y los simulados.
-const responder = seq(click("#mensajes-lista .responder"), async (p) => { await p.type("#mensajes-lista .respuesta-texto", "Es para hoy, antes de las 12."); });
+// Responder es ahora desde la conversación (prompt 10.26): abrir la primera de la bandeja y escribir.
+const abrirPrimera = click("#bandeja-lista .conversacion-fila");
+const responder = seq(abrirPrimera, async (p) => { await p.type("#hilo-texto", "Es para hoy, antes de las 12."); });
 await f("72-participacion", "lab-participacion", { ruta: "participacion" });
 await f("73-participacion-insignias-alumnos", "lab-participacion");
 await f("74-participacion-respondiendo", "lab-participacion", { ruta: "participacion", pasos: responder });
@@ -89,6 +91,38 @@ await f("76-participacion-llega-mano", "lab-participacion", { pasos: async (p) =
 } });
 await f("77-participacion-vacia", "lab", { ruta: "participacion" });
 await f("78-participacion-oscuro-900x600", "lab-participacion", { oscuro: true, w: 900, h: 600, ruta: "participacion" });
+
+// Bandeja tipo chat (prompt 10.26): 30 conversaciones (varias sin leer), una abierta, el teclado,
+// un mensaje que llega mientras escribes (no quita el foco ni lo escrito) y claro, oscuro y 900×600.
+const enTodas = click('label.opcion-seg:has(input[name="bandeja-filtro"][value="all"])');
+await f("214-bandeja-30", "lab-bandeja", { ruta: "participacion", pasos: enTodas });
+await f("215-bandeja-conversacion", "lab-bandeja", { ruta: "participacion", pasos: abrirPrimera });
+await f("216-bandeja-teclado", "lab-bandeja", { ruta: "participacion", pasos: seq(enTodas, async (p) => {
+  await p.focus("#bandeja-lista .conversacion-fila");
+  await p.keyboard.press("ArrowDown");
+  await p.keyboard.press("ArrowDown");
+  // Llega un mensaje con el foco en la lista: la lista no se mueve; queda el aviso «Mostrar».
+  await p.evaluate(() => window.__llegaMensaje("LAB3-PC12", "¿Me ayudas con el ejercicio 4?"));
+  await sleep(250);
+  const foco = await p.evaluate(() => document.activeElement.closest("li")?.dataset.clave || "");
+  if (!foco) throw new Error("el foco salió de la bandeja al llegar un mensaje");
+}) });
+await f("217-bandeja-llega-escribiendo", "lab-bandeja", { ruta: "participacion", pasos: seq(abrirPrimera, async (p) => {
+  await p.type("#hilo-texto", "Revisa la línea");
+  await p.evaluate(() => window.__llegaMensaje("Simulado 1", "Otra duda"));
+  await p.evaluate(() => window.__llegaMensaje("LAB3-PC07", "Ya quedó"));
+  await sleep(250);
+  const r = await p.evaluate(() => ({ id: document.activeElement.id, texto: document.getElementById("hilo-texto").value }));
+  if (r.id !== "hilo-texto" || r.texto !== "Revisa la línea") throw new Error("se perdió el foco o lo escrito: " + JSON.stringify(r));
+}) });
+await f("218-bandeja-volver", "lab-bandeja", { ruta: "participacion", pasos: seq(abrirPrimera, async (p) => {
+  await p.keyboard.press("Escape");
+  await sleep(150);
+  const ok = await p.evaluate(() => !document.getElementById("bandeja").hidden && document.activeElement.classList.contains("conversacion-fila"));
+  if (!ok) throw new Error("Esc no regresó a la bandeja con el foco en la fila");
+}) });
+await f("219-bandeja-oscuro-900x600", "lab-bandeja", { oscuro: true, w: 900, h: 600, ruta: "participacion", pasos: abrirPrimera });
+await f("220-bandeja-900x600", "lab-bandeja", { w: 900, h: 600, ruta: "participacion" });
 
 // Temporizador de ejercicio (prompt 10.8): panel, franja mientras corre, extender, fin y Participación.
 const panelTemporizador = seq(click(fila("LAB3-PC07")), click(fila("lab-ubuntu-02")), click('[data-panel="temporizador"]'), async (p) => {

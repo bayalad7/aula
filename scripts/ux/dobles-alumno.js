@@ -32,6 +32,8 @@
     "transmision-alumno": st("connected", { watching: true }),
     // Tu pantalla mostrada a la clase (docs/privacidad.md, reglas 75-82).
     mostrando: st("connected", { presenting: true }),
+    // El hilo de «Tus mensajes» mientras se proyecta: lo del profesor no se muestra (prompt 10.26).
+    "mensajes-proyectando": st("connected", { presenting: true }),
     restricciones: st("connected", { restricted: true }),
     // El control remoto implica la pantalla vista (docs/privacidad.md, regla 37).
     control: st("connected", { viewed: true, control: "active" }),
@@ -100,7 +102,7 @@
   // con motivo), mano-bajada (la bajó el profesor), mensajes (uno recibido y una respuesta),
   // sin-soporte (consola anterior). En «buscando» los botones están desactivados.
   const enviado = (id, text, status, min) => ({ messageId: id, text, status, at: new Date(Date.now() - min * 60000).toISOString() });
-  let part = { hand: "down", note: "", messages: [], unsupported: false };
+  let part = { hand: "down", note: "", messages: [], replies: [], unsupported: false };
   if (scene === "mano") part = Object.assign(part, { hand: "up", note: "No me compila el for de la línea 12" });
   if (scene === "mano-bajada") part.hand = "lowered_by_teacher";
   if (scene === "mensajes") part.messages = [enviado("pm-1", "Ya terminé el ejercicio 1", "received", 6),
@@ -108,7 +110,13 @@
   if (scene === "sin-soporte") part.unsupported = true;
   if (scene === "mensajes") notices.push({ id: "m-r", level: "info", text: "Sí, antes de las 12. Si te atoras, levanta la mano.",
     at: ahora, replyTo: "pm-2" });
-  const copia = () => Object.assign({}, part, { messages: part.messages.slice() });
+  // El hilo de «Tus mensajes» (prompt 10.26): las respuestas y los mensajes privados del profesor.
+  if (scene === "mensajes" || scene === "mensajes-proyectando") {
+    part.messages = [enviado("pm-1", "Ya terminé el ejercicio 1", "received", 6), enviado("pm-2", "¿El ejercicio 2 es para hoy?", "received", 2)];
+    part.replies = [{ id: "m-q", text: "¡Bien! Sigue con el 2.", at: new Date(Date.now() - 5 * 60000).toISOString(), replyTo: "pm-1" },
+      { id: "m-r", text: "Sí, antes de las 12. Si te atoras, levanta la mano.", at: ahora, replyTo: "pm-2" }];
+  }
+  const copia = () => Object.assign({}, part, { messages: part.messages.slice(), replies: part.replies.slice() });
   // El temporizador del profesor (classtimer.View, prompt 10.8). Escenas: temporizador
   // (4:32), temporizador-final (0:42, último minuto) y temporizador-fin (terminó).
   const timer = { temporizador: { state: "running", timerId: "t-1", label: "Ejercicio 1", remainingMs: 272000, justEnded: false },

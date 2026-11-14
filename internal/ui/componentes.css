@@ -399,6 +399,27 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
   border-radius: 0 0 var(--r-lg) var(--r-lg);
 }
 
+/* --- Conversación: burbujas de un chat (prompt 10.26) -----------------------------------------
+   .hilo es la lista en orden; cada .burbuja es un mensaje. Las del otro van a la izquierda y las
+   propias (.burbuja--propia) a la derecha, con el acento suave. La hora va en .burbuja__meta. */
+.hilo { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-2); align-content: start; }
+.burbuja {
+  justify-self: start; display: grid; gap: var(--e-1);
+  max-width: min(85%, 34rem); padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-lg); border-end-start-radius: var(--r-sm);
+  background: var(--c-superficie-2); color: var(--c-texto);
+}
+.burbuja--propia {
+  justify-self: end;
+  border-end-start-radius: var(--r-lg); border-end-end-radius: var(--r-sm);
+  background: var(--c-acento-suave); color: var(--c-acento-sobre-suave);
+}
+.burbuja__texto { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.burbuja__cita { margin: 0; padding-inline-start: var(--e-2); border-inline-start: 2px solid currentColor; font-size: var(--t-sm); overflow-wrap: anywhere; }
+.burbuja__cita[hidden] { display: none; }
+.burbuja__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-1) var(--e-2); font-size: var(--t-xs); color: var(--c-texto-suave); }
+.burbuja--propia .burbuja__meta { color: inherit; }
+
 /* --- Estado vacío ---------------------------------------------------------------------------- */
 .vacio {
   display: grid; justify-items: center; gap: var(--e-3);

@@ -21,6 +21,9 @@ const (
 	AgentHandEvery    = time.Second
 	// keptMessages is how many of their own messages the window shows.
 	keptMessages = 20
+	// keptReplies is how many private messages of the teacher the thread of
+	// «Tus mensajes» keeps (prompt 10.26).
+	keptReplies = 20
 )
 
 // Errors of the agent side. The window words them.
@@ -50,6 +53,16 @@ type Sent struct {
 	Status    SentStatus `json:"status"`
 }
 
+// Reply is a private message of the teacher to this student (msg.show
+// personal), for the thread of «Tus mensajes»; ReplyTo is the message it
+// answers, if any.
+type Reply struct {
+	ID      string    `json:"id"`
+	Text    string    `json:"text"`
+	At      time.Time `json:"at"`
+	ReplyTo string    `json:"replyTo,omitempty"`
+}
+
 // HandState is the student's own hand, as the window shows it.
 type HandState string
 
@@ -65,6 +78,7 @@ type DeskView struct {
 	Hand     HandState `json:"hand"`
 	Note     string    `json:"note,omitempty"`
 	Messages []Sent    `json:"messages"` // oldest first
+	Replies  []Reply   `json:"replies"`  // oldest first
 	// Unsupported: the console answered unknown_type (an older console).
 	Unsupported bool `json:"unsupported"`
 }
@@ -82,6 +96,7 @@ type Desk struct {
 	lastHand    time.Time
 	lastMsg     time.Time
 	sent        []Sent
+	replies     []Reply
 	envelopes   map[string]string // envelope ID → message_id, or hand_id for a hand.raise
 	unsupported bool
 }
@@ -275,11 +290,25 @@ func (d *Desk) Own(messageID string) (Sent, bool) {
 	return Sent{}, false
 }
 
+// Heard keeps a private message of the teacher for the thread. A notice seen
+// twice (same envelope ID) is kept once.
+func (d *Desk) Heard(r Reply) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if slices.ContainsFunc(d.replies, func(x Reply) bool { return x.ID == r.ID }) {
+		return
+	}
+	d.replies = append(d.replies, r)
+	if len(d.replies) > keptReplies {
+		d.replies = slices.Delete(d.replies, 0, len(d.replies)-keptReplies)
+	}
+}
+
 // View returns the state for the window.
 func (d *Desk) View() DeskView {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	v := DeskView{Hand: HandDown, Note: d.note, Messages: slices.Clone(d.sent), Unsupported: d.unsupported}
+	v := DeskView{Hand: HandDown, Note: d.note, Messages: slices.Clone(d.sent), Replies: slices.Clone(d.replies), Unsupported: d.unsupported}
 	switch {
 	case d.handID != "":
 		v.Hand = HandUp
@@ -288,6 +317,9 @@ func (d *Desk) View() DeskView {
 	}
 	if v.Messages == nil {
 		v.Messages = []Sent{}
+	}
+	if v.Replies == nil {
+		v.Replies = []Reply{}
 	}
 	return v
 }
@@ -306,7 +338,7 @@ func (d *Desk) Reset() (hand bool, unsent int) {
 		}
 	}
 	d.handID, d.note, d.byTeacher = "", "", false
-	d.sent = nil
+	d.sent, d.replies = nil, nil
 	clear(d.envelopes)
 	return hand, unsent
 }

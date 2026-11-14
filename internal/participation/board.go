@@ -1,6 +1,7 @@
 package participation
 
 import (
+	"cmp"
 	"maps"
 	"slices"
 	"sync"
@@ -15,9 +16,10 @@ const (
 	MessageEvery = 3 * time.Second
 	HandBurst    = 3
 	HandEvery    = time.Second
-	// MaxMessagesPerStudent is how many messages the console keeps of one
-	// student.
-	MaxMessagesPerStudent = 20
+	// MaxEntriesPerConversation is how many entries the console keeps of one
+	// conversation: the student's messages and the teacher's private
+	// messages to them (prompt 10.26).
+	MaxEntriesPerConversation = 50
 )
 
 // Student identifies a student the way the rest of the console does: machine
@@ -59,10 +61,43 @@ type Message struct {
 	RepliedAt time.Time     `json:"repliedAt,omitzero"`
 }
 
+// Author is who wrote an entry of a conversation.
+type Author string
+
+// Authors.
+const (
+	FromStudent Author = "student"
+	FromTeacher Author = "teacher" // a private msg.show to this student only
+)
+
+// Entry is one line of a conversation: a student's message or a private
+// message of the teacher to that student (an answer carries ReplyTo).
+type Entry struct {
+	From      Author        `json:"from"`
+	MessageID string        `json:"messageId,omitempty"` // the student's message_id
+	ReplyTo   string        `json:"replyTo,omitempty"`   // the teacher's answer to that message_id
+	Text      string        `json:"text"`
+	At        time.Time     `json:"at"`
+	Status    MessageStatus `json:"status,omitempty"` // a student's message only
+}
+
+// Conversation is everything one student and the teacher said in this
+// class, oldest first.
+type Conversation struct {
+	Student
+	Entries []Entry `json:"entries"`
+	// Unread counts the student's messages not answered nor marked: the
+	// conversation is «Por atender» while it is not zero.
+	Unread int       `json:"unread"`
+	LastAt time.Time `json:"lastAt"`
+}
+
 // Inbox is what the «Participación» view shows.
 type Inbox struct {
 	Hands    []Hand    `json:"hands"`    // in order of arrival
 	Messages []Message `json:"messages"` // newest first
+	// Conversations has one per student, the most recent first.
+	Conversations []Conversation `json:"conversations"`
 	// Pending counts the raised hands and the new messages: the number next
 	// to «Participación» in the menu.
 	Pending int `json:"pending"`
@@ -92,17 +127,17 @@ type pace struct{ hands, messages *bucket }
 type Board struct {
 	now func() time.Time // replaced in tests
 
-	mu       sync.Mutex
-	hands    []Hand                // in order of arrival
-	lowered  map[Student]string    // the last hand_id the teacher lowered
-	messages map[Student][]Message // oldest first
-	paces    map[Student]*pace
+	mu      sync.Mutex
+	hands   []Hand              // in order of arrival
+	lowered map[Student]string  // the last hand_id the teacher lowered
+	threads map[Student][]Entry // oldest first
+	paces   map[Student]*pace
 }
 
 // NewBoard returns an empty board.
 func NewBoard() *Board {
 	return &Board{now: time.Now, lowered: map[Student]string{},
-		messages: map[Student][]Message{}, paces: map[Student]*pace{}}
+		threads: map[Student][]Entry{}, paces: map[Student]*pace{}}
 }
 
 func (b *Board) pace(s Student, now time.Time) *pace {
@@ -184,64 +219,115 @@ func (b *Board) Message(s Student, p protocol.MsgStudent) Outcome {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	now := b.now()
-	list := b.messages[s]
-	if slices.ContainsFunc(list, func(m Message) bool { return m.MessageID == p.MessageID }) {
+	if b.find(s, p.MessageID) >= 0 {
 		return Repeated // acked again, never counted twice; not paced either
 	}
 	if !b.pace(s, now).messages.take(now) {
 		return TooFast
 	}
-	list = append(list, Message{Student: s, MessageID: p.MessageID, Text: p.Text, At: now, Status: MessageNew})
-	if len(list) > MaxMessagesPerStudent {
-		// Drop the oldest answered (or seen) message, else the oldest.
-		i := slices.IndexFunc(list, func(m Message) bool { return m.Status != MessageNew })
+	b.add(s, Entry{From: FromStudent, MessageID: p.MessageID, Text: p.Text, At: now, Status: MessageNew})
+	return Added
+}
+
+// add appends an entry and keeps the conversation under
+// MaxEntriesPerConversation: the oldest entry that is not waiting for the
+// teacher goes first, else the oldest.
+func (b *Board) add(s Student, e Entry) {
+	list := append(b.threads[s], e)
+	if len(list) > MaxEntriesPerConversation {
+		i := slices.IndexFunc(list, func(e Entry) bool { return e.Status != MessageNew })
 		if i < 0 {
 			i = 0
 		}
 		list = slices.Delete(list, i, i+1)
 	}
-	b.messages[s] = list
-	return Added
+	b.threads[s] = list
 }
 
-// Replied marks a message as answered with text. It reports whether the
-// message is on the board.
-func (b *Board) Replied(s Student, messageID, text string) bool {
-	return b.setStatus(s, messageID, func(m *Message) {
-		m.Status, m.Reply, m.RepliedAt = MessageReplied, text, b.now()
+// find returns the index of a student's message, or -1.
+func (b *Board) find(s Student, messageID string) int {
+	return slices.IndexFunc(b.threads[s], func(e Entry) bool {
+		return e.From == FromStudent && e.MessageID == messageID
 	})
+}
+
+// Replied records the teacher's answer to a message: it goes into the
+// conversation and that message, and every earlier one still waiting, is
+// answered. It reports whether the message is on the board.
+func (b *Board) Replied(s Student, messageID, text string) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	i := b.find(s, messageID)
+	if i < 0 {
+		return false
+	}
+	list := b.threads[s]
+	for j := range list[:i+1] {
+		if list[j].Status == MessageNew {
+			list[j].Status = MessageReplied
+		}
+	}
+	list[i].Status = MessageReplied
+	b.add(s, Entry{From: FromTeacher, ReplyTo: messageID, Text: text, At: b.now()})
+	return true
+}
+
+// Said records a private message of the teacher that answers no message: a
+// reply to a raised hand or «Mensaje privado» (prompt 10.7).
+func (b *Board) Said(s Student, text string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.add(s, Entry{From: FromTeacher, Text: text, At: b.now()})
 }
 
 // Done marks a message as seen without an answer.
 func (b *Board) Done(s Student, messageID string) bool {
-	return b.setStatus(s, messageID, func(m *Message) {
-		if m.Status == MessageNew {
-			m.Status = MessageDone
-		}
-	})
-}
-
-func (b *Board) setStatus(s Student, messageID string, f func(*Message)) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	list := b.messages[s]
+	i := b.find(s, messageID)
+	if i < 0 {
+		return false
+	}
+	if e := &b.threads[s][i]; e.Status == MessageNew {
+		e.Status = MessageDone
+	}
+	return true
+}
+
+// DoneAll marks every waiting message of a student as seen («Marcar como
+// atendida»). ok is false if there is no conversation with that student.
+func (b *Board) DoneAll(s Student) (marked int, ok bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	list, ok := b.threads[s]
 	for i := range list {
-		if list[i].MessageID == messageID {
-			f(&list[i])
-			return true
+		if list[i].Status == MessageNew {
+			list[i].Status = MessageDone
+			marked++
 		}
 	}
-	return false
+	return marked, ok
+}
+
+// message builds the Message of a student's entry, with the teacher's last
+// answer to it.
+func message(s Student, list []Entry, i int) Message {
+	e := list[i]
+	m := Message{Student: s, MessageID: e.MessageID, Text: e.Text, At: e.At, Status: e.Status}
+	for _, r := range list[i+1:] {
+		if r.From == FromTeacher && r.ReplyTo == e.MessageID {
+			m.Reply, m.RepliedAt = r.Text, r.At
+		}
+	}
+	return m
 }
 
 // Lookup returns one message.
 func (b *Board) Lookup(s Student, messageID string) (Message, bool) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	for _, m := range b.messages[s] {
-		if m.MessageID == messageID {
-			return m, true
-		}
+	if i := b.find(s, messageID); i >= 0 {
+		return message(s, b.threads[s], i), true
 	}
 	return Message{}, false
 }
@@ -267,20 +353,36 @@ func (b *Board) handOf(s Student) int {
 func (b *Board) Inbox() Inbox {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	in := Inbox{Hands: make([]Hand, len(b.hands)), Messages: []Message{}}
+	in := Inbox{Hands: make([]Hand, len(b.hands)), Messages: []Message{}, Conversations: []Conversation{}}
 	for i, h := range b.hands {
 		h.Position = i + 1
 		in.Hands[i] = h
 	}
-	for _, list := range b.messages {
-		for _, m := range list {
-			in.Messages = append(in.Messages, m)
-			if m.Status == MessageNew {
-				in.Pending++
+	for s, list := range b.threads {
+		if len(list) == 0 {
+			continue
+		}
+		c := Conversation{Student: s, Entries: slices.Clone(list), LastAt: list[len(list)-1].At}
+		for i, e := range list {
+			if e.From != FromStudent {
+				continue
+			}
+			in.Messages = append(in.Messages, message(s, list, i))
+			if e.Status == MessageNew {
+				c.Unread++
 			}
 		}
+		in.Pending += c.Unread
+		in.Conversations = append(in.Conversations, c)
 	}
 	slices.SortStableFunc(in.Messages, func(x, y Message) int { return y.At.Compare(x.At) })
+	// The most recent first; the same order on every call (a map has none).
+	slices.SortFunc(in.Conversations, func(x, y Conversation) int {
+		if c := y.LastAt.Compare(x.LastAt); c != 0 {
+			return c
+		}
+		return cmp.Compare(x.Hostname+"|"+x.Username, y.Hostname+"|"+y.Username)
+	})
 	in.Pending += len(in.Hands)
 	return in
 }
@@ -292,7 +394,7 @@ func (b *Board) Reset() {
 	defer b.mu.Unlock()
 	b.hands = nil
 	b.lowered = map[Student]string{}
-	b.messages = map[Student][]Message{}
+	b.threads = map[Student][]Entry{}
 	b.paces = map[Student]*pace{}
 }
 
@@ -302,7 +404,7 @@ func (b *Board) ForgetSimulated() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.hands = slices.DeleteFunc(b.hands, func(h Hand) bool { return h.Simulated })
-	maps.DeleteFunc(b.messages, func(s Student, _ []Message) bool { return s.Simulated })
+	maps.DeleteFunc(b.threads, func(s Student, _ []Entry) bool { return s.Simulated })
 	maps.DeleteFunc(b.lowered, func(s Student, _ string) bool { return s.Simulated })
 	maps.DeleteFunc(b.paces, func(s Student, _ *pace) bool { return s.Simulated })
 }

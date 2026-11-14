@@ -122,22 +122,94 @@ func TestMessagesAreDeduplicatedPacedAndCapped(t *testing.T) {
 	if m, _ := b.Lookup(s, first); m.Status != MessageReplied || m.Reply != "sí" {
 		t.Errorf("after reply: %+v", m)
 	}
-	// Over MaxMessagesPerStudent: the answered one goes first.
-	for range MaxMessagesPerStudent {
+	// Over MaxEntriesPerConversation: the answered message and the answer go
+	// first, never one that still waits.
+	for range MaxEntriesPerConversation {
 		c.add(MessageEvery)
 		b.Message(s, msg(protocol.NewID(), "x"))
 	}
 	if _, ok := b.Lookup(s, first); ok {
 		t.Error("the answered message was kept over the cap")
 	}
-	n := 0
-	for _, m := range b.Inbox().Messages {
-		if m.Student == s {
-			n++
+	conv := conversationOf(t, b.Inbox(), s)
+	if len(conv.Entries) != MaxEntriesPerConversation {
+		t.Errorf("%d entries kept, want %d", len(conv.Entries), MaxEntriesPerConversation)
+	}
+	for _, e := range conv.Entries {
+		if e.From == FromTeacher {
+			t.Error("the answer was kept over a message that waits")
 		}
 	}
-	if n != MaxMessagesPerStudent {
-		t.Errorf("%d messages kept, want %d", n, MaxMessagesPerStudent)
+}
+
+func conversationOf(t *testing.T, in Inbox, s Student) Conversation {
+	t.Helper()
+	for _, c := range in.Conversations {
+		if c.Student == s {
+			return c
+		}
+	}
+	t.Fatalf("no conversation with %s", s.Hostname)
+	return Conversation{}
+}
+
+func TestConversationsAreThreadsMostRecentFirst(t *testing.T) {
+	b, c := newTestBoard()
+	ana, luis, eva := student("PC-1"), student("PC-2"), student("PC-3")
+	m1, m2 := protocol.NewID(), protocol.NewID()
+	b.Message(ana, msg(m1, "no compila"))
+	c.add(time.Second)
+	b.Message(ana, msg(m2, "la línea 4"))
+	c.add(time.Second)
+	b.Message(luis, msg(protocol.NewID(), "ya quedó"))
+	c.add(time.Second)
+	b.Said(eva, "pasa al pizarrón") // a private message opens a conversation too
+
+	in := b.Inbox()
+	if got := []string{in.Conversations[0].Hostname, in.Conversations[1].Hostname, in.Conversations[2].Hostname}; got[0] != "PC-3" || got[1] != "PC-2" || got[2] != "PC-1" {
+		t.Fatalf("order %v, want the most recent first", got)
+	}
+	if a := conversationOf(t, in, ana); a.Unread != 2 || in.Pending != 3 {
+		t.Errorf("ana unread %d, pending %d; want 2 and 3", a.Unread, in.Pending)
+	}
+	if e := conversationOf(t, in, eva); e.Unread != 0 || e.Entries[0].From != FromTeacher || e.Entries[0].Status != "" {
+		t.Errorf("eva: %+v", e)
+	}
+
+	// Answering the last message answers the earlier one that waited, and the
+	// answer goes into the thread after them.
+	c.add(time.Second)
+	if !b.Replied(ana, m2, "revisa el punto y coma") {
+		t.Fatal("Replied did not find the message")
+	}
+	in = b.Inbox()
+	a := conversationOf(t, in, ana)
+	if a.Unread != 0 || in.Conversations[0].Student != ana {
+		t.Errorf("after the answer: unread %d, first %s", a.Unread, in.Conversations[0].Hostname)
+	}
+	if last := a.Entries[len(a.Entries)-1]; last.From != FromTeacher || last.ReplyTo != m2 || last.Text != "revisa el punto y coma" {
+		t.Errorf("last entry %+v", last)
+	}
+	if m, _ := b.Lookup(ana, m1); m.Status != MessageReplied {
+		t.Errorf("the earlier message is %s", m.Status)
+	}
+
+	// A message that arrives later does not touch a copy already handed out:
+	// the open conversation stays as the teacher sees it.
+	c.add(time.Second)
+	b.Message(ana, msg(protocol.NewID(), "gracias"))
+	if len(a.Entries) != 3 {
+		t.Errorf("the copy changed: %d entries", len(a.Entries))
+	}
+
+	if n, ok := b.DoneAll(ana); !ok || n != 1 {
+		t.Errorf("DoneAll = %d, %v; want 1, true", n, ok)
+	}
+	if _, ok := b.DoneAll(student("PC-9")); ok {
+		t.Error("DoneAll found a conversation that does not exist")
+	}
+	if b.Inbox().Pending != 1 {
+		t.Errorf("pending %d, want luis's 1", b.Inbox().Pending)
 	}
 }
 
@@ -163,11 +235,12 @@ func TestResetAndForgetSimulated(t *testing.T) {
 	b.Message(sim, msg(protocol.NewID(), "x"))
 	b.ForgetSimulated()
 	in := b.Inbox()
-	if len(in.Hands) != 1 || in.Hands[0].Student != real || len(in.Messages) != 0 {
+	if len(in.Hands) != 1 || in.Hands[0].Student != real || len(in.Messages) != 0 || len(in.Conversations) != 0 {
 		t.Errorf("after ForgetSimulated: %+v", in)
 	}
+	b.Said(real, "hola")
 	b.Reset()
-	if in := b.Inbox(); len(in.Hands) != 0 || in.Pending != 0 {
+	if in := b.Inbox(); len(in.Hands) != 0 || in.Pending != 0 || len(in.Conversations) != 0 {
 		t.Errorf("after Reset: %+v", in)
 	}
 }
@@ -322,5 +395,25 @@ func TestDeskReset(t *testing.T) {
 	}
 	if out := d.Reconnected(); len(out) != 0 {
 		t.Fatalf("nothing is resent after Reset: %v", out)
+	}
+}
+
+func TestDeskKeepsTheTeachersRepliesForTheThread(t *testing.T) {
+	d, c := newTestDesk()
+	p, _ := d.Write("no compila")
+	d.Heard(Reply{ID: "n1", Text: "revisa la línea 4", At: c.now(), ReplyTo: p.MessageID})
+	d.Heard(Reply{ID: "n1", Text: "revisa la línea 4", At: c.now(), ReplyTo: p.MessageID})
+	if v := d.View(); len(v.Replies) != 1 || v.Replies[0].ReplyTo != p.MessageID {
+		t.Fatalf("replies %+v", v.Replies)
+	}
+	for i := range keptReplies {
+		d.Heard(Reply{ID: "x" + strings.Repeat("y", i), Text: "x", At: c.now()})
+	}
+	if v := d.View(); len(v.Replies) != keptReplies || v.Replies[0].ID == "n1" {
+		t.Errorf("%d replies kept, first %s", len(v.Replies), v.Replies[0].ID)
+	}
+	d.Reset()
+	if v := d.View(); len(v.Replies) != 0 {
+		t.Error("Reset kept the replies")
 	}
 }

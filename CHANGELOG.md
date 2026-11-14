@@ -50,7 +50,11 @@ retiraron; esta es la primera.
 
 ### Participación
 
-- **Manos levantadas y mensajes** de los alumnos, en la vista «Participación».
+- **Manos levantadas y mensajes** de los alumnos, en la vista «Participación». Los mensajes se
+  ven como un chat: una conversación por alumno con lo que te escribió y lo que le respondiste (o le
+  mandaste en privado), en una bandeja con **Por atender**, **Atendidas** y **Todas**, búsqueda por
+  equipo o usuario y manejo con el teclado. Un mensaje que llega no mueve la lista ni borra lo que
+  escribes.
 - **Avisos** a la clase y **mensajes privados** a un alumno.
 - **Temporizador** de ejercicio, con descripción de lo que hay que hacer y duraciones de 1 a 60
   minutos (u otra); extender y detener.
@@ -101,6 +105,8 @@ retiraron; esta es la primera.
 - **Transparencia:** bandas fijas y sin botón de cerrar cuando el profesor ve, controla, pausa,
   restringe o transmite; el alumno sabe siempre quién y qué.
 - **Qué puede hacer Aula en este equipo**, levantar la mano y escribir al profesor desde la tira.
+  **Tus mensajes** muestra la conversación con el profesor: lo que escribiste y sus respuestas, que
+  se ocultan mientras tu pantalla se muestra a la clase.
   También dice el nombre del equipo y la etiqueta que le puso el profesor, para decírsela al soporte.
 
 ### Consola

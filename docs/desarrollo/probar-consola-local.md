@@ -132,7 +132,7 @@ Con el aula simulada abierta (C-03): cada simulado tiene «Levantar la mano» y 
 |---|---|---|
 | C-54 | En Aula simulada, «Levantar la mano» en Simulado 2 y luego en Simulado 1 | Aparece abajo a la derecha «Simulado 2 levantó la mano» con «Ver en Participación» (sin el texto); el menú muestra «Participación 2»; en Alumnos, Notas dice «Mano levantada · 1» en Simulado 2 y «· 2» en Simulado 1 |
 | C-55 | Abre «Participación» | «2 manos levantadas» en orden de llegada (Simulado 2 primero, con el 1); cada una con «Responder» y «Bajar la mano»; marcadas «Simulado» |
-| C-56 | «Escribir» en Simulado 1; en Participación, «Responder» al mensaje, escribe y pulsa Enter | El mensaje aparece arriba de «Mensajes» como «Nuevo»; al enviar: «Respuesta enviada a Simulado 1», el mensaje pasa a «Respondido» con tu respuesta debajo, el contador baja y en Aula simulada Simulado 1 suma un aviso recibido. Esc en el campo cancela sin enviar |
+| C-56 | «Escribir» en Simulado 1; en Participación, abre su conversación en **Por atender**, escribe y pulsa Enter | Su conversación aparece arriba con «1 mensaje nuevo»; al enviar: «Respuesta enviada a Simulado 1», tu respuesta queda en el hilo («Tú · hora»), la conversación pasa a **Atendidas**, el contador baja y en Aula simulada Simulado 1 suma un aviso recibido. Esc regresa a la bandeja sin enviar (10.26) |
 | C-57 | «Bajar la mano» en Simulado 2; luego «Bajar todas» y confirma | Simulado 2 sale de la fila y Simulado 1 pasa a ser el 1; en Aula simulada el botón de Simulado 2 vuelve a «Levantar la mano». «Bajar todas» deja la fila vacía y el contador sin número |
 | C-59 | En la pantalla en grande de Simulado 1 › «Mensaje privado» (se abre su diálogo), escribe y pulsa Enter | El diálogo se cierra; «Mensaje privado enviado a Simulado 1»; debajo de su pantalla, «Enviado… · ya lo vio»; en Aula simulada, solo Simulado 1 suma un aviso; Simulado 2 no |
 | C-60 | Ve a Código › Últimos envíos | El envío dice «Mensaje privado a Simulado 1», **sin el texto**, con su confirmación |
@@ -233,6 +233,22 @@ revisa a ojo (nunca con clics sintéticos en tu escritorio).
 | C-138 | **Exportar…** y guarda el archivo; en otra consola (o tras borrar `canal-1.json`) abre el canal 2 e **Importar…** ese archivo | La confirmación dice tamaño, equipos y etiquetas y que es del canal 1; al aceptar queda igual en el canal 2 y los alumnos conectados ven su etiqueta. Un archivo editado a mano con un lugar repetido da «Ese archivo no es un salón que Aula pueda usar» y nada cambia. Un `canal-1.json` roto al abrir la consola queda como `canal-1-danado-<fecha>.json` con el aviso arriba del plano. El log dice «room plan imported/exported» con cuentas, **nunca** usuarios |
 | A-57 | En el alumno con etiqueta, el botón ⓘ de la tira, en modo ventana y como servicio | «Este equipo: Fila 2 · PC07 (LAB3-PC07)» arriba de la grilla; sin etiqueta, «Este equipo: LAB3-PC07». Cambiar la etiqueta en la consola no muestra aviso, no saca a Aula del modo compacto ni le quita el foco a tu editor; al reabrir el diálogo ya se ve la nueva |
 | A-58 | Reinstala (o renombra y reinicia) un equipo acomodado y deja que se conecte con otro nombre | En la consola, aviso «LAB3-PC07 ahora se llama …»: conserva su lugar y su etiqueta, y el alumno la ve. Con dos equipos de la misma MAC (VM clonada sin cambiarla) no se renombra ninguno: el nuevo queda en «Sin acomodar» |
+
+### Bandeja de mensajes tipo chat (10.26)
+
+Con el aula simulada abierta (C-03) con 30 alumnos que escriben con **Escribir**, y para C-143 y
+A-59 a A-60 un alumno real en otra ventana o VM (`instaladores-locales.md`). Lo que pasa en el
+equipo del alumno se revisa a ojo (nunca con clics sintéticos en tu escritorio).
+
+| # | Pasos | Esperado |
+|---|---|---|
+| C-139 | Haz que tres simulados escriban (dos de ellos dos veces) › **Participación** | Una fila por alumno en **Por atender**, la más reciente arriba, con el último mensaje recortado, la hora y «2 mensajes nuevos». El número del menú y las insignias de Alumnos cuentan los mismos mensajes que antes. **Atendidas** y **Todas** dicen cuántas hay |
+| C-140 | Con el teclado: Tab a la bandeja, flechas, Enter; luego Esc | Las flechas recorren las filas con el foco visible; Enter abre la conversación con el foco en el cuadro de respuesta; Esc (o **Volver**) regresa a la bandeja con el foco en la misma fila |
+| C-141 | Con el foco en una fila, haz que escriba un simulado nuevo; luego, con una conversación abierta y algo escrito, que escriba otro | En la bandeja la lista no se mueve: aparece «1 conversación nueva espera…» con **Mostrar** y se acomoda al salir de la lista. En la conversación no pierdes el foco ni lo escrito; si escribió ese mismo alumno, su mensaje aparece en el hilo |
+| C-142 | Responde en la conversación (Enter) y en otra pulsa **Marcar como atendida**; luego busca por equipo | Tu respuesta queda a la derecha con «Tú · hora» y la conversación pasa a **Atendidas**; la otra también, sin enviar nada. La búsqueda filtra por equipo, etiqueta o usuario. A 900×600 y en oscuro la bandeja y el hilo se desplazan por dentro y se leen completos |
+| C-143 | Con el alumno real: que escriba; respóndele; mándale **Mensaje privado** desde su Pantalla grande y responde a su mano. Luego **Terminar la clase** | Todo queda en su conversación, en orden. Al terminar la clase la bandeja queda vacía. El log de la consola dice «student message», «reply to a student» y «private notice» con longitudes, **nunca** el texto |
+| A-59 | En el equipo del alumno, tras C-143 | **Tus mensajes** es un hilo: lo suyo a la derecha con «Recibido», lo del profesor a la izquierda con «Tu profesor · hora». Las respuestas también llegan como aviso en la esquina, sin quitar el foco a su editor ni sacar a Aula del modo compacto |
+| A-60 | Proyecta la pantalla de ese alumno a la clase (12.1) con el hilo a la vista | Lo del profesor en **Tus mensajes** dice «oculto mientras tu pantalla se muestra a la clase»; al dejar de proyectar vuelve a verse. Al terminar la clase el hilo queda vacío |
 
 ### Proyectar la pantalla de un alumno (12.1)
 

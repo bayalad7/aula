@@ -298,6 +298,7 @@ La consola funciona a **900 × 600**.
 | Contenedores | `.tarjeta`, `.panel-lateral`, `.dialogo` (`--form`, `--peligro`), `.modal-ajustes`, `.detalles` | |
 | Avisos | `.toast--*`, `.aviso-en-linea--*`, `.franja--*`, `.bandas` | Franjas globales arriba del contenido; las bandas del alumno no se cierran |
 | Datos | `.tabla`, `.tabla-adaptable`, `.barras` / `.barra-opcion`, `.bloque-codigo`, `.visor-diagrama` | La tabla pasa a tarjetas en ventana angosta |
+| Conversación | `.hilo`, `.burbuja` (`--propia`), `.burbuja__texto`, `.burbuja__cita`, `.burbuja__meta` | Un chat en orden: lo del otro a la izquierda y lo propio a la derecha con el acento suave; la hora y el estado en `__meta` (prompt 10.26, en las dos apps) |
 | Alumno (miniatura) | `.alumno`, `.alumno__monitor`, `.alumno__pantalla`, `.alumno__pie`, `.cuadricula-alumnos` | Ver reglas de rendimiento |
 | Estructura | `.app`, `.nav-lateral`, `.principal`, `.vista`, `.barra-acciones`, `.migas`, `.indice-manual` | |
 | App del alumno | `.codigo-recibido`, `.codigos`, `.modo-compacto`, `.pantalla-pausa` | |

@@ -38,23 +38,50 @@ lugar** (verás «Desconectado») y vuelve a estar al día cuando reconecta.
 
 ## Mensajes de los alumnos
 
-Los mensajes aparecen del más reciente al más viejo, con la hora y su estado:
+Los mensajes se ven como en una app de chat: cada alumno es **una conversación** con lo que te
+escribió y lo que le respondiste, en orden. La **bandeja** muestra una fila por conversación, la
+más reciente arriba, con el equipo, el usuario, la última línea y la hora. La insignia dice cuántos
+mensajes nuevos tiene.
 
-| Estado | Qué significa |
+![La bandeja con varias conversaciones por atender](img/participacion-bandeja.webp)
+
+Arriba de la bandeja eliges qué ver:
+
+| Pestaña | Qué muestra |
 |---|---|
-| Nuevo | Aún no lo respondes. Cuenta en el número del menú. |
-| Respondido | Le contestaste con **Responder**; debajo ves tu respuesta. |
-| Atendido | Lo marcaste con **Marcar como atendido** (por ejemplo, porque fuiste a su lugar). |
+| Por atender | Las conversaciones con algún mensaje que aún no respondes ni marcas. Cuentan en el número del menú. |
+| Atendidas | Las que ya respondiste o marcaste con **Marcar como atendida** (por ejemplo, porque fuiste a su lugar). |
+| Todas | Todas las de la clase. |
+
+Con **Buscar por equipo o usuario** encuentras la de un alumno. Con el teclado: las **flechas**
+recorren la bandeja y **Enter** abre la conversación.
+
+Si llega un mensaje mientras recorres la bandeja, la lista **no se mueve**: verás «1 conversación
+nueva espera para no mover la lista» con **Mostrar**, y se acomoda en cuanto sales de ella.
+
+En la conversación ves también lo que le mandaste con **Mensaje privado** desde la Pantalla grande
+y lo que respondiste a su mano. Se guarda solo mientras dura la clase, en tu consola: hasta 50
+líneas por alumno. Al terminar la clase o cambiar de canal, la bandeja queda vacía.
 
 Al alumno le llega «Recibido» en cuanto el mensaje está en tu consola. Eso no significa que ya lo
 leíste.
 
 ## Responder a un alumno
 
-**Responder** abre un campo debajo del mensaje o de la mano. Escribe y pulsa **Enter** (o
-**Enviar**); **Shift+Enter** pasa a otra línea y **Esc** cancela. La respuesta le llega **solo a
-ese alumno** como «Respuesta a tu mensaje», con lo que te escribió, sin quitarle el teclado. Si
-respondes a una mano, la casilla **Bajar también su mano** la baja al enviar.
+Abre su conversación en la bandeja; si levantó la mano y ya te había escrito, **Ver conversación**
+en su mano también la abre. La conversación ocupa el lugar de la bandeja: **Volver** (o **Esc**)
+te regresa a la misma fila.
+
+Escribe abajo y pulsa **Enter** (o **Enviar**); **Mayús+Enter** pasa a otra línea. La respuesta
+le llega **solo a ese alumno** como «Respuesta a tu mensaje», con lo que te escribió, sin quitarle
+el teclado, y queda en su ventana, en **Tus mensajes**, junto a lo que él escribió. Responder deja
+la conversación en **Atendidas**. Si llega otro mensaje mientras escribes, aparece en la
+conversación sin borrar lo que llevas escrito.
+
+**Marcar como atendida** la pasa a Atendidas sin responder.
+
+En una mano, **Responder** abre un campo debajo de ella; la casilla **Bajar también su mano** la
+baja al enviar. Lo que respondas ahí también queda en su conversación.
 
 Solo puedes responder a un alumno conectado. El envío aparece también en **Código › Últimos
 envíos**, con su confirmación, como cualquier aviso.

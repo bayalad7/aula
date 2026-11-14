@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-13 (10.15 etiquetas de los equipos y salón implementados, sin commit,
+Última actualización: 2026-11-14 (10.26 bandeja de mensajes tipo chat implementada como mejora de
+10.6 y 10.7, sin commit, faltan los casos C-139 a C-143 y A-59 y A-60; 10.15 etiquetas de los equipos y salón implementados, sin commit,
 falta la prueba con alumnos reales; 10.20 cuestionarios con puntaje implementados como mejora de
 10.12, sin commit, falta la prueba en VM; 10.14 terminar la clase implementada, falta la prueba en VM;
 12.2 transmisión a una selección y modos ventana y pantalla
@@ -55,6 +56,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.23 | Rebobinar la clase (código paso a paso) | ⏳ Pendiente, después de `v0.1.0` |
 | 10.24 | Transmitir el editor como texto en vivo | ⏳ Pendiente, después de `v0.1.0` |
 | 10.25 | Salud del laboratorio | ⏳ Pendiente, después de `v0.1.0` |
+| 10.26 | Bandeja de mensajes tipo chat (mejora de 10.6 y 10.7) | ✅ Implementado y probado en CI con dobles y alumnos simulados (14/11/2026, adelantado a petición del usuario): una conversación por alumno en Participación › Manos y mensajes (bandeja con Por atender, Atendidas y Todas → conversación con Volver), con respuestas y mensajes privados, hasta 50 líneas en memoria; binding `MarkConversationDone`; «Tus mensajes» del alumno como hilo, oculto lo del profesor al proyectar. Sin protocolo nuevo. Componente `.hilo`/`.burbuja`; diagrama 18; `docs/ux/historial/bandeja-de-mensajes.md` (faltan los casos C-139 a C-143 y A-59 y A-60) |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.1.0`) |
 | 12 (09.2) | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 12.1 | Proyectar la pantalla de un alumno a la clase | ✅ Implementado y probado en CI con dobles y de punta a punta con pion por loopback; «Proyectar a la clase» en la ficha y la Pantalla grande, con su franja (falta la prueba en VM, `docs/prueba-vms.md` §25, y los casos C-89 a C-94 y A-31 a A-34) |

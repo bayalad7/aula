@@ -430,8 +430,10 @@ nada de esto trae su ventana al frente ni le quita el foco (prompt 19). Lo que l
     `message_id`, quién y la longitud; **nunca** el texto del mensaje, el motivo de la mano ni la
     respuesta del profesor. El aviso flotante de la consola dice quién levantó la mano o
     escribió, no qué escribió.
-51. **Solo en memoria, solo durante la clase.** La consola guarda la fila de manos y los mensajes
-    en memoria y los borra al cerrar la clase o cambiar de canal; lo de los alumnos simulados se
+51. **Solo en memoria, solo durante la clase.** La consola guarda la fila de manos y las
+    conversaciones (los mensajes de cada alumno y lo que el profesor le mandó solo a él, hasta 50
+    líneas por alumno; prompt 10.26) en memoria y las borra al cerrar o terminar la clase o cambiar
+    de canal; lo de los alumnos simulados se
     borra al cerrar el aula simulada. Nadie los escribe en disco. Exportarlos será parte de la
     asistencia y bitácora (prompt 10.13), con su propia regla.
 52. **Solo lo ve el profesor.** La mano y el mensaje de un alumno van solo a la consola; los demás
@@ -447,7 +449,9 @@ con `notify`, sin quitar el foco.
 
 53. **Solo lo recibe su destinatario, y su texto no queda a la vista.** La consola lo manda a una
     sola sesión y nunca lo difunde; un agente anterior, que no conoce `personal`, lo muestra como
-    un aviso normal, pero igual solo a él. Los registros llevan el equipo, el `id` y la longitud,
+    un aviso normal, pero igual solo a él. Su ventana lo guarda en memoria en el hilo de «Tus
+    mensajes» hasta que termina la clase y, **mientras su pantalla se proyecta a la clase**, no
+    muestra ahí su texto (dice «oculto mientras tu pantalla se muestra a la clase»). Los registros llevan el equipo, el `id` y la longitud,
     **nunca** el texto (regla 5). En «Últimos envíos» la consola lo etiqueta «Mensaje privado a
     <equipo>», sin el texto, para que no quede a la vista si el profesor transmite su pantalla.
 

@@ -457,7 +457,7 @@ Payload `{}`. El agente vacía el overlay de código y responde `code.ack`.
 |---|---|---|
 | `text` | string | 1–2000 caracteres, texto plano (el agente no interpreta HTML ni Markdown). |
 | `level` | string | `info` o `warning`. |
-| `reply_to` | string | Opcional (v0.8, §5.18). `message_id` del `msg.student` al que responde. La consola solo lo pone en un aviso a **un** alumno, el autor de ese mensaje. El agente muestra el aviso como «Respuesta a tu mensaje» con la cita de lo que escribió; si no conoce ese `message_id`, lo muestra como un aviso normal. Un agente anterior lo ignora. |
+| `reply_to` | string | Opcional (v0.8, §5.18). `message_id` del `msg.student` al que responde. La consola solo lo pone en un aviso a **un** alumno, el autor de ese mensaje. El agente muestra el aviso como «Respuesta a tu mensaje» con la cita de lo que escribió; si no conoce ese `message_id`, lo muestra como un aviso normal. Un agente anterior lo ignora. La consola guarda la respuesta en la conversación de ese alumno y el agente en el hilo de «Tus mensajes» (prompt 10.26), sin campo nuevo: basta `reply_to`. |
 | `personal` | booleano | Opcional (v0.8, prompt 10.7). `true`: el aviso va **solo a este alumno** («Mensaje privado» de la ficha y «Responder» de Participación); el agente lo titula «Mensaje para ti». La consola solo lo pone en un `msg.show` enviado a **una** sesión, nunca en uno difundido (`docs/privacidad.md` regla 53). Ausente o `false`: un aviso como los demás. Un agente anterior lo ignora y lo muestra como un aviso normal (le llega igual solo a él). |
 
 ### 5.5 `msg.ack` (A → P)

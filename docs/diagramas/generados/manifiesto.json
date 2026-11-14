@@ -282,7 +282,7 @@
     {
       "id": "18-manos-mensajes",
       "titulo": "Manos y mensajes del alumno",
-      "descripcion": "Cómo llega al profesor una mano levantada o un mensaje del alumno, y cómo vuelven la respuesta y «Bajar la mano»",
+      "descripcion": "Cómo llega al profesor una mano levantada o un mensaje del alumno a su conversación, y cómo vuelven la respuesta y «Bajar la mano»",
       "audiencia": [
         "profesor",
         "alumno",
@@ -291,8 +291,8 @@
       "pantallas": [
         "participacion"
       ],
-      "hash": "sha256:a66813f649aca3d8972bbc834eef497b8a72a567d83b0db6379511dadafc1c39",
-      "alt": "Manos y mensajes del alumno: Cómo llega al profesor una mano levantada o un mensaje del alumno, y cómo vuelven la respuesta y «Bajar la mano»",
+      "hash": "sha256:e7977b5070d3b6eceac734c6dc7bf5a825e0023386fa00a6d689d158a1ade368",
+      "alt": "Manos y mensajes del alumno: Cómo llega al profesor una mano levantada o un mensaje del alumno a su conversación, y cómo vuelven la respuesta y «Bajar la mano»",
       "claro": "generados/18-manos-mensajes.claro.svg",
       "oscuro": "generados/18-manos-mensajes.oscuro.svg"
     },

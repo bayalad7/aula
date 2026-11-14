@@ -186,8 +186,9 @@ remoto, junto a **Tomar captura**. Mientras lo escribes, tu teclado vuelve a la 
 tecleas no llega a su equipo. Al enviarlo, haz clic en su pantalla para seguir manejándolo; el
 control nunca se detiene.
 
-Si el alumno te escribió desde su equipo, **Responder** en [Participación](participacion) hace lo
-mismo y además cita su mensaje.
+El mensaje queda en la conversación de ese alumno en [Participación](participacion#mensajes-de-los-alumnos),
+junto a lo que él te escribió, y en su ventana, en **Tus mensajes**. Si el alumno te escribió desde
+su equipo, responder desde su conversación hace lo mismo y además cita su mensaje.
 
 ## Bloquear aplicaciones o sitios
 

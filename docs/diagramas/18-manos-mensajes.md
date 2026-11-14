@@ -1,6 +1,6 @@
 ---
 titulo: "Manos y mensajes del alumno"
-descripcion: "Cómo llega al profesor una mano levantada o un mensaje del alumno, y cómo vuelven la respuesta y «Bajar la mano»"
+descripcion: "Cómo llega al profesor una mano levantada o un mensaje del alumno a su conversación, y cómo vuelven la respuesta y «Bajar la mano»"
 audiencia: [profesor, alumno, desarrollador]
 pantallas: [participacion]
 secciones_manual: [administracion/participacion, protocol, privacidad]
@@ -38,11 +38,15 @@ sequenceDiagram
     D->>B: msg.student {message_id, text}
     B-->>D: msg.student.ack {message_id}
     D->>W: «Recibido» (llegó, no «leído»)
+    B->>V: la conversación del alumno pasa a «Por atender»
+    Note over V: bandeja: una fila por alumno, la más reciente arriba,<br/>con el foco en la lista, no se reordena
 
-    P->>V: Responder (Enter envía)
-    V->>B: ReplyToStudent → solo a ese alumno
-    B->>W: msg.show {text, reply_to = message_id}
+    P->>V: abre la conversación y responde (Enter envía)
+    V->>B: ReplyToStudent (reply_to: el último mensaje que espera)
+    B->>B: la respuesta entra a la conversación,<br/>esos mensajes quedan respondidos («Atendidas»)
+    B->>W: msg.show {text, personal, reply_to = message_id}
     W-->>B: msg.ack
+    W->>D: la respuesta entra al hilo de «Tus mensajes»
     Note over W: «Respuesta a tu mensaje» con la cita,<br/>sin quitar el foco (notify)
 
     alt el profesor baja la mano
@@ -70,8 +74,13 @@ sequenceDiagram
 - **La respuesta reutiliza `msg.show`** con el campo opcional `reply_to` (diagrama 06): un agente
   anterior la muestra como un aviso normal.
 - **Ritmo**: el agente deja un mensaje cada 3 s y como mucho 5 sin acuse; la consola, por si
-  acaso, admite ráfagas de 5 y descarta lo que pase con `error invalid_message`. Guarda 20
-  mensajes por alumno.
+  acaso, admite ráfagas de 5 y descarta lo que pase con `error invalid_message`. Guarda 50
+  líneas por conversación (mensajes del alumno y lo que el profesor le mandó); al pasar, se va lo
+  más viejo ya atendido, nunca un mensaje que espera si hay otro.
+- **Una conversación por alumno** (prompt 10.26): junta sus mensajes, las respuestas, lo que se le
+  respondió a su mano y los «Mensaje privado» de la Pantalla grande. No hay mensaje nuevo en el
+  protocolo: el agente arma su hilo con los `msg.show` `personal` y su `reply_to`. Mientras la
+  pantalla del alumno se proyecta, su ventana oculta el texto del profesor.
 - **Nada se guarda en disco ni en los registros**: la fila y la bandeja viven en la memoria de la
   consola hasta cerrar la clase; los logs llevan `hand_id`, `message_id` y longitudes, nunca el
   texto (`docs/privacidad.md` reglas 50–52).
@@ -81,7 +90,9 @@ sequenceDiagram
 ## Fuentes en el código
 
 - `internal/participation/board.go` (consola), `internal/participation/desk.go` (agente)
-- `apps/teacher/participation.go` (`onClassroomMessage`, `LowerHand`, `ReplyToStudent`)
+- `apps/teacher/participation.go` (`onClassroomMessage`, `LowerHand`, `ReplyToStudent`,
+  `MarkConversationDone`), `apps/teacher/private.go` (`SendPrivateNotice`)
+- `apps/student/app.go` (`onNotice`: el hilo de «Tus mensajes»)
 - `apps/student/participation.go` (`RaiseHand`, `LowerHand`, `SendTeacherMessage`, `onConnect`)
 - `internal/session/console.go` (capacidad de los mensajes que inicia el agente),
   `internal/session/agent.go` (`OnConnect`)

@@ -144,8 +144,18 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 |---|---|---|
 | 1 | **Cabecera de la vista** | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | 2 | **Manos levantadas** | La fila de manos, por orden de llegada. |
-| 3 | **Mensajes de los alumnos** | La bandeja de mensajes con Responder. |
-| 4 | **Sección Temporizador** | Quién ve el temporizador y quién falta. |
+| 3 | **Mensajes de los alumnos** | Los mensajes como chat: la bandeja o, al abrir una, su conversación. |
+| 4 | **Bandeja de conversaciones** | Una fila por alumno (la más reciente arriba) con Por atender, Atendidas y Todas, y la búsqueda. |
+| 5 | **Sección Temporizador** | Quién ve el temporizador y quién falta. |
+
+### Consola · Participación › Conversación
+
+![Consola · Participación › Conversación](mapa/consola-participacion-conversacion.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Mensajes de los alumnos** | Los mensajes como chat: la bandeja o, al abrir una, su conversación. |
+| 2 | **Conversación** | El hilo de un alumno (sus mensajes y lo que le mandaste) con Volver, el cuadro para responder y Marcar como atendida. |
 
 ### Consola · Encuesta (panel de la barra)
 
@@ -370,7 +380,9 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `cuest-editor` | Vista Cuestionarios › Editor de cuestionario | Diálogo con los datos (título, tiempo, al azar) y cada pregunta con su tipo, puntos y opciones con la columna Correcta; Guardar y Guardar y lanzar. |
 | `participacion` | Vista Participación | Lo que responden los alumnos en vivo. |
 | `manos` | Vista Participación › Manos levantadas | La fila de manos, por orden de llegada. |
-| `mensajes` | Vista Participación › Mensajes de los alumnos | La bandeja de mensajes con Responder. |
+| `mensajes` | Vista Participación › Mensajes de los alumnos | Los mensajes como chat: la bandeja o, al abrir una, su conversación. |
+| `bandeja` | Vista Participación › Mensajes de los alumnos › Bandeja de conversaciones | Una fila por alumno (la más reciente arriba) con Por atender, Atendidas y Todas, y la búsqueda. |
+| `hilo` | Vista Participación › Mensajes de los alumnos › Conversación | El hilo de un alumno (sus mensajes y lo que le mandaste) con Volver, el cuadro para responder y Marcar como atendida. |
 | `part-encuestas` | Vista Participación › Sección Encuestas | La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones. |
 | `part-temporizador` | Vista Participación › Sección Temporizador | Quién ve el temporizador y quién falta. |
 | `simulada` | Vista Aula simulada | Alumnos de prueba y sus fallas. |
@@ -395,7 +407,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `mano-estado` | Estado de la mano | «Tu mano está levantada» y el motivo. |
 | `redactar` | Diálogo Mensaje al profesor | El diálogo para escribirle al profesor. |
 | `capacidades` | Qué puede hacer Aula en este equipo | La grilla de lo que el profesor puede hacer con este equipo, como la ficha de la consola. |
-| `enviados` | Tus mensajes | Los mensajes enviados y si llegaron. |
+| `enviados` | Tus mensajes | El hilo con el profesor: lo que el alumno escribió (y si llegó) y lo que el profesor le mandó solo a él. |
 | `vacio` | Estado vacío | Lo que se ve cuando no hay código ni archivos. |
 | `fin-clase` | Tarjeta «La clase terminó» | Cuándo terminó la clase y qué se quitó, con «Entendido»; no es una banda (prompt 10.14). |
 | `encuestas` | Encuestas | Una tarjeta por encuesta del profesor, arriba de la lista. |

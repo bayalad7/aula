@@ -10,8 +10,16 @@
 
 /* --- Vistas: la barra de acciones queda abajo aunque haya pocos alumnos ------------------ */
 .vista__seccion { display: flex; flex-direction: column; min-height: 100%; }
-.vista__seccion > .vista__cuerpo { flex: 1; }
+/* El cuerpo crece con su contenido y nunca se encoge (notas 011 y 013): si no, una lista larga o
+   el salón quedan debajo de la barra de acciones, sin desplazamiento, y la barra a media pantalla. */
+.vista__seccion > .vista__cuerpo { flex: 1 0 auto; }
 .ancho-completo { width: 100%; }
+/* Cabecera de Alumnos en una línea (nota 007): el título no se estira; los controles van a la derecha. */
+[data-vista-de=alumnos] > .vista__cabecera { column-gap: var(--e-3); }
+[data-vista-de=alumnos] > .vista__cabecera h1 { flex: 0 0 auto; min-width: 0; }
+[data-vista-de=alumnos] > .vista__cabecera .segmentado { margin-left: auto; }
+/* Barra de acciones (nota 008): el icono arriba, un poco más grande que en un botón en línea. */
+.barra-acciones .btn .icono { width: 1.2rem; height: 1.2rem; }
 
 /* --- Utilidades de composición ----------------------------------------------------------- */
 .pila { display: grid; gap: var(--e-4); align-content: start; }
@@ -149,7 +157,19 @@ a.insignia:hover { text-decoration: underline; }
 .encuesta-opcion { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) auto; gap: var(--e-2); align-items: center; }
 .encuesta-opcion button[hidden] { display: none; }
 /* Cuestionarios (prompt 10.20): cada opción con su interruptor «Correcta»; la pregunta es una tarjeta sin el borde del fieldset. */
-.cuest-opcion { grid-template-columns: 1.25rem minmax(0, 1fr) auto auto; }
+/* Editor de cuestionario en su diálogo (nota 012): datos en una rejilla; cada opción con el
+   interruptor bajo «Correcta» y quitar separado por una línea. */
+#cuest-editor { width: min(56rem, calc(100vw - 2rem)); }
+.cuest-datos { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--e-3) var(--e-4); align-items: start; }
+.cuest-datos > .campo:last-child { grid-column: 1 / -1; }
+@media (max-width: 700px) { .cuest-datos { grid-template-columns: minmax(0, 1fr); } }
+.cuest-seccion + .cuest-seccion { padding-top: var(--e-4); border-top: 1px solid var(--c-borde); }
+.cuest-seccion__cabecera { display: flex; align-items: baseline; gap: var(--e-3); }
+.cuest-opcion { grid-template-columns: 1.25rem minmax(0, 1fr) 5.5rem auto; }
+.cuest-opciones__cabecera { display: grid; grid-template-columns: minmax(0, 1fr) 5.5rem 2.75rem; gap: var(--e-2); }
+.cuest-opciones__correcta { text-align: center; }
+.cuest-correcta { justify-content: center; gap: var(--e-1); }
+.cuest-quitar-opcion { margin-left: var(--e-1); border-left: 1px solid var(--c-borde); border-radius: 0; }
 .cuest-pregunta > fieldset { margin: 0; border: 0; min-width: 0; }
 .cuest-pregunta > fieldset > legend { float: left; width: 100%; padding: 0; font-weight: var(--peso-medio); }
 .cuest-pregunta [hidden] { display: none; }
@@ -221,8 +241,14 @@ a.insignia:hover { text-decoration: underline; }
 .salon__asiento-nombre { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-texto); }
 .salon__subtitulo { font-size: var(--t-md); }
 
-.salon-editor { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: var(--e-4); align-items: start; }
-@media (max-width: 1100px) { .salon-editor { grid-template-columns: minmax(0, 1fr); } }
+/* Nota 014: arriba las herramientas, «Sin acomodar» y «Equipo elegido»; el plano debajo a todo lo
+   ancho. A 900×600 las herramientas ocupan su fila y las otras dos quedan lado a lado. */
+.salon-arriba { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--e-4); align-items: start; }
+@media (max-width: 1250px) { .salon-arriba { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .salon-herramientas { grid-column: 1 / -1; } }
+#salon-sin-lista { max-height: 12rem; overflow: auto; }
+.salon-herramientas .fila > fieldset { flex-basis: 100%; }
+.salon__elegido .desglose { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--e-3); }
+.salon__elegido .desglose dd { margin: 0; }
 .salon__plano { display: grid; gap: var(--e-1); grid-template-columns: repeat(var(--salon-columnas, 8), minmax(5.5rem, 1fr)); }
 .salon__celda, .salon__suelto {
   min-width: 0; padding: var(--e-1) var(--e-2);
@@ -246,3 +272,15 @@ a.insignia:hover { text-decoration: underline; }
 }
 .salon__sin h3, .salon__elegido h3 { font-size: var(--t-md); }
 .salon__sin[data-soltar="true"] { border-style: dashed; border-color: var(--c-acento); cursor: pointer; }
+
+/* --- Participación en dos columnas (nota de interfaz 015) ----------------------------------
+   A la izquierda, Manos y mensajes a todo lo alto; a la derecha, Encuestas y debajo Temporizador.
+   Por debajo de 1100 px, una sola columna como antes. */
+[data-vista-de=participacion] > .vista__cuerpo {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start;
+}
+[data-vista-de=participacion] > .vista__cuerpo > section:first-of-type { grid-row: span 2; }
+@media (max-width: 1100px) {
+  [data-vista-de=participacion] > .vista__cuerpo { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  [data-vista-de=participacion] > .vista__cuerpo > section:first-of-type { grid-row: auto; }
+}

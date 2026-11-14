@@ -61,6 +61,8 @@
     s.append(document.createTextNode(texto));
     return s;
   }
+  // La celda «#» de cada tabla: el número de la fila, centrado (formato de tablas, 2026-11-13).
+  const celdaNum = (i) => el("td", "col-num", String(i + 1));
   function boton(texto, cls, ic) {
     const b = el("button", "btn" + (cls ? " " + cls : ""));
     b.type = "button";
@@ -439,20 +441,33 @@
   };
   // Lo que se puede hacer con un equipo sin sesión: Encender y, si no respondió, el porqué.
   const AYUDA_ENCENDER = "solucion-de-problemas#un-equipo-no-se-enciende";
-  function encenderDe(s) {
+  // soloNotas: sin el botón (la fila lo pone, solo icono, en su columna Acciones: nota 010).
+  function encenderDe(s, soloNotas) {
     if (s.simulated || s.state === "connected") return [];
     const n = [];
     if (s.wake && s.wake.other_subnet) n.push(insignia("advertencia", "red", T("encender.otraRed")));
     if (s.wake && s.wake.state === "noresponse") {
       n.push(Object.assign(el("a", "pequeno", T("encender.porQue")), { href: rutaManual(AYUDA_ENCENDER), title: T("encender.porQueAyuda") }));
     }
-    if (s.canWake && !(s.wake && s.wake.state === "waking")) {
-      const b = boton(T("encender.boton"), "btn--sm encender", "encender");
-      b.dataset.equipo = s.hostname;
-      b.setAttribute("aria-label", T("encender.botonAria", { equipo: nombreEquipo(s) }));
-      n.push(b);
-    }
+    if (!soloNotas && puedeEncender(s)) n.push(botonEncender(s, false));
     return n;
+  }
+  const puedeEncender = (s) => !s.simulated && s.state !== "connected" && s.canWake && !(s.wake && s.wake.state === "waking");
+  function botonEncender(s, icono) {
+    const aria = T("encender.botonAria", { equipo: nombreEquipo(s) });
+    const b = icono ? botonFila("encender", aria, "encender") : boton(T("encender.boton"), "btn--sm encender", "encender");
+    b.dataset.equipo = s.hostname;
+    b.setAttribute("aria-label", aria);
+    return b;
+  }
+  // Un botón de solo icono con su tooltip (columna Acciones de la lista, nota 010).
+  function botonFila(cls, texto, ic) {
+    const b = el("button", "btn btn--fantasma btn--icono btn--sm " + cls);
+    b.type = "button";
+    b.setAttribute("aria-label", texto);
+    b.dataset.tip = texto;
+    b.append(icono(ic));
+    return b;
   }
   // Los equipos conocidos sin sesión, como filas de la lista («Mostrar apagados»).
   const aApagado = (o) => ({ id: "", hostname: o.hostname, username: "", state: "off", lastSeen: o.lastSeen, wake: o.wake,
@@ -504,8 +519,10 @@
 
     const tplFila = $("t-fila-alumno").content.firstElementChild;
     const filas = [];
+    let n = 0;
     const fila = (s) => {
       const tr = tplFila.cloneNode(true);
+      tr.prepend(celdaNum(n++));
       const marcado = seleccion.has(clave(s));
       tr.dataset.clave = clave(s);
       tr.dataset.seleccionado = String(marcado);
@@ -520,19 +537,21 @@
       tr.querySelector(".codigo").append(...codigoDe(s));
       tr.querySelector(".so").textContent = sistemaDe(s);
       tr.querySelector(".version").textContent = s.agentVersion ? T("alumnos.versionAula", { v: s.agentVersion }) : "";
+      // Acciones (nota 010): ficha, Encender y Olvidar, solo iconos con su tooltip.
+      const acciones = tr.querySelector(".acciones-fila");
       const f = tr.querySelector(".ficha");
       if (s.state === "off") {
         // Sin sesión no hay ficha: el botón olvida el equipo (borra su dirección física).
-        f.classList.replace("ficha", "olvidar");
-        f.querySelector("use").setAttribute("href", "sistema/iconos.svg#limpiar");
-        f.dataset.equipo = s.hostname;
-        f.setAttribute("aria-label", T("encender.olvidar", { equipo: nombreEquipo(s) }));
-        f.title = T("encender.olvidar", { equipo: nombreEquipo(s) });
+        f.remove();
+        const o = botonFila("olvidar", T("encender.olvidar", { equipo: nombreEquipo(s) }), "limpiar");
+        o.dataset.equipo = s.hostname;
+        acciones.append(o);
       } else {
         f.setAttribute("aria-label", T("alumnos.verFicha", { equipo: nombreEquipo(s) }));
-        f.title = T("alumnos.verFicha", { equipo: nombreEquipo(s) });
+        f.dataset.tip = T("alumnos.verFicha", { equipo: nombreEquipo(s) });
       }
-      const notas = [...notasDe(s), ...encenderDe(s)];
+      if (puedeEncender(s)) acciones.prepend(botonEncender(s, true));
+      const notas = [...notasDe(s), ...encenderDe(s, true)];
       tr.querySelector(".notas").append(...(notas.length ? notas : [el("span", "suave", "—")]));
       return tr;
     };
@@ -540,7 +559,7 @@
     if (sims.length) {
       const g = el("tr", "tabla__grupo");
       const th = el("th");
-      th.colSpan = 7;
+      th.colSpan = 8;
       th.scope = "rowgroup";
       th.append(icono("simulado"), document.createTextNode(" " + T("alumnos.grupoSimulados")), insignia("simulado", "", T("alumnos.grupoSimuladosNota")));
       g.append(th);
@@ -549,9 +568,22 @@
     if (verApagados && apagados.length) {
       const g = el("tr", "tabla__grupo");
       const th = el("th");
-      th.colSpan = 7;
+      th.colSpan = 8;
       th.scope = "rowgroup";
-      th.append(icono("energia"), document.createTextNode(" " + T("alumnos.grupoApagados", { n: apagados.length })));
+      // Nota 009: una casilla marca o desmarca todos los apagados.
+      const todos = el("input", "marca-grupo");
+      todos.type = "checkbox";
+      todos.setAttribute("aria-label", T("alumnos.seleccionarApagados"));
+      const marcados = apagados.filter((s) => seleccion.has(clave(s))).length;
+      todos.checked = marcados > 0 && marcados === apagados.length;
+      todos.indeterminate = marcados > 0 && marcados < apagados.length;
+      todos.addEventListener("change", () => {
+        for (const s of apagados) {
+          if (todos.checked) seleccion.add(clave(s)); else seleccion.delete(clave(s));
+        }
+        pintarAlumnos(alumnos);
+      });
+      th.append(todos, document.createTextNode(" "), icono("energia"), document.createTextNode(" " + T("alumnos.grupoApagados", { n: apagados.length })));
       g.append(th);
       filas.push(g, ...apagados.map(fila));
     }
@@ -2081,8 +2113,15 @@
     seleccionarTodos(true);
   });
 
+  // Encender de la barra (nota 009): solo con equipos marcados que se pueden encender.
+  const marcadosEncendibles = () => (seleccion.size ? encendibles().filter(puedeEncender) : []);
+  $("barra-encender").addEventListener("click", () => {
+    const hosts = marcadosEncendibles().map((s) => s.hostname);
+    if (hosts.length) encender(hosts);
+  });
   function pintarSeleccion() {
     const n = seleccion.size;
+    $("barra-encender").disabled = marcadosEncendibles().length === 0;
     // En la cabecera, corto; la explicación va en el tooltip y para el lector de pantalla.
     const ayudaSel = n === 0 ? T("seleccion.ninguno") : T("seleccion.ayudaSeleccion");
     $("seleccion-corto").textContent = n === 0 ? T("seleccion.todosCorto", { n: conectados().length }) : P("seleccion.corto", n);
@@ -2093,6 +2132,7 @@
     todos.checked = n > 0 && n === alumnos.students.length;
     todos.indeterminate = n > 0 && n < alumnos.students.length;
     $("seleccionar-todos-texto").textContent = n > 0 ? T("alumnos.quitarSeleccion") : T("alumnos.seleccionarTodos");
+    $("seleccionar-todos").dataset.tip = $("seleccionar-todos-texto").textContent; // nota 007: solo icono
     $("seleccionar-todos-icono").setAttribute("href", "sistema/iconos.svg#" + (n > 0 ? "cerrar" : "hecho"));
     $("seleccionar-todos").disabled = alumnos.students.length === 0;
     const destino = n === 0 ? T("destino.todos", { n: conectados().length }) : P("destino.seleccion", n);
@@ -3068,8 +3108,9 @@
     $("cuest-donde").textContent = cuestVista.folder ? T("cuest.donde", { carpeta: cuestVista.folder }) : "";
     const tpl = $("t-cuestionario").content.firstElementChild;
     const etiquetas = { titulo: "cuest.colTitulo", preguntas: "cuest.colPreguntas", puntos: "cuest.colPuntos", tiempo: "cuest.colTiempo" };
-    $("cuest-filas").replaceChildren(...lista.map((s) => {
+    $("cuest-filas").replaceChildren(...lista.map((s, i) => {
       const tr = tpl.cloneNode(true);
+      tr.prepend(celdaNum(i));
       const q = s.quiz;
       const roto = s.problem === "unreadable";
       const celdas = { titulo: q.title, preguntas: roto ? "—" : String(q.questions.length), puntos: roto ? "—" : String(puntosDe(q)),
@@ -3154,7 +3195,7 @@
   let nPreguntaId = 0;
   function abrirEditor(id, q) {
     cuestEditando = id;
-    $("cuest-editor").hidden = false;
+    if (!$("cuest-editor").open) $("cuest-editor").showModal();
     $("h-cuest-editor").textContent = id ? T("cuest.editando", { titulo: q.title }) : T("cuest.nuevoTitulo");
     $("cuest-titulo").value = q ? q.title : "";
     $("cuest-minutos").value = q ? String(q.minutes || 0) : "0";
@@ -3164,15 +3205,18 @@
     const preguntas = q ? q.questions : [{ text: "", kind: "choice", options: ["", "", ""], correct: [], points: 1 }];
     $("cuest-preguntas").replaceChildren(...preguntas.map(nodoPregunta));
     numerarPreguntas();
-    $("h-cuest-editor").focus();
-    $("cuest-editor").scrollIntoView({ block: "start" });
+    $("cuest-titulo").focus();
   }
+  // Cerrar el diálogo (Cancelar, la X o Esc) olvida lo escrito, como antes «Cancelar».
   function cerrarEditor() {
-    cuestEditando = null;
-    $("cuest-editor").hidden = true;
-    $("cuest-preguntas").replaceChildren();
+    if ($("cuest-editor").open) $("cuest-editor").close();
   }
-  $("cuest-cancelar").addEventListener("click", () => { cerrarEditor(); $("cuest-nuevo").focus(); });
+  $("cuest-editor").addEventListener("close", () => {
+    cuestEditando = null;
+    $("cuest-preguntas").replaceChildren();
+    $("cuest-nuevo").focus();
+  });
+  $("cuest-cancelar").addEventListener("click", cerrarEditor);
 
   function campoNumero(valor, min, max, ic, etiqueta) {
     const i = Object.assign(el("input"), { type: "number", min: String(min), max: String(max), step: "1", value: String(valor) });
@@ -3197,7 +3241,7 @@
     error.id = pid + "-error";
     texto.setAttribute("aria-describedby", error.id);
     const lblTexto = el("label", "campo");
-    lblTexto.append(el("span", "campo__etiqueta", T("cuest.preguntaCampo")), texto);
+    lblTexto.append(el("span", "solo-lector", T("cuest.preguntaCampo")), texto); // nota 012: «Pregunta n» ya lo dice
     texto.addEventListener("input", () => limpiarCampo(texto, error));
     // Tipo y puntos en una fila.
     const fila = el("div", "fila");
@@ -3229,7 +3273,9 @@
       numerarOpcionesCuest(li);
       o.querySelector("input[type=text]").focus();
     });
-    opciones.append(el("span", "campo__etiqueta", T("cuest.opciones")), ol, el("div", ""), el("p", "pequeno suave", T("cuest.variasNota")));
+    const cab = el("div", "cuest-opciones__cabecera");
+    cab.append(el("span", "campo__etiqueta", T("cuest.opciones")), el("span", "campo__etiqueta cuest-opciones__correcta", T("cuest.correcta")));
+    opciones.append(cab, ol, el("div", ""), el("p", "pequeno suave", T("cuest.variasNota")));
     opciones.children[2].append(agregar);
     const correctas = new Set(q.correct || []);
     const opts = (q.kind || "choice") === "choice" && q.options && q.options.length ? q.options : ["", "", ""];
@@ -3268,15 +3314,18 @@
     input.className = "control";
     input.dataset.icono = "lista";
     input.addEventListener("input", () => limpiarCampo(li.querySelector(".cuest-texto"), li.querySelector(".cuest-pregunta__error")));
+    // Nota 012: el interruptor bajo su encabezado «Correcta», y quitar la opción aparte.
     const lbl = el("label", "opcion cuest-correcta");
     const sw = Object.assign(el("input"), { type: "checkbox", checked: !!correcta });
     sw.className = "interruptor";
     sw.setAttribute("role", "switch");
     sw.addEventListener("change", () => limpiarCampo(li.querySelector(".cuest-texto"), li.querySelector(".cuest-pregunta__error")));
-    lbl.append(sw, document.createTextNode(" "), icono("hecho"), document.createTextNode(" "), el("span", "", T("cuest.correcta")));
-    const quitar = el("button", "btn btn--fantasma btn--icono btn--sm");
+    lbl.append(icono("hecho"), sw, el("span", "solo-lector", T("cuest.correcta")));
+    const quitar = el("button", "btn btn--fantasma btn--icono btn--sm btn--peligro-texto cuest-quitar-opcion");
     quitar.type = "button";
-    quitar.append(icono("cerrar"));
+    quitar.setAttribute("aria-label", T("cuest.quitarOpcion"));
+    quitar.dataset.tip = T("cuest.quitarOpcion");
+    quitar.append(icono("limpiar"));
     quitar.addEventListener("click", () => { o.remove(); numerarOpcionesCuest(li); li.querySelector(".cuest-opcion input[type=text]")?.focus(); });
     o.append(el("span", "suave pequeno encuesta-opcion__n"), input, lbl, quitar);
     return o;
@@ -3427,14 +3476,16 @@
       const tabla = el("table", "tabla");
       const thead = el("thead");
       const trh = el("tr");
-      for (const k of ["cuest.colEquipo", "cuest.colUsuario", "cuest.colPuntaje", "cuest.colEntrego"]) trh.append(el("th", "", T(k)));
+      trh.append(Object.assign(el("th", "col-num", "#"), { scope: "col" }));
+      for (const k of ["cuest.colEquipo", "cuest.colUsuario", "cuest.colPuntaje", "cuest.colEntrego"]) trh.append(el("th", k === "cuest.colPuntaje" ? "col-cantidad" : "", T(k)));
       thead.append(trh);
       const tbody = el("tbody");
-      for (const s of q.scores) {
+      for (const [i, s] of q.scores.entries()) {
         const tr = el("tr");
+        tr.append(celdaNum(i));
         const eq = el("td", "celda-principal", nombreEquipo(s));
         if (s.simulated) eq.append(document.createTextNode(" "), insignia("simulado", "", T("alumnos.simulado")));
-        tr.append(eq, el("td", "", s.username || "—"), el("td", "", T("cuest.puntajeDe", { n: s.score, max: q.max })),
+        tr.append(eq, el("td", "", s.username || "—"), el("td", "col-cantidad", T("cuest.puntajeDe", { n: s.score, max: q.max })),
           el("td", "", s.submitted ? T("cuest.si") : P("cuest.respondio", s.answered, { total: q.questions.length })));
         for (const [i, td] of [...tr.children].entries()) td.dataset.etiqueta = trh.children[i].textContent;
         tbody.append(tr);
@@ -3645,8 +3696,9 @@
     $("historial-vacio").hidden = entradas.length > 0;
     $("historial-tabla").hidden = entradas.length === 0;
     const tpl = $("t-historial").content.firstElementChild;
-    $("historial-filas").replaceChildren(...entradas.slice().reverse().map((e) => {
+    $("historial-filas").replaceChildren(...entradas.slice().reverse().map((e, i) => {
       const tr = tpl.cloneNode(true);
+      tr.prepend(celdaNum(i));
       const lineas = e.content.replace(/\n$/, "").split("\n").length;
       const lang = LANGS.find(([id]) => id === e.lang);
       const celdas = [["num", String(e.number)], ["titulo", e.title || T("codigo.sinTitulo")], ["lenguaje", lang ? lang[1] : e.lang],
@@ -3711,8 +3763,9 @@
     $("plantillas-tabla").hidden = plantillas.length === 0;
     const tpl = $("t-plantilla").content.firstElementChild;
     const etiquetas = { nombre: "archivos.colNombre", archivos: "archivos.colArchivos", tamano: "archivos.colTamano", estado: "archivos.colEstado" };
-    $("plantillas-filas").replaceChildren(...plantillas.map((t) => {
+    $("plantillas-filas").replaceChildren(...plantillas.map((t, i) => {
       const tr = tpl.cloneNode(true);
+      tr.prepend(celdaNum(i));
       const celdas = { nombre: t.name, archivos: String(t.files.length), tamano: tamano(t.size),
         estado: t.problem ? T(PROBLEMA + camel(t.problem)) : T("archivos.lista") };
       for (const [c, v] of Object.entries(celdas)) {
@@ -3868,8 +3921,9 @@
     $("historial-archivos-tabla").hidden = !hay;
     const tpl = $("t-historial-archivos").content.firstElementChild;
     const etiquetas = { que: "archivos.colQue", destino: "archivos.colDestino", tamano: "archivos.colTamano", veces: "codigo.colVeces", hora: "codigo.colHora" };
-    $("historial-archivos-filas").replaceChildren(...sends.map((s) => {
+    $("historial-archivos-filas").replaceChildren(...sends.map((s, i) => {
       const tr = tpl.cloneNode(true);
+      tr.prepend(celdaNum(i));
       const que = s.template ? T("archivos.dePlantilla", { nombre: s.template, n: s.names.length })
         : s.names.length === 1 ? s.names[0] : T("archivos.varios", { primero: s.names[0], n: s.names.length - 1 });
       const celdas = { que, destino: T("archivos.destinoCelda", { ruta: ["Documentos", "Aula"].concat(s.dest ? s.dest.split("/") : []).join("\\") }),
@@ -3999,8 +4053,9 @@
       abrir.querySelector("span").textContent = T("reco.abrirCarpeta");
       abrir.setAttribute("aria-label", T("reco.abrirCarpetaDe", { titulo }));
       abrir.addEventListener("click", () => api.OpenCollectionFolder(c.id, "").catch(fallo));
-      card.querySelector(".reco-filas").replaceChildren(...alumnosC.map((s) => {
+      card.querySelector(".reco-filas").replaceChildren(...alumnosC.map((s, i) => {
         const tr = tplFila.cloneNode(true);
+        tr.prepend(celdaNum(i));
         const quien = nombreAlumno(s);
         const td = (cls, contenido) => {
           const x = tr.querySelector("." + cls);
@@ -4077,8 +4132,9 @@
       }));
     }
     const tpl = $("t-fila-simulado").content.firstElementChild;
-    $("sim-filas").replaceChildren(...v.students.map((s) => {
+    $("sim-filas").replaceChildren(...v.students.map((s, i) => {
       const tr = tpl.cloneNode(true);
+      tr.prepend(celdaNum(i));
       tr.querySelector(".nombre").textContent = s.name;
       tr.querySelector(".detalle").textContent = { windows: "Windows", linux: "Linux", darwin: "macOS" }[s.os] + " · " +
         s.capabilities.map((c) => T(CAPS[c] || c)).join(", ");
@@ -4499,11 +4555,13 @@
         case "table": {
           const tabla = el("table", "tabla");
           const thead = el("thead"), tr = el("tr");
+          tr.append(Object.assign(el("th", "col-num", "#"), { scope: "col" }));
           for (const c of b.head || []) { const th = el("th"); th.append(...incisos(c, p.slug)); tr.append(th); }
           thead.append(tr);
           const tbody = el("tbody");
-          for (const row of b.rows || []) {
+          for (const [i, row] of (b.rows || []).entries()) {
             const r = el("tr");
+            r.append(celdaNum(i));
             for (const c of row) { const td = el("td"); td.append(...incisos(c, p.slug)); r.append(td); }
             tbody.append(r);
           }
@@ -4946,8 +5004,9 @@
     $("te-pasos").replaceChildren(...(v.steps || []).map((s) => itemTerminar(
       s.status === "done" ? "hecho" : s.status === "kept" ? "info" : "error",
       T(TE_PASO + s.kind + "." + s.status, { n: s.count }), s.status)));
-    const filas = (v.students || []).map((s) => {
+    const filas = (v.students || []).map((s, i) => {
       const tr = el("tr");
+      tr.append(celdaNum(i));
       const nombre = el("td", "celda-principal", nombreEquipo(s));
       if (s.simulated) nombre.append(" ", insignia("simulado", "simulado", T("alumnos.simulado")));
       const [ic, tipo] = ESTADO_TERMINAR[s.state] || ESTADO_TERMINAR.waiting;
@@ -4960,7 +5019,7 @@
     if (!filas.length) {
       const tr = el("tr");
       const td = el("td", "suave", T("terminar.sinAlumnos"));
-      td.colSpan = 2;
+      td.colSpan = 3;
       tr.append(td);
       filas.push(tr);
     }

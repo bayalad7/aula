@@ -156,9 +156,10 @@
                   <option value="ajustar" data-t="alumnos.tamano.ajustar"></option>
                 </select></label>
               <!-- Equipos conocidos sin sesión (prompt 10.19): ocultos hasta que se piden; se recuerda. -->
-              <label class="opcion" id="alumnos-apagados-campo" hidden><input type="checkbox" class="interruptor" id="alumnos-apagados" role="switch"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg> <span id="alumnos-apagados-texto"></span></label>
-              <button type="button" class="btn" id="seleccionar-todos" data-t-title="alumnos.ctrlA"><svg class="icono" aria-hidden="true"><use id="seleccionar-todos-icono" href="sistema/iconos.svg#hecho"/></svg><span class="btn__texto" id="seleccionar-todos-texto"></span></button>
-              <a class="btn btn--fantasma" href="#falta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#persona-buscar"/></svg><span data-t="falta.titulo"></span></a>
+              <label class="opcion" id="alumnos-apagados-campo" data-t-ayuda="alumnos.mostrarApagadosTip" hidden><input type="checkbox" class="interruptor" id="alumnos-apagados" role="switch"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg> <span id="alumnos-apagados-texto"></span></label>
+              <!-- Nota de interfaz 007: la cabecera en una línea; estos dos son iconos con su tooltip. -->
+              <button type="button" class="btn btn--fantasma btn--icono" id="seleccionar-todos" aria-describedby="seleccionar-todos-atajo"><svg class="icono" aria-hidden="true"><use id="seleccionar-todos-icono" href="sistema/iconos.svg#hecho"/></svg><span class="solo-lector" id="seleccionar-todos-texto"></span><span class="solo-lector" id="seleccionar-todos-atajo" data-t="alumnos.ctrlA"></span></button>
+              <a class="btn btn--fantasma btn--icono" href="#falta" data-t-aria-label="falta.titulo" data-t-tip="falta.titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#persona-buscar"/></svg></a>
               <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
             </header>
             <div class="vista__cuerpo">
@@ -174,10 +175,10 @@
               <div id="alumnos-lista" class="tabla-adaptable">
                 <table class="tabla" data-t-aria-label="alumnos.tablaEtiqueta">
                   <thead><tr>
-                    <th class="col-marca"><input type="checkbox" id="alumnos-todos" data-t-aria-label="alumnos.seleccionarTodos"></th>
+                    <th class="col-num" scope="col">#</th><th class="col-marca"><input type="checkbox" id="alumnos-todos" data-t-aria-label="alumnos.seleccionarTodos"></th>
                     <th data-t="alumnos.colEquipo"></th><th data-t="alumnos.colEstado"></th>
                     <th data-t="alumnos.colCodigo"></th><th class="col-sistema" data-t="alumnos.colSistema"></th><th data-t="alumnos.colNotas"></th>
-                    <th class="col-accion"><span class="solo-lector" data-t="alumnos.colFicha"></span></th>
+                    <th class="col-accion" data-t="alumnos.colAcciones"></th>
                   </tr></thead>
                   <tbody id="alumnos-filas"></tbody>
                 </table>
@@ -212,6 +213,8 @@
                 <button type="button" class="btn" data-panel="temporizador" aria-expanded="false" data-t-tip="panel.temporizador"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span class="btn__texto" data-t="panel.temporizador"></span></button>
                 <button type="button" class="btn" data-panel="encuesta" aria-expanded="false" data-t-tip="panel.encuesta"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encuesta"/></svg><span class="btn__texto" data-t="panel.encuesta"></span></button>
                 <button type="button" class="btn" data-panel="abrir" aria-expanded="false" data-t-tip="panel.abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#externo"/></svg><span class="btn__texto" data-t="panel.abrirCorto"></span></button>
+                <!-- Nota de interfaz 009: encender los equipos marcados que estén apagados. -->
+                <button type="button" class="btn" id="barra-encender" data-t-tip="encender.barraTip" disabled><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#encender"/></svg><span class="btn__texto" data-t="encender.boton"></span></button>
               </div>
             </div>
           </section>
@@ -233,50 +236,52 @@
               <section class="tarjeta" aria-labelledby="h-salon-plano">
                 <div class="tarjeta__cabecera"><h2 id="h-salon-plano" data-t="salon.plano"></h2></div>
                 <div class="tarjeta__cuerpo pila">
-                  <div class="fila">
-                    <label class="campo"><span class="campo__etiqueta" data-t="salon.filas"></span>
-                      <select id="salon-filas" class="control" data-icono="flecha-abajo"></select></label>
-                    <label class="campo"><span class="campo__etiqueta" data-t="salon.columnas"></span>
-                      <select id="salon-columnas" class="control" data-icono="flecha-der"></select></label>
-                    <fieldset class="campo crece"><legend class="campo__etiqueta" data-t="salon.herramienta"></legend>
-                      <div class="opciones-seg">
-                        <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="equipo" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pantalla"/></svg> <span data-t="salon.herramientaEquipo"></span></label>
-                        <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="teacher"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#escritorio"/></svg> <span data-t="salon.lugar.teacher"></span></label>
-                        <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="aisle"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pasillo"/></svg> <span data-t="salon.lugar.aisle"></span></label>
-                        <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="vacio"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg> <span data-t="salon.herramientaVacio"></span></label>
-                      </div>
-                    </fieldset>
-                  </div>
-                  <p class="pequeno suave" id="salon-ayuda-teclado" data-t="salon.ayudaTeclado"></p>
-                  <p class="aviso-en-linea" id="salon-llevando" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="salon-llevando-texto"></span></p>
-                  <div class="salon-editor">
-                    <div class="salon">
-                      <p class="salon__frente" data-t="salon.frente"></p>
-                      <div class="salon__plano" id="salon-plano" role="group" data-t-aria-label="salon.planoEtiqueta" aria-describedby="salon-ayuda-teclado"></div>
-                    </div>
-                    <div class="pila">
-                      <section class="salon__sin" id="salon-sin" aria-labelledby="salon-sin-titulo">
-                        <h3 id="salon-sin-titulo"></h3>
-                        <p class="pequeno suave" id="salon-sin-vacio" data-t="salon.sinAcomodarVacio"></p>
-                        <ul class="lista-limpia" id="salon-sin-lista"></ul>
-                      </section>
-                      <section class="salon__elegido" aria-labelledby="salon-elegido-titulo">
-                        <h3 id="salon-elegido-titulo" data-t="salon.elegido"></h3>
-                        <p class="pequeno suave" id="salon-elegido-nada" data-t="salon.elegidoNada"></p>
-                        <form id="salon-elegido-form" class="pila" hidden novalidate>
-                          <dl class="desglose" id="salon-elegido-datos"></dl>
-                          <label class="campo"><span class="campo__etiqueta" data-t="salon.etiqueta"></span>
-                            <input id="salon-etiqueta" maxlength="40" data-t-placeholder="salon.etiquetaEjemplo" aria-describedby="salon-etiqueta-ayuda salon-etiqueta-error" data-icono="etiqueta">
-                            <span class="campo__ayuda" id="salon-etiqueta-ayuda"></span>
-                            <span class="campo__error" id="salon-etiqueta-error" role="alert" hidden></span></label>
-                          <div class="grupo-botones">
-                            <button type="submit" class="btn btn--primario btn--sm" id="salon-etiqueta-guardar" data-icono="guardar" data-t="salon.guardarEtiqueta"></button>
-                            <button type="button" class="btn btn--sm" id="salon-desacomodar" data-icono="cerrar" data-t="salon.desacomodar"></button>
-                            <button type="button" class="btn btn--sm btn--fantasma" id="salon-olvidar" data-icono="limpiar" data-t="salon.olvidar"></button>
+                  <!-- Nota de interfaz 014: arriba, las herramientas, «Sin acomodar» y «Equipo elegido»;
+                       abajo, el frente y el plano a todo lo ancho. -->
+                  <div class="salon-arriba">
+                    <div class="pila salon-herramientas">
+                      <div class="fila">
+                        <label class="campo"><span class="campo__etiqueta" data-t="salon.filas"></span>
+                          <select id="salon-filas" class="control" data-icono="flecha-abajo"></select></label>
+                        <label class="campo"><span class="campo__etiqueta" data-t="salon.columnas"></span>
+                          <select id="salon-columnas" class="control" data-icono="flecha-der"></select></label>
+                        <fieldset class="campo crece"><legend class="campo__etiqueta" data-t="salon.herramienta"></legend>
+                          <div class="opciones-seg">
+                            <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="equipo" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pantalla"/></svg> <span data-t="salon.herramientaEquipo"></span></label>
+                            <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="teacher"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#escritorio"/></svg> <span data-t="salon.lugar.teacher"></span></label>
+                            <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="aisle"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#pasillo"/></svg> <span data-t="salon.lugar.aisle"></span></label>
+                            <label class="opcion-seg"><input type="radio" name="salon-herramienta" value="vacio"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#limpiar"/></svg> <span data-t="salon.herramientaVacio"></span></label>
                           </div>
-                        </form>
-                      </section>
+                        </fieldset>
+                      </div>
+                      <p class="pequeno suave" id="salon-ayuda-teclado" data-t="salon.ayudaTeclado"></p>
+                      <p class="aviso-en-linea" id="salon-llevando" role="status" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="salon-llevando-texto"></span></p>
                     </div>
+                    <section class="salon__sin" id="salon-sin" aria-labelledby="salon-sin-titulo">
+                      <h3 id="salon-sin-titulo"></h3>
+                      <p class="pequeno suave" id="salon-sin-vacio" data-t="salon.sinAcomodarVacio"></p>
+                      <ul class="lista-limpia" id="salon-sin-lista"></ul>
+                    </section>
+                    <section class="salon__elegido" aria-labelledby="salon-elegido-titulo">
+                      <h3 id="salon-elegido-titulo" data-t="salon.elegido"></h3>
+                      <p class="pequeno suave" id="salon-elegido-nada" data-t="salon.elegidoNada"></p>
+                      <form id="salon-elegido-form" class="pila" hidden novalidate>
+                        <dl class="desglose" id="salon-elegido-datos"></dl>
+                        <label class="campo"><span class="campo__etiqueta" data-t="salon.etiqueta"></span>
+                          <input id="salon-etiqueta" maxlength="40" data-t-placeholder="salon.etiquetaEjemplo" aria-describedby="salon-etiqueta-ayuda salon-etiqueta-error" data-icono="etiqueta">
+                          <span class="campo__ayuda" id="salon-etiqueta-ayuda"></span>
+                          <span class="campo__error" id="salon-etiqueta-error" role="alert" hidden></span></label>
+                        <div class="grupo-botones">
+                          <button type="submit" class="btn btn--primario btn--sm" id="salon-etiqueta-guardar" data-icono="guardar" data-t="salon.guardarEtiqueta"></button>
+                          <button type="button" class="btn btn--sm" id="salon-desacomodar" data-icono="cerrar" data-t="salon.desacomodar"></button>
+                          <button type="button" class="btn btn--sm btn--fantasma" id="salon-olvidar" data-icono="limpiar" data-t="salon.olvidar"></button>
+                        </div>
+                      </form>
+                    </section>
+                  </div>
+                  <div class="salon">
+                    <p class="salon__frente" data-t="salon.frente"></p>
+                    <div class="salon__plano" id="salon-plano" role="group" data-t-aria-label="salon.planoEtiqueta" aria-describedby="salon-ayuda-teclado"></div>
                   </div>
                 </div>
               </section>
@@ -337,8 +342,8 @@
                 <div class="tabla-adaptable" id="historial-tabla">
                   <table class="tabla" aria-labelledby="h-historial">
                     <thead><tr>
-                      <th data-t="codigo.colNumero"></th><th data-t="codigo.colTitulo"></th><th data-t="codigo.lenguaje"></th>
-                      <th data-t="codigo.colLineas"></th><th data-t="codigo.colVeces"></th><th data-t="codigo.colHora"></th>
+                      <th class="col-num" scope="col">#</th><th class="col-fija" data-t="codigo.colNumero"></th><th data-t="codigo.colTitulo"></th><th data-t="codigo.lenguaje"></th>
+                      <th class="col-cantidad" data-t="codigo.colLineas"></th><th class="col-cantidad" data-t="codigo.colVeces"></th><th class="col-fija" data-t="codigo.colHora"></th>
                       <th><span class="solo-lector" data-t="comun.acciones"></span></th>
                     </tr></thead>
                     <tbody id="historial-filas"></tbody>
@@ -427,7 +432,7 @@
                 <div class="tabla-adaptable" id="plantillas-tabla">
                   <table class="tabla" aria-labelledby="h-plantillas">
                     <thead><tr>
-                      <th data-t="archivos.colNombre"></th><th data-t="archivos.colArchivos"></th><th data-t="archivos.colTamano"></th>
+                      <th class="col-num" scope="col">#</th><th data-t="archivos.colNombre"></th><th class="col-cantidad" data-t="archivos.colArchivos"></th><th class="col-cantidad" data-t="archivos.colTamano"></th>
                       <th data-t="archivos.colEstado"></th><th><span class="solo-lector" data-t="comun.acciones"></span></th>
                     </tr></thead>
                     <tbody id="plantillas-filas"></tbody>
@@ -441,8 +446,8 @@
                 <div class="tabla-adaptable" id="historial-archivos-tabla">
                   <table class="tabla" aria-labelledby="h-historial-archivos">
                     <thead><tr>
-                      <th data-t="archivos.colQue"></th><th data-t="archivos.colDestino"></th><th data-t="archivos.colTamano"></th>
-                      <th data-t="codigo.colVeces"></th><th data-t="codigo.colHora"></th>
+                      <th class="col-num" scope="col">#</th><th data-t="archivos.colQue"></th><th data-t="archivos.colDestino"></th><th class="col-cantidad" data-t="archivos.colTamano"></th>
+                      <th class="col-cantidad" data-t="codigo.colVeces"></th><th class="col-fija" data-t="codigo.colHora"></th>
                       <th><span class="solo-lector" data-t="comun.acciones"></span></th>
                     </tr></thead>
                     <tbody id="historial-archivos-filas"></tbody>
@@ -506,7 +511,7 @@
                   <div class="tabla-adaptable" id="cuest-tabla" hidden>
                     <table class="tabla" aria-labelledby="h-cuest-guardados">
                       <thead><tr>
-                        <th data-t="cuest.colTitulo"></th><th data-t="cuest.colPreguntas"></th><th data-t="cuest.colPuntos"></th><th data-t="cuest.colTiempo"></th>
+                        <th class="col-num" scope="col">#</th><th data-t="cuest.colTitulo"></th><th class="col-cantidad" data-t="cuest.colPreguntas"></th><th class="col-cantidad" data-t="cuest.colPuntos"></th><th class="col-cantidad" data-t="cuest.colTiempo"></th>
                         <th><span class="solo-lector" data-t="comun.acciones"></span></th>
                       </tr></thead>
                       <tbody id="cuest-filas"></tbody>
@@ -516,32 +521,6 @@
                 </div>
               </section>
 
-              <section class="tarjeta" id="cuest-editor" aria-labelledby="h-cuest-editor" hidden>
-                <div class="tarjeta__cabecera"><h2 id="h-cuest-editor" tabindex="-1"></h2></div>
-                <div class="tarjeta__cuerpo pila">
-                  <div class="fila">
-                    <label class="campo crece"><span class="campo__etiqueta" data-t="cuest.tituloCampo"></span>
-                      <input type="text" id="cuest-titulo" maxlength="80" autocomplete="off" data-t-placeholder="cuest.tituloEjemplo" data-icono="cuestionario" aria-describedby="cuest-titulo-error">
-                      <span class="campo__error" id="cuest-titulo-error" hidden></span></label>
-                    <label class="campo"><span class="campo__etiqueta"><span data-t="cuest.minutos"></span> <span class="suave" data-t="comun.opcional"></span></span>
-                      <input type="number" id="cuest-minutos" min="0" max="120" step="1" value="0" data-icono="reloj" aria-describedby="cuest-minutos-ayuda">
-                      <span class="campo__ayuda" id="cuest-minutos-ayuda" data-t="cuest.minutosAyuda"></span></label>
-                  </div>
-                  <div class="campo">
-                    <label class="opcion"><input type="checkbox" class="interruptor" id="cuest-azar" role="switch" aria-describedby="cuest-azar-ayuda"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#azar"/></svg> <span data-t="cuest.azar"></span></label>
-                    <span class="campo__ayuda" id="cuest-azar-ayuda" data-t="cuest.azarAyuda"></span>
-                  </div>
-                  <ol class="lista-limpia pila" id="cuest-preguntas" data-t-aria-label="cuest.preguntas"></ol>
-                  <div><button type="button" class="btn btn--sm" id="cuest-agregar" data-icono="mas" data-t="cuest.agregarPregunta"></button></div>
-                  <p class="pequeno suave" id="cuest-total" aria-live="polite"></p>
-                  <p class="campo__error" id="cuest-error" role="alert" hidden></p>
-                  <div class="grupo-botones">
-                    <button type="button" class="btn btn--primario" id="cuest-guardar" data-icono="guardar" data-t="cuest.guardar"></button>
-                    <button type="button" class="btn" id="cuest-guardar-lanzar" data-icono="enviar" data-t="cuest.guardarLanzar"></button>
-                    <button type="button" class="btn btn--fantasma" id="cuest-cancelar" data-icono="cerrar" data-t="cuest.cancelar"></button>
-                  </div>
-                </div>
-              </section>
             </div>
           </section>
 
@@ -645,7 +624,7 @@
                     <button type="button" class="btn btn--sm" id="sim-cerrar" data-t="simulada.salir" data-icono="cerrar"></button></div>
                   <div class="tabla-adaptable">
                     <table class="tabla" aria-labelledby="h-sim-lista">
-                      <thead><tr><th data-t="simulada.colAlumno"></th><th data-t="alumnos.colEstado"></th><th data-t="simulada.colPantalla"></th><th data-t="simulada.colFalla"></th><th><span class="solo-lector" data-t="comun.acciones"></span></th></tr></thead>
+                      <thead><tr><th class="col-num" scope="col">#</th><th data-t="simulada.colAlumno"></th><th data-t="alumnos.colEstado"></th><th data-t="simulada.colPantalla"></th><th data-t="simulada.colFalla"></th><th><span class="solo-lector" data-t="comun.acciones"></span></th></tr></thead>
                       <tbody id="sim-filas"></tbody>
                     </table>
                   </div>
@@ -1171,7 +1150,7 @@
         <ul class="lista-limpia terminar__lista" id="te-pasos"></ul>
         <div class="tabla-adaptable terminar__tabla" tabindex="0" role="region" data-t-aria-label="terminar.tablaEtiqueta">
           <table class="tabla" data-t-aria-label="terminar.tablaEtiqueta">
-            <thead><tr><th scope="col" data-t="terminar.colEquipo"></th><th scope="col" data-t="terminar.colEstado"></th></tr></thead>
+            <thead><tr><th class="col-num" scope="col">#</th><th scope="col" data-t="terminar.colEquipo"></th><th scope="col" data-t="terminar.colEstado"></th></tr></thead>
             <tbody id="te-alumnos"></tbody>
           </table>
         </div>
@@ -1199,6 +1178,40 @@
             <button type="submit" class="btn btn--primario" id="dlg-pausa-cambiar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#editar"/></svg><span data-t="pausa.cambiar"></span></button>
           </div>
         </form>
+    </div>
+  </dialog>
+
+  <!-- Editor de cuestionario (nota de interfaz 012): en su propio diálogo, para crear o editar. -->
+  <dialog class="dialogo dialogo--grande dialogo--form" id="cuest-editor" aria-labelledby="h-cuest-editor">
+    <div class="dialogo__cuerpo pila">
+      <div class="dialogo__titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cuestionario"/></svg><h2 id="h-cuest-editor" class="crece" tabindex="-1"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" data-cerrar-dialogo data-t-aria-label="comun.cerrar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <section class="pila cuest-seccion" aria-labelledby="h-cuest-datos">
+        <h3 id="h-cuest-datos" data-t="cuest.datos"></h3>
+        <div class="cuest-datos">
+          <label class="campo"><span class="campo__etiqueta" data-t="cuest.tituloCampo"></span>
+            <input type="text" id="cuest-titulo" maxlength="80" autocomplete="off" data-t-placeholder="cuest.tituloEjemplo" data-icono="cuestionario" aria-describedby="cuest-titulo-error">
+            <span class="campo__error" id="cuest-titulo-error" hidden></span></label>
+          <label class="campo"><span class="campo__etiqueta"><span data-t="cuest.minutos"></span> <span class="suave" data-t="comun.opcional"></span></span>
+            <input type="number" id="cuest-minutos" min="0" max="120" step="1" value="0" data-icono="reloj" aria-describedby="cuest-minutos-ayuda">
+            <span class="campo__ayuda" id="cuest-minutos-ayuda" data-t="cuest.minutosAyuda"></span></label>
+          <div class="campo">
+            <label class="opcion"><input type="checkbox" class="interruptor" id="cuest-azar" role="switch" aria-describedby="cuest-azar-ayuda"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#azar"/></svg> <span data-t="cuest.azar"></span></label>
+            <span class="campo__ayuda" id="cuest-azar-ayuda" data-t="cuest.azarAyuda"></span>
+          </div>
+        </div>
+      </section>
+      <section class="pila cuest-seccion" aria-labelledby="h-cuest-preguntas">
+        <div class="cuest-seccion__cabecera"><h3 id="h-cuest-preguntas" class="crece" data-t="cuest.preguntas"></h3><span class="pequeno suave" id="cuest-total" aria-live="polite"></span></div>
+        <ol class="lista-limpia pila" id="cuest-preguntas" data-t-aria-label="cuest.preguntas"></ol>
+        <div><button type="button" class="btn btn--sm" id="cuest-agregar" data-icono="mas" data-t="cuest.agregarPregunta"></button></div>
+      </section>
+      <p class="campo__error" id="cuest-error" role="alert" hidden></p>
+      <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+        <button type="button" class="btn" id="cuest-cancelar" data-icono="cerrar" data-t="cuest.cancelar"></button>
+        <button type="button" class="btn" id="cuest-guardar-lanzar" data-icono="enviar" data-t="cuest.guardarLanzar"></button>
+        <button type="button" class="btn btn--primario" id="cuest-guardar" data-icono="guardar" data-t="cuest.guardar"></button>
+      </div>
     </div>
   </dialog>
 
@@ -1397,7 +1410,7 @@
       <td data-t-etiqueta="alumnos.colCodigo" class="codigo"></td>
       <td data-t-etiqueta="alumnos.colSistema" class="sistema col-sistema"><span class="so"></span><span class="celda-sub version"></span></td>
       <td data-t-etiqueta="alumnos.colNotas" class="notas"></td>
-      <td class="col-accion"><button type="button" class="btn btn--fantasma btn--icono btn--sm ficha"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></td>
+      <td class="col-accion" data-t-etiqueta="alumnos.colAcciones"><div class="grupo-botones grupo-botones--fin acciones-fila"><button type="button" class="btn btn--fantasma btn--icono btn--sm ficha"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></div></td>
     </tr>
   </template>
   <template id="t-tarjeta-alumno">
@@ -1418,7 +1431,7 @@
   </template>
   <template id="t-historial">
     <tr>
-      <td class="num"></td><td class="celda-principal titulo"></td><td class="lenguaje"></td><td class="lineas"></td><td class="veces"></td><td class="hora"></td>
+      <td class="num col-fija"></td><td class="celda-principal titulo"></td><td class="lenguaje"></td><td class="lineas col-cantidad"></td><td class="veces col-cantidad"></td><td class="hora col-fija"></td>
       <td><div class="grupo-botones grupo-botones--fin">
         <button type="button" class="btn btn--sm abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#editar"/></svg><span></span></button>
         <button type="button" class="btn btn--sm reemitir" data-icono="reenviar"></button></div></td>
@@ -1434,7 +1447,7 @@
   <!-- Una fila de Cuestionarios guardados (prompt 10.20). -->
   <template id="t-cuestionario">
     <tr>
-      <td class="celda-principal titulo"></td><td class="preguntas"></td><td class="puntos"></td><td class="tiempo"></td>
+      <td class="celda-principal titulo"></td><td class="preguntas col-cantidad"></td><td class="puntos col-cantidad"></td><td class="tiempo col-cantidad"></td>
       <td><div class="grupo-botones grupo-botones--fin">
         <button type="button" class="btn btn--sm lanzar" data-icono="enviar"></button>
         <button type="button" class="btn btn--sm btn--fantasma editar" data-icono="editar"></button>
@@ -1443,7 +1456,7 @@
   </template>
   <template id="t-plantilla">
     <tr>
-      <td class="celda-principal nombre"></td><td class="archivos"></td><td class="tamano"></td><td class="estado"></td>
+      <td class="celda-principal nombre"></td><td class="archivos col-cantidad"></td><td class="tamano col-cantidad"></td><td class="estado"></td>
       <td><div class="grupo-botones grupo-botones--fin">
         <button type="button" class="btn btn--sm usar" data-icono="archivo"></button>
         <button type="button" class="btn btn--sm btn--fantasma abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span></span></button>
@@ -1452,7 +1465,7 @@
   </template>
   <template id="t-historial-archivos">
     <tr>
-      <td class="celda-principal que"></td><td class="destino"></td><td class="tamano"></td><td class="veces"></td><td class="hora"></td>
+      <td class="celda-principal que"></td><td class="destino"></td><td class="tamano col-cantidad"></td><td class="veces col-cantidad"></td><td class="hora col-fija"></td>
       <td><div class="grupo-botones grupo-botones--fin"><button type="button" class="btn btn--sm reenviar" data-icono="reenviar"></button></div></td>
     </tr>
   </template>
@@ -1471,7 +1484,7 @@
       <div class="tabla-adaptable">
         <table class="tabla">
           <thead><tr>
-            <th data-t="reco.colAlumno"></th><th data-t="reco.colEstado"></th><th data-t="reco.colLlego"></th><th data-t="reco.colCuando"></th>
+            <th class="col-num" scope="col">#</th><th data-t="reco.colAlumno"></th><th data-t="reco.colEstado"></th><th data-t="reco.colLlego"></th><th class="col-fija" data-t="reco.colCuando"></th>
             <th><span class="solo-lector" data-t="comun.acciones"></span></th>
           </tr></thead>
           <tbody class="reco-filas"></tbody>
@@ -1481,7 +1494,7 @@
   </template>
   <template id="t-reco-fila">
     <tr>
-      <td class="celda-principal quien"></td><td class="estado"></td><td class="llego"></td><td class="cuando"></td>
+      <td class="celda-principal quien"></td><td class="estado"></td><td class="llego"></td><td class="cuando col-fija"></td>
       <td><div class="grupo-botones grupo-botones--fin">
         <button type="button" class="btn btn--sm btn--fantasma abrir"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span></span></button>
         <button type="button" class="btn btn--sm btn--fantasma guardar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span></span></button>

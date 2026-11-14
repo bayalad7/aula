@@ -131,6 +131,7 @@
     $("compacto-mostrando").hidden = !status.presenting;
     $("compacto-vista").hidden = !status.viewed || !!status.control || !!status.presenting;
     pintarMano();
+    pintarEnviados(); // al proyectar su pantalla, lo que escribió el profesor se oculta
   }
   function ponerCompacto(on, avisarAGo) {
     compacto = on;
@@ -1144,7 +1145,7 @@
   // Lo hace el alumno: nada de esto quita el foco ni trae la ventana, y no hay
   // banda. Go manda el estado (participation.DeskView) y aquí se arma el texto.
   // Los errores llegan como «aula:<código>» y se dicen con mano.error.<código>.
-  let participacion = { hand: "down", note: "", messages: [], unsupported: false };
+  let participacion = { hand: "down", note: "", messages: [], replies: [], unsupported: false };
   const ME = "mano.error."; // + código de apps/student/participation.go
   const EM = "mensaje.estado."; // + participation.SentStatus
   const errorDe = (err) => {
@@ -1154,7 +1155,9 @@
   const conectado = () => status.state === "connected";
   // participation.HandState → clave: «lowered_by_teacher» → «loweredByTeacher».
   const estadoMano = (h) => "mano.estado." + String(h).replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-  const maxEnviados = 3;
+  // «Tus mensajes» es un hilo (prompt 10.26): lo que el alumno escribió y lo que el profesor le
+  // mandó solo a él, en orden; las últimas maxEnviados líneas.
+  const maxEnviados = 6;
 
   function pintarMano() {
     const arriba = participacion.hand === "up";
@@ -1192,25 +1195,41 @@
     $("motivo-abrir").textContent = v.note ? T("mano.cambiarMotivo") : T("mano.agregarMotivo");
     if (v.hand !== "up") $("motivo").hidden = true;
     if (antes !== v.hand) anunciar(v.hand === "up" ? T("mano.anuncioArriba") : v.hand === "lowered_by_teacher" ? T(estadoMano(v.hand)) : T("mano.anuncioAbajo"));
-    // Los últimos mensajes del alumno y si ya llegaron.
-    const ultimos = v.messages.slice(-maxEnviados).reverse();
-    $("enviados").hidden = ultimos.length === 0;
-    $("enviados-lista").replaceChildren(...ultimos.map((m) => {
+    pintarEnviados();
+    renderNotices(avisos); // una respuesta cita el mensaje: ya se conoce
+  }
+
+  // El hilo: los mensajes del alumno a la derecha (con si llegaron) y lo del profesor a la
+  // izquierda. Mientras su pantalla se proyecta a la clase, el texto del profesor no se muestra
+  // (es solo para él: docs/privacidad.md regla 53).
+  function pintarEnviados() {
+    const v = participacion;
+    const lineas = [
+      ...(v.messages || []).map((m) => ({ propio: true, m, at: m.at })),
+      ...(v.replies || []).map((r) => ({ propio: false, m: r, at: r.at })),
+    ].sort((a, b) => String(a.at).localeCompare(String(b.at))).slice(-maxEnviados);
+    $("enviados").hidden = lineas.length === 0;
+    const oculto = !!status.presenting;
+    $("enviados-lista").replaceChildren(...lineas.map(({ propio, m }) => {
       const li = document.createElement("li");
-      li.className = "enviado";
-      const t = document.createElement("span");
-      t.className = "enviado__texto";
-      t.textContent = m.text;
-      const e = document.createElement("span");
-      e.className = "insignia" + (m.status === "received" ? " insignia--conectado" : m.status === "failed" ? " insignia--error" : "");
-      e.textContent = T(EM + m.status);
+      li.className = "burbuja" + (propio ? " burbuja--propia" : "");
+      const t = document.createElement("p");
+      t.className = "burbuja__texto";
+      t.textContent = propio ? m.text : oculto ? T("mensaje.ocultoProyectando") : m.text;
+      const meta = document.createElement("span");
+      meta.className = "burbuja__meta";
       const h = document.createElement("span");
-      h.className = "codigo-recibido__meta";
-      h.textContent = hora(m.at);
-      li.append(t, h, e);
+      h.textContent = propio ? hora(m.at) : T("mensaje.delProfesor", { hora: hora(m.at) });
+      meta.append(h);
+      if (propio) {
+        const e = document.createElement("span");
+        e.className = "insignia" + (m.status === "received" ? " insignia--conectado" : m.status === "failed" ? " insignia--error" : "");
+        e.textContent = T(EM + m.status);
+        meta.append(e);
+      }
+      li.append(t, meta);
       return li;
     }));
-    renderNotices(avisos); // una respuesta cita el mensaje: ya se conoce
   }
 
   function alternarMano() {

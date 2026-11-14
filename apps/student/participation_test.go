@@ -122,6 +122,10 @@ func TestHandAndMessageWithLiveConsole(t *testing.T) {
 	if n := a.View().Notices; len(n) != 1 || n[0].ReplyTo != m.MessageID {
 		t.Fatalf("notices %+v", n)
 	}
+	// The answer also goes into the thread of «Tus mensajes» (prompt 10.26).
+	if r := a.desk.View().Replies; len(r) != 1 || r[0].ReplyTo != m.MessageID || r[0].Text != "Sí." {
+		t.Errorf("thread replies %+v", r)
+	}
 	if rec.raised != 0 {
 		t.Errorf("the window was raised %d times; hands and messages never take the focus", rec.raised)
 	}

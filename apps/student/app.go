@@ -553,6 +553,12 @@ func (a *App) onNotice(n codedist.Notice) {
 	list := slices.Clone(a.notices)
 	a.mu.Unlock()
 	a.emit(EventNotices, Notices{Notices: list})
+	if n.Personal || n.ReplyTo != "" {
+		// A private message of the teacher also goes into the thread of «Tus
+		// mensajes» (prompt 10.26).
+		a.desk.Heard(participation.Reply{ID: n.ID, Text: n.Text, At: n.At, ReplyTo: n.ReplyTo})
+		a.emitParticipation()
+	}
 	a.notify()
 }
 

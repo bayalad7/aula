@@ -265,6 +265,8 @@ window.AulaTextos = Object.freeze({
   "mensaje.enviar": "Enviar",
   "mensaje.cancelar": "Cancelar",
   "mensaje.enviados": "Tus mensajes",
+  "mensaje.delProfesor": "Tu profesor · {hora}",
+  "mensaje.ocultoProyectando": "Mensaje de tu profesor: oculto mientras tu pantalla se muestra a la clase.",
   "mensaje.estado.sending": "Enviando…",
   "mensaje.estado.received": "Recibido",
   "mensaje.estado.failed": "No se envió",

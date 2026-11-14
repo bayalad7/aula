@@ -65,8 +65,6 @@ body.watching #contenido { display: none; }
 .enviados { display: grid; gap: var(--e-1); }
 .enviados__titulo { margin: 0; font-size: var(--t-sm); color: var(--c-texto-suave); }
 .enviados__lista { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-1); }
-.enviado { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--e-1) var(--e-2); font-size: var(--t-sm); }
-.enviado__texto { flex: 1; min-width: 10rem; overflow-wrap: anywhere; }
 .notice-cita { font-size: var(--t-sm); color: var(--c-texto-suave); overflow-wrap: anywhere; }
 
 /* Archivos que envió el profesor (prompt 10.9): la tarjeta del código, sin código. */

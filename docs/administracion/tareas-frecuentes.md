@@ -251,15 +251,17 @@ desde aquí aunque esté apagado (Wake-on-LAN). La primera vez hay que encenderl
    conexión del canal; con alumnos marcados, solo a esos.
 2. Pulsa **Encender**.
 
-También puedes encender uno solo con el botón **Encender** de su fila. Los equipos que no tienen
-sesión en esta consola aparecen con el interruptor **Mostrar apagados** de la lista de Alumnos.
+También puedes marcar los equipos apagados (la casilla de su grupo los marca todos) y pulsar
+**Encender** en la barra de acciones, o encender uno solo con el ⚡ de su columna Acciones. Los
+equipos que no tienen sesión en esta consola aparecen con el interruptor **Apagados (n)** de la
+cabecera de Alumnos.
 
 - Mientras arranca, la fila dice **Encendiendo…** con lo que falta de los 3 minutos que Aula
   espera. Cuando su agente se conecta, vuelve a ser un alumno conectado.
 - Si no se conecta a tiempo, la fila dice **No respondió**. Pulsa **¿Por qué?** y revisa
   [Un equipo no se enciende](solucion-de-problemas#un-equipo-no-se-enciende).
 - Encender no le hace nada a un equipo que ya está encendido, por eso no pide confirmación.
-- **Olvidar** (en la fila de un apagado) borra de la consola la dirección física del equipo. Si
+- **Olvidar** (el 🗑 de la columna Acciones de un apagado) borra de la consola la dirección física del equipo. Si
   su agente se vuelve a conectar, Aula lo recuerda otra vez.
 
 ## Acomodar el salón

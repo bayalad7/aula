@@ -31,7 +31,8 @@ Un archivo que Aula no puede leer (por ejemplo, si se editó a mano y quedó rot
 
 ## Crear un cuestionario
 
-Pulsa **Nuevo cuestionario**:
+Pulsa **Nuevo cuestionario**: el editor se abre en su propio diálogo, con los **datos del
+cuestionario** arriba y las **preguntas** debajo. **Cancelar**, la X o Esc lo cierran sin guardar.
 
 1. Escribe el **título** (hasta 80 caracteres): es lo que ve el alumno arriba de su tarjeta.
 2. Si quieres, pon un **tiempo en minutos** (hasta 120). Al lanzarlo se pone en marcha el
@@ -42,8 +43,9 @@ Pulsa **Nuevo cuestionario**:
    el mismo para el mismo alumno, aunque se reconecte).
 4. Para cada pregunta escribe el **texto** (hasta 200 caracteres), elige el **tipo** y sus
    **puntos** (de 1 a 100):
-   - **Opción múltiple**: de 2 a 6 opciones. Marca con **Correcta** una o varias. Con varias, el
-     alumno ve «Elige todas las que apliquen».
+   - **Opción múltiple**: de 2 a 6 opciones. Enciende el interruptor de la columna **Correcta** en
+     una o varias; el 🗑 al final de la fila quita la opción. Con varias correctas, el alumno ve
+     «Elige todas las que apliquen».
    - **Sí o no**: elige si **la correcta** es Sí o No.
 5. **Agregar pregunta** suma otra (hasta 30). **Quitar pregunta** quita la suya.
 6. Pulsa **Guardar**, o **Guardar y lanzar** para mandarlo ahora mismo.

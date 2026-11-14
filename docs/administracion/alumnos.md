@@ -15,9 +15,11 @@ o solo a algunos.
 
 ## Lista, miniaturas o salón
 
-- **Lista**: una fila por equipo con su estado, el código que tiene en pantalla, su sistema y
-  versión de Aula, y notas (por ejemplo, «No comparte su pantalla», «Restricciones» o «No pudo: …»
-  si su equipo contestó con un problema).
+- **Lista**: una fila por equipo, numerada, con su estado, el código que tiene en pantalla, su
+  sistema y versión de Aula, notas (por ejemplo, «No comparte su pantalla», «Restricciones» o «No
+  pudo: …» si su equipo contestó con un problema) y sus **Acciones**: ⓘ abre su ficha, ⚡ lo
+  enciende si está apagado y 🗑 olvida un equipo apagado. Al pasar el mouse, cada icono dice qué
+  hace. Si la lista es larga, se desplaza y el encabezado de la tabla se queda arriba.
 - **Miniaturas**: la pantalla de cada alumno, como un monitor, actualizada cada segundo. Haz clic
   en una para verla en grande. Con **Tamaño** las haces más chicas o más grandes (Pequeño, Mediano,
   Grande, Extra grande) o eliges **Ajustar a la pantalla** para ver a todos sin desplazarte; la
@@ -36,7 +38,7 @@ siendo vista por el profesor». Las imágenes no se guardan: al volver a Lista s
 
 ## La ficha de un alumno
 
-El botón de información al final de cada fila abre su **ficha** a la derecha: usuario, estado,
+El botón ⓘ de la columna Acciones abre su **ficha** a la derecha: usuario, estado,
 la etiqueta y el nombre de su equipo, su lugar en el salón, sistema, versión de Aula, canal, desde
 qué hora está conectado y sus restricciones. Abajo dice
 **qué puede hacer su equipo** (recibir código, mostrar su pantalla, energía, control remoto…), y
@@ -74,13 +76,16 @@ privado, Proyectar, Pausar ni Abrir.
 
 ## Seleccionar alumnos
 
-Haz clic en una fila o su casilla, o usa **Seleccionar todos** (también con Ctrl+A). Arriba, junto
+Haz clic en una fila o su casilla, o usa el botón ✓ de la cabecera, **Seleccionar todos** (también
+con Ctrl+A). Los equipos apagados se marcan todos juntos con la casilla de su grupo. Arriba, junto
 a los conectados, dice **Todos (n)** o **n seleccionados** (al pasar el mouse explica a quién van).
 **Sin selección, las acciones van a todos los conectados.**
 
 ## Acciones sobre la selección
 
-La barra de abajo abre un panel a la derecha, sin tapar la lista:
+La barra de abajo tiene un botón por acción, todos del mismo tamaño, con su icono y su nombre (en
+una ventana angosta, solo el icono; el nombre sale al pasar el mouse). Casi todas abren un panel a
+la derecha, sin tapar la lista:
 
 | Acción | Qué hace | Más |
 |---|---|---|
@@ -91,6 +96,7 @@ La barra de abajo abre un panel a la derecha, sin tapar la lista:
 | Energía | Apaga, reinicia o cierra la sesión de los equipos. | [Tareas frecuentes](tareas-frecuentes#apagar-o-reiniciar-los-equipos) |
 | Captura | Toma una foto de la pantalla de cada uno; guardas las que elijas. | [Tareas frecuentes](tareas-frecuentes#tomar-una-captura-de-la-pantalla-de-un-alumno) |
 | Abrir | Abre una página en su navegador o una app permitida en su equipo. | [Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos) |
+| Encender | Enciende los equipos marcados que están apagados; se activa al marcar al menos uno. | [Tareas frecuentes](tareas-frecuentes#encender-los-equipos) |
 
 ## Estados de un alumno
 
@@ -100,7 +106,7 @@ La barra de abajo abre un panel a la derecha, sin tapar la lista:
 - **Sin sesión iniciada**: el equipo está encendido pero nadie inició sesión; solo puede recibir
   órdenes de energía.
 - **Apagado**: un equipo que ya se conectó alguna vez a esta consola y ahora no está; se ve con el
-  interruptor **Mostrar apagados**, con la última vez que se vio. **Encendiendo…** y **No
+  interruptor **Apagados (n)** de la cabecera, con la última vez que se vio. **Encendiendo…** y **No
   respondió** dicen cómo va su encendido: [Encender los equipos](tareas-frecuentes#encender-los-equipos).
 - **En pausa** (insignia en Notas): su pantalla está cubierta por la pausa. **Pausando…** o **Sin
   acusar la pausa** dicen que su equipo aún no la confirma; **No se pudo pausar**, que su equipo no

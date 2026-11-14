@@ -51,7 +51,7 @@ Sistema multiplataforma de gestión de aula (estilo LanSchool / Veyon) con un m�
 | 19 | `19-pulido-app-alumno-ux.md` | Pulido de la app del alumno: overlay de código, avisos y transparencia ✅ | Pulido |
 | 20 | `20-auditoria-limpieza-artefactos.md` | Auditoría y limpieza de los artefactos de `docs/v1/ux/` (hecha el 12/11/2026; `docs/v1` ya no existe) | Docs |
 
-Las funciones del backlog con prompt propio son `10.1` a `10.25` (hechas: 10.1 a 10.12; ver
+Las funciones del backlog con prompt propio son `10.1` a `10.26` (hechas: 10.1 a 10.12; ver
 `docs/progreso.md`). Las de 10.13 en adelante (redactadas el 12/11/2026; 10.22 a 10.25 son las
 que distinguen a Aula de otras herramientas de aula):
 
@@ -70,6 +70,7 @@ que distinguen a Aula de otras herramientas de aula):
 | 10.23 | `10.23-rebobinar-la-clase.md` | Código paso a paso: el alumno ve qué cambió y vuelve a cualquier paso | Después |
 | 10.24 | `10.24-transmitir-el-editor-como-texto.md` | El editor del profesor en vivo como texto, no como video | Después |
 | 10.25 | `10.25-salud-del-laboratorio.md` | Alertas del equipo: disco, memoria, reloj, internet, reinicio pendiente | Después |
+| 10.26 | `10.26-bandeja-de-mensajes-tipo-chat.md` | Mejora de 10.6 y 10.7: bandeja de mensajes tipo chat, una conversación por alumno (nota de interfaz 015; `/funcionalidad-mejora`) | Después |
 
 Orden sugerido para `v0.1.0`: 10.21 → 10.13 → 10.14 → 10.15 → 10.17 → 15 (auto-actualización)
 → 11 (revisión) → pruebas en VM.

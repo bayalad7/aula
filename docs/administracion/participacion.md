@@ -14,6 +14,9 @@ sigues también el **temporizador** del ejercicio. El número junto a **Particip
 el menú cuenta lo que espera tu atención: las manos levantadas y los mensajes que aún no
 respondes.
 
+En una ventana ancha se ve en dos columnas: a la izquierda **Manos y mensajes**; a la derecha
+**Encuestas** y debajo **Temporizador**. En una angosta, una debajo de otra.
+
 ![Participación con dos manos levantadas y un mensaje nuevo](img/participacion.webp)
 
 Cuando llega una mano o un mensaje, aparece un aviso abajo a la derecha con el nombre del equipo.

@@ -112,6 +112,15 @@ retiraron; esta es la primera.
 - **Identidad nueva, Nodo:** el logo de Aula (cuatro pantallas unidas por un punto) en el icono de
   las dos apps y de la bandeja, y títulos en Plus Jakarta Sans, incluida en Aula para que se vea
   igual sin internet. El código que recibe el alumno se ve un poco más grande (14 px).
+- **Tablas más claras:** cada fila numerada («#»), el encabezado fijo al desplazarse y cada dato
+  alineado según su tipo (texto a la izquierda, horas al centro, cantidades a la derecha). Una
+  lista larga de alumnos ya se desplaza y la barra de acciones se queda abajo.
+- **Alumnos:** la cabecera en una sola línea; la barra de acciones con botones iguales (icono arriba
+  y nombre abajo) y **Encender** para los equipos marcados; una columna **Acciones** con iconos
+  (ficha, Encender, Olvidar) y una casilla para marcar todos los apagados.
+- El editor de cuestionarios se abre en su propio diálogo, con la columna **Correcta** separada de
+  quitar la opción; **Salón** pone «Sin acomodar» y «Equipo elegido» arriba y el plano a todo lo
+  ancho; **Participación** se ve en dos columnas.
 
 ### Para quien instala
 

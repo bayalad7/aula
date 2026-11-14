@@ -20,14 +20,14 @@ export const zonas = {
     { id: "alumnos", nombre: "Vista Alumnos", selector: "[data-vista-de=alumnos]", que: "Los alumnos del canal, en lista, miniaturas o como en el salón." },
     { id: "alumnos-modo", dentro: "alumnos", nombre: "Selector Lista | Miniaturas | Salón", selector: "[data-vista-de=alumnos] .segmentado", que: "Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón." },
     { id: "alumnos-lista", dentro: "alumnos", nombre: "Lista de alumnos", selector: "#alumnos-lista", que: "Tabla con un alumno por fila." },
-    { id: "fila-alumno", dentro: "alumnos-lista", nombre: "Fila del alumno", selector: "#alumnos-filas > tr", que: "Un alumno: casilla, equipo, estado, insignias y el botón de su ficha; en un equipo sin conexión, Encender." },
+    { id: "fila-alumno", dentro: "alumnos-lista", nombre: "Fila del alumno", selector: "#alumnos-filas > tr", que: "Un alumno: número, casilla, equipo, estado, insignias y sus Acciones (ficha, Encender y Olvidar, solo iconos con su tooltip)." },
     { id: "alumnos-seleccion", dentro: "alumnos", nombre: "Selección", selector: "#seleccion-texto", que: "A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip." },
-    { id: "alumnos-apagados", dentro: "alumnos", nombre: "Mostrar apagados", selector: "#alumnos-apagados-campo", que: "Muestra en la lista los equipos que la consola conoce y no están conectados, con Encender y Olvidar; solo en Lista y se recuerda (prompt 10.19)." },
+    { id: "alumnos-apagados", dentro: "alumnos", nombre: "Mostrar apagados", selector: "#alumnos-apagados-campo", que: "El interruptor «Apagados (n)»: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19)." },
     { id: "alumnos-tamano", dentro: "alumnos", nombre: "Tamaño de las miniaturas", selector: "#tamano-miniaturas", que: "Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda." },
     { id: "alumnos-miniaturas", dentro: "alumnos", nombre: "Miniaturas", selector: "#alumnos-miniaturas", que: "Cuadrícula con la pantalla de cada alumno." },
     { id: "tarjeta-alumno", dentro: "alumnos-miniaturas", nombre: "Tarjeta del alumno", selector: "#alumnos-cuadricula > li", que: "La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande." },
     { id: "alumnos-salon", dentro: "alumnos", nombre: "Alumnos en el salón", selector: "#alumnos-salon", que: "Las tarjetas de los alumnos en su lugar del salón; el lugar de un equipo sin conexión se ve vacío, con Encender. Los números de fila y columna seleccionan a los de esa fila o columna (prompt 10.15)." },
-    { id: "barra-acciones", dentro: "alumnos", nombre: "Barra de acciones", selector: ".barra-acciones", que: "Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…)." },
+    { id: "barra-acciones", dentro: "alumnos", nombre: "Barra de acciones", selector: ".barra-acciones", que: "Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño." },
 
     // Paneles y diálogos que salen de Alumnos
     { id: "ficha", nombre: "Ficha del alumno", selector: "#panel-alumno", que: "Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande." },
@@ -73,7 +73,7 @@ export const zonas = {
 
     // Salón (prompt 10.15): módulo propio del menú, el plano del canal
     { id: "salon", nombre: "Vista Salón", selector: "[data-vista-de=salon]", que: "El plano del salón del canal: etiqueta y lugar de cada equipo, Exportar, Importar y Abrir carpeta." },
-    { id: "salon-herramientas", dentro: "salon", nombre: "Filas, columnas y lugar", selector: "[data-vista-de=salon] .tarjeta__cuerpo > .fila", que: "El tamaño del salón (hasta 12 × 12) y qué pone un clic: mover equipos, Profesor, Pasillo o Vacío." },
+    { id: "salon-herramientas", dentro: "salon", nombre: "Filas, columnas y lugar", selector: ".salon-herramientas", que: "El tamaño del salón (hasta 12 × 12) y qué pone un clic: mover equipos, Profesor, Pasillo o Vacío." },
     { id: "salon-plano", dentro: "salon", nombre: "Plano del salón", selector: "#salon-plano", que: "Un botón por lugar, con el frente del salón arriba: se arrastra cada equipo a su lugar, o con el teclado (flechas, Enter y Esc)." },
     { id: "salon-sin", dentro: "salon", nombre: "Sin acomodar", selector: "#salon-sin", que: "Los equipos sin lugar: los nuevos y los que la consola recuerda; soltar uno aquí lo saca del plano." },
     { id: "salon-elegido", dentro: "salon", nombre: "Equipo elegido", selector: ".salon__elegido", que: "El equipo elegido: su nombre, lugar y estado, su etiqueta con Guardar etiqueta, Quitar de su lugar y Quitar del salón." },
@@ -81,7 +81,7 @@ export const zonas = {
     // Cuestionarios (prompt 10.20): módulo propio del menú
     { id: "cuestionarios", nombre: "Vista Cuestionarios", selector: "[data-vista-de=cuestionarios]", que: "Los cuestionarios guardados, su editor y Lanzar; los resultados van en Participación › Encuestas." },
     { id: "cuest-guardados", dentro: "cuestionarios", nombre: "Cuestionarios guardados", selector: "#cuest-guardados", que: "Los de Documentos\\Aula\\cuestionarios con «Lanzar a» (todos o la selección), Lanzar, Editar, Eliminar, Nuevo cuestionario y Abrir carpeta." },
-    { id: "cuest-editor", dentro: "cuestionarios", nombre: "Editor de cuestionario", selector: "#cuest-editor", que: "Título, tiempo, al azar y cada pregunta con su tipo, puntos y opciones con el interruptor Correcta; Guardar y Guardar y lanzar." },
+    { id: "cuest-editor", dentro: "cuestionarios", nombre: "Editor de cuestionario", selector: "#cuest-editor", que: "Diálogo con los datos (título, tiempo, al azar) y cada pregunta con su tipo, puntos y opciones con la columna Correcta; Guardar y Guardar y lanzar." },
 
     // Participación
     { id: "participacion", nombre: "Vista Participación", selector: "[data-vista-de=participacion]", que: "Lo que responden los alumnos en vivo." },

@@ -1,0 +1,27 @@
+{
+  "n": 11,
+  "version": "v0.1.0",
+  "fecha": "2026-11-13T21:54:06.496Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "alumnos",
+    "nombre": "Vista Alumnos",
+    "cadena": "Consola › Vista Alumnos"
+  },
+  "elemento": {
+    "etiqueta": "section",
+    "texto": "Alumnos 4 conectados1 desconectado Todos (4) · Sin selección: las acciones van a",
+    "claveTexto": "",
+    "selector": "#contenido > section.vista__seccion:nth-of-type(1)"
+  },
+  "tipo": "estilo",
+  "texto": "Cuando la lista de alumnos crece no veo como un scrollbar para poder subir o bajar en el listado de la tabla de los filas de los alumnos"
+}

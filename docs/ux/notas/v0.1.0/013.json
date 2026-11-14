@@ -1,0 +1,27 @@
+{
+  "n": 13,
+  "version": "v0.1.0",
+  "fecha": "2026-11-13T22:14:02.233Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "",
+    "nombre": "(zona sin nombre)",
+    "cadena": "Consola › (zona sin nombre)"
+  },
+  "elemento": {
+    "etiqueta": "main#contenido",
+    "texto": "Alumnos 4 conectados1 desconectado Todos (4) · Sin selección: las acciones van a",
+    "claveTexto": "",
+    "selector": "#contenido"
+  },
+  "tipo": "estilo",
+  "texto": "Al ver la vista \"Salón\", al estar cambiando el tipo de tamaño para la vista \"pequeña, mediana, grande, extra grande o ajustar\" la barra de acciones se desacomoda y queda a la mitad de la vista de la pantalla"
+}

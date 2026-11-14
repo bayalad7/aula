@@ -10,4 +10,4 @@ equipo donde se anotó (`.gitignore`).
 
 | Versión | Notas | Pendientes o en curso | Hechas | Descartadas |
 |---|---|---|---|---|
-| [v0.1.0](v0.1.0/LEEME.md) (en curso) | 6 | 0 | 6 | 0 |
+| [v0.1.0](v0.1.0/LEEME.md) (en curso) | 15 | 0 | 15 | 0 |

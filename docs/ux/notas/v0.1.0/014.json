@@ -1,0 +1,27 @@
+{
+  "n": 14,
+  "version": "v0.1.0",
+  "fecha": "2026-11-13T22:24:34.905Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "salon",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "salon",
+    "nombre": "Vista Salón",
+    "cadena": "Consola › Vista Salón"
+  },
+  "elemento": {
+    "etiqueta": "section",
+    "texto": "Plano del salón Filas 123456789101112 Columnas 123456789101112 Al hacer clic en ",
+    "claveTexto": "",
+    "selector": "#contenido > section.vista__seccion:nth-of-type(2) > div.vista__cuerpo.pila > section.tarjeta"
+  },
+  "tipo": "mover",
+  "texto": "La sección de \"Frente del salón (pizarron)\" quiero que tome todo el ancho de la pantalla y las secciones de \"Sin acomodar\" y \"Equipo creo es mejor que se acomode en la parte superior aún lado de \"Filas\", \"Columnas\" y \"Al hacer click en el lugar\", creo que suficiente espacio para todo realiza un mejor acomodo de la parte superior."
+}

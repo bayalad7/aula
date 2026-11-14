@@ -1,0 +1,27 @@
+{
+  "n": 9,
+  "version": "v0.1.0",
+  "fecha": "2026-11-13T20:50:55.115Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "alumnos-lista",
+    "nombre": "Lista de alumnos",
+    "cadena": "Consola › Vista Alumnos › Lista de alumnos"
+  },
+  "elemento": {
+    "etiqueta": "table",
+    "texto": "Alumnos de la clase",
+    "claveTexto": "alumnos.tablaEtiqueta",
+    "selector": "#alumnos-lista > table.tabla"
+  },
+  "tipo": "estilo",
+  "texto": "Cuando se habilitan las computadoras apagadas no existe un input para poder seleccionar y deseleccionar todas las computadoras apagadas\" y tampoco existe un botón para poder prender todas las computadoras en una sola acción, creo que debería haber un botón de \"Encender\" en la \"Barra de acciones\" y el botón se debería de habilitar solamente cuando este seleccionada 1 computadora o más."
+}

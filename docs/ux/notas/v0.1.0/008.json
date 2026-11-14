@@ -1,0 +1,27 @@
+{
+  "n": 8,
+  "version": "v0.1.0",
+  "fecha": "2026-11-13T20:45:09.534Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "barra-acciones",
+    "nombre": "Barra de acciones",
+    "cadena": "Consola › Vista Alumnos › Barra de acciones"
+  },
+  "elemento": {
+    "etiqueta": "div",
+    "texto": "Mostrar mi pantalla Aviso Pausar Restricciones Energía Captura Temporizador Encu",
+    "claveTexto": "alumnos.barraEtiqueta",
+    "selector": "#contenido > section.vista__seccion:nth-of-type(1) > div.barra-acciones:nth-of-type(2) > div.barra-acciones__dentro"
+  },
+  "tipo": "estilo",
+  "texto": "El diseño de los botones de la barra de acciones, no se ve uniforme, quisiera que todos los botones se vieran uniformes, opinión sugerida #1 \"1. Eliminar la etiqueta tooltip, 2. Ocultar el texto de los botones, 3. Cuando el usuario pase el mouse sobre el icono de los botones que muestre el texto de los botones\"; opinión sugerida #2 \"1. Poner el icono del botón arriba del texto 2. Hacer que el botón tenga el mismo tamaño 3. Mostrar el tooltip solamente con el icono cuando el texto esta oculto\". Analiza mis opiniones sugeridas cual es lo mejor para el ux-ui del usuario o implementa algo mejor."
+}

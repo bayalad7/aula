@@ -20,10 +20,10 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 4 | **Cabecera de la vista** | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | 5 | **Selección** | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
 | 6 | **Selector Lista | Miniaturas | Salón** | Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón. |
-| 7 | **Mostrar apagados** | Muestra en la lista los equipos que la consola conoce y no están conectados, con Encender y Olvidar; solo en Lista y se recuerda (prompt 10.19). |
+| 7 | **Mostrar apagados** | El interruptor «Apagados (n)»: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19). |
 | 8 | **Lista de alumnos** | Tabla con un alumno por fila. |
-| 9 | **Fila del alumno** | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha; en un equipo sin conexión, Encender. |
-| 10 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 9 | **Fila del alumno** | Un alumno: número, casilla, equipo, estado, insignias y sus Acciones (ficha, Encender y Olvidar, solo iconos con su tooltip). |
+| 10 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 
 ### Consola · Alumnos (miniaturas)
 
@@ -34,7 +34,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 1 | **Tamaño de las miniaturas** | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda. |
 | 2 | **Miniaturas** | Cuadrícula con la pantalla de cada alumno. |
 | 3 | **Tarjeta del alumno** | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
-| 4 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 4 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 
 ### Consola · Ficha del alumno
 
@@ -62,7 +62,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 |---|---|---|
 | 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
 | 2 | **Panel Aviso** | Mandar un aviso a la selección. |
-| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 
 ### Consola · Pausar pantallas
 
@@ -72,7 +72,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 |---|---|---|
 | 1 | **Franja global** | Lo que sigue activo durante la clase (transmitir, proyectar a un alumno, control, pantallas en pausa, energía, temporizador, encuesta o cuestionario abierto, aula simulada), con su botón para detenerlo. |
 | 2 | **Panel Pausar pantallas** | Pausar las pantallas de la selección o de todos, con un mensaje opcional, o reanudarlas (Ctrl+Mayús+P). |
-| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 
 ### Consola · Terminar la clase
 
@@ -90,7 +90,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Panel Abrir página o app** | Abrir una página en el navegador o una app permitida en los equipos de la selección, y las últimas que abriste. |
-| 2 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 2 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 
 ### Consola · Ajustes › Apps permitidas
 
@@ -154,7 +154,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Panel Encuesta** | La pregunta, el tipo de respuesta, las opciones y «Ver quién respondió qué»; Lanzar a todos o a la selección. |
-| 2 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 2 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 
 ### Consola · Participación › Encuestas
 
@@ -173,7 +173,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 |---|---|---|
 | 1 | **Selector Lista | Miniaturas | Salón** | Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón. |
 | 2 | **Alumnos en el salón** | Las tarjetas de los alumnos en su lugar del salón; el lugar de un equipo sin conexión se ve vacío, con Encender. Los números de fila y columna seleccionan a los de esa fila o columna (prompt 10.15). |
-| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| 3 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 
 ### Consola · Salón
 
@@ -195,7 +195,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 |---|---|---|
 | 1 | **Menú** | Columna izquierda: la clase abierta, las vistas y Ayuda y Ajustes. |
 | 2 | **Cuestionarios guardados** | Los de Documentos\Aula\cuestionarios con «Lanzar a» (todos o la selección), Lanzar, Editar, Eliminar, Nuevo cuestionario y Abrir carpeta. |
-| 3 | **Editor de cuestionario** | Título, tiempo, al azar y cada pregunta con su tipo, puntos y opciones con el interruptor Correcta; Guardar y Guardar y lanzar. |
+| 3 | **Editor de cuestionario** | Diálogo con los datos (título, tiempo, al azar) y cada pregunta con su tipo, puntos y opciones con la columna Correcta; Guardar y Guardar y lanzar. |
 
 ### Consola · Participación › Encuestas (cuestionario)
 
@@ -316,14 +316,14 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `alumnos` | Vista Alumnos | Los alumnos del canal, en lista, miniaturas o como en el salón. |
 | `alumnos-modo` | Vista Alumnos › Selector Lista | Miniaturas | Salón | Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón. |
 | `alumnos-lista` | Vista Alumnos › Lista de alumnos | Tabla con un alumno por fila. |
-| `fila-alumno` | Vista Alumnos › Lista de alumnos › Fila del alumno | Un alumno: casilla, equipo, estado, insignias y el botón de su ficha; en un equipo sin conexión, Encender. |
+| `fila-alumno` | Vista Alumnos › Lista de alumnos › Fila del alumno | Un alumno: número, casilla, equipo, estado, insignias y sus Acciones (ficha, Encender y Olvidar, solo iconos con su tooltip). |
 | `alumnos-seleccion` | Vista Alumnos › Selección | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
-| `alumnos-apagados` | Vista Alumnos › Mostrar apagados | Muestra en la lista los equipos que la consola conoce y no están conectados, con Encender y Olvidar; solo en Lista y se recuerda (prompt 10.19). |
+| `alumnos-apagados` | Vista Alumnos › Mostrar apagados | El interruptor «Apagados (n)»: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19). |
 | `alumnos-tamano` | Vista Alumnos › Tamaño de las miniaturas | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda. |
 | `alumnos-miniaturas` | Vista Alumnos › Miniaturas | Cuadrícula con la pantalla de cada alumno. |
 | `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
 | `alumnos-salon` | Vista Alumnos › Alumnos en el salón | Las tarjetas de los alumnos en su lugar del salón; el lugar de un equipo sin conexión se ve vacío, con Encender. Los números de fila y columna seleccionan a los de esa fila o columna (prompt 10.15). |
-| `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía…). |
+| `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 | `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande. |
 | `ficha-puede` | Ficha del alumno › Qué puede hacer su equipo | Lista de capacidades del equipo del alumno. |
 | `pantalla-grande` | Pantalla grande | La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno. |
@@ -367,7 +367,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `salon-elegido` | Vista Salón › Equipo elegido | El equipo elegido: su nombre, lugar y estado, su etiqueta con Guardar etiqueta, Quitar de su lugar y Quitar del salón. |
 | `cuestionarios` | Vista Cuestionarios | Los cuestionarios guardados, su editor y Lanzar; los resultados van en Participación › Encuestas. |
 | `cuest-guardados` | Vista Cuestionarios › Cuestionarios guardados | Los de Documentos\Aula\cuestionarios con «Lanzar a» (todos o la selección), Lanzar, Editar, Eliminar, Nuevo cuestionario y Abrir carpeta. |
-| `cuest-editor` | Vista Cuestionarios › Editor de cuestionario | Título, tiempo, al azar y cada pregunta con su tipo, puntos y opciones con el interruptor Correcta; Guardar y Guardar y lanzar. |
+| `cuest-editor` | Vista Cuestionarios › Editor de cuestionario | Diálogo con los datos (título, tiempo, al azar) y cada pregunta con su tipo, puntos y opciones con la columna Correcta; Guardar y Guardar y lanzar. |
 | `participacion` | Vista Participación | Lo que responden los alumnos en vivo. |
 | `manos` | Vista Participación › Manos levantadas | La fila de manos, por orden de llegada. |
 | `mensajes` | Vista Participación › Mensajes de los alumnos | La bandeja de mensajes con Responder. |

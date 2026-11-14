@@ -1,0 +1,27 @@
+{
+  "n": 7,
+  "version": "v0.1.0",
+  "fecha": "2026-11-13T20:37:23.454Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "cabecera",
+    "nombre": "Cabecera de la vista",
+    "cadena": "Consola › Vista Alumnos › Cabecera de la vista"
+  },
+  "elemento": {
+    "etiqueta": "header",
+    "texto": "Alumnos 4 conectados1 desconectado Todos (4) · Sin selección: las acciones van a",
+    "claveTexto": "",
+    "selector": "#contenido > section.vista__seccion:nth-of-type(1) > header.vista__cabecera"
+  },
+  "tipo": "estilo",
+  "texto": "Con todas las nuevas funcionalidades implementadas fue creciendo los botones de las acciones, tanto que ya saltaron la linea, realiza una mejora para que el acomodo de los botones quede en una misma linea y que el diseño coincida entre todos los diferentes botones, ya que se ven muy diferentes unos de otros."
+}

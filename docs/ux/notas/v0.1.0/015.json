@@ -1,0 +1,28 @@
+{
+  "n": 15,
+  "version": "v0.1.0",
+  "fecha": "2026-11-13T22:33:51.285Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "participacion",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "participacion",
+    "nombre": "Vista Participación",
+    "cadena": "Consola › Vista Participación"
+  },
+  "elemento": {
+    "etiqueta": "div",
+    "texto": "Manos y mensajes Bajar todas Nadie ha levantado la mano ni te ha escrito. Cuando",
+    "claveTexto": "",
+    "selector": "#contenido > section.vista__seccion:nth-of-type(6) > div.vista__cuerpo.pila"
+  },
+  "tipo": "estilo",
+  "texto": "El acomodo de las secciones \"Manos y mensajes\", \"Encuestas\" y \"Temporizador\", creo que sería mejor si se acomoda de la siguiente forma:\n-----------------------  ---------------------\n| Manos y mensajes  | | Encuestas             |\n|                                 | |                             |\n|                                 | ---------------------\n|                                 | ----------------------\n|                                 | | Temporizador       |\n|                                 | |                              |\n------------------------ ----------------------\n\ny la sección de Manos y mensajes quiero que tenga un diseño como las aplicaciones de chats, con clasificación deinbox e historial de mensajes como el correo del gmail",
+  "respuesta": "Hecho el acomodo en dos columnas. La bandeja tipo chat (Por atender, Atendidas y una conversación por alumno) quedó como prompt: docs/prompts/10.26-bandeja-de-mensajes-tipo-chat.md, para /funcionalidad-mejora."
+}

@@ -1,0 +1,27 @@
+{
+  "n": 12,
+  "version": "v0.1.0",
+  "fecha": "2026-11-13T22:07:59.856Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab-cuestionario",
+  "ruta": "cuestionarios",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "cuest-editor",
+    "nombre": "Editor de cuestionario",
+    "cadena": "Consola › Vista Cuestionarios › Editor de cuestionario"
+  },
+  "elemento": {
+    "etiqueta": "section#cuest-editor",
+    "texto": "Nuevo cuestionario Título Tiempo en minutos (opcional) Con tiempo, se lanza el t",
+    "claveTexto": "",
+    "selector": "#cuest-editor"
+  },
+  "tipo": "estilo",
+  "texto": "1. Quiero que el editor del cuestionario se abra en una ventana modal en creación o modificación\n\n2. La forma de marcar las respuestas correctas en cada opción esta un poco confuso por que esta aún lado de donde se elimina la opción y entre checkbox y la \"x\" se confunde un poco.\n\n3. El acomo del formulario en general esta un poco desacomodado y no tiene uniformidad, realiza un mejor orden y acomodo de las secciones.\n\n4. El texto de \"Pregunta X\" abajo esta el texto de \"Pregunta\" se duplica la palabra \"Pregunta\" es redundante"
+}

@@ -103,8 +103,9 @@ rasterizador (iconos, instaladores, presentaciones) las dibuje igual.
 - `internal/ui/iconos.svg#marca-horizontal`: el logotipo (isotipo y «aula» dibujado, en
   minúsculas) con `class="logotipo"`; lo usa el menú de la consola, centrado.
 - `internal/ui/marca/`: `aula-isotipo.svg`, `aula-horizontal.svg` y sus variantes `-oscuro` y
-  `-una-tinta`, más `aula-icono-app.svg` (el isotipo oscuro sobre una placa `#12151c` de radio
-  7/32, con 3 unidades de margen).
+  `-una-tinta`, más `aula-icono-app.svg` (pantallas `#e8ecf5` y nodo `#7b9bff` sobre una placa
+  `#17213a`, el `--c-secundario` claro, de radio 7/32, con 3 unidades de margen: 64 % placa,
+  32 % pantallas y 4 % nodo, el 60-30-10 de la marca; D-022).
 - `apps/*/build/appicon.png` (1024 px) y `apps/*/build/windows/icon.ico` (16, 20, 24, 32, 40,
   48, 64 y 256 px) desde `aula-icono-app.svg`. El icono de la bandeja del alumno sale de
   `appicon.png` (`apps/student/trayicon.go`); su punto de «llegó algo» queda en la esquina,
@@ -148,6 +149,28 @@ Los grises tiran a azul pizarra (no son grises neutros): conversan con el azul d
 | `--c-enlace` | `#1d4ed8` | `#8db4ff` | Enlaces |
 
 **Una sola acción primaria por zona.** El azul es la marca y la acción: no se usa para decorar.
+
+### Secundario: el 30 % (D-022)
+
+La consola reparte el color en **60-30-10**: neutros para el contenido (fondo y superficies), el
+secundario para la estructura (el Menú y la placa del icono de app) y el acento para la acción
+(primaria, selección, contador, nodo). Los estados no cuentan en el reparto. El secundario es la
+tinta del logo llevada a superficie; en oscuro es más hondo que el fondo, no más azul.
+
+| Token | Claro | Oscuro | Uso |
+|---|---|---|---|
+| `--c-secundario` | `#17213a` | `#0b0f19` | Fondo del Menú |
+| `--c-secundario-2` | `#222e4c` | `#161d30` | Hover y tarjeta de la clase en el Menú |
+| `--c-secundario-borde` | `#2c3858` | `#1f2940` | Separadores dentro del Menú y su borde |
+| `--c-secundario-texto` | `#e8ecf5` | `#e7eaf0` | Texto e iconos del Menú; pantallas del logo |
+| `--c-secundario-suave` | `#a9b4ca` | `#9aa6bd` | Títulos de grupo y ayudas del Menú |
+| `--c-secundario-elegido` | `#2b3f78` | `#22356a` | La vista abierta en el Menú |
+| `--c-secundario-nodo` | `#7b9bff` | `#6b8cff` | Punto del logo sobre el secundario |
+| `--c-secundario-foco` | `#8db4ff` | `#8db4ff` | Anillo de foco dentro del Menú |
+| `--c-secundario-error` | `#ff9b91` | `#ff9b91` | «Terminar la clase» en el Menú |
+
+Dentro de `.nav-lateral`, `--c-marca-tinta`, `--c-marca-nodo` y `--c-foco` toman estos valores:
+el logo y el foco se leen sobre el secundario sin otra regla.
 
 ### Estados
 
@@ -283,8 +306,22 @@ La consola funciona a **900 × 600**.
 
 ### Movimiento
 
-`--transicion` 140 ms ease-out, solo en color, borde y la perilla del interruptor. Con
-`prefers-reduced-motion: reduce` vale 0 ms. Nada se anima al aparecer, salvo el giro de «trabajando».
+`--transicion` 140 ms ease-out, solo en color, borde y la perilla del interruptor.
+
+**Al aparecer** (prompt 10.27, sutil; solo CSS, sin tocar el JS):
+
+| Qué | Cómo | Tokens |
+|---|---|---|
+| Diálogos (`.dialogo`, `.modal-ajustes`) y su velo | Fundido y acercamiento de 98 % a 100 % al abrir; lo mismo al revés al cerrar (`@starting-style`, `transition-behavior: allow-discrete`) | `--mov-dialogo` 180 ms, `--mov-escala`, `--mov-curva` |
+| Panel lateral | Entra deslizándose 1 rem desde la derecha, con fundido | `--mov-panel` 200 ms, `--mov-desliz-panel` |
+| Aviso flotante (`.toast`) | Sube 0.5 rem con fundido | `--mov-panel`, `--mov-desliz-aviso` |
+
+- **No se animan:** las franjas globales y las bandas de transparencia del alumno (se ven en el
+  instante; `docs/privacidad.md`), nada dentro de `.alumno` (§7) ni la cuadrícula.
+- Con `prefers-reduced-motion: reduce`, `--transicion`, `--mov-dialogo` y `--mov-panel` valen
+  0 ms: todo aparece sin movimiento.
+- Un WebView sin `@starting-style` abre sin animación; nada depende de ella.
+- Solo propiedades baratas (`opacity`, `scale`, `translate`), nunca tamaño ni sombra.
 
 ---
 
@@ -302,6 +339,11 @@ La consola funciona a **900 × 600**.
 | Alumno (miniatura) | `.alumno`, `.alumno__monitor`, `.alumno__pantalla`, `.alumno__pie`, `.cuadricula-alumnos` | Ver reglas de rendimiento |
 | Estructura | `.app`, `.nav-lateral`, `.principal`, `.vista`, `.barra-acciones`, `.migas`, `.indice-manual` | |
 | App del alumno | `.codigo-recibido`, `.codigos`, `.modo-compacto`, `.pantalla-pausa` | |
+| Utilidades (`utilidades.css`) | `.pila`, `.pila-mini`, `.fila` (`--centro`), `.crece`, `.empujar`, `.estirar`, `.gap-0`…`.gap-6`, `.rejilla-auto` (`--rejilla-min`), `.lista-limpia`, `.ancho-completo`, `.truncar`, `.num`, `.contenedor` | Solo acomodan, con tokens: sin color, sombra, letra ni movimiento (`TestUtilitiesOnlyArrange`). Lista cerrada: una nueva se agrega aquí. Las de texto (`.suave`, `.pequeno`, `.mono`, `.solo-lector`) siguen en `componentes.css` (D-022) |
+
+**Capas de la cascada** (`@layer tokens, componentes, utilidades, vista;`, D-022): cada hoja
+envuelve lo suyo y el `style.css` de cada app es `vista`. Entre capas no cuenta la especificidad:
+la vista le gana a las utilidades, y estas a los componentes. `TestCSSIsLayered` lo comprueba.
 
 ---
 
@@ -337,6 +379,10 @@ La consola pinta decenas de miniaturas que se reemplazan cada pocos segundos. De
 6. Foco visible con `--c-foco` en todo lo que se alcanza con el teclado.
 7. El rediseño es solo presentación: no cambia HTML funcional (ids, `data-*`, roles), JS,
    bindings ni eventos.
+8. Para acomodar, primero una utilidad de `utilidades.css`; una regla nueva en `style.css` solo
+   si la página lo necesita. Nada de Tailwind ni de clases con valores arbitrarios (D-022).
+9. Reparto 60-30-10: neutros para el contenido, `--c-secundario` para la estructura y el acento
+   para la acción. Un color de estado no cuenta en el reparto.
 
 ---
 
@@ -365,3 +411,12 @@ La consola pinta decenas de miniaturas que se reemplazan cada pocos segundos. De
   en la bandeja (sale de `appicon.png`).
 - Las vistas ya usaban solo tokens y componentes: no hubo que cambiar su composición.
 - Capturas del manual y del mapa regeneradas; casos C-119, C-120, A-51 y A-52.
+
+**Fase 4 — utilidades, capas, 60-30-10 y movimiento** (prompt 10.27, D-022): hecha (2026-11-17);
+detalle en `historial/menu-secundario.md`.
+
+- `utilidades.css` (sin Tailwind) y la cascada en capas; el estilo calculado de cada elemento,
+  igual antes y después en las 329 escenas de los dos arneses, salvo el Menú y lo explicado.
+- `--c-secundario` y el Menú sobre él; placa secundaria del icono de app.
+- Movimiento sutil de diálogos, paneles y avisos.
+- Casos C-144 a C-146 y A-61.

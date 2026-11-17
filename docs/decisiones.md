@@ -776,3 +776,40 @@ fuera del subconjunto caen a la pila del sistema.
 `url()` del CSS apunta a algo que no va en el binario o si falta la licencia. Los títulos ocupan un
 poco más de ancho que con Segoe UI; las capturas del arnés y del manual cambian (fase 3). El
 logotipo no depende de la fuente: «aula» está dibujado en el SVG.
+
+## D-022: Sin Tailwind; utilidades propias, cascada en capas y el 30 % en el Menú
+
+**Fecha:** 2026-11-16 · **Estado:** aprobada (opción A de la propuesta de diseño).
+
+**Contexto.** Se evaluó Tailwind CSS para mejorar el diseño. El frontend no tiene paso de build
+(D-002) y el sistema de diseño (`internal/ui`) ya es la fuente única de tokens y componentes,
+con clases semánticas que no se renombran y pruebas que dependen de ellas
+(`TestEveryButtonAndFieldHasAnIcon`, `TestTokensContrast`). Tailwind exigiría un build en las dos
+apps, el CI y el release, reescribir ~1 350 atributos `class` o quedarse como una capa casi
+vacía, y sus valores arbitrarios (`bg-[#123]`) escaparían a la prueba de contraste. Además, la
+consola no seguía el reparto 60-30-10: tenía los neutros (60) y el azul (10), pero el Menú era
+blanco como el contenido.
+
+**Decisión.**
+- **No se adopta Tailwind.** En su lugar, `internal/ui/utilidades.css`: una lista cerrada de
+  utilidades de composición con tokens (las que ya vivían en el `style.css` de la consola, con su
+  comportamiento intacto, más `.fila--centro`, `.empujar`, `.estirar`, `.gap-0`…`.gap-6`,
+  `.rejilla-auto`, `.truncar`, `.num` y `.contenedor`). `TestUtilitiesOnlyArrange` falla si una
+  trae color, sombra, letra, movimiento o un valor suelto.
+- **Cascada en capas:** `@layer tokens, componentes, utilidades, vista;` al inicio de
+  `tokens.css`; cada hoja envuelve lo suyo (el `style.css` de cada app es `vista`).
+  `TestCSSIsLayered` lo comprueba. La especificidad entre capas deja de contar: la vista le gana a
+  las utilidades y estas a los componentes.
+- **El 30 %:** token de función `--c-secundario` y su familia (`-2`, `-borde`, `-texto`,
+  `-suave`, `-elegido`, `-nodo`, `-foco`, `-error`) en los tres bloques de tema, con sus pares en
+  `contrast_test.go`. El Menú de la consola va sobre él: azul pizarra profundo en claro
+  (`#17213a`), casi negro en oscuro (`#0b0f19`), más hondo que el fondo. El azul de acción no
+  cambia de papel.
+- **El logo no cambia.** El icono de app pasa a la placa secundaria (`scripts/ux/marca.mjs`):
+  64 % placa, 32 % pantallas, 4 % nodo.
+
+**Consecuencias.** Ningún paso de build nuevo. Al meter las hojas en capas, una regla de
+`componentes.css` más específica ya no le gana a una de `style.css`: se comparó el estilo
+calculado de cada elemento en todas las escenas del arnés antes y después (historial
+`docs/ux/historial/menu-secundario.md`). El Menú y el icono de app cambian en las capturas del
+manual y del mapa.

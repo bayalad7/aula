@@ -309,10 +309,21 @@ Wails (`docs/ux/DESIGN_SYSTEM.md`).
 
 | Caso | Pasos | Esperado |
 |---|---|---|
-| C-119 | Compila e instala la consola; mira el acceso directo, la barra de tareas y Alt+Tab | El icono Nodo (cuatro pantallas claras y un punto azul sobre una placa oscura) en los tres, nítido a 16, 24 y 32 px; ningún icono genérico de Wails |
+| C-119 | Compila e instala la consola; mira el acceso directo, la barra de tareas y Alt+Tab | El icono Nodo (cuatro pantallas claras y un punto azul sobre una placa azul pizarra, D-022) en los tres, nítido a 16, 24 y 32 px; ningún icono genérico de Wails |
 | C-120 | Abre la consola en modo claro y oscuro de Windows, sin red | Arranque con el logo Nodo y el menú con el logotipo «aula» (minúsculas) centrado; al angostar la ventana a menos de 1100 px, solo el isotipo centrado; títulos («Alumnos», «Código»…) en Plus Jakarta Sans aunque no haya internet (más redonda y ancha que el texto, igual que en las capturas del manual); el texto sigue en Segoe UI |
 | A-51 | Instala el agente; con la ventana cerrada, mira el área de notificación con la barra clara y la oscura; luego emite código | El icono Nodo se lee en las dos barras; al llegar código aparece su punto de «llegó algo» en la esquina, sin tapar el nodo central |
 | A-52 | Abre la ventana del alumno, compáctala y restáurala | El logo pequeño a la izquierda de la tira y del modo compacto, antes del punto de conexión; el código recibido se lee a 14 px |
+
+### Menú en el color secundario y movimiento (10.27, D-022, 2026-11-17)
+
+En la ventana real de Wails (WebView2), que el arnés no ve.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| C-144 | Abre la consola con Windows en modo claro y luego en oscuro (Ajustes › Apariencia en «Sistema»); recorre el menú con Tab | Claro: el Menú en azul marino profundo, texto e iconos claros, la vista abierta resaltada en azul y el logotipo «aula» claro con su punto azul. Oscuro: el Menú casi negro, más hondo que el contenido. En los dos, el anillo de foco se ve sobre el Menú, «Terminar la clase» se lee en rojo claro y la barra de desplazamiento del Menú es oscura |
+| C-145 | Angosta la ventana a menos de 1100 px y luego a 900 × 600 | El Menú pasa a solo iconos con el isotipo; el contador de Participación y la tarjeta compacta del canal se leen sobre el azul; nada del contenido cambia de lugar respecto a la versión anterior |
+| C-146 | Abre y cierra Ajustes, un diálogo de confirmación (p. ej. **Olvidar** un equipo) y el panel **Aviso**; luego activa en Windows «Efectos de animación» en apagado (Accesibilidad › Efectos visuales) y repite | Con animaciones: el diálogo aparece con un fundido y un ligero acercamiento y se va igual, el velo se aclara y oscurece suave, el panel entra deslizándose desde la derecha y un aviso sube al aparecer; nada tarda más de un cuarto de segundo. Sin animaciones: todo aparece y se va en el instante. Las franjas y las miniaturas nunca se mueven |
+| A-61 | Instala el agente y mira su icono en el área de notificación con la barra clara y la oscura, y en la ventana | La placa del icono es azul pizarra (no negra); el nodo central se sigue distinguiendo a 16 px |
 
 ### Encender equipos (10.19)
 

@@ -118,6 +118,10 @@ retiraron; esta es la primera.
 - **Identidad nueva, Nodo:** el logo de Aula (cuatro pantallas unidas por un punto) en el icono de
   las dos apps y de la bandeja, y títulos en Plus Jakarta Sans, incluida en Aula para que se vea
   igual sin internet. El código que recibe el alumno se ve un poco más grande (14 px).
+- **Menú en azul pizarra:** el menú de la consola se distingue del contenido (azul marino profundo
+  en modo claro, casi negro en oscuro), y el icono de las dos apps toma ese mismo color de placa.
+- Los diálogos, los paneles y los avisos aparecen con una transición breve en vez de golpe, en la
+  consola y en la app del alumno; con «reducir movimiento» de Windows aparecen al instante.
 - **Tablas más claras:** cada fila numerada («#»), el encabezado fijo al desplazarse y cada dato
   alineado según su tipo (texto a la izquierda, horas al centro, cantidades a la derecha). Una
   lista larga de alumnos ya se desplaza y la barra de acciones se queda abajo.

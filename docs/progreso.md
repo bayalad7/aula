@@ -5,7 +5,10 @@ todo en `dist\local`, sin cgo como el release; qué es cada ejecutable en
 `docs/desarrollo/ejecutables.md`; se borraron los `teacher.exe`/`student.exe` sueltos de
 `go build ./apps/...`, que no abren. 10.27 sistema de diseño implementado, sin commit: sin Tailwind
 (D-022), utilidades propias, cascada en capas, Menú en el color secundario, icono de app y
-movimiento sutil; faltan los casos C-144 a C-146 y A-61; 10.26 bandeja de mensajes tipo chat implementada como mejora de
+movimiento sutil; faltan los casos C-144 a C-146 y A-61. Notas de interfaz 016–021 hechas y en
+develop: tamaño de miniaturas con icono, tooltips de la cabecera hacia abajo, Código en una columna
+con el panel abierto, «Apagados» como botón alternable, motivo de la mano en un diálogo y la barra
+de acciones del alumno con el tema; faltan C-147, C-148 y A-62; 10.26 bandeja de mensajes tipo chat implementada como mejora de
 10.6 y 10.7, sin commit, faltan los casos C-139 a C-143 y A-59 y A-60; 10.15 etiquetas de los equipos y salón implementados, sin commit,
 falta la prueba con alumnos reales; 10.20 cuestionarios con puntaje implementados como mejora de
 10.12, sin commit, falta la prueba en VM; 10.14 terminar la clase implementada, falta la prueba en VM;

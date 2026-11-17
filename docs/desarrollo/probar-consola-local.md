@@ -325,6 +325,16 @@ En la ventana real de Wails (WebView2), que el arnés no ve.
 | C-146 | Abre y cierra Ajustes, un diálogo de confirmación (p. ej. **Olvidar** un equipo) y el panel **Aviso**; luego activa en Windows «Efectos de animación» en apagado (Accesibilidad › Efectos visuales) y repite | Con animaciones: el diálogo aparece con un fundido y un ligero acercamiento y se va igual, el velo se aclara y oscurece suave, el panel entra deslizándose desde la derecha y un aviso sube al aparecer; nada tarda más de un cuarto de segundo. Sin animaciones: todo aparece y se va en el instante. Las franjas y las miniaturas nunca se mueven |
 | A-61 | Instala el agente y mira su icono en el área de notificación con la barra clara y la oscura, y en la ventana | La placa del icono es azul pizarra (no negra); el nodo central se sigue distinguiendo a 16 px |
 
+### Notas de interfaz v0.1.0 016–021 (2026-11-17)
+
+En la ventana real de Wails (WebView2), que el arnés no ve al pasar el mouse.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| C-147 | En Alumnos, pasa el mouse por «Marcar todos», «¿Falta un alumno?» y «?» de la cabecera, con la ventana maximizada y a 900 × 600 | Cada tooltip se abre hacia abajo y entero, sin salirse por arriba ni por la derecha |
+| C-148 | En Código, abre la ayuda «?» y luego angosta la ventana | Con el panel abierto, Código pasa a una columna y nada del formulario queda tapado; al cerrar el panel vuelven las dos columnas |
+| A-62 | Con la ventana del alumno normal, levanta la mano, agrega un motivo, manda un mensaje y pulsa el botón de tema tres veces; cierra y abre la ventana; luego compáctala | Los tres botones están abajo, en la barra; el motivo se escribe en un diálogo como el del mensaje; el tema pasa por claro, oscuro y el del sistema y el elegido sigue al reabrir; en el modo compacto la barra no se ve y la mano y el mensaje siguen en su tira. Los tooltips de «i» y «Hacer pequeña» se ven completos, hacia abajo |
+
 ### Encender equipos (10.19)
 
 Solo en el laboratorio (en una VM hace falta configurar el hipervisor): dos equipos con Windows,

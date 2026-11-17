@@ -104,7 +104,9 @@ retiraron; esta es la primera.
   modo compacto.
 - **Transparencia:** bandas fijas y sin botón de cerrar cuando el profesor ve, controla, pausa,
   restringe o transmite; el alumno sabe siempre quién y qué.
-- **Qué puede hacer Aula en este equipo**, levantar la mano y escribir al profesor desde la tira.
+- **Qué puede hacer Aula en este equipo** desde la tira de arriba; **Levantar la mano**, **Mensaje
+  al profesor** y el **tema** (del sistema, claro u oscuro, que se recuerda) en una barra de
+  acciones abajo, como la de la consola. El motivo de la mano se escribe en su propio diálogo.
   **Tus mensajes** muestra la conversación con el profesor: lo que escribiste y sus respuestas, que
   se ocultan mientras tu pantalla se muestra a la clase.
   También dice el nombre del equipo y la etiqueta que le puso el profesor, para decírsela al soporte.
@@ -122,6 +124,9 @@ retiraron; esta es la primera.
   en modo claro, casi negro en oscuro), y el icono de las dos apps toma ese mismo color de placa.
 - Los diálogos, los paneles y los avisos aparecen con una transición breve en vez de golpe, en la
   consola y en la app del alumno; con «reducir movimiento» de Windows aparecen al instante.
+- **Alumnos:** el tamaño de las miniaturas con su icono (y «Ajustar» en vez de «Ajustar a la
+  pantalla»), **Apagados** como un botón que se resalta al activarlo, y las ayudas de la cabecera
+  ya no se salen de la ventana. **Código** pasa a una columna cuando abres la ayuda a un lado.
 - **Tablas más claras:** cada fila numerada («#»), el encabezado fijo al desplazarse y cada dato
   alineado según su tipo (texto a la izquierda, horas al centro, cantidades a la derecha). Una
   lista larga de alumnos ya se desplaza y la barra de acciones se queda abajo.

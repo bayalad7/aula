@@ -180,8 +180,10 @@ Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. 
     notificación. Solo una acción del profesor **sobre el equipo** (energía, restricciones,
     transmisión, control remoto, pausa) usa `raise`, saca la ventana del modo compacto y lo
     justifica en su regla de privacidad.
-  - Lo que el **alumno** hace (levantar la mano, mandar un mensaje, votar) son botones de la tira
-    de identidad (también en el modo compacto) o de la tarjeta que llegó, con teclado.
+  - Lo que el **alumno** hace (levantar la mano, mandar un mensaje, votar) son botones de la
+    **barra de acciones del alumno** (abajo, como la de la consola; nota de interfaz v0.1.0 021),
+    de la tira del modo compacto o de la tarjeta que llegó, con teclado. La tira de identidad
+    de arriba queda para el estado, el temporizador, «Qué puede hacer Aula» y compactar.
   - **Transparencia:** lo que observa o controla el equipo agrega su banda a `.bandas`, en el
     orden fijo de `docs/privacidad.md`, sin botón de cerrar, y entra en las pruebas de bandas de
     `scripts/ux/pruebas-alumno.mjs`. Todo binding nuevo de la ventana se revisa en

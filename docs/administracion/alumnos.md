@@ -21,9 +21,9 @@ o solo a algunos.
   enciende si está apagado y 🗑 olvida un equipo apagado. Al pasar el mouse, cada icono dice qué
   hace. Si la lista es larga, se desplaza y el encabezado de la tabla se queda arriba.
 - **Miniaturas**: la pantalla de cada alumno, como un monitor, actualizada cada segundo. Haz clic
-  en una para verla en grande. Con **Tamaño** las haces más chicas o más grandes (Pequeño, Mediano,
-  Grande, Extra grande) o eliges **Ajustar a la pantalla** para ver a todos sin desplazarte; la
-  consola recuerda tu elección.
+  en una para verla en grande. Con el selector de **tamaño** (el de las flechas en diagonal) las
+  haces más chicas o más grandes (Pequeño, Mediano, Grande, Extra grande) o eliges **Ajustar**
+  para ver a todos sin desplazarte; la consola recuerda tu elección.
 
 - **Salón**: las mismas pantallas, cada una en su lugar del salón; los lugares de los equipos sin
   conexión se ven vacíos y apagados. Los números de las filas y las columnas seleccionan a los de

@@ -35,9 +35,11 @@ const svg = (viewBox, cuerpo) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" role="img" aria-label="Aula">${cuerpo}</svg>\n`;
 const isotipo = (c) => svg("0 0 32 32", nodo(c));
 const horizontal = (c) => svg("0 0 116 40", `<g transform="scale(1.25)">${nodo(c)}</g><g transform="translate(50 0)">${letras(c)}</g>`);
-// Icono de app: el isotipo oscuro sobre una placa (radio 7/32), con 3 unidades de margen.
+// Icono de app: el isotipo sobre la placa secundaria (--c-secundario claro, radio 7/32), con 3
+// unidades de margen: 64 % placa, 32 % pantallas y 4 % nodo (D-022).
+const SECUNDARIO = { placa: "#17213a", tinta: "#e8ecf5", nodo: "#7b9bff" };
 const iconoApp = () =>
-  svg("0 0 32 32", `<rect width="32" height="32" rx="7" fill="#12151c"/><g transform="translate(3 3) scale(0.8125)">${nodo(COLORES.oscuro)}</g>`);
+  svg("0 0 32 32", `<rect width="32" height="32" rx="7" fill="${SECUNDARIO.placa}"/><g transform="translate(3 3) scale(0.8125)">${nodo(SECUNDARIO)}</g>`);
 
 async function escribirSVG() {
   const dir = path.join(raiz, "internal/ui/marca");

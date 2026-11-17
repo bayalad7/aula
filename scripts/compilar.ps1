@@ -63,7 +63,7 @@ if ($Version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$') {
 $numeric = ($Version -split "-")[0]   # Windows file versions are numeric only
 
 if (-not (Get-Command wails -ErrorAction SilentlyContinue)) {
-    throw "No se encontró la CLI de Wails: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0"
+    throw "No se encontró la CLI de Wails: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1"
 }
 
 # Full build starts from an empty dist\local so no installer from another version stays behind.

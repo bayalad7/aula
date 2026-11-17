@@ -53,7 +53,17 @@ type Session struct {
 	// LastCodeAckAt is zero until the agent acknowledges something.
 	LastCodeAck   string
 	LastCodeAckAt time.Time
+	// ClockSkew is how far the agent's clock is ahead of the console's
+	// (negative: behind): the median of the last ClockSamples heartbeats
+	// (docs/protocol.md §5.27.6). ClockSamples is 0 until one arrives.
+	ClockSkew    time.Duration
+	ClockSamples int
+
+	clock []time.Duration // the last clockWindow samples, oldest first
 }
+
+// clockWindow is how many heartbeats the clock skew is the median of.
+const clockWindow = 5
 
 // Can reports whether the agent declared capability c.
 func (s Session) Can(c protocol.Capability) bool { return protocol.Has(s.Capabilities, c) }
@@ -133,6 +143,27 @@ func (r *Registry) RecordCodeAck(id, snippetID string) bool {
 	return true
 }
 
+// RecordClock notes the send time ts (Unix ms) of a heartbeat the agent
+// just sent: the skew of this sample is ts minus the arrival time, and the
+// session's ClockSkew is the median of the last five, so one slow packet
+// does not move it.
+func (r *Registry) RecordClock(id string, ts int64) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	s, ok := r.sessions[id]
+	if !ok || ts <= 0 {
+		return false
+	}
+	s.clock = append(s.clock, time.UnixMilli(ts).Sub(r.now()))
+	if len(s.clock) > clockWindow {
+		s.clock = s.clock[len(s.clock)-clockWindow:]
+	}
+	sorted := slices.Clone(s.clock)
+	slices.Sort(sorted)
+	s.ClockSkew, s.ClockSamples = sorted[len(sorted)/2], len(sorted)
+	return true
+}
+
 // Disconnect marks a session disconnected. It reports whether its state
 // changed.
 func (r *Registry) Disconnect(id string) bool {
@@ -200,5 +231,6 @@ func (r *Registry) List(channel string) []Session {
 func (s *Session) snapshot() Session {
 	c := *s
 	c.Capabilities = slices.Clone(s.Capabilities)
+	c.clock = nil
 	return c
 }

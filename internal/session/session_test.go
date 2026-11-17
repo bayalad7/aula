@@ -157,3 +157,33 @@ func TestBackoffJitter(t *testing.T) {
 		}
 	}
 }
+
+// The clock of a computer is the median skew of its last five heartbeats
+// (docs/protocol.md §5.27.6): one late packet does not move it.
+func TestRegistryClockSkewFromHeartbeats(t *testing.T) {
+	r, clk := newTestRegistry()
+	r.Connect("a", testChannel, "10.0.0.2:5000", hello("PC01"))
+	if s, _ := r.Get("a"); s.ClockSamples != 0 || s.ClockSkew != 0 {
+		t.Fatalf("no heartbeat yet: %+v", s)
+	}
+	ahead := 4 * time.Minute
+	for i, late := range []time.Duration{0, 10 * time.Millisecond, 5 * time.Second, 20 * time.Millisecond, 0, 0} {
+		// The agent stamps its (fast) clock; the packet arrives late.
+		ts := clk.now().Add(ahead).UnixMilli()
+		clk.add(late)
+		if !r.RecordClock("a", ts) {
+			t.Fatalf("sample %d refused", i)
+		}
+		clk.add(5*time.Second - late)
+	}
+	s, _ := r.Get("a")
+	if s.ClockSamples != 5 {
+		t.Fatalf("samples = %d, want 5", s.ClockSamples)
+	}
+	if d := s.ClockSkew - ahead; d < -20*time.Millisecond || d > 0 {
+		t.Fatalf("skew = %v, want about %v", s.ClockSkew, ahead)
+	}
+	if r.RecordClock("nobody", 1) || r.RecordClock("a", 0) {
+		t.Fatal("an unknown session or a missing ts must be refused")
+	}
+}

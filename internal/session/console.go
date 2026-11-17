@@ -243,6 +243,8 @@ func (c *Console) route(ctx context.Context, log *slog.Logger, ev transport.Even
 	c.Registry.Touch(ev.Conn.ID())
 	switch ev.Envelope.Type {
 	case protocol.TypeHeartbeat:
+		// The clock of the computer, from the heartbeat's send time (§5.27.6).
+		c.Registry.RecordClock(ev.Conn.ID(), ev.Envelope.TS)
 	case protocol.TypeCodeAck:
 		ack := ev.Envelope.Payload.(protocol.CodeAck)
 		c.Registry.RecordCodeAck(ev.Conn.ID(), ack.SnippetID)

@@ -1,6 +1,7 @@
 # Progreso
 
-Última actualización: 2026-11-17 (10.28 dependencias al día implementada, sin commit: Wails
+Última actualización: 2026-11-17 (prompt 16.1 escrito: firma de código y distribución sin costo,
+para cuando empiece la comercialización; 10.28 dependencias al día implementada, sin commit: Wails
 v2.17.1, `x/net` v0.63.0 y 24 módulos más; vulnerabilidades en módulos de 17 a 0; `govulncheck`
 v1.9.0 en el CI; Wails se queda en v2 y la migración a v3 es otra etapa; faltan C-154 a C-156 y
 A-65; 10.25 salud del laboratorio implementada, sin commit: módulo Laboratorio, Salud del equipo en la Ficha, Ajustes › Salud y autodiagnóstico; faltan la prueba en VM §30 y los casos C-149 a C-153, A-63 y A-64; compilación local unificada: `scripts/compilar.ps1` deja
@@ -78,6 +79,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 14 | Sandbox para ejecutar entregas | ⏳ Pendiente (después de 10.10) |
 | 15 | Flota: despliegue, auto-actualización y diagnóstico | 🚧 El diagnóstico está casi todo hecho (`aula-cliente diagnostico`, comprobador de conexión, ficha del alumno); faltan la auto-actualización, la guía de despliegue y marcar a los desactualizados |
 | 16 | Comercialización y licenciamiento | ⏳ Pendiente |
+| 16.1 | Firma de código y distribución en Windows, empezando sin gastar | ⏳ Pendiente (prompt del 17/11/2026; se corre al empezar la comercialización, después de la 16 Parte A) |
 | 17 | Documentación: diagramas iniciales y validador `go test ./docs` | ✅ 21 diagramas (el 21, proyectar a un alumno) |
 | 18 | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | ✅ Cerrada el 04/11/2026 (`docs/ux/historial/consola-resultados.md`). Falta de tu lado: la prueba en una VM limpia y los casos C-01 a C-43 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
 | 19 | Pulido de la app del alumno: UX/UI, transparencia y no intrusión | ✅ Cerrada el 05/11/2026 (`docs/ux/historial/alumno-resultados.md`). Falta de tu lado: los casos A-01 a A-08 de `docs/desarrollo/probar-consola-local.md` en la ventana real |
@@ -113,6 +115,12 @@ el que se trabajó antes; las notas de abajo lo conservan.
 6. Menor (traído de la entrega E11, eliminada en la limpieza del 12/11/2026): el comprobador de
    conexión deja en el registro de la consola una línea `TLS handshake error … EOF` del servidor
    HTTP por cada dirección que prueba. Es inofensiva; si molesta, se silencia en `transport`.
+7. **SmartScreen (17/11/2026):** los instaladores salen sin Authenticode (no existe el secreto
+   `WINDOWS_CERT_PFX`), así que Windows muestra «Windows protegió tu PC». Mientras no haya
+   presupuesto: instalar desde USB o carpeta compartida, `Unblock-File` o instalación silenciosa
+   (`/VERYSILENT /CANAL= /CLAVECENTRO=`), que no pasan por SmartScreen. La consola podría ir a la
+   Microsoft Store en MSIX sin comprar certificado; el agente del alumno no (servicio, firewall,
+   DNS). Plan por fases y costos en `docs/prompts/16.1-firma-y-distribucion-sin-costo.md`.
 
 ## Etapa 02: notas
 

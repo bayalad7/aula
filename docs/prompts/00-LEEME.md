@@ -46,6 +46,7 @@ Sistema multiplataforma de gestión de aula (estilo LanSchool / Veyon) con un m�
 | 14 | `14-sandbox-ejecucion-entregas.md` | Correr entregas del alumno en sandbox Docker | Fase 3 |
 | 15 | `15-flota-despliegue-actualizacion-diagnostico.md` | Despliegue masivo, auto-actualización y diagnóstico | Fase 3 |
 | 16 | `16-comercializacion-y-licenciamiento.md` | Modelo de negocio (licencia vs. renta) + licenciamiento | Negocio |
+| 16.1 | `16.1-firma-y-distribucion-sin-costo.md` | Aviso de SmartScreen: instalar sin costo, consola en la Store (MSIX) y firma de código por fases | Negocio |
 | 17 | `17-documentacion-diagramas-iniciales.md` | Escribir los diagramas de `docs/diagramas/` (ver su README) | Docs |
 | 18 | `18-pulido-consola-ux-manual-simulador.md` | Pulido de la consola: UX/UI, manual, diagramas y aula simulada | Pulido |
 | 19 | `19-pulido-app-alumno-ux.md` | Pulido de la app del alumno: overlay de código, avisos y transparencia ✅ | Pulido |

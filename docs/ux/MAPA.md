@@ -98,7 +98,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Ajustes** | Diálogo con Clase, Apariencia, Apps permitidas, Salón y Acerca de. |
+| 1 | **Ajustes** | Diálogo con Clase, Apariencia, Apps permitidas, Salón, Salud y Acerca de. |
 | 2 | **Apps permitidas** | Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos. |
 
 ### Consola · Código
@@ -196,6 +196,35 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 3 | **Plano del salón** | Un botón por lugar, con el frente del salón arriba: se arrastra cada equipo a su lugar, o con el teclado (flechas, Enter y Esc). |
 | 4 | **Sin acomodar** | Los equipos sin lugar: los nuevos y los que la consola recuerda; soltar uno aquí lo saca del plano. |
 | 5 | **Equipo elegido** | El equipo elegido: su nombre, lugar y estado, su etiqueta con Guardar etiqueta, Quitar de su lugar y Quitar del salón. |
+
+### Consola · Laboratorio
+
+![Consola · Laboratorio](mapa/consola-laboratorio.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Contador de Laboratorio** | Cuántos equipos conectados tienen alertas de salud. |
+| 2 | **Revisar ahora y Autodiagnóstico** | «Enviar a» (todos o la selección), Revisar ahora (una vez cada 10 s) y Autodiagnóstico. |
+| 3 | **Tabla de salud** | Un equipo por fila, primero los que tienen alertas, con Solo con alertas; en una ventana angosta solo Alertas, Disco y Autodiagnóstico. |
+| 4 | **Fila de salud** | Al abrir un equipo: cada alerta con qué hacer y Cómo arreglarlo, todos sus datos y cada prueba del autodiagnóstico. |
+
+### Consola · Ficha del alumno (salud)
+
+![Consola · Ficha del alumno (salud)](mapa/consola-ficha-salud.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Ficha del alumno** | Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande. |
+| 2 | **Salud del equipo** | Las alertas de salud de su equipo con qué hacer y sus datos (disco, memoria, procesador, reloj, red, batería); solo informa (prompt 10.25). |
+
+### Consola · Ajustes › Salud
+
+![Consola · Ajustes › Salud](mapa/consola-ajustes-salud.webp)
+
+| # | Zona | Qué es |
+|---|---|---|
+| 1 | **Ajustes** | Diálogo con Clase, Apariencia, Apps permitidas, Salón, Salud y Acerca de. |
+| 2 | **Salud** | La dirección para probar internet, los servicios de la clase, los umbrales de cada alerta y cuáles se muestran (prompt 10.25). |
 
 ### Consola · Cuestionarios
 
@@ -336,6 +365,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `barra-acciones` | Vista Alumnos › Barra de acciones | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
 | `ficha` | Ficha del alumno | Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande. |
 | `ficha-puede` | Ficha del alumno › Qué puede hacer su equipo | Lista de capacidades del equipo del alumno. |
+| `ficha-salud` | Ficha del alumno › Salud del equipo | Las alertas de salud de su equipo con qué hacer y sus datos (disco, memoria, procesador, reloj, red, batería); solo informa (prompt 10.25). |
 | `pantalla-grande` | Pantalla grande | La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno. |
 | `pg-acciones` | Pantalla grande › Acciones sobre el alumno | Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Pausar pantalla, Abrir página o app y Etiqueta del equipo (ACCIONES_ALUMNO en main.js). |
 | `dlg-etiqueta` | Diálogo Etiqueta del equipo | Cambiar o quitar la etiqueta de un equipo; se abre desde la Pantalla grande (prompt 10.15). |
@@ -385,12 +415,18 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `hilo` | Vista Participación › Mensajes de los alumnos › Conversación | El hilo de un alumno (sus mensajes y lo que le mandaste) con Volver, el cuadro para responder y Marcar como atendida. |
 | `part-encuestas` | Vista Participación › Sección Encuestas | La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones. |
 | `part-temporizador` | Vista Participación › Sección Temporizador | Quién ve el temporizador y quién falta. |
+| `laboratorio` | Vista Laboratorio | La salud de los equipos antes de clase: alertas, Revisar ahora y Autodiagnóstico (menú, grupo Pruebas). |
+| `lab-acciones` | Vista Laboratorio › Revisar ahora y Autodiagnóstico | «Enviar a» (todos o la selección), Revisar ahora (una vez cada 10 s) y Autodiagnóstico. |
+| `lab-tabla` | Vista Laboratorio › Tabla de salud | Un equipo por fila, primero los que tienen alertas, con Solo con alertas; en una ventana angosta solo Alertas, Disco y Autodiagnóstico. |
+| `lab-fila` | Vista Laboratorio › Tabla de salud › Fila de salud | Al abrir un equipo: cada alerta con qué hacer y Cómo arreglarlo, todos sus datos y cada prueba del autodiagnóstico. |
+| `menu-laboratorio` | Menú › Contador de Laboratorio | Cuántos equipos conectados tienen alertas de salud. |
 | `simulada` | Vista Aula simulada | Alumnos de prueba y sus fallas. |
 | `ayuda` | Vista Ayuda (manual) | El manual, con búsqueda e índice. |
 | `panel-ayuda` | Panel de ayuda contextual | La página del manual de la vista actual, al costado. |
 | `falta` | Vista ¿Falta un alumno? | Comprobar la conexión y el asistente paso a paso. |
-| `ajustes` | Ajustes | Diálogo con Clase, Apariencia, Apps permitidas, Salón y Acerca de. |
+| `ajustes` | Ajustes | Diálogo con Clase, Apariencia, Apps permitidas, Salón, Salud y Acerca de. |
 | `ajustes-apps` | Ajustes › Apps permitidas | Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos. |
+| `ajustes-salud` | Ajustes › Salud | La dirección para probar internet, los servicios de la clase, los umbrales de cada alerta y cuáles se muestran (prompt 10.25). |
 | `ajustes-salon` | Ajustes › Salón | El resumen del salón del canal, dónde se guarda, Abrir el salón, Exportar e Importar (prompt 10.15). |
 | `confirmar` | Diálogo de confirmación | «¿Seguro?» antes de una acción con consecuencias. |
 | `arranque` | Pantalla de arranque | Abrir la clase: canal y nombre. |

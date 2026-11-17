@@ -32,6 +32,7 @@ export const zonas = {
     // Paneles y diálogos que salen de Alumnos
     { id: "ficha", nombre: "Ficha del alumno", selector: "#panel-alumno", que: "Panel derecho con los datos de un alumno y qué puede hacer su equipo; su fila queda marcada. Las acciones están en la Pantalla grande." },
     { id: "ficha-puede", dentro: "ficha", nombre: "Qué puede hacer su equipo", selector: "#ficha-puede", que: "Lista de capacidades del equipo del alumno." },
+    { id: "ficha-salud", dentro: "ficha", nombre: "Salud del equipo", selector: "#ficha-salud", que: "Las alertas de salud de su equipo con qué hacer y sus datos (disco, memoria, procesador, reloj, red, batería); solo informa (prompt 10.25)." },
     { id: "pantalla-grande", nombre: "Pantalla grande", selector: "#pantalla-grande", que: "La pantalla de un alumno en grande; también la vista del control remoto y la de la proyección de un alumno." },
     { id: "pg-acciones", dentro: "pantalla-grande", nombre: "Acciones sobre el alumno", selector: "#pg-acciones", que: "Tomar control, Mensaje privado, Tomar captura, Proyectar a la clase, Pausar pantalla, Abrir página o app y Etiqueta del equipo (ACCIONES_ALUMNO en main.js)." },
     { id: "dlg-etiqueta", nombre: "Diálogo Etiqueta del equipo", selector: "#dlg-etiqueta", que: "Cambiar o quitar la etiqueta de un equipo; se abre desde la Pantalla grande (prompt 10.15)." },
@@ -92,13 +93,20 @@ export const zonas = {
     { id: "part-encuestas", dentro: "participacion", nombre: "Sección Encuestas", selector: "#encuestas", que: "La encuesta o el cuestionario abierto en vivo (barras, o aciertos por pregunta y puntaje por alumno) con Cerrar, y los anteriores con Compartir resultados y Exportar calificaciones." },
     { id: "part-temporizador", dentro: "participacion", nombre: "Sección Temporizador", selector: "#temporizador-activo, #temporizador-vacio", que: "Quién ve el temporizador y quién falta." },
 
+    // Laboratorio (prompt 10.25)
+    { id: "laboratorio", nombre: "Vista Laboratorio", selector: "[data-vista-de=laboratorio]", que: "La salud de los equipos antes de clase: alertas, Revisar ahora y Autodiagnóstico (menú, grupo Pruebas)." },
+    { id: "lab-acciones", dentro: "laboratorio", nombre: "Revisar ahora y Autodiagnóstico", selector: "[data-vista-de=laboratorio] .pie-envio", que: "«Enviar a» (todos o la selección), Revisar ahora (una vez cada 10 s) y Autodiagnóstico." },
+    { id: "lab-tabla", dentro: "laboratorio", nombre: "Tabla de salud", selector: "#lab-tabla-caja", que: "Un equipo por fila, primero los que tienen alertas, con Solo con alertas; en una ventana angosta solo Alertas, Disco y Autodiagnóstico." },
+    { id: "lab-fila", dentro: "lab-tabla", nombre: "Fila de salud", selector: "#lab-filas > tr.tabla-lab__detalle", que: "Al abrir un equipo: cada alerta con qué hacer y Cómo arreglarlo, todos sus datos y cada prueba del autodiagnóstico." },
+    { id: "menu-laboratorio", dentro: "menu", nombre: "Contador de Laboratorio", selector: "#nav-lab-contador", que: "Cuántos equipos conectados tienen alertas de salud." },
     // Otras vistas
     { id: "simulada", nombre: "Vista Aula simulada", selector: "[data-vista-de=simulada]", que: "Alumnos de prueba y sus fallas." },
     { id: "ayuda", nombre: "Vista Ayuda (manual)", selector: "[data-vista-de=ayuda]", que: "El manual, con búsqueda e índice." },
     { id: "panel-ayuda", nombre: "Panel de ayuda contextual", selector: "#panel-ayuda", que: "La página del manual de la vista actual, al costado." },
     { id: "falta", nombre: "Vista ¿Falta un alumno?", selector: "[data-vista-de=falta]", que: "Comprobar la conexión y el asistente paso a paso." },
-    { id: "ajustes", nombre: "Ajustes", selector: "#ajustes", que: "Diálogo con Clase, Apariencia, Apps permitidas, Salón y Acerca de." },
+    { id: "ajustes", nombre: "Ajustes", selector: "#ajustes", que: "Diálogo con Clase, Apariencia, Apps permitidas, Salón, Salud y Acerca de." },
     { id: "ajustes-apps", dentro: "ajustes", nombre: "Apps permitidas", selector: "#aj-apps", que: "Las apps que se pueden abrir en los equipos: nombre y ruta del .exe, con ejemplos." },
+    { id: "ajustes-salud", dentro: "ajustes", nombre: "Salud", selector: "#aj-salud", que: "La dirección para probar internet, los servicios de la clase, los umbrales de cada alerta y cuáles se muestran (prompt 10.25)." },
     { id: "ajustes-salon", dentro: "ajustes", nombre: "Salón", selector: "#aj-salon", que: "El resumen del salón del canal, dónde se guarda, Abrir el salón, Exportar e Importar (prompt 10.15)." },
     { id: "confirmar", nombre: "Diálogo de confirmación", selector: "#confirmar", que: "«¿Seguro?» antes de una acción con consecuencias." },
     { id: "arranque", nombre: "Pantalla de arranque", selector: "#arranque", que: "Abrir la clase: canal y nombre." },
@@ -149,6 +157,7 @@ export const escenas = {
     "lab-pausa": "Pantallas en pausa, una sin acusar",
     "lab-captura-falla": "Captura que falló",
     "lab-participacion": "Manos y mensajes",
+    "lab-laboratorio": "Salud: equipos con alertas y un autodiagnóstico",
     "lab-temporizador": "Temporizador corriendo",
     "lab-temporizador-fin": "Temporizador terminado",
     "lab-archivos": "Envío de archivos con un fallo",
@@ -194,5 +203,5 @@ export const escenas = {
 };
 
 // Las vistas de la consola, para ir a ellas desde el anotador (ruta = hash).
-export const rutas = { alumnos: "", codigo: "codigo", archivos: "archivos", cuestionarios: "cuestionarios", participacion: "participacion", simulada: "simulada",
+export const rutas = { alumnos: "", codigo: "codigo", archivos: "archivos", cuestionarios: "cuestionarios", participacion: "participacion", laboratorio: "laboratorio", simulada: "simulada",
   ayuda: "ayuda", falta: "falta" };

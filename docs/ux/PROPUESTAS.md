@@ -61,6 +61,24 @@ SemVer).
   laboratorio real lo necesite; mientras, que sistemas deje pasar el broadcast dirigido hacia la
   VLAN del laboratorio.
 
+## P-05 · Checklist interactivo del autodiagnóstico
+
+- **Pide:** prompt 10.25, parte B: para lo que el software no puede validar solo (que la bocina
+  suene, que el micrófono capte, que la cámara vea, que todas las teclas respondan), una pantalla
+  guiada en el equipo del alumno que el técnico recorre marcando «Funciona / No funciona», o
+  integrarla en `aula-cliente diagnostico`.
+- **Hoy:** el autodiagnóstico automático (§5.27.5, parte A) está hecho; la parte B quedó fuera de
+  la entrega del 2026-11-17 por decisión del usuario.
+- **Necesitaría:** un mensaje `health.checklist` (P → A) con la capacidad `health.checklist`, una
+  pantalla nueva en la app del alumno que **sí toma el foco** (`raise`: el técnico la está usando
+  en ese equipo) con su texto de privacidad, y `health.checklist.result` (A → P) con una lista
+  cerrada de pruebas y su resultado. La bocina y el micrófono tocarían el SO (reproducir un tono,
+  medir el nivel), así que van por `platform` y, como servicio, por el ayudante.
+- **Privacidad y riesgo:** el micrófono y la cámara son sensibles: nunca se graba ni viaja audio o
+  imagen, solo «captó sonido sí/no»; la pantalla diría siempre qué se prueba y se cierra con un
+  clic. Recomendación: empezar por `aula-cliente diagnostico --interactivo` (sin red, sin consola)
+  y llevarlo a la consola solo si los técnicos lo piden.
+
 ## Notas (no son cambios de protocolo)
 
 - **Columna «Canal»** (Fase 3, punto 2): no se agrega a la lista porque todos los alumnos que ve la

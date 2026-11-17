@@ -58,10 +58,12 @@ const (
 // collection gets their last code, from memory too (collect.go). When the
 // teacher ends the class they clear their simulated window (classend.go).
 // The label of their computer in the room plan they keep for the session
-// (computer.label, §5.26).
+// (computer.label, §5.26). The health of their computer they invent, some
+// with alerts, to try the Laboratorio view (health.go, §5.27): it changes
+// nothing on any computer.
 var Capabilities = []protocol.Capability{protocol.CapCodeView, protocol.CapMsgShow, protocol.CapScreenThumb, protocol.CapScreenSnapshot,
 	protocol.CapHand, protocol.CapMsgStudent, protocol.CapTimer, protocol.CapFilePush, protocol.CapFileCollect, protocol.CapPoll, protocol.CapPollQuiz, protocol.CapClassEnd,
-	protocol.CapComputerLabel}
+	protocol.CapComputerLabel, protocol.CapHealth, protocol.CapHealthSelfTest}
 
 // DefaultCapabilities are those of a new student when none are given.
 var DefaultCapabilities = Capabilities
@@ -299,7 +301,9 @@ type student struct {
 	notices    int
 	private    int
 	lastNotice string
-	label      string // computer.label of this session (§5.26)
+	label      string                 // computer.label of this session (§5.26)
+	healthCfg  *protocol.HealthConfig // health.config of this session (§5.27.1)
+	healthSeq  int
 	snapshots  int
 	cancel     context.CancelFunc // stops the running agent; nil while disconnected
 	done       chan struct{}
@@ -386,6 +390,7 @@ func (s *student) start() {
 			s.connected = st == session.AgentConnected
 			if !s.connected {
 				s.cl, s.label = nil, "" // the label is only for the session
+				s.healthCfg, s.healthSeq = nil, 0
 			}
 			s.mu.Unlock()
 			if st != session.AgentConnected {
@@ -454,6 +459,9 @@ func (s *student) handle(ctx context.Context, cl *transport.Client, recv *codedi
 			return
 		}
 		if s.handleClassEnd(ctx, cl, env, fault) {
+			return
+		}
+		if s.handleHealth(ctx, send, env) {
 			return
 		}
 		if p, ok := env.Payload.(protocol.ComputerLabel); ok {

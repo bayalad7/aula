@@ -45,6 +45,7 @@ type console struct {
 	votes  []protocol.PollVote
 	polls  []protocol.PollAck
 	ends   []protocol.ClassEndAck
+	health []protocol.Envelope // health.report and health.selftest.result
 }
 
 func startConsole(t *testing.T) *console {
@@ -89,6 +90,8 @@ func startConsole(t *testing.T) *console {
 				c.polls = append(c.polls, p)
 			case protocol.ClassEndAck:
 				c.ends = append(c.ends, p)
+			case protocol.HealthReport, protocol.HealthSelfTestResult:
+				c.health = append(c.health, env)
 			case protocol.PollVote:
 				c.votes = append(c.votes, p)
 				go conn.Send(context.Background(), protocol.PollVoteAck{RefID: env.ID, PollID: p.PollID, Status: protocol.PollVoteAccepted})
@@ -650,4 +653,54 @@ func TestSimulatedHelloHasNoMACs(t *testing.T) {
 	if h := s.hello(); len(h.MACs) != 0 {
 		t.Fatalf("macs = %v", h.MACs)
 	}
+}
+
+func (c *console) healthOf(match func(protocol.Envelope) bool) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.ContainsFunc(c.health, match)
+}
+
+// Simulated students report an invented health (prompt 10.25): the first
+// report after health.config, one per «Revisar ahora» and a self-test.
+// They read no computer and change nothing (docs/privacidad.md rule 95).
+func TestSimulatedStudentsReportHealth(t *testing.T) {
+	c := startConsole(t)
+	cl := newClass(t, c)
+	a, _ := cl.Add(protocol.OSWindows, nil)
+	eventually(t, "connected", func() bool { return len(c.connected()) == 1 })
+	s := sessionOf(t, c, a.Name)
+	if !s.Can(protocol.CapHealth) || !s.Can(protocol.CapHealthSelfTest) {
+		t.Fatalf("capabilities %v", s.Capabilities)
+	}
+	ctx := context.Background()
+	if _, err := c.Send(ctx, s.ID, protocol.HealthConfig{Services: []protocol.HealthService{{Name: "Git", Host: "git.local", Port: 22}}}); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "the first report", func() bool {
+		return c.healthOf(func(e protocol.Envelope) bool {
+			r, ok := e.Payload.(protocol.HealthReport)
+			return ok && r.Reason == protocol.HealthFirst
+		})
+	})
+	req, err := c.Send(ctx, s.ID, protocol.HealthRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "the answer to the request", func() bool {
+		return c.healthOf(func(e protocol.Envelope) bool {
+			r, ok := e.Payload.(protocol.HealthReport)
+			return ok && r.RefID == req
+		})
+	})
+	test := protocol.HealthSelfTest{TestID: protocol.NewID()}
+	if _, err := c.Send(ctx, s.ID, test); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "the self-test with the service", func() bool {
+		return c.healthOf(func(e protocol.Envelope) bool {
+			r, ok := e.Payload.(protocol.HealthSelfTestResult)
+			return ok && r.TestID == test.TestID && slices.ContainsFunc(r.Checks, func(k protocol.HealthCheck) bool { return k.ID == protocol.CheckTCP && k.Service != nil })
+		})
+	})
 }

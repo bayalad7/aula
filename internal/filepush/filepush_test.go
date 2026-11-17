@@ -189,7 +189,9 @@ func TestReceiverRefusesPathTraversal(t *testing.T) {
 
 func TestReceiverCorruptAndIncomplete(t *testing.T) {
 	disk, w := newMemDisk(), newWire()
-	r := &Receiver{Writer: disk, PartsWait: 50 * time.Millisecond}
+	// A wait long enough that a slow runner never expires the first file
+	// before its damaged part arrives; the second one shortens it.
+	r := &Receiver{Writer: disk, PartsWait: 5 * time.Second}
 	ps := parts(t, "a.bin", "", bytes.Repeat([]byte{1}, protocol.FilePushPartSize+10), false)
 	bad := ps[1]
 	bad.Data = slices.Clone(bad.Data)
@@ -198,6 +200,9 @@ func TestReceiverCorruptAndIncomplete(t *testing.T) {
 	if ack := w.next(t).(protocol.FilePushAck); ack.Reason != protocol.FilePushCorrupt {
 		t.Fatalf("corrupt: %+v", ack)
 	}
+	r.mu.Lock()
+	r.PartsWait = 50 * time.Millisecond
+	r.mu.Unlock()
 	ps = parts(t, "b.bin", "", bytes.Repeat([]byte{2}, protocol.FilePushPartSize+10), false)
 	feed(t, r, w, ps[:1])
 	if ack := w.next(t).(protocol.FilePushAck); ack.Reason != protocol.FilePushIncomplete {

@@ -93,4 +93,6 @@
   <symbol id="etiqueta" viewBox="0 0 24 24"><path d="M3.5 4.5v7l9 9 7-7-9-9z"/><path d="M8 8.5h.01"/></symbol>
   <symbol id="escritorio" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><path d="M7.5 13a4.5 4.5 0 0 1 9 0"/><path d="M3 14.5h18M5.5 14.5v5.5M18.5 14.5v5.5"/></symbol>
   <symbol id="pasillo" viewBox="0 0 24 24"><path d="M6 3.5v17M18 3.5v17"/><path d="M12 5v2.5M12 10.75v2.5M12 16.5V19"/></symbol>
+  <symbol id="salud" viewBox="0 0 24 24"><path d="M3 12h4l2-4.5 4 9 2-4.5h6"/><rect x="2.5" y="3.5" width="19" height="17" rx="2"/></symbol>
+  <symbol id="prueba" viewBox="0 0 24 24"><path d="m4 6.5 1.5 1.5L8.5 5M4 12.5l1.5 1.5 3-3M4 18.5l1.5 1.5 3-3"/><path d="M11.5 6.5h8.5M11.5 12.5h8.5M11.5 18.5h8.5"/></symbol>
 </svg>

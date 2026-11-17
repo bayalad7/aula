@@ -19,8 +19,11 @@ const informe = [];
 const enfocado = (p) => p.evaluate(() => {
   const e = document.activeElement;
   if (!e || e === document.body || e === document.documentElement) return { nada: true };
-  const cs = getComputedStyle(e);
-  const r = e.getBoundingClientRect();
+  // Un botón alternable (.alternable) esconde su casilla y dibuja el anillo en la etiqueta:
+  // ahí se mira el foco y su tamaño.
+  const marco = e.closest(".alternable") || e;
+  const cs = getComputedStyle(marco);
+  const r = marco.getBoundingClientRect();
   const contorno = cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0;
   const sombra = cs.boxShadow && cs.boxShadow !== "none";
   const nombre = e.id ? "#" + e.id : e.tagName.toLowerCase() + (e.className && typeof e.className === "string" ? "." + e.className.trim().split(/\s+/).join(".") : "");

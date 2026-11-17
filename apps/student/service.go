@@ -295,6 +295,9 @@ func newServiceAgent(cfg Config, pub ed25519.PublicKey, cfgErr error, log *slog.
 	app.collect.Reader = agentsvc.WorkFolderReader{Helper: sa.helper}
 	// And opens pages and allowed apps in the student's session (§5.22).
 	app.opener.Session = agentsvc.Opener{Helper: sa.helper}
+	// The service reads the computer's health itself; the Documents disk is
+	// that of the session's user, none with nobody logged on (§5.27.3).
+	app.health = app.newHealth(platform.NewSystemHealth(), sa.documents)
 	app.emit = func(event string, data any) {
 		sa.helper.Notify(agentsvc.EventEmit, emitted{Event: event, Data: data})
 	}
@@ -329,6 +332,8 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 	if sa.app.power.Supported() {
 		h.Capabilities = append(h.Capabilities, protocol.CapPower)
 	}
+	// The service reads the health itself, also without a session (§5.27).
+	h.Capabilities = append(h.Capabilities, healthCapabilities()...)
 	if sa.ready == nil {
 		return h
 	}
@@ -379,6 +384,20 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 		h.Capabilities = append(h.Capabilities, sa.policy.Capabilities()...)
 	}
 	return h
+}
+
+// documents is the Documents folder of the session's user, "" with nobody
+// logged on.
+func (sa *serviceAgent) documents() string {
+	id, ok := sa.session()
+	if !ok {
+		return ""
+	}
+	dir, err := platform.DocumentsDirOf(id)
+	if err != nil {
+		return ""
+	}
+	return dir
 }
 
 // session is the student's session while a helper is ready in it.

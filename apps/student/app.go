@@ -20,6 +20,7 @@ import (
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/filepush"
+	"github.com/bayalad7/aula/internal/health"
 	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
@@ -62,6 +63,7 @@ type App struct {
 	inbox     *filepush.Inbox         // what arrived, for the window
 	collect   *collect.Responder      // file.collect; inert until enableCollect (§5.21)
 	opener    *openapp.Opener         // open.*; inert until enableOpen (§5.22)
+	health    *health.Agent           // health.* (§5.27): only reads the computer
 	work      platform.WorkFolder     // «Abrir carpeta»; nil without a work folder
 	clip      platform.Clipboard      // nil when the system has none
 	clipEr    error
@@ -164,6 +166,7 @@ func NewApp(cfg Config, pub ed25519.PublicKey, cfgErr error, hello protocol.Hell
 	a.inbox = &filepush.Inbox{}
 	a.collect = &collect.Responder{OnChange: a.onCollect, Logger: log}
 	a.opener = &openapp.Opener{Who: a.who, OnOpened: a.onOpened, Logger: log}
+	a.health = a.newHealth(platform.NewSystemHealth(), windowDocuments)
 	if cfgErr != nil {
 		a.status = Status{State: StateUnconfigured, Channel: cfg.Channel, Detail: cfgErr.Error()}
 	} else {
@@ -185,6 +188,9 @@ func (a *App) start(ctx context.Context) {
 		a.awaitMedia(ctx)
 		a.supervise(ctx)
 	}()
+	if a.health != nil {
+		go a.health.Monitor.Run(ctx) // processor samples; reports only while connected
+	}
 }
 
 // supervise keeps one agent running with the current configuration and
@@ -406,6 +412,7 @@ func (a *App) onState(s session.AgentState, c discovery.Console) {
 		a.present.Stop()  // the band and the badge go; nothing is captured any more
 		a.files.Reset()   // a file half received is dropped, never written
 		a.collect.Reset() // a round half sent is abandoned; what was collected stays listed
+		a.healthDisconnected()
 		if a.onLeave != nil {
 			a.onLeave()
 		}
@@ -470,7 +477,7 @@ func (a *App) onMessage(ctx context.Context, cl *transport.Client, env protocol.
 		_, err := cl.Send(ctx, p)
 		return err
 	}
-	if a.handleParticipation(env) || a.handleTimer(ctx, cl, env) || a.handlePoll(ctx, cl, env) || a.handleClassEnd(ctx, cl, env) ||
+	if a.handleHealth(ctx, cl, env) || a.handleParticipation(env) || a.handleTimer(ctx, cl, env) || a.handlePoll(ctx, cl, env) || a.handleClassEnd(ctx, cl, env) ||
 		a.handleComputerLabel(env) {
 		return
 	}

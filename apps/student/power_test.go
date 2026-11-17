@@ -291,7 +291,7 @@ func TestServiceAgentPower(t *testing.T) {
 	defer sa.app.stop()
 
 	s := c.waitAgent(t, "agent without helper", func(session.Session) bool { return true })
-	if !slices.Equal(capsOf(s), []string{"power"}) || s.Username != "" {
+	if !slices.Equal(capsOf(s), withHealth("power")) || s.Username != "" {
 		t.Fatalf("without a helper: %v as %q", capsOf(s), s.Username)
 	}
 	logoff, _ := c.console.Send(ctx, s.ID, protocol.PowerAction{ActionID: protocol.NewID(), Action: protocol.PowerLogoff})
@@ -324,7 +324,7 @@ func TestServiceAgentPower(t *testing.T) {
 	h := newFakeHelper(t, helperEnd)
 	_ = h.link.Notify(agentsvc.EventReady, agentsvc.Ready{Clipboard: true})
 	s = c.waitAgent(t, "agent with helper", func(s session.Session) bool { return s.Username == "ana" })
-	if !slices.Equal(capsOf(s), []string{"class.end", "code.view", "computer.label", "hand", "msg.show", "msg.student", "poll", "power", "timer"}) {
+	if !slices.Equal(capsOf(s), withHealth("class.end", "code.view", "computer.label", "hand", "msg.show", "msg.student", "poll", "power", "timer")) {
 		t.Fatalf("with a helper: %v", capsOf(s))
 	}
 	order := protocol.PowerAction{ActionID: protocol.NewID(), Action: protocol.PowerLogoff}

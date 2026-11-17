@@ -319,6 +319,8 @@ window.AulaTextos = Object.freeze({
   "capacidad.recoger": "Recoger tu trabajo",
   "capacidad.abrirPagina": "Abrir una página en tu navegador",
   "capacidad.abrirApp": "Abrir una app permitida",
+  "capacidad.salud": "Revisar el estado de este equipo: espacio y salud del disco, memoria, carga y temperatura del procesador, red, batería y si falta reiniciar. Nunca tus apps, sitios ni archivos",
+  "capacidad.autodiagnostico": "Probar este equipo cuando el profesor lo pide: escribe y borra un archivo temporal y revisa audio, red, video, teclado y mouse",
   "banda.mostrandoFin": "Tu pantalla ya no se está mostrando a la clase.",
   "banda.tamanoReal": "Tamaño real",
   "banda.ajustar": "Ajustar a la ventana",

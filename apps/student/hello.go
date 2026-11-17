@@ -56,3 +56,12 @@ func localHello() protocol.HelloInfo {
 			protocol.CapComputerLabel},
 	}
 }
+
+// localHelloWithHealth is localHello plus the health of this computer
+// (§5.27), declared in window mode and, by the service, also without a
+// session.
+func localHelloWithHealth() protocol.HelloInfo {
+	h := localHello()
+	h.Capabilities = append(h.Capabilities, healthCapabilities()...)
+	return h
+}

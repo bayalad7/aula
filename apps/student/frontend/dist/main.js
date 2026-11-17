@@ -1424,6 +1424,8 @@
     ["power", "energia", () => T("capacidad.energia")], ["app.block", "candado", () => T("capacidad.apps")],
     ["web.filter", "filtro", () => T("capacidad.web")], ["open.url", "externo", () => T("capacidad.abrirPagina")],
     ["open.app", "app", () => T("capacidad.abrirApp")],
+    // Salud del equipo (§5.27): solo lee el equipo; nunca apps, sitios ni archivos (regla 92).
+    ["health", "salud", () => T("capacidad.salud")], ["health.selftest", "prueba", () => T("capacidad.autodiagnostico")],
   ];
   const SVGNS = "http://www.w3.org/2000/svg";
   function iconoCap(id, cls) {

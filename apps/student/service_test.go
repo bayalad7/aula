@@ -150,6 +150,16 @@ func capsOf(s session.Session) []string {
 	return out
 }
 
+// withHealth adds the health capabilities, which the service declares
+// with or without a helper (§5.27), to a sorted list.
+func withHealth(caps ...string) []string {
+	for _, c := range healthCapabilities() {
+		caps = append(caps, string(c))
+	}
+	slices.Sort(caps)
+	return caps
+}
+
 // The agent in the service shows up without capabilities while there is no
 // helper, reconnects with the session's user and the helper's capabilities
 // when one is ready, reaches the student's clipboard only through it, and
@@ -168,7 +178,7 @@ func TestServiceAgentFollowsItsHelper(t *testing.T) {
 	defer sa.app.stop()
 
 	s := c.waitAgent(t, "agent without helper", func(session.Session) bool { return true })
-	if len(s.Capabilities) != 0 || s.Username != "" {
+	if !slices.Equal(capsOf(s), withHealth()) || s.Username != "" {
 		t.Fatalf("without a helper the agent declared %v as %q", s.Capabilities, s.Username)
 	}
 
@@ -181,8 +191,8 @@ func TestServiceAgentFollowsItsHelper(t *testing.T) {
 	if err := h.link.Notify(agentsvc.EventReady, agentsvc.Ready{Capture: true, Clipboard: true, Broadcast: true}); err != nil {
 		t.Fatal(err)
 	}
-	s = c.waitAgent(t, "agent with helper", func(s session.Session) bool { return len(s.Capabilities) > 0 })
-	want := []string{"class.end", "code.view", "computer.label", "hand", "msg.show", "msg.student", "poll", "screen.broadcast", "screen.present.view", "screen.snapshot", "screen.thumb", "timer"}
+	s = c.waitAgent(t, "agent with helper", func(s session.Session) bool { return s.Username == "ana" })
+	want := withHealth("class.end", "code.view", "computer.label", "hand", "msg.show", "msg.student", "poll", "screen.broadcast", "screen.present.view", "screen.snapshot", "screen.thumb", "timer")
 	if !slices.Equal(capsOf(s), want) || s.Username != "ana" {
 		t.Fatalf("with a helper: %v as %q, want %v as ana", capsOf(s), s.Username, want)
 	}
@@ -226,10 +236,11 @@ func TestServiceAgentFollowsItsHelper(t *testing.T) {
 		t.Fatalf("code.share through the helper: notify %v, raise %v; want true and false", notified, raised)
 	}
 
-	// The helper goes (logoff, or the student killed it): no capabilities.
+	// The helper goes (logoff, or the student killed it): only the health
+	// of the computer, which the service reads itself.
 	h.link.Close()
 	<-served
-	s = c.waitAgent(t, "agent after the helper left", func(s session.Session) bool { return len(s.Capabilities) == 0 })
+	s = c.waitAgent(t, "agent after the helper left", func(s session.Session) bool { return slices.Equal(capsOf(s), withHealth()) })
 	if s.Username != "" {
 		t.Fatalf("user %q kept after the helper left", s.Username)
 	}

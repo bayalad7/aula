@@ -87,6 +87,9 @@ func runDiagnose(out io.Writer, log *slog.Logger) int {
 	_ = agent.Run(ctx)
 	if !connected {
 		fmt.Fprintln(out, "  No se logró conectar.")
+	}
+	printHealth(out)
+	if !connected {
 		return 1
 	}
 	fmt.Fprintln(out, "\nTodo bien: si la ventana de Aula Cliente sigue sin conectar, ciérrala y vuelve a abrirla.")

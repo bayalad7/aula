@@ -62,7 +62,7 @@ func main() {
 	if clipErr != nil {
 		log.Warn("no system clipboard", "err", clipErr)
 	}
-	app := NewApp(cfg, pub, cfgErr, localHello(), clip, clipErr, log)
+	app := NewApp(cfg, pub, cfgErr, localHelloWithHealth(), clip, clipErr, log)
 	app.mediaWait = 5 * time.Second // the frontend reports its WebRTC support on load
 	capture, capErr := platform.NewScreenCapture()
 	indicator, indErr := platform.NewScreenIndicator()

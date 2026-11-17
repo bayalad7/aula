@@ -87,6 +87,7 @@ func runHelper(channel string, log *slog.Logger) int {
 	// The App only serves the window's bindings, forwarding them to the
 	// agent in the service; it does not connect to any console.
 	app := NewApp(Config{}, nil, nil, localHello(), h.clip, clipErr, log)
+	app.health = nil // the service reads the computer's health, not the helper (§5.27)
 	var wctx context.Context
 	var wmu sync.Mutex
 	window := func() context.Context { wmu.Lock(); defer wmu.Unlock(); return wctx }

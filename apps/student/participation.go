@@ -62,6 +62,7 @@ func (a *App) onConnect(ctx context.Context, cl *transport.Client) {
 	a.mu.Lock()
 	a.cl = cl
 	a.mu.Unlock()
+	a.healthConnected(cl)  // reports once the console sends health.config (§5.27.1)
 	a.timerReconnected()   // before the console can send it again (§5.19)
 	a.ballot.Reconnected() // the console sends the open poll again (§5.23)
 	time.AfterFunc(poll.ReconnectGrace, func() {

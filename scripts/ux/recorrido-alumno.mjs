@@ -195,6 +195,12 @@ await f("23-oscuro-aviso-y-restricciones", "restricciones", { oscuro: true, paso
   { notices: [{ id: "m-2", level: "warning", text: "Guarden su trabajo: en 5 minutos cerramos la sesión.", at: new Date().toISOString() }] }) });
 await f("24-ventana-minima-480x360", "varios-codigos", { w: 480, h: 360 });
 await f("25-ventana-minima-aviso", "aviso-warning", { w: 480, h: 360 });
+// Notas de interfaz 020 y 021: el motivo en su diálogo; la barra de acciones con el tema, también
+// elegido a mano (claro sobre un sistema oscuro) y en la ventana mínima.
+await f("106-barra-acciones", "mano");
+await f("107-tema-claro-sobre-oscuro", "conectado", { oscuro: true, pasos: click("#tema") });
+await f("108-barra-acciones-480x360", "mano", { w: 480, h: 360 });
+await f("109-motivo-dialogo-oscuro", "mano", { oscuro: true, pasos: click("#motivo-abrir") });
 
 await cerrar();
 fs.writeFileSync(path.join(salida, "axe.json"), JSON.stringify(informe, null, 2));

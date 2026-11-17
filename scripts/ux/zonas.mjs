@@ -22,8 +22,8 @@ export const zonas = {
     { id: "alumnos-lista", dentro: "alumnos", nombre: "Lista de alumnos", selector: "#alumnos-lista", que: "Tabla con un alumno por fila." },
     { id: "fila-alumno", dentro: "alumnos-lista", nombre: "Fila del alumno", selector: "#alumnos-filas > tr", que: "Un alumno: número, casilla, equipo, estado, insignias y sus Acciones (ficha, Encender y Olvidar, solo iconos con su tooltip)." },
     { id: "alumnos-seleccion", dentro: "alumnos", nombre: "Selección", selector: "#seleccion-texto", que: "A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip." },
-    { id: "alumnos-apagados", dentro: "alumnos", nombre: "Mostrar apagados", selector: "#alumnos-apagados-campo", que: "El interruptor «Apagados (n)»: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19)." },
-    { id: "alumnos-tamano", dentro: "alumnos", nombre: "Tamaño de las miniaturas", selector: "#tamano-miniaturas", que: "Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda." },
+    { id: "alumnos-apagados", dentro: "alumnos", nombre: "Mostrar apagados", selector: "#alumnos-apagados-campo", que: "El botón alternable «Apagados (n)», resaltado cuando está activo: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19)." },
+    { id: "alumnos-tamano", dentro: "alumnos", nombre: "Tamaño de las miniaturas", selector: "#tamano-miniaturas", que: "Selector con el icono de tamaño: Pequeño, Mediano, Grande, Extra grande o Ajustar; en Miniaturas y en Salón, y se recuerda." },
     { id: "alumnos-miniaturas", dentro: "alumnos", nombre: "Miniaturas", selector: "#alumnos-miniaturas", que: "Cuadrícula con la pantalla de cada alumno." },
     { id: "tarjeta-alumno", dentro: "alumnos-miniaturas", nombre: "Tarjeta del alumno", selector: "#alumnos-cuadricula > li", que: "La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande." },
     { id: "alumnos-salon", dentro: "alumnos", nombre: "Alumnos en el salón", selector: "#alumnos-salon", que: "Las tarjetas de los alumnos en su lugar del salón; el lugar de un equipo sin conexión se ve vacío, con Encender. Los números de fila y columna seleccionan a los de esa fila o columna (prompt 10.15)." },
@@ -105,7 +105,8 @@ export const zonas = {
   ],
 
   alumno: [
-    { id: "tira", nombre: "Tira de identidad", selector: "#estado", que: "Arriba: a qué clase está conectado, el temporizador y los botones del alumno." },
+    { id: "tira", nombre: "Tira de identidad", selector: "#estado", que: "Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo." },
+    { id: "acciones-alumno", nombre: "Barra de acciones del alumno", selector: "#acciones-alumno", que: "Abajo, como la de la consola: Levantar la mano, Mensaje al profesor y el tema (del sistema, claro u oscuro). No se ve en el modo compacto (nota de interfaz v0.1.0 021)." },
     { id: "tira-botones", dentro: "tira", nombre: "Botones de la tira", selector: "#mano, #escribir, #capacidades, #compactar", que: "Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto." },
     { id: "tira-temporizador", dentro: "tira", nombre: "Insignia del temporizador", selector: "#temporizador", que: "Cuánto falta del ejercicio." },
     { id: "bandas", nombre: "Bandas de transparencia", selector: "#bandas", que: "Lo que el profesor hace con el equipo (energía, control, pantalla en pausa, pantalla vista, tu pantalla mostrada a la clase, restricciones); no se cierran." },

@@ -359,6 +359,7 @@ await caso("mano-bajada-por-profesor", "mano", async (p) => {
 });
 await caso("mano-motivo", "mano", async (p) => {
   await p.click("#motivo-abrir");
+  ok(await p.evaluate(() => document.getElementById("dlg-motivo").open), "el motivo no abrió su diálogo (nota 020)");
   ok(await p.evaluate(() => document.activeElement.id === "motivo-texto"), "el foco no pasó al motivo");
   ok(await p.evaluate(() => document.activeElement.value === "No me compila el for de la línea 12"), "el campo no trae el motivo actual");
   await p.evaluate(() => { document.activeElement.value = ""; });
@@ -367,6 +368,21 @@ await caso("mano-motivo", "mano", async (p) => {
   await sleep(150);
   const c = await p.evaluate(() => window.__calls.filter((x) => x[0] === "RaiseHand").pop());
   ok(c && c[1][0] === "Necesito ayuda con el for", "RaiseHand con el motivo: " + JSON.stringify(c));
+  ok(await p.evaluate(() => !document.getElementById("dlg-motivo").open), "el diálogo del motivo no se cerró al enviar");
+});
+// Nota de interfaz 021: la mano, el mensaje y el tema van en la barra de acciones de abajo; el tema
+// recorre sistema → claro → oscuro → sistema y se recuerda.
+await caso("barra-alumno-y-tema", "conectado", async (p) => {
+  const lugar = await p.evaluate(() => ["mano", "escribir", "tema"].map((id) => !!document.getElementById(id).closest("#acciones-alumno")));
+  ok(lugar.every(Boolean), "fuera de la barra de acciones: " + JSON.stringify(lugar));
+  const temas = [];
+  for (let i = 0; i < 3; i++) {
+    await p.click("#tema");
+    temas.push(await p.evaluate(() => document.documentElement.dataset.theme || "sistema"));
+  }
+  ok(temas.join() === "light,dark,sistema", "temas: " + temas.join());
+  await p.click("#tema");
+  ok(await p.evaluate(() => localStorage.getItem("aula-tema")) === "light", "el tema no se recuerda");
 });
 await caso("mensaje-enter-y-esc", "conectado", async (p) => {
   await p.click("#escribir");

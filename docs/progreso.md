@@ -1,8 +1,9 @@
 # Progreso
 
-Última actualización: 2026-11-17 (10.28 dependencias al día documentada, sin ejecutar: prompt
-`docs/prompts/10.28-dependencias-al-dia.md`, Wails se queda en v2 y la migración a v3 es otra
-etapa; 10.25 salud del laboratorio implementada, sin commit: módulo Laboratorio, Salud del equipo en la Ficha, Ajustes › Salud y autodiagnóstico; faltan la prueba en VM §30 y los casos C-149 a C-153, A-63 y A-64; compilación local unificada: `scripts/compilar.ps1` deja
+Última actualización: 2026-11-17 (10.28 dependencias al día implementada, sin commit: Wails
+v2.17.1, `x/net` v0.63.0 y 24 módulos más; vulnerabilidades en módulos de 17 a 0; `govulncheck`
+v1.9.0 en el CI; Wails se queda en v2 y la migración a v3 es otra etapa; faltan C-154 a C-156 y
+A-65; 10.25 salud del laboratorio implementada, sin commit: módulo Laboratorio, Salud del equipo en la Ficha, Ajustes › Salud y autodiagnóstico; faltan la prueba en VM §30 y los casos C-149 a C-153, A-63 y A-64; compilación local unificada: `scripts/compilar.ps1` deja
 todo en `dist\local`, sin cgo como el release; qué es cada ejecutable en
 `docs/desarrollo/ejecutables.md`; se borraron los `teacher.exe`/`student.exe` sueltos de
 `go build ./apps/...`, que no abren. 10.27 sistema de diseño implementado, sin commit: sin Tailwind
@@ -68,7 +69,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 | 10.25 | Salud del laboratorio | ✅ Implementado y probado en CI con dobles y alumnos simulados (17/11/2026, sin commit, adelantado a petición del usuario): módulo «Laboratorio» del menú (grupo Pruebas, con contador), «Salud del equipo» en la Ficha, insignia en la Fila del alumno y en el salón, Ajustes › Salud; `health.config`, `health.request`, `health.report`, `health.selftest` y `.result`, capacidades `health` y `health.selftest` (§5.27), reloj con los `heartbeat` (`Registry.RecordClock`), reglas 92–95, paquete `internal/health` y `platform.SystemHealth` (Windows sin WMI; fallback por dato), `aula-cliente diagnostico` con salud y autodiagnóstico; diagrama 23 nuevo, 11 y 12 al día; el checklist interactivo (parte B) quedó como propuesta P-05 (falta la prueba en VM, `docs/prueba-vms.md` §30, y los casos C-149 a C-153 y A-63 y A-64) |
 | 10.26 | Bandeja de mensajes tipo chat (mejora de 10.6 y 10.7) | ✅ Implementado y probado en CI con dobles y alumnos simulados (14/11/2026, adelantado a petición del usuario): una conversación por alumno en Participación › Manos y mensajes (bandeja con Por atender, Atendidas y Todas → conversación con Volver), con respuestas y mensajes privados, hasta 50 líneas en memoria; binding `MarkConversationDone`; «Tus mensajes» del alumno como hilo, oculto lo del profesor al proyectar. Sin protocolo nuevo. Componente `.hilo`/`.burbuja`; diagrama 18; `docs/ux/historial/bandeja-de-mensajes.md` (faltan los casos C-139 a C-143 y A-59 y A-60) |
 | 10.27 | Sistema de diseño: utilidades, capas, 60-30-10 y movimiento (mejora de `internal/ui`) | ✅ Implementado (17/11/2026, sin commit): decisión D-022 (no Tailwind); `internal/ui/utilidades.css` con las utilidades que ya existían y las nuevas (`TestUtilitiesOnlyArrange`); `@layer tokens, componentes, utilidades, vista` en las cinco hojas (`TestCSSIsLayered`), comparando el estilo calculado de cada elemento en las 329 escenas antes y después (solo cambió el Menú; dos alineaciones de tabla corregidas); `--c-secundario` y su familia con 12 pares de contraste para el Menú de la consola (opción A, el logo no cambia); placa secundaria del icono de app (`marca.mjs`); movimiento sutil de diálogos (también al cerrar), paneles y avisos, apagado con «reducir movimiento». Recorridos de las dos apps sin errores ni violaciones, 67 pruebas del alumno, capturas del manual y del mapa; `docs/ux/historial/menu-secundario.md`. Faltan los casos C-144 a C-146 y A-61 en la ventana real |
-| 10.28 | Dependencias al día y revisión de vulnerabilidades (mantenimiento) | 📝 Documentada, sin ejecutar (17/11/2026; se trabaja con `/funcionalidad-mejora 10.28-dependencias-al-dia.md` cuando el usuario lo indique): análisis de Wails v3.1.0 → **no migrar todavía** (port de las dos apps: *services* en lugar de `Bind`, ventana como objeto, bindings generados, build con Taskfile; toca arnés, CI y release); se queda en v2 y la migración a v3 será otra etapa con su decisión, probando primero la app del alumno (19 bindings; la consola tiene 121). Plan: las 7 directas menores o de parche (Wails v2.17.0 → v2.17.1, `x/net` v0.57.0 → v0.63.0, `x/text`, `x/image`, `x/sys`, `pion/ice`, `pion/transport`) y las ~64 indirectas (71 módulos con versión nueva el 17/11/2026), la CLI de Wails en `release.yml`, `scripts/compilar.ps1` y esta página, y `govulncheck` v1.9.0 anclado en el CI y en «Antes de terminar». Versión: patch. Aún no se tocó `go.mod` ni el código |
+| 10.28 | Dependencias al día y revisión de vulnerabilidades (mantenimiento) | ✅ Implementado (17/11/2026, sin commit, con `/funcionalidad-mejora`): análisis de Wails v3.1.0 → **no migrar todavía** (port de las dos apps; será otra etapa con su decisión, probando primero la app del alumno: 19 bindings, la consola tiene 121). `go get -u ./...` y `go mod tidy`: 7 directas (Wails v2.17.0 → v2.17.1 con GHSA-r5j2-ghh9-2jqw de Linux, `x/net` v0.57.0 → v0.63.0, `x/text` → v0.44.0, `x/image` → v0.48.0, `x/sys` → v0.50.0, `pion/ice` → v4.4.9, `pion/transport` → v5.1.5) y 18 indirectas (entre ellas `x/crypto` v0.59.0); directiva `go 1.26.0` sin cambio, ninguna versión mayor nueva, nada fijado atrás. Los 42 módulos que siguen con versión nueva solo están en el grafo (CLI de Wails, git, terminal) y no se compilan en Aula. `govulncheck` v1.9.0: en módulos, de 17 (no llamadas) a 0; con Go 1.26.11 (el del CI) «No vulnerabilities found». CLI de Wails v2.17.1 en `release.yml` y `compilar.ps1`; paso `govulncheck` en las tres plataformas del CI (el análisis sigue los build tags); CLAUDE.md, README y los comandos lo listan. `gofmt`, `vet`, `staticcheck`, `wails doctor`, `compilar.ps1 -Solo` de las dos apps y el humo de los dos arneses en verde. Página `docs/ux/historial/dependencias-al-dia.md`. Faltan C-154 a C-156 y A-65 en equipos reales |
 | 11 | Revisión de seguridad y privacidad | ⏳ Pendiente (conviene antes de publicar `v0.1.0`) |
 | 12 (09.2) | Transmisión de la pantalla del profesor (WebRTC, Windows) | ✅ Implementada y probada en el centro de cómputo (4 equipos) |
 | 12.1 | Proyectar la pantalla de un alumno a la clase | ✅ Implementado y probado en CI con dobles y de punta a punta con pion por loopback; «Proyectar a la clase» en la ficha y la Pantalla grande, con su franja (falta la prueba en VM, `docs/prueba-vms.md` §25, y los casos C-89 a C-94 y A-31 a A-34) |
@@ -115,7 +116,7 @@ el que se trabajó antes; las notas de abajo lo conservan.
 
 ## Etapa 02: notas
 
-- Módulo `github.com/bayalad7/aula` (`go 1.26.0`), Wails v2.17.0.
+- Módulo `github.com/bayalad7/aula` (`go 1.26.0`), Wails v2.17.1 (10.28).
 - Paquetes `internal/{protocol,discovery,transport,session,security,platform,codedist}`, cada uno
   con un archivo mínimo y una prueba trivial. `platform` ya define `ErrNotSupported`.
 - `apps/teacher` ("Aula — Consola") y `apps/student` ("Aula — Cliente"): Wails v2 con frontend
@@ -131,7 +132,10 @@ el que se trabajó antes; las notas de abajo lo conservan.
   <https://wails.io/docs/gettingstarted/installation>. Ejecuta
   `go install github.com/wailsapp/wails/v2/cmd/wails@latest` para instalar la CLI de Wails.
   El binario queda en `%USERPROFILE%\go\bin`, que debe estar en el PATH. Comprueba con
-  `wails doctor` (debe terminar en *SUCCESS*). Versión instalada: v2.17.0.
+  `wails doctor` (debe terminar en *SUCCESS*). Versión instalada: v2.17.1 (la de `go.mod`; `go install
+  github.com/wailsapp/wails/v2/cmd/wails@v2.17.1`). Go local: actualízalo a 1.27.4 o superior;
+  con 1.27.2, `govulncheck` reporta dos fallas de la biblioteca estándar (GO-2026-6859 y
+  GO-2026-6809) que el CI no tiene porque usa Go 1.26.11.
 - gcc 16.2.0 (WinLibs POSIX UCRT, instalado con
   `winget install BrechtSanders.WinLibs.POSIX.UCRT`) para cgo y `go test -race`.
 - winget lo instala bajo `C:\Users\Benjamín Ayala\...`. `ld` no soporta el espacio de esa ruta

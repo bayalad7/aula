@@ -350,6 +350,19 @@ En la ventana real de Wails (WebView2), que el arnés no ve al pasar el mouse.
 | C-148 | En Código, abre la ayuda «?» y luego angosta la ventana | Con el panel abierto, Código pasa a una columna y nada del formulario queda tapado; al cerrar el panel vuelven las dos columnas |
 | A-62 | Con la ventana del alumno normal, levanta la mano, agrega un motivo, manda un mensaje y pulsa el botón de tema tres veces; cierra y abre la ventana; luego compáctala | Los tres botones están abajo, en la barra; el motivo se escribe en un diálogo como el del mensaje; el tema pasa por claro, oscuro y el del sistema y el elegido sigue al reabrir; en el modo compacto la barra no se ve y la mano y el mensaje siguen en su tira. Los tooltips de «i» y «Hacer pequeña» se ven completos, hacia abajo |
 
+### Dependencias al día (10.28, 2026-11-17)
+
+Mantenimiento sin cambios de comportamiento (Wails v2.17.1, `x/net` v0.63.0 y el resto dentro de su
+versión mayor): se revisa que todo siga igual. Compila antes con `scripts\compilar.ps1`, que ya
+pide la CLI de Wails v2.17.1 (`wails version`).
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| C-154 | Abre `dist\local\bin\aula-consola.exe`; con un agente instalado en otro equipo o VM, espera a que aparezca y emite un snippet | El alumno aparece en Alumnos (descubierto por mDNS, conectado por TLS) y el snippet le llega; la consola abre con su tema y su menú como antes |
+| C-155 | Con la consola abierta, ábrela otra vez (doble clic en el `.exe` o desde Inicio) | No se abre una segunda consola: la que ya estaba vuelve al frente |
+| C-156 | **Transmitir** a ese alumno y luego **Detener**; después, en **Archivos**, elige un archivo para enviar con el diálogo de Windows | La transmisión arranca y se detiene; el diálogo para elegir archivo se abre y lo elegido aparece como antes |
+| A-65 | En el equipo del alumno: llega el snippet de C-154; pulsa **Copiar** y pega en un editor; ábrelo otra vez desde Inicio | Se copia formateado; abrir de nuevo trae la ventana que ya estaba (no abre otra). Durante la transmisión de C-156 la banda de transparencia aparece y se va al detener |
+
 ### Encender equipos (10.19)
 
 Solo en el laboratorio (en una VM hace falta configurar el hipervisor): dos equipos con Windows,

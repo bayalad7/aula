@@ -160,6 +160,9 @@ retiraron; esta es la primera.
 - **`aula-cliente diagnostico`** muestra también la salud del equipo y corre su autodiagnóstico.
 - Para probar sin publicar, un solo comando (`scripts\compilar.ps1`) deja las apps y los
   instaladores en `dist\local`, compilados igual que una versión publicada.
+- Componentes de red, cifrado, imagen y ventana al día con sus correcciones de seguridad (entre
+  ellas, varias del servidor HTTP/2 y de WebKit en Linux); cada cambio del código se revisa contra
+  la base de vulnerabilidades conocidas de Go antes de integrarse.
 
 ### Todavía no
 

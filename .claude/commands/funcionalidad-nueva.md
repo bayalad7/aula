@@ -119,7 +119,8 @@ Como mínimo:
   y en VM si toca el SO. Lo nativo se prueba a ojo: nunca con clics ni teclas sintéticas en el
   escritorio del usuario.
 - `gofmt -l .` sin salida, `go vet ./...`,
-  `go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...` y `go test -race ./...`.
+  `go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...`, `go test -race ./...` y
+  `go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...`.
 - Su línea en «Sin publicar» de `CHANGELOG.md`, en su área y en palabras de quien usa Aula.
 - `docs/progreso.md` y, si la entrega tomó decisiones de interfaz que valga conservar, una sola
   página en `docs/ux/historial/` con el análisis, los resultados y las decisiones, **sin

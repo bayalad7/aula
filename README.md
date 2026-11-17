@@ -125,6 +125,7 @@ gofmt -l .                     # no debe imprimir nada
 go vet ./...
 go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
 go test -race ./...            # requiere cgo (gcc)
+go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...   # vulnerabilidades conocidas
 ```
 
 ## Ramas y versiones

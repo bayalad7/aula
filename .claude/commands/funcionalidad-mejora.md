@@ -92,7 +92,8 @@ Una `corrección` o una `mejora` pequeña y local no necesita esta pausa: dilo y
   `node scripts/ux/capturas-manual.mjs`; si cambió un diagrama, `scripts/docs/generar-diagramas`.
 - Ajusta o agrega los casos manuales de `docs/desarrollo/probar-consola-local.md`.
 - `gofmt -l .` sin salida, `go vet ./...`,
-  `go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...` y `go test -race ./...`.
+  `go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...`, `go test -race ./...` y
+  `go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...`.
 - Actualiza `docs/progreso.md` y, si el cambio se nota (no una corrección interna), su línea en
   «Sin publicar» de `CHANGELOG.md` (en «Corregido» si es una corrección).
 

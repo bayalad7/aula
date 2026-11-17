@@ -50,6 +50,12 @@ jobs:
       - name: staticcheck
         run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
 
+      # Known vulnerabilities (Go standard library and modules) that the code
+      # actually calls. Per OS, because the call graph follows the build tags
+      # (*_windows.go is only analysed on Windows).
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
       - name: go test -race
         env:
           CGO_ENABLED: '1'

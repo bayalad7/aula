@@ -137,7 +137,8 @@ misma LAN.
 - Logs con `log/slog`; nunca registrar código de alumnos, contenido de pantalla ni claves.
 - Cada mensaje nuevo del protocolo se documenta primero en `docs/protocol.md`.
 - Cambios pequeños e incrementales; no refactorizar paquetes ajenos a la tarea.
-- Antes de terminar: `gofmt -l` (sin salida), `go vet ./...`, `staticcheck ./...`, `go test -race ./...`.
+- Antes de terminar: `gofmt -l` (sin salida), `go vet ./...`, `staticcheck ./...`, `go test -race ./...`
+  y `govulncheck ./...` (sin vulnerabilidades que el código llame; ver Integración continua).
 
 ## Definición de terminado (toda función nueva o cambio visible)
 Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. Lo marcado con
@@ -263,8 +264,15 @@ Referencia completa en `docs/ux/DESIGN_SYSTEM.md`; la fuente de verdad es `inter
 - **Workflow de CI** (`.github/workflows/ci.yml`): se dispara en `push` a `main`/`develop` y en
   `pull_request`; `permissions: contents: read`; matriz `ubuntu-latest`, `windows-latest`,
   `macos-latest`. Pasos: `go vet ./...`, `staticcheck` (vía
-  `go run honnef.co/go/tools/cmd/staticcheck@<versión fija> ./...`), `go test -race ./...`
-  (con `CGO_ENABLED=1`, que `-race` requiere; los binarios publicados se compilan sin cgo).
+  `go run honnef.co/go/tools/cmd/staticcheck@<versión fija> ./...`), `govulncheck` (vía
+  `go run golang.org/x/vuln/cmd/govulncheck@<versión fija> ./...`, en las tres plataformas porque
+  el análisis sigue los build tags; falla si el código llama una función vulnerable de la stdlib
+  o de un módulo), `go test -race ./...` (con `CGO_ENABLED=1`, que `-race` requiere; los binarios
+  publicados se compilan sin cgo).
+- **Dependencias:** se ponen al día dentro de su versión mayor con `go get -u ./...` y
+  `go mod tidy` (prompt 10.28), sin `replace`. Wails se queda en v2 hasta que una etapa propia
+  decida la migración a v3. La CLI de Wails de `release.yml` y `scripts/compilar.ps1` es la misma
+  versión que la de `go.mod`.
 - **Job `ux` del CI:** en `ubuntu-latest`, `npm ci` y `node recorrido.mjs` en `scripts/ux/`. Recorre
   la consola en Chromium headless y falla con errores de JS o violaciones serias de axe-core. Sube
   las capturas como artefacto.

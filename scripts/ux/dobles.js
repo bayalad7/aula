@@ -30,14 +30,15 @@
     canPresent: s.capabilities.includes("screen.present"), canPresentView: s.capabilities.includes("screen.present.view"),
     canPause: s.capabilities.includes("screen.freeze"), canClassEnd: s.capabilities.includes("class.end"),
     canLabel: s.capabilities.includes("computer.label"),
+    canHealth: s.capabilities.includes("health"), canSelfTest: s.capabilities.includes("health.selftest"),
   });
   const ALL = ["code.view", "msg.show", "screen.thumb", "screen.broadcast", "app.block", "web.filter", "power", "remote", "screen.snapshot",
-    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "poll.quiz", "screen.present", "screen.present.view", "screen.freeze", "class.end", "computer.label"];
+    "hand", "msg.student", "timer", "file.push", "file.collect", "open.url", "open.app", "poll", "poll.quiz", "screen.present", "screen.present.view", "screen.freeze", "class.end", "computer.label", "health", "health.selftest"];
   const student = (o) => Object.assign({
     id: "s-" + o.hostname, username: "", os: "windows", osVersion: "10.0.19045", agentVersion: "0.5.0",
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
     lastCodeAck: "", ackedAt: "", simulated: false, connectedAt: "10:31", lastError: null, hand: 0, newMessages: 0,
-    pause: "", pauseUnacked: false, canWake: false, wake: null,
+    pause: "", pauseUnacked: false, canWake: false, wake: null, healthAlerts: 0, healthLevel: "",
   }, o, caps(o));
 
   // muchos_alumnos -n 2: SIM-01, SIM-02 (code.view y msg.show).
@@ -182,6 +183,55 @@
       canSnapshot: n("canSnapshot"), canTimer: n("canTimer"), canPoll: n("canPoll"), canCollect: n("canCollect"),
       canOpenUrl: r("canOpenUrl"), canOpenApp: r("canOpenApp"), canPause: r("canPause"), off };
   };
+
+  // Salud del laboratorio (apps/teacher/health.go, prompt 10.25): el último informe de cada equipo
+  // con health. En lab-laboratorio, LAB3-PC07 tiene el disco casi lleno, LAB3-PC12 el reloj
+  // adelantado y el cable a 10 Mb/s y un autodiagnóstico con una falla; LAB3-PC03 está apagado con
+  // su último informe. En las demás escenas lab, todos están bien.
+  const GiB = 1073741824;
+  const conAlertas = scene === "lab-laboratorio";
+  const informe = (o) => Object.assign({ seq: 3, reason: "periodic",
+    disks: [{ role: "system", free_bytes: 82 * GiB, total_bytes: 238 * GiB }], disk_health: "ok",
+    memory: { total_bytes: 8 * GiB, available_bytes: 4 * GiB }, cpu: { load_pct: 9, limit_pct: 100 }, uptime_s: 7200,
+    reboot_pending: false, network: { kind: "ethernet", link_mbps: 1000 }, internet: { dns: "ok", reach: "ok" } }, o);
+  const saludTh = { diskMinGB: 5, diskMinPct: 10, memoryMinPct: 10, cpuMaxPct: 90, cpuLimitMinPct: 90, clockMaxS: 120,
+    linkMinMbps: 100, wifiMinPct: 40, batteryMinPct: 20, batteryWearMaxPct: 50 };
+  let saludAjustes = { thresholds: Object.assign({}, saludTh), targets: { internet: "www.google.com:443",
+    services: [{ name: "Licencias", address: "licencias.escuela.local:27000" }] } };
+  const hace = (s) => new Date(now - s * 1000).toISOString();
+  const saludEquipo = (s, o) => Object.assign({ key: "r:" + s.hostname.toLowerCase(), hostname: s.hostname, simulated: false,
+    connected: s.state === "connected", at: hace(25), clockMs: 180, alerts: [] }, o);
+  let labView = { computers: [], withAlerts: 0, connected: 0, requestInMs: 0, hasTargets: true };
+  const contarLab = () => {
+    labView.connected = labView.computers.filter((c) => c.connected).length;
+    labView.withAlerts = labView.computers.filter((c) => c.connected && c.alerts.length).length;
+    for (const s of list) {
+      const c = labView.computers.find((x) => x.key === (s.simulated ? "s:" : "r:") + s.hostname.toLowerCase());
+      s.healthAlerts = c && s.state === "connected" ? c.alerts.length : 0;
+      s.healthLevel = c && c.alerts.some((a) => a.level === "error") ? "error" : s.healthAlerts ? "warn" : "";
+    }
+  };
+  if (scene.startsWith("lab")) {
+    labView.computers = [
+      saludEquipo(lab[0], conAlertas ? { report: informe({ disks: [{ role: "system", free_bytes: 3.2 * GiB, total_bytes: 238 * GiB },
+        { role: "documents", free_bytes: 3.2 * GiB, total_bytes: 238 * GiB }], cpu: { load_pct: 34, limit_pct: 100 } }),
+        alerts: [{ id: "diskSystem", level: "warn", values: { free: 3.2 * GiB, total: 238 * GiB, pct: 1 } },
+          { id: "diskDocuments", level: "warn", values: { free: 3.2 * GiB, total: 238 * GiB, pct: 1 } }] } : { report: informe() }),
+      saludEquipo(lab[1], conAlertas ? { clockMs: 252000, report: informe({ network: { kind: "ethernet", link_mbps: 10 }, reboot_pending: true, uptime_s: 1209600 }),
+        alerts: [{ id: "clock", level: "error", values: { seconds: 252 } }, { id: "rebootPending", level: "warn", values: { uptime: 1209600 } },
+          { id: "linkSlow", level: "warn", values: { mbps: 10, min: 100 } }],
+        test: { testId: "t1", status: "done", failed: 2, at: hace(40), checks: [
+          { id: "disk_write", status: "ok" }, { id: "dns", status: "ok" }, { id: "tcp", status: "ok" },
+          { id: "dns", service: 0, status: "ok" }, { id: "tcp", service: 0, status: "fail", reason: "timeout" },
+          { id: "audio_out", status: "ok" }, { id: "nic", status: "ok" }, { id: "gpu", status: "fail", reason: "basic_driver" },
+          { id: "keyboard", status: "ok" }, { id: "mouse", status: "ok" }] } } : { report: informe() }),
+      saludEquipo(lab[2], { report: informe({ disks: [{ role: "system", free_bytes: 120 * GiB, total_bytes: 238 * GiB }] }) }),
+      saludEquipo(lab[3], { report: { seq: 2, reason: "periodic" }, clockMs: -400 }),
+      saludEquipo(lab[4], { at: hace(3600), clockMs: null, report: informe() }),
+    ];
+    contarLab();
+  }
+  const emitLab = () => { contarLab(); despues(() => { window.__emit("aula:lab", JSON.parse(JSON.stringify(labView))); window.__emit("aula:students", studentsView()); }); };
 
   // Abrir página o app (apps/teacher/open.go): el catálogo de Ajustes y las últimas órdenes.
   // En lab-abrir ya hay una abierta en un equipo y fallida en otro (no tiene la app).
@@ -635,6 +685,40 @@
     }),
     ClassEnd: call("ClassEnd", () => (fin ? JSON.parse(JSON.stringify(fin)) : { endId: "", at: "0001-01-01T00:00:00Z", running: false, steps: [], students: [], clean: 0, missing: 0 })),
     AllowedApps: call("AllowedApps", () => allowed),
+    Lab: call("Lab", () => JSON.parse(JSON.stringify(labView))),
+    CheckHealth: call("CheckHealth", (ids) => {
+      if (labView.requestInMs > 0) return new Error("aula:healthTooSoon: se revisó hace menos de 10 s");
+      const n = (ids && ids.length) || list.filter((s) => s.state === "connected" && s.canHealth).length;
+      if (!n) return new Error("aula:healthNoTargets: ningún equipo conectado informa su salud");
+      labView.requestInMs = 10000;
+      for (const c of labView.computers) if (c.connected) c.at = new Date().toISOString();
+      emitLab();
+      return n;
+    }),
+    RunSelfTest: call("RunSelfTest", (ids) => {
+      const quien = list.filter((s) => s.state === "connected" && s.canSelfTest && (!ids || !ids.length || ids.includes(s.id)));
+      if (!quien.length) return new Error("aula:healthNoTargets: ningún equipo conectado puede hacer el autodiagnóstico");
+      for (const s of quien) {
+        const c = labView.computers.find((x) => x.hostname === s.hostname);
+        if (c) c.test = { testId: "t2", status: "pending", failed: 0, at: new Date().toISOString(), checks: [] };
+      }
+      emitLab();
+      return quien.length;
+    }),
+    HealthSettings: call("HealthSettings", () => JSON.parse(JSON.stringify(saludAjustes))),
+    DefaultHealthSettings: call("DefaultHealthSettings", () => ({ thresholds: Object.assign({}, saludTh), targets: {} })),
+    SaveHealthSettings: call("SaveHealthSettings", (s) => {
+      const t = s.thresholds;
+      if (!(t.diskMinGB >= 1 && t.diskMinGB <= 500) || ![10, 100, 1000].includes(t.linkMinMbps)) return new Error("aula:healthThreshold: health: threshold out of range");
+      const dir = /^[A-Za-z0-9.-]+:\d{1,5}$/;
+      if ((s.targets.internet && !dir.test(s.targets.internet)) || (s.targets.services || []).some((x) => !x.name || !dir.test(x.address))) {
+        return new Error("aula:healthTarget: health: destination is not host:port");
+      }
+      saludAjustes = JSON.parse(JSON.stringify(s));
+      labView.hasTargets = !!s.targets.internet || (s.targets.services || []).length > 0;
+      emitLab();
+      return JSON.parse(JSON.stringify(saludAjustes));
+    }),
     Room: call("Room", salaVista),
     ResizeRoom: call("ResizeRoom", (rows, cols) => {
       if (rows < 1 || rows > 12 || cols < 1 || cols > 12) return new Error("aula:roomInvalid: el salón no es válido: size");

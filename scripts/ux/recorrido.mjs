@@ -487,6 +487,25 @@ await f("211-salon-ajustes", "lab", { pasos: ajustes("salon") });
 await f("212-salon-importar-otro-canal", "lab", { ruta: "salon", pasos: click("#salon-importar") });
 await f("213-salon-renombrado", "lab", { pasos: async (p) => { await p.evaluate(() => window.__renombrar("LAB3-PC03", "LAB3-03")); await sleep(200); } });
 
+// Laboratorio: la salud de los equipos (prompt 10.25): la tabla con alertas, una fila abierta con
+// qué hacer y el autodiagnóstico, «Revisar ahora», la insignia en Alumnos, la ficha, Ajustes ›
+// Salud con un destino inválido, y la ventana angosta y oscura.
+const abrirLab = (host) => click(`#lab-filas tr[data-clave="r:${host.toLowerCase()}"] .tabla-lab__abrir`);
+await f("221-laboratorio", "lab-laboratorio", { ruta: "laboratorio" });
+await f("222-laboratorio-fila-abierta", "lab-laboratorio", { ruta: "laboratorio", h: 1100, pasos: abrirLab("LAB3-PC12") });
+await f("223-laboratorio-revisar", "lab-laboratorio", { ruta: "laboratorio", pasos: seq(click("#lab-revisar"), async () => { await sleep(300); }) });
+await f("224-laboratorio-autodiagnostico", "lab-laboratorio", { ruta: "laboratorio", pasos: seq(click("#lab-autodiagnostico"), click("#confirmar-si"), async () => { await sleep(300); }) });
+await f("225-laboratorio-insignias-alumnos", "lab-laboratorio");
+await f("226-laboratorio-ficha", "lab-laboratorio", { h: 1100, pasos: click(`${fila("LAB3-PC12")} .ficha`) });
+await f("227-laboratorio-ajustes", "lab-laboratorio", { h: 1000, pasos: seq(ajustes("salud"), async () => { await sleep(200); }) });
+await f("228-laboratorio-ajustes-error", "lab-laboratorio", { h: 1000, pasos: seq(ajustes("salud"), async (p) => {
+  await sleep(200);
+  await p.evaluate(() => { document.getElementById("aj-salud-internet").value = "www.google.com"; });
+  await click("#aj-salud-guardar")(p);
+  await sleep(200);
+}) });
+await f("229-laboratorio-oscuro-900x600", "lab-laboratorio", { oscuro: true, w: 900, h: 600, ruta: "laboratorio" });
+
 await cerrar();
 let graves = 0;
 for (const [nombre, r] of Object.entries(informe)) {

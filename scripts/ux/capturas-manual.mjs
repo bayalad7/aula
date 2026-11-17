@@ -26,6 +26,7 @@ const capturas = {
   // El plano del salón (prompt 10.15) con un equipo elegido para ponerle su etiqueta.
   "salon.webp": ["lab", { ruta: "salon", h: 900, pasos: seq(click('#salon-plano [data-equipo="LAB3-PC07"]'), click('#salon-plano [data-equipo="LAB3-PC07"]')) }],
   "participacion.webp": ["lab-participacion", { ruta: "participacion" }],
+  "laboratorio.webp": ["lab-laboratorio", { ruta: "laboratorio" }],
   // La bandeja tipo chat (prompt 10.26) con 30 conversaciones.
   "participacion-bandeja.webp": ["lab-bandeja", { ruta: "participacion" }],
   "participacion-encuesta.webp": ["lab-encuesta", { ruta: "participacion", pasos: async (p) => {

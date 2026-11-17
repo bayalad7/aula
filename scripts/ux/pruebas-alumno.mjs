@@ -851,11 +851,14 @@ await caso("capacidades", "conectado", async (p) => {
     si: document.querySelectorAll("#capacidades-lista .capacidad--si").length,
     tip: document.querySelector("#capacidades-lista .capacidad").dataset.tip,
     equipo: document.getElementById("capacidades-equipo-texto").textContent,
-    foco: document.activeElement.id }));
+    foco: document.activeElement.id,
+    salud: [...document.querySelectorAll("#capacidades-lista .capacidad--si")].some((li) => li.dataset.tip.startsWith("Revisar el estado de este equipo")) }));
   ok(c.abierto, "el diálogo no se abrió");
   // Este equipo (prompt 10.15): la etiqueta del profesor y el nombre del equipo, para el soporte.
   ok(c.equipo === "Este equipo: Fila 2 · PC07 (LAB3-PC07)", "este equipo: " + c.equipo);
-  ok(c.total === 20 && c.si === 18, "grilla " + JSON.stringify(c));
+  // 22 con la salud del equipo y el autodiagnóstico (prompt 10.25); el bloqueo y el filtro, en gris.
+  ok(c.total === 22 && c.si === 20, "grilla " + JSON.stringify(c));
+  ok(c.salud, "falta «Revisar el estado de este equipo» en verde");
   ok(c.tip === "Recibir código para copiar: sí", "tooltip: " + c.tip);
   await p.keyboard.press("Escape");
   await sleep(100);

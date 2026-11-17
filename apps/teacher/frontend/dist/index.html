@@ -147,9 +147,10 @@
                 <button type="button" data-modo="miniaturas"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#miniaturas"/></svg><span data-t="alumnos.miniaturas"></span></button>
                 <button type="button" data-modo="salon"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#salon"/></svg><span data-t="alumnos.salon"></span></button>
               </div>
-              <!-- Tamaño de las miniaturas (nota de interfaz v0.1.0 004): solo en Miniaturas; se recuerda. -->
-              <label class="tamano-miniaturas" id="tamano-miniaturas" hidden><span data-t="alumnos.tamano"></span>
-                <select id="tamano-miniaturas-select" class="control" data-icono="miniaturas">
+              <!-- Tamaño de las miniaturas (notas de interfaz v0.1.0 004 y 016): solo en Miniaturas; se
+                   recuerda. La etiqueta queda para el lector de pantalla; a la vista, el icono. -->
+              <label class="tamano-miniaturas" id="tamano-miniaturas" hidden><span class="solo-lector" data-t="alumnos.tamano"></span>
+                <select id="tamano-miniaturas-select" class="control" data-icono="tamano">
                   <option value="pequeno" data-t="alumnos.tamano.pequeno"></option>
                   <option value="mediano" data-t="alumnos.tamano.mediano"></option>
                   <option value="grande" data-t="alumnos.tamano.grande"></option>
@@ -157,11 +158,12 @@
                   <option value="ajustar" data-t="alumnos.tamano.ajustar"></option>
                 </select></label>
               <!-- Equipos conocidos sin sesión (prompt 10.19): ocultos hasta que se piden; se recuerda. -->
-              <label class="opcion" id="alumnos-apagados-campo" data-t-ayuda="alumnos.mostrarApagadosTip" hidden><input type="checkbox" class="interruptor" id="alumnos-apagados" role="switch"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg> <span id="alumnos-apagados-texto"></span></label>
+              <!-- Nota de interfaz 019: se ve como un botón alternable; sigue siendo la casilla role="switch". -->
+              <label class="alternable" id="alumnos-apagados-campo" data-t-ayuda="alumnos.mostrarApagadosTip" hidden><input type="checkbox" class="interruptor" id="alumnos-apagados" role="switch"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#energia"/></svg><span id="alumnos-apagados-texto"></span></label>
               <!-- Nota de interfaz 007: la cabecera en una línea; estos dos son iconos con su tooltip. -->
               <button type="button" class="btn btn--fantasma btn--icono" id="seleccionar-todos" aria-describedby="seleccionar-todos-atajo"><svg class="icono" aria-hidden="true"><use id="seleccionar-todos-icono" href="sistema/iconos.svg#hecho"/></svg><span class="solo-lector" id="seleccionar-todos-texto"></span><span class="solo-lector" id="seleccionar-todos-atajo" data-t="alumnos.ctrlA"></span></button>
               <a class="btn btn--fantasma btn--icono" href="#falta" data-t-aria-label="falta.titulo" data-t-tip="falta.titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#persona-buscar"/></svg></a>
-              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
             </header>
             <div class="vista__cuerpo">
               <div id="alumnos-vacio" class="tarjeta vacio" hidden>
@@ -230,7 +232,7 @@
                 <button type="button" class="btn btn--sm" id="salon-importar" data-icono="archivo" data-t="salon.importar"></button>
                 <button type="button" class="btn btn--sm btn--fantasma" id="salon-carpeta" data-icono="carpeta" data-t="salon.abrirCarpeta"></button>
               </div>
-              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
             </header>
             <div class="vista__cuerpo pila">
               <p class="aviso-en-linea aviso-en-linea--advertencia" id="salon-problema" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#advertencia"/></svg><span id="salon-problema-texto"></span></p>
@@ -291,7 +293,7 @@
 
           <!-- ============ Código ============ -->
           <section data-vista-de="codigo" aria-labelledby="h-codigo" class="vista__seccion" hidden>
-            <header class="vista__cabecera"><h1 id="h-codigo" data-t="codigo.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
+            <header class="vista__cabecera"><h1 id="h-codigo" data-t="codigo.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
             <div class="vista__cuerpo pila">
               <div class="codigo-rejilla">
                 <section class="tarjeta" aria-labelledby="codigo-ejercicio">
@@ -362,7 +364,7 @@
                 <button type="button" data-archivos-pestana="enviar" aria-pressed="true" aria-controls="archivos-panel-enviar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="archivos.pestanaEnviar"></span></button>
                 <button type="button" data-archivos-pestana="recolecciones" aria-pressed="false" aria-controls="archivos-panel-recolecciones"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#carpeta"/></svg><span data-t="archivos.pestanaRecolecciones"></span><span class="insignia insignia--info" id="reco-pestana-n" hidden></span></button>
               </div>
-              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
             <div class="vista__cuerpo pila" id="archivos-panel-enviar">
               <div class="codigo-rejilla">
                 <section class="tarjeta" aria-labelledby="h-archivos-enviar">
@@ -487,7 +489,7 @@
           <!-- Los guardados (Documentos\Aula\cuestionarios), su editor y «Lanzar». Lanzado, sus
                resultados van en la sección Encuestas de Participación (privacidad, reglas 87-91). -->
           <section data-vista-de="cuestionarios" aria-labelledby="h-cuestionarios" class="vista__seccion" hidden>
-            <header class="vista__cabecera"><h1 id="h-cuestionarios" data-t="cuest.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
+            <header class="vista__cabecera"><h1 id="h-cuestionarios" data-t="cuest.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
             <div class="vista__cuerpo pila">
               <p class="aviso-en-linea" id="cuest-abierto" hidden><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span id="cuest-abierto-texto"></span> <a href="#participacion" data-t="cuest.verResultados"></a></p>
               <section class="tarjeta" id="cuest-guardados" aria-labelledby="h-cuest-guardados">
@@ -530,7 +532,7 @@
             <header class="vista__cabecera">
               <h1 id="h-participacion" data-t="participacion.titulo"></h1>
               <div class="resumen" id="participacion-resumen" aria-live="polite"></div>
-              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
             </header>
             <div class="vista__cuerpo pila">
               <!-- Manos y mensajes (prompt 10.6). Las siguientes funciones agregan su sección. -->
@@ -638,7 +640,7 @@
 
           <!-- ============ Aula simulada ============ -->
           <section data-vista-de="simulada" aria-labelledby="h-simulada" class="vista__seccion" hidden>
-            <header class="vista__cabecera"><h1 id="h-simulada" data-t="simulada.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
+            <header class="vista__cabecera"><h1 id="h-simulada" data-t="simulada.titulo"></h1><button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button></header>
             <div class="vista__cuerpo pila">
               <div id="simulada-cerrada" class="tarjeta vacio">
                 <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg>
@@ -699,7 +701,7 @@
               <nav class="ancho-completo" data-t-aria-label="comun.estasEn"><ol class="migas"><li><a href="#ayuda" data-t="ayuda.titulo"></a></li><li data-t="ayuda.problemas"></li><li aria-current="page" data-t="falta.titulo"></li></ol></nav>
               <h1 id="h-falta" data-t="falta.titulo"></h1>
               <a class="btn btn--fantasma" href="#alumnos"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg><span data-t="falta.volver"></span></a>
-              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-title="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
             </header>
             <div class="vista__cuerpo codigo-rejilla">
               <div class="pila">

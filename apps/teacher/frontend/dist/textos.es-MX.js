@@ -432,7 +432,7 @@ window.AulaTextos = Object.freeze({
   "alumnos.tamano.mediano": "Mediano",
   "alumnos.tamano.grande": "Grande",
   "alumnos.tamano.extra": "Extra grande",
-  "alumnos.tamano.ajustar": "Ajustar a la pantalla",
+  "alumnos.tamano.ajustar": "Ajustar",
   "destino.todos": "Todos los conectados ({n})",
   "destino.seleccion.uno": "{n} alumno seleccionado",
   "destino.seleccion.varios": "{n} alumnos seleccionados",

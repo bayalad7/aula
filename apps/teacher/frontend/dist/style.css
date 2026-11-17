@@ -24,7 +24,11 @@
 
 /* --- Código ------------------------------------------------------------------------------ */
 .codigo-rejilla { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: var(--e-4); align-items: stretch; }
-@media (max-width: 1100px) { .codigo-rejilla { grid-template-columns: minmax(0, 1fr); } }
+/* Nota de interfaz v0.1.0 018: las vistas de dos columnas pasan a una según el espacio de la vista,
+   no el de la ventana (con el panel de ayuda abierto la ventana sigue ancha y el formulario se
+   salía). 60 rem de vista = la ventana de 1100 px menos el Menú. */
+#contenido { container: vista / inline-size; }
+@container vista (max-width: 60rem) { .codigo-rejilla { grid-template-columns: minmax(0, 1fr); } }
 .editor { height: 20rem; border: 1px solid var(--c-borde-fuerte); border-radius: var(--r-md); overflow: hidden; }
 @media (max-height: 700px) { .editor { height: 14rem; } }
 
@@ -307,7 +311,7 @@ a.insignia:hover { text-decoration: underline; }
    y Temporizador mitad y mitad a la derecha. Lo que no cabe se desplaza dentro de cada tarjeta
    (la bandeja y la conversación, dentro de su lista, con el cuadro de respuesta siempre a la
    vista). Con muy poco alto (menos de 30 rem) se desplaza la vista. */
-@media (min-width: 1101px) {
+@container vista (min-width: 60.0625rem) {
   [data-vista-de=participacion] { height: 100%; }
   [data-vista-de=participacion] > .vista__cuerpo {
     flex: 1 1 0; min-height: 30rem; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch;
@@ -318,7 +322,7 @@ a.insignia:hover { text-decoration: underline; }
   #mensajes:not([hidden]), #bandeja:not([hidden]), #hilo:not([hidden]) { display: flex; flex-direction: column; flex: 1; min-height: 12rem; }
   #mensajes .bandeja__lista, #hilo .conversacion__lista { flex: 1; min-height: 6rem; max-height: none; }
 }
-@media (max-width: 1100px) {
+@container vista (max-width: 60rem) {
   [data-vista-de=participacion] > .vista__cuerpo { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
   [data-vista-de=participacion] > .vista__cuerpo > section:first-of-type { grid-row: auto; }
 }

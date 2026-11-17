@@ -64,6 +64,13 @@ flowchart TD
 
 ## Lo que no es obvio
 
+- **Si el alumno sí aparece pero su equipo falla** (va lento, no guarda, no abre sitios
+  seguros), no es un problema de conexión: la consola lo marca en **Laboratorio** con sus
+  alertas de salud (disco lleno o con fallas, reloj desfasado, sin internet, cable lento, Wi‑Fi,
+  batería) y qué hacer en cada una (diagrama 23). El reloj desfasado **no** impide que Aula
+  conecte (el agente fija el certificado de la consola y no mira sus fechas), pero sí rompe los
+  sitios HTTPS del alumno.
+
 - **Las preguntas salen de mensajes reales**: cada rama corresponde a un texto que el agente
   muestra bajo su barra (`Agent.OnDiagnostic`). Si un mensaje cambia en el código, cambia este
   diagrama; **la consola genera de aquí el asistente «¿Falta un alumno?»** (`internal/manual.ParseTree`):

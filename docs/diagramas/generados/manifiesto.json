@@ -174,7 +174,7 @@
       "pantallas": [
         "ayuda"
       ],
-      "hash": "sha256:0814027e8f735c9e6c376c2289b767707931ee71b7d1499629c3ab10bbabd149",
+      "hash": "sha256:148249070c4cfaf4012846905b10779e3e4c11c6f91b1817f37f5e34e1cb9fa1",
       "alt": "Modelo de datos local: Qué guarda Aula en el disco de cada equipo, qué solo vive en memoria y cómo se relacionan claves y configuración",
       "claro": "generados/11-modelo-datos.claro.svg",
       "oscuro": "generados/11-modelo-datos.oscuro.svg"
@@ -367,6 +367,23 @@
       "alt": "Terminar la clase: En qué orden la consola detiene lo activo y limpia la ventana de cada alumno, qué acusa cada uno y qué pasa con quien falta",
       "claro": "generados/22-terminar-clase.claro.svg",
       "oscuro": "generados/22-terminar-clase.oscuro.svg"
+    },
+    {
+      "id": "23-salud-laboratorio",
+      "titulo": "Salud del laboratorio",
+      "descripcion": "Qué informa cada equipo y cuándo, cómo la consola lo convierte en alertas, qué hace «Revisar ahora» y cómo corre el autodiagnóstico",
+      "audiencia": [
+        "profesor",
+        "instalador",
+        "desarrollador"
+      ],
+      "pantallas": [
+        "laboratorio"
+      ],
+      "hash": "sha256:e2b1c0a070057e988ebe4de0f8cdbe200fd84dc726f3a5e09c715781541cc15c",
+      "alt": "Salud del laboratorio: Qué informa cada equipo y cuándo, cómo la consola lo convierte en alertas, qué hace «Revisar ahora» y cómo corre el autodiagnóstico",
+      "claro": "generados/23-salud-laboratorio.claro.svg",
+      "oscuro": "generados/23-salud-laboratorio.oscuro.svg"
     }
   ]
 }

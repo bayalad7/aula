@@ -103,12 +103,17 @@ Dos aplicaciones, mismo monorepo:
     canal con el lugar y la etiqueta de cada equipo (`Room`), su validación, su archivo en
     `Documentos\Aula\salones\canal-<n>.json`, exportar e importar, reconocer por su MAC un equipo
     renombrado y los alumnos simulados solo en memoria. Guarda equipos, nunca alumnos.
+  - `internal/health`: la salud del laboratorio (prompt 10.25, `health.*`): del lado del agente,
+    el informe de la lista cerrada cada 60 s y al cambiar mucho, y el autodiagnóstico bajo demanda
+    (`Monitor`, `SelfTest`); del lado de la consola, el último informe de cada equipo en memoria,
+    los umbrales de Ajustes › Salud y las alertas (`Lab`, `Evaluate`). Lee por
+    `platform.SystemHealth` (en servicio, el propio servicio, sin el ayudante). Solo informa.
   - `internal/ui`: el sistema de diseño compartido por las dos apps (tokens CSS con modo claro y
     oscuro, componentes e iconos en un sprite SVG), embebido con `go:embed` y servido a cada
     frontend Wails bajo `sistema/`. Una sola copia: ninguna app guarda la suya. Su prueba de
     contraste (WCAG AA) vive con él.
   - `apps/teacher`, `apps/student`: cada una su `main` y su frontend Wails; solo consumen `internal/*`.
-- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `classend`, `poll`, `filepush`, `collect`, `openapp`, `roomplan`, `ui` NO llaman APIs del SO.** Todo lo
+- **`protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`, `broadcast`, `agentsvc`, `policy`, `power`, `remote`, `snapshot`, `simclass`, `manual`, `connectcheck`, `participation`, `classtimer`, `classend`, `poll`, `filepush`, `collect`, `openapp`, `roomplan`, `health`, `ui` NO llaman APIs del SO.** Todo lo
   que toca pantalla, teclado, portapapeles, overlay o servicios pasa por una interfaz de
   `internal/platform`.
 - El profesor anuncia su sesión por mDNS con el canal en los metadatos. **Los alumnos se

@@ -743,6 +743,42 @@ controla el equipo (sin banda ni aviso fijo) y llega sin interrumpir (regla 71).
     correctas ni el puntaje de un alumno. Los alumnos simulados responden al azar, se cuentan
     aparte (regla 32) y **nunca** entran en el CSV exportado.
 
+## Salud del laboratorio (sin publicar; Windows, y por dato en los demás sistemas)
+
+Antes de clase, el profesor o el técnico ve qué equipos van a dar problemas (`docs/protocol.md`
+§5.27, prompt 10.25). Cada agente informa unos pocos datos **de su equipo**; la consola los
+muestra como alertas en **Laboratorio**, en la ficha del alumno y como insignia en la lista. No
+observa al alumno ni cambia el equipo: por eso **no lleva banda** ni aviso cuando informa.
+
+92. **Lista cerrada de lo que se informa.** Solo esto, y nada más: el espacio libre y total del
+    disco de Windows y del de `Documentos` (este, solo con una sesión iniciada); si el disco
+    avisa de fallas (S.M.A.R.T.); la memoria total y disponible; el uso promedio del procesador
+    en el último minuto y su límite de frecuencia; cuánto lleva encendido y si espera un
+    reinicio por actualizaciones; el tipo de la tarjeta de red por la que llega a la consola
+    (cable, Wi‑Fi u otra), su velocidad, la señal del Wi‑Fi y si hay un cable conectado sin
+    usar; si resuelve y alcanza la dirección de prueba que el profesor puso en Ajustes; y la
+    batería (carga, si está conectado, desgaste), si la tiene. El reloj **no viaja**: la consola
+    lo calcula con los `heartbeat` que ya existen. **Nunca**: procesos o apps abiertas, historial
+    o sitios visitados, archivos o sus nombres, el usuario (más allá del `hello`), el nombre de la
+    red Wi‑Fi, direcciones IP o físicas, la ubicación. Un dato nuevo exige cambiar el protocolo
+    y esta regla (lo prueba `TestHealthReportClosedList`).
+93. **Solo informa.** Ni el informe ni el autodiagnóstico limpian el disco, reinician, cierran
+    programas ni cambian nada del equipo. El autodiagnóstico, que solo corre cuando el profesor
+    lo lanza (nunca en segundo plano), escribe un archivo temporal de 4 MiB en la carpeta
+    temporal del agente, lo lee y **lo borra siempre**; nunca toca `Documentos` ni los archivos
+    del alumno. Las conexiones de prueba van solo a los destinos de Ajustes › Salud (hasta 8),
+    con la misma confianza que la consola ya tiene para abrir páginas (regla 68).
+94. **Visible para el alumno.** El alumno ve en «Qué puede hacer Aula en este equipo» que su
+    equipo «informa su estado» y «se prueba cuando el profesor lo pide», con la lista de lo que
+    se revisa y la aclaración «Nunca tus apps, sitios ni archivos». Como no observa al alumno, no
+    hay banda (reglas 5 y 6) ni aviso cada vez.
+95. **Solo en memoria; registros y simulados.** La consola guarda el último informe de cada
+    equipo **solo en memoria** mientras está abierta; al cerrarla o cambiar de canal se olvida.
+    Nada se escribe en disco salvo los umbrales y destinos de Ajustes (`salud.json`, sin datos de
+    equipos). Los registros llevan el equipo, `seq`, el motivo y qué alerta entra o sale, **nunca**
+    los valores. Los alumnos simulados informan valores inventados, con algunas alertas, marcados
+    y contados aparte (regla 32): no leen ningún equipo.
+
 ## Pendiente para etapas futuras
 
 - Linux y macOS (incluida la recepción de la transmisión, las restricciones, el control remoto

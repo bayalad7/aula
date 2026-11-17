@@ -56,6 +56,7 @@ lleve `foreignObject`.
 | 20 | [Encuestas y cuestionarios](20-encuestas.md) | `sequenceDiagram` | profesor, alumno, desarrollador, auditor |
 | 21 | [Proyectar la pantalla de un alumno](21-proyectar-alumno.md) | `sequenceDiagram` | profesor, alumno, desarrollador, auditor |
 | 22 | [Terminar la clase](22-terminar-clase.md) | `sequenceDiagram` | profesor, alumno, desarrollador |
+| 23 | [Salud del laboratorio](23-salud-laboratorio.md) | `sequenceDiagram` | profesor, instalador, desarrollador |
 
 Una fila sin enlace debe decir «(pendiente)»: así se lista un diagrama cuya función aún no
 existe.

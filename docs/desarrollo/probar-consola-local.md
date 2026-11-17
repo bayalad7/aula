@@ -325,6 +325,21 @@ En la ventana real de Wails (WebView2), que el arnés no ve.
 | C-146 | Abre y cierra Ajustes, un diálogo de confirmación (p. ej. **Olvidar** un equipo) y el panel **Aviso**; luego activa en Windows «Efectos de animación» en apagado (Accesibilidad › Efectos visuales) y repite | Con animaciones: el diálogo aparece con un fundido y un ligero acercamiento y se va igual, el velo se aclara y oscurece suave, el panel entra deslizándose desde la derecha y un aviso sube al aparecer; nada tarda más de un cuarto de segundo. Sin animaciones: todo aparece y se va en el instante. Las franjas y las miniaturas nunca se mueven |
 | A-61 | Instala el agente y mira su icono en el área de notificación con la barra clara y la oscura, y en la ventana | La placa del icono es azul pizarra (no negra); el nodo central se sigue distinguiendo a 16 px |
 
+### Salud del laboratorio (10.25, 2026-11-17)
+
+En la ventana real y con agentes reales; lo de la VM (llenar el disco, adelantar el reloj, quitar
+la red) está en `docs/prueba-vms.md` §30. Los simulados ya lo prueban en el arnés.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| C-149 | Abre la consola con un agente conectado (servicio) y entra a **Laboratorio** | El equipo aparece con su disco, memoria, procesador, reloj y red en menos de un minuto; el menú no muestra número si no hay alertas |
+| C-150 | En Ajustes › Salud escribe `www.google.com` (sin puerto) y pulsa Guardar; luego `www.google.com:443` y un servicio `Prueba` con `127.0.0.1:9` | La primera vez sale «Una dirección no es válida» junto al formulario; la segunda se guarda. Tras **Revisar ahora**, la columna Red sigue igual e Internet dice «Llega» en la fila abierta |
+| C-151 | Pulsa **Autodiagnóstico** y confirma | En unos segundos la columna dice «1 falla» (el servicio de prueba no contesta) y al abrir la fila «Conexión · Prueba · rechazó la conexión»; el resto en verde. No queda ningún archivo `aula-prueba-*.tmp` en `C:\Windows\Temp` |
+| C-152 | En Ajustes › Salud apaga «Reloj desfasado» y baja «Reloj: desfase máximo» a 10 s; guarda | Las alertas se recalculan al momento; con el interruptor apagado no aparece la de reloj aunque el equipo esté desfasado |
+| C-153 | Abre la ficha de ese alumno desde Alumnos | **Salud del equipo** muestra «Actualizado hace …», sus alertas con **Cómo arreglarlo** (que abre la sección del manual) y sus datos; no tiene botones |
+| A-63 | En el equipo del alumno abre «Qué puede hacer Aula en este equipo» | Aparecen «Revisar el estado de este equipo…» y «Probar este equipo…» en verde, con «Nunca tus apps, sitios ni archivos» en su tooltip; ningún aviso ni banda aparece cuando la consola revisa o hace el autodiagnóstico |
+| A-64 | En el equipo del alumno, como administrador, ejecuta `aula-cliente diagnostico` | La sección «3. Salud del equipo» muestra disco, estado S.M.A.R.T., memoria, procesador, encendido y el autodiagnóstico sin destinos |
+
 ### Notas de interfaz v0.1.0 016–021 (2026-11-17)
 
 En la ventana real de Wails (WebView2), que el arnés no ve al pasar el mouse.

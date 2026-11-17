@@ -74,6 +74,18 @@ retiraron; esta es la primera.
 - **Recolecciones:** recoger el trabajo de cada alumno de una carpeta acordada.
 - **Abrir** una página o una app permitida en el equipo del alumno.
 
+### Antes de clase
+
+- **Laboratorio** (menú, grupo Pruebas): la salud de cada equipo antes de que lleguen los
+  alumnos. Avisa con qué hacer cuando un equipo tiene el disco casi lleno o con fallas, poca
+  memoria, el procesador saturado o frenado por calor, un reinicio pendiente, el reloj desfasado,
+  sin internet, el cable de red lento, Wi‑Fi débil o teniendo cable, o la batería baja o sin
+  corriente. **Revisar ahora** pide el estado al momento y el **Autodiagnóstico** prueba el disco,
+  la red, los servicios de tu clase, el audio, el video, el teclado y el mouse. El menú cuenta los
+  equipos con alertas, la lista de Alumnos los marca y la ficha muestra **Salud del equipo**. Los
+  umbrales, la dirección para probar internet y los servicios se ajustan en **Ajustes › Salud**.
+  Solo informa: nunca cambia nada del equipo, y nunca ve lo que hace el alumno.
+
 ### Al terminar la hora
 
 - **Terminar la clase**, bajo la tarjeta de la clase en el menú: detiene en un paso lo que quedó
@@ -110,6 +122,8 @@ retiraron; esta es la primera.
   **Tus mensajes** muestra la conversación con el profesor: lo que escribiste y sus respuestas, que
   se ocultan mientras tu pantalla se muestra a la clase.
   También dice el nombre del equipo y la etiqueta que le puso el profesor, para decírsela al soporte.
+  Y que el equipo informa su estado (disco, memoria, red, batería) y se prueba cuando el profesor lo
+  pide, nunca sus apps, sitios ni archivos.
 
 ### Consola
 
@@ -143,6 +157,7 @@ retiraron; esta es la primera.
   ventana en la sesión del alumno.
 - Las versiones van firmadas (`checksums.txt` con la llave de releases del repositorio).
 - La consola no carga nada de Internet; compilar no necesita Node.
+- **`aula-cliente diagnostico`** muestra también la salud del equipo y corre su autodiagnóstico.
 - Para probar sin publicar, un solo comando (`scripts\compilar.ps1`) deja las apps y los
   instaladores en `dist\local`, compilados igual que una versión publicada.
 

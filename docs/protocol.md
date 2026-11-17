@@ -323,11 +323,13 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `screen.present.view` | `screen.broadcast.*` con `source` (la pantalla de un compañero) | v0.14 (§5.24). La declara quien declara `screen.broadcast` y sabe mostrar de quién es la pantalla. Nunca los alumnos simulados. |
 | `class.end` | `class.end` | Sin publicar (§5.25). Todos los SO: no toca el sistema, limpia la ventana. Se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 | `computer.label` | `computer.label` | Sin publicar (§5.26). Todos los SO: no toca el sistema, solo la ventana del alumno. Se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
+| `health` | `health.config`, `health.request`; y acepta `health.report` | Sin publicar (§5.27). Todos los SO: cada dato que el SO no sabe leer simplemente no viaja. En modo ventana y como servicio, **también sin sesión iniciada** (lo lee el servicio, sin el ayudante, como `power`); también los alumnos simulados. |
+| `health.selftest` | `health.selftest` | Sin publicar (§5.27.5). Windows, en modo ventana y como servicio (también sin sesión iniciada); también los alumnos simulados. Linux y macOS no la declaran. |
 
-`hand`, `msg.student` y `poll` habilitan mensajes que **inicia el agente**: la consola acepta
-`hand.*`, `msg.student` y `poll.vote` solo de un agente que declaró la capacidad (si no, responde
-`error` `unsupported_capability`), y solo le envía `hand.lower`, `msg.student.ack` y
-`poll.vote.ack` a ese agente.
+`hand`, `msg.student`, `poll` y `health` habilitan mensajes que **inicia el agente**: la consola
+acepta `hand.*`, `msg.student`, `poll.vote` y `health.report` solo de un agente que declaró la
+capacidad (si no, responde `error` `unsupported_capability`), y solo le envía `hand.lower`,
+`msg.student.ack` y `poll.vote.ack` a ese agente.
 
 Las capacidades desconocidas en `hello` se ignoran (un agente más nuevo puede declarar cosas
 que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 caracteres.
@@ -409,6 +411,11 @@ que la consola todavía no conoce). Formato: `^[a-z]+(\.[a-z]+)*$`, ≤ 64 carac
 | `class.end` | P → A | `class.end` | `end_id` | `class.end.ack` o `error` |
 | `class.end.ack` | A → P | — | `ref_id`, `end_id`, `status`, `reason`? | — |
 | `computer.label` | P → A | `computer.label` | `label` | — |
+| `health.config` | P → A | `health` | `internet`?, `services`? | — |
+| `health.request` | P → A | `health` | `{}` | `health.report` (`reason: "request"`, `ref_id`) |
+| `health.report` | A → P | `health` | `seq`, `reason`, `ref_id`?, y los datos de la lista cerrada (§5.27.3) | — |
+| `health.selftest` | P → A | `health.selftest` | `test_id` | `health.selftest.result` |
+| `health.selftest.result` | A → P | — | `ref_id`, `test_id`, `status`, `checks`? | — |
 
 ### 5.1 `code.share` (P → A)
 
@@ -2231,6 +2238,165 @@ solo cambia la línea «Este equipo» de «Qué puede hacer Aula en este equipo�
   equipo está conectado, el nuevo queda «Sin acomodar».
 - Nunca se manda a un agente que no la declaró; a él no le cambia nada.
 
+### 5.27 Salud del equipo (`health.*`)
+
+> Aprobado el 2026-11-17 (prompt 10.25), sin publicar. Implementación en `internal/health` y
+> `platform.SystemHealth`; privacidad en `docs/privacidad.md` reglas 92–95.
+
+Antes de clase, el profesor quiere saber qué equipos van a dar problemas. Cada agente informa
+unos pocos datos **del equipo, nunca del alumno** (lista cerrada en §5.27.3), y la consola los
+convierte en alertas con sus umbrales (Ajustes › Salud). El agente **solo informa**: nunca
+limpia, reinicia ni cambia nada del equipo. Los umbrales no viajan: el agente no decide qué es
+una alerta.
+
+#### 5.27.1 `health.config` (P → A)
+
+```json
+{
+  "internet": { "host": "www.google.com", "port": 443 },
+  "services": [ { "name": "Licencias", "host": "lic.escuela.local", "port": 27000 } ]
+}
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `internet` | objeto | **Opcional.** El destino con el que el informe prueba internet (`dns` y `reach`). Ausente: no se prueba. |
+| `services` | objeto[] | **Opcional.** 0–8 destinos que solo prueba el autodiagnóstico (§5.27.5). |
+| `*.host` | string | 1–253 caracteres: un nombre DNS (letras, dígitos, `-` y `.`) o una dirección IP. |
+| `*.port` | entero | 1–65 535. |
+| `services[].name` | string | 1–40 caracteres, sin caracteres de control. Solo para la consola: el agente no lo muestra. |
+
+No tiene respuesta. La consola lo manda a cada sesión que declaró `health` justo después del
+`hello` (aunque vaya vacío, `{}`) y cada vez que el profesor cambia esos destinos en Ajustes. El
+agente lo guarda **solo en memoria, para esta sesión**. Un agente no manda informes hasta recibir
+su primer `health.config` (una consola que no conoce `health` nunca lo manda, y nunca recibe un
+informe).
+
+#### 5.27.2 `health.request` (P → A)
+
+«Revisar ahora». Payload `{}`. El agente responde enseguida con un `health.report` de
+`reason: "request"` cuyo `ref_id` es el `id` de la petición. Si probó internet hace menos de
+10 s, reutiliza ese resultado.
+
+#### 5.27.3 `health.report` (A → P)
+
+```json
+{
+  "seq": 14,
+  "reason": "periodic",
+  "disks": [
+    { "role": "system", "free_bytes": 3221225472, "total_bytes": 255060848640 },
+    { "role": "documents", "free_bytes": 3221225472, "total_bytes": 255060848640 }
+  ],
+  "disk_health": "ok",
+  "memory": { "total_bytes": 8589934592, "available_bytes": 3006477107 },
+  "cpu": { "load_pct": 12, "limit_pct": 100 },
+  "uptime_s": 93600,
+  "reboot_pending": false,
+  "network": { "kind": "ethernet", "link_mbps": 100, "cable_idle": false },
+  "internet": { "dns": "ok", "reach": "fail" },
+  "battery": { "charge_pct": 54, "on_ac": true, "wear_pct": 12 }
+}
+```
+
+**Lista cerrada.** Estos son **todos** los campos que puede llevar; un dato nuevo exige cambiar
+este apartado y la regla 92 de `docs/privacidad.md`. Todos salvo `seq` y `reason` son
+**opcionales**: un dato que el SO no sabe leer, o que no se pudo leer esta vez, **no viaja**, y la
+consola lo muestra como «No se puede leer en este equipo».
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `seq` | entero | ≥ 1, crece de 1 en 1 durante la sesión. |
+| `reason` | string | `first` (el primero de la sesión), `periodic`, `change` (un cambio notable, abajo) o `request` (respuesta a `health.request`). |
+| `ref_id` | string | Solo con `request`: el `id` de la petición. |
+| `disks` | objeto[] | 0–2 entradas, sin repetir `role`. `role`: `system` (la unidad de Windows) o `documents` (la de `Documentos` del usuario de la sesión; sin sesión iniciada no va). `free_bytes` ≤ `total_bytes`, ambos ≥ 0. |
+| `disk_health` | string | `ok` o `degraded`: el estado S.M.A.R.T. del disco físico del sistema (predicción de falla en SATA, advertencia crítica en NVMe). Ausente si no se puede leer (p. ej. sin permisos de administrador). |
+| `memory` | objeto | `total_bytes` > 0 y `available_bytes` ≤ `total_bytes`. |
+| `cpu.load_pct` | entero | 0–100: el uso promedio del procesador en el último minuto (muestras cada 5 s; con menos de un minuto de muestras, el promedio de las que hay). Nunca qué procesos lo usan. |
+| `cpu.limit_pct` | entero | 1–100: el límite de frecuencia que el sistema impone ahora, en % de la máxima. Bajo 100 con el equipo encendido normalmente suele ser límite térmico (polvo, ventilación). |
+| `uptime_s` | entero | 0–315 360 000: segundos desde que el equipo arrancó. |
+| `reboot_pending` | booleano | Windows tiene un reinicio pendiente por actualizaciones. |
+| `network` | objeto | La tarjeta por la que el agente llega a la consola. `kind`: `ethernet`, `wifi` u `other`. `link_mbps`: 0–1 000 000, la velocidad negociada. `wifi_signal_pct`: 0–100, solo con `wifi`. `cable_idle`: solo con `wifi`, `true` si además hay un cable Ethernet conectado que no se usa. Nunca el nombre de la red ni direcciones. |
+| `internet` | objeto | Solo si `health.config` trae `internet`. `dns`: `ok` o `fail` (resolver el nombre, ≤ 3 s). `reach`: `ok` o `fail` (conexión TCP al puerto, ≤ 3 s; `fail` si no resolvió). |
+| `battery` | objeto | Solo si el equipo tiene batería. `charge_pct`: 0–100. `on_ac`: conectado a la corriente. `wear_pct`: 0–100, la capacidad perdida frente a la de fábrica (ausente si no se puede leer). |
+
+La hora del equipo **no viaja**: la consola compara el `ts` de cada `heartbeat` (§3.4) con su
+propia hora (§5.27.6). La versión del agente ya viaja en `hello`.
+
+**Ritmo.**
+
+- `first`: al recibir el primer `health.config` de la sesión.
+- `periodic`: cada **60 s** con ±10 % de variación aleatoria (para que 40 equipos no informen a la
+  vez).
+- `change`: antes de su turno si hay un **cambio notable** frente al último informe, como máximo
+  uno cada **10 s**. Las bandas son fijas en el agente: el espacio libre de un disco cambia más de
+  1 GiB o de 5 puntos porcentuales; la memoria disponible, más de 10 puntos; la carga cruza el
+  90 %; cambia `limit_pct` más de 10 puntos; cambia `disk_health`, `reboot_pending`,
+  `network.kind`, `link_mbps`, `cable_idle`, `internet.dns`, `internet.reach`, `on_ac`, o la
+  carga de la batería cruza el 20 %.
+- Un informe ocupa menos de **4 KiB**; un mensaje más grande es `invalid_message`.
+
+#### 5.27.4 Reglas de la consola
+
+- Acepta `health.report` solo de un agente que declaró `health` (§4).
+- Guarda el último informe de cada equipo **solo en memoria** mientras la consola sigue abierta;
+  si el equipo se desconecta, lo sigue mostrando con «hace 12 min». Nada se escribe en disco.
+- «Revisar ahora» manda `health.request` a todos o a la selección, como máximo una vez cada
+  **10 s**.
+- Convierte el informe en alertas con los umbrales de Ajustes › Salud. Los registros llevan el
+  equipo y el identificador de la alerta que entra o sale, **nunca** los valores.
+
+#### 5.27.5 Autodiagnóstico: `health.selftest` (P → A) y `health.selftest.result` (A → P)
+
+Bajo demanda, nunca en segundo plano. El profesor o el técnico lo lanza antes del semestre o de
+una práctica, a todos o a la selección.
+
+```json
+{ "test_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }
+```
+
+```json
+{
+  "ref_id": "5b0e8f3c-2a6d-4c1e-9b7a-0f3d2e1c4b5a",
+  "test_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "status": "done",
+  "checks": [
+    { "id": "disk_write", "status": "ok" },
+    { "id": "dns", "status": "ok" },
+    { "id": "tcp", "status": "ok" },
+    { "id": "dns", "service": 0, "status": "ok" },
+    { "id": "tcp", "service": 0, "status": "fail", "reason": "refused" },
+    { "id": "audio_out", "status": "ok" },
+    { "id": "nic", "status": "ok" },
+    { "id": "gpu", "status": "fail", "reason": "basic_driver" },
+    { "id": "keyboard", "status": "ok" },
+    { "id": "mouse", "status": "ok" }
+  ]
+}
+```
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `test_id` | string | UUID v4. |
+| `status` | string | `done` (corrió, con `checks`), `busy` (ya corre otro, o corrió uno hace menos de 60 s) o `unsupported` (este SO no sabe). |
+| `checks` | objeto[] | Solo con `done`: 1–24 entradas. |
+| `checks[].id` | string | Lista cerrada: `disk_write` (escribe 4 MiB en la carpeta temporal del agente, verifica su SHA-256 y lo borra), `dns` y `tcp` (resolver y conectar a un destino de `health.config`), `audio_out` (una salida de audio activa), `nic` (una tarjeta de red activa), `gpu` (la tarjeta de video tiene su driver, no el adaptador básico de Microsoft), `keyboard` y `mouse` (conectados). |
+| `checks[].service` | entero | Solo en `dns` y `tcp`: 0–7, el índice en `services`. Ausente: el destino `internet`. |
+| `checks[].status` | string | `ok`, `fail` o `unknown` (no se pudo comprobar). |
+| `checks[].reason` | string | Opcional, `^[a-z_]{1,32}$`. Los que la consola conoce: `read_only`, `no_space`, `mismatch`, `not_found`, `timeout`, `refused`, `unreachable`, `missing`, `basic_driver`, `not_supported`, `no_permission`; otro se muestra como «falló». |
+
+El agente responde una sola vez por `test_id`, en ≤ **20 s** (cada prueba tiene su tiempo
+máximo; la batería completa, 15 s). La consola marca «sin respuesta» a los 30 s. Sin destinos en
+`health.config`, no hay `dns` ni `tcp`. El autodiagnóstico no lee ni escribe nada fuera de su
+archivo temporal, que borra siempre, también si falla.
+
+#### 5.27.6 El reloj, con los `heartbeat`
+
+Por cada `heartbeat` de un agente, la consola calcula `ts − hora de llegada` y muestra la
+**mediana de los últimos 5**: positiva si el reloj del equipo va adelantado. El error es del orden
+de la latencia de la red (milisegundos), irrelevante frente al umbral (2 min por omisión). Un
+reloj desfasado rompe TLS y los certificados de los sitios web.
+
 ---
 
 ## 6. Reservados para fases futuras
@@ -2292,6 +2458,12 @@ Nombres reservados; un agente v0 responde `unknown_type` o `unsupported_capabili
 | Acuse de `student.present.start` | 15 s | La consola termina la proyección (`failed`, `no_answer`) |
 | Acuse de `class.end` | 10 s | La consola lo marca «sin acuse» y se lo reenvía al reconectar |
 | `computer.label.label` | 0–40 caracteres, sin caracteres de control | `error` `invalid_message` |
+| `health.config` | `internet` y hasta 8 `services`; `host` 1–253, `port` 1–65 535, `name` 1–40 | `error` `invalid_message` |
+| `health.report` | 4 KiB; `disks` ≤ 2; porcentajes 0–100 | `error` `invalid_message`; se descarta |
+| `health.report` por agente | 60 s ±10 %; `change` ≤ 1 cada 10 s | La consola descarta los que llegan con menos de 2 s entre sí, sin error |
+| `health.request` | ≤ 1 cada 10 s desde la consola | La consola no lo manda |
+| `health.selftest` | uno a la vez y ≤ 1 por minuto por agente; respuesta ≤ 20 s | `health.selftest.result` `busy`; la consola marca «sin respuesta» a los 30 s |
+| `health.selftest.result.checks` | 1–24 | `error` `invalid_message` |
 | `app.block.set.apps` | 1–100 nombres de ≤ 64 caracteres | `error` `invalid_message` |
 | `web.filter.set.domains` | 1–500 dominios de ≤ 253 caracteres | `error` `invalid_message` |
 | `power.action.delay_s` | 10–600 s (0 o ausente = 30 s) | `error` `invalid_message` |
@@ -2351,6 +2523,8 @@ emisor verifica el tamaño final de la envoltura.
 - De `class.end*` se registran `end_id`, `status`, `reason`, el equipo y qué se quitó (sin
   contenido: cuántas tarjetas, si había restricciones). **Nunca** el código, los avisos ni los
   nombres de los archivos que se quitaron de la ventana.
+- De `health.*` se registran el equipo, `seq`, `reason`, `test_id`, `status` y qué alertas
+  entran o salen (su identificador). **Nunca** los valores, ni los destinos (`host`, `name`).
 - De un `msg.show` `personal` se registran el equipo, el `id` y la longitud; **nunca** el texto.
   En «Últimos envíos» la consola lo etiqueta «Mensaje privado a <equipo>», sin el texto.
 - De `hand.*` y `msg.student*` se registran `hand_id`, `message_id`, `by`, la longitud y el

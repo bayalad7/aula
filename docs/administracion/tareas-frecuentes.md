@@ -388,6 +388,22 @@ siguiente grupo. Pulsar **Terminar la clase** dos veces seguidas no rompe nada.
 
 {{diagrama:22-terminar-clase}}
 
+## Revisar el laboratorio antes de clase
+
+Unos minutos antes de que lleguen los alumnos, con los equipos encendidos:
+
+1. Abre **Laboratorio** en el menú (grupo Pruebas). El número junto a su nombre dice cuántos
+   equipos tienen alertas.
+2. Pulsa **Revisar ahora** para tener los datos de este momento.
+3. Abre cada equipo con alertas: cada una dice qué pasa y qué hacer, con su enlace al manual.
+   Lo urgente sale en rojo: un disco con fallas, el reloj desfasado o sin internet.
+4. Antes del semestre o de una práctica importante, lanza el **Autodiagnóstico**: prueba el
+   disco, la red, los servicios de tu clase, el audio, el video, el teclado y el mouse.
+
+Para probar internet y los servicios de tu clase (el servidor de licencias, un repositorio),
+pon sus direcciones en [Ajustes › Salud](ajustes#salud). Más detalles en
+[la pantalla Laboratorio](laboratorio).
+
 ## Cambiar de canal o de nombre
 
 Toca la tarjeta «Clase abierta · canal» del menú (o ve a [Ajustes](ajustes#clase)), escribe el

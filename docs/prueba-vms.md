@@ -1346,3 +1346,21 @@ cerrada.
 | **CU-E** Reconexión | Con el cuestionario abierto, en la VM 1 marca dos respuestas, desconecta la red, marca otra y reconéctala; reinicia Aula en la VM 2 a mitad. | La VM 1 sigue donde iba y la consola recibe la última respuesta al reconectar. La VM 2, al volver, muestra lo que ya había marcado. |
 
 **Para aceptar** bastan CU-A a CU-D en ✅.
+
+## 30. Salud del laboratorio (10.25)
+
+Comprueba que las alertas de salud aparecen con su texto y su enlace al manual, que «Revisar ahora»
+actualiza en segundos y que el informe no lleva nada fuera de la lista cerrada (`docs/protocol.md`
+§5.27, `docs/privacidad.md` reglas 92–95). Con las dos VMs de §18 (el agente **como servicio** en la
+VM 1, en modo ventana en la VM 2) y en Ajustes › Salud la dirección `www.google.com:443`.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **SL-A** Disco lleno (**aceptación**) | En la VM 1 llena la unidad C: hasta que queden menos de 5 GB (p. ej. `fsutil file createnew C:\relleno.bin <bytes>`) y pulsa **Revisar ahora**. Después borra el relleno y revisa otra vez. | Laboratorio marca «Disco del sistema casi lleno» en la VM 1, con qué hacer y **Cómo arreglarlo** que abre «Un equipo tiene el disco casi lleno»; el menú cuenta 1. Al borrar el relleno, la alerta se va. |
+| **SL-B** Reloj adelantado (**aceptación**) | En la VM 2 desactiva la hora automática y adelanta el reloj 5 minutos. Espera 30 s. | La consola marca «Reloj desfasado» con «+5 min» (roja) en la VM 2, sin tocar el informe; al sincronizar la hora, se va. Aula sigue conectada todo el tiempo. |
+| **SL-C** Sin internet (**aceptación**) | En la VM 1 bloquea la salida a internet (desactiva la puerta de enlace o una regla del firewall que bloquee el 443 saliente sin cortar la LAN) y pulsa **Revisar ahora**. | En segundos aparece «Sin internet» (o «Sin DNS» si tampoco resuelve) con su texto y su enlace; al quitar el bloqueo, se va. |
+| **SL-D** Lista cerrada (**aceptación**) | Con el registro de la consola en nivel debug, revisa `aula-consola.log` y captura un `health.report` (p. ej. con el registro del agente en debug). | El informe solo trae los campos de §5.27.3; ningún log trae procesos, sitios, archivos, el nombre de la red ni valores de las alertas. |
+| **SL-E** Sin sesión | Cierra la sesión del alumno en la VM 1 (el servicio sigue). | El equipo sigue en Laboratorio con su salud (sin disco de Documentos). |
+| **SL-F** Autodiagnóstico | **Autodiagnóstico** a las dos VMs. | Las dos responden en menos de 20 s; en una VM sin driver de video, «Tarjeta de video · sin su driver». No queda ningún `aula-prueba-*.tmp` en la carpeta temporal. |
+
+**Para aceptar** bastan SL-A a SL-D en ✅.

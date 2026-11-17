@@ -121,6 +121,100 @@ propio equipo o en la red. Pide al responsable de TI que revise, en cada equipo 
 Si el botón **Encender** no aparece, el agente del equipo es una versión que no informa su
 dirección física: actualízalo, o enciende el equipo a mano una vez después de actualizarlo.
 
+## Un equipo tiene el disco casi lleno
+
+Lo marca [Laboratorio](laboratorio): el disco de Windows o el de Documentos tiene menos de lo que
+fijaste en Ajustes › Salud (por omisión, 5 GB o el 10 %). Sin espacio, Windows y los programas
+fallan, y el alumno no puede guardar su trabajo ni recibir archivos.
+
+1. En ese equipo, abre **Liberador de espacio en disco** (o Configuración › Sistema ›
+   Almacenamiento › Archivos temporales) y borra los temporales y la papelera.
+2. Borra lo que ya no se use en ese equipo (descargas viejas, instaladores).
+3. Pulsa **Revisar ahora** en Laboratorio: la alerta se va cuando hay espacio.
+
+## El disco de un equipo tiene fallas
+
+El disco avisa por sí mismo (S.M.A.R.T.) que puede dejar de funcionar: sectores dañados, errores
+de lectura o, en un disco NVMe, que ya no es confiable o quedó de solo lectura. Un disco así
+puede dejar de arrancar de un día para otro.
+
+1. Respalda lo importante de ese equipo.
+2. Pide al responsable de TI que cambie el disco antes de la próxima clase.
+
+Si el estado dice «No se puede leer en este equipo», Aula no tiene permiso para preguntarle al
+disco: pasa cuando Aula Cliente corre como ventana y no como servicio.
+
+## Un equipo tiene poca memoria o el procesador saturado
+
+El equipo va a ir lento. Casi siempre es un programa que se quedó abierto o una actualización
+de Windows que trabaja en segundo plano.
+
+1. En ese equipo, cierra los programas que no se usen.
+2. Si sigue igual, espera a que termine la actualización o reinícialo antes de clase.
+3. Si pasa siempre, el equipo tiene poca memoria para lo que se usa en tu clase.
+
+## El procesador de un equipo está limitado
+
+Windows baja la velocidad del procesador para que no se caliente de más. Explica por qué un
+equipo «lento» falla sin tener nada pesado abierto. Casi siempre es **polvo** en el disipador o
+el ventilador, o el equipo está tapado o sin ventilación. Pide que lo limpien. En una laptop
+también pasa con el plan de energía en «Ahorro de batería».
+
+## Un equipo espera un reinicio
+
+Windows instaló actualizaciones y necesita reiniciar. Si no lo haces, puede reiniciarse solo en
+plena clase. Reinícialo antes de empezar (puedes usar [Apagar o reiniciar los
+equipos](tareas-frecuentes#apagar-o-reiniciar-los-equipos)).
+
+## El reloj de un equipo está desfasado
+
+El reloj del equipo se adelanta o se atrasa frente al de tu consola más de lo que fijaste (por
+omisión, 2 minutos). Con el reloj mal, los sitios seguros (HTTPS) y los certificados fallan, y
+algunos programas no instalan ni inician sesión.
+
+1. En ese equipo, abre Configuración › Hora e idioma y pulsa **Sincronizar ahora**. Revisa que la
+   zona horaria sea la correcta.
+2. Si vuelve a desfasarse después de apagarlo, la pila de la tarjeta madre puede estar gastada.
+
+Si **todos** los equipos aparecen desfasados por lo mismo, el reloj que está mal es el de tu
+consola.
+
+## Un equipo no tiene internet
+
+Lo marca Laboratorio solo si pusiste una dirección en [Ajustes › Salud](ajustes#salud).
+
+- **Sin DNS:** el equipo no encuentra los sitios por su nombre. Revisa su cable o su Wi‑Fi y su
+  configuración de red; si les pasa a todos, el servidor DNS del laboratorio no responde.
+- **Sin internet:** encuentra el nombre pero no llega. Revisa el proxy y el firewall del
+  laboratorio, y que el puerto de la dirección de prueba sea el correcto.
+
+Las restricciones de la clase pueden bloquear sitios a propósito: si filtras la web, elige una
+dirección de prueba que el filtro permita.
+
+## El cable de red de un equipo va lento
+
+El cable negoció una velocidad menor a la que fijaste (por omisión, 100 Mb/s). Es el síntoma
+clásico de un **cable dañado o mal ponchado**, o de un puerto del switch con problemas. Con
+10 Mb/s, ver tu pantalla o recibir archivos se vuelve imposible.
+
+1. Cambia el cable de ese equipo por uno que funcione.
+2. Si sigue igual, conéctalo a otro puerto del switch o de la pared.
+
+## Un equipo se conecta por Wi-Fi
+
+- **Wi‑Fi teniendo cable:** el equipo tiene un cable conectado pero sale por Wi‑Fi. Suele pasar
+  cuando el cable o el puerto están mal. Revisa el cable o apaga el Wi‑Fi del equipo.
+- **Wi‑Fi débil:** la señal es baja; la transmisión de tu pantalla y los archivos irán lentos o
+  se cortarán. Acerca el equipo al punto de acceso o conéctalo por cable.
+
+## Un equipo funciona con batería
+
+- **Sin corriente:** la laptop no está cargando. Si les pasa a varias juntas, revisa el
+  multicontacto o el interruptor del salón.
+- **Batería baja:** se va a apagar pronto. Conéctala a la corriente ya.
+- **Batería gastada:** perdió más capacidad de la que fijaste (por omisión, la mitad). Que
+  trabaje siempre conectada o pide que cambien la batería.
+
 ## El portapapeles no funciona
 
 Si «Pegar» dice que no hay texto copiado, copia el código con Ctrl+C y vuelve a

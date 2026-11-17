@@ -24,6 +24,7 @@ erDiagram
     CONFIG_ALUMNO ||--o| POLITICA_ACTIVA : "solo con filtro web aplicado"
     HISTORIAL_MEMORIA ||--o{ ENVIOS_MEMORIA : "cada emisión crea un envío"
     ENVIOS_MEMORIA }o--o{ TABLERO_MEMORIA : "code.ack confirma lo mostrado"
+    AJUSTES_SALUD ||--o{ SALUD_MEMORIA : "umbrales convierten informes en alertas"
 
     CLAVE_CENTRO {
         pem ed25519_pkcs8 "ProgramData Aula centro clave-centro.pem"
@@ -44,6 +45,18 @@ erDiagram
         list recent_channels "hasta 8"
         string console_name
         int port "0 = 47830"
+    }
+    AJUSTES_SALUD {
+        object thresholds "AppData Aula consola salud.json, sin datos de equipos"
+        string internet "host:puerto, vacío no se prueba"
+        list services "hasta 8, nombre y host:puerto"
+    }
+    SALUD_MEMORIA {
+        string key "solo memoria de la consola, por equipo"
+        object report "último health.report, lista cerrada"
+        int clockMs "de los heartbeat"
+        list alerts "calculadas, no se guardan"
+        object test "último autodiagnóstico"
     }
     EQUIPOS_CONOCIDOS {
         string hostname "AppData Aula consola equipos-conocidos.json, por canal"
@@ -127,6 +140,11 @@ erDiagram
   Documentos y no en la carpeta de configuración porque es material del profesor: se exporta y se
   importa en las demás consolas del centro. Los alumnos simulados toman lugar solo en memoria.
   Un archivo dañado se aparta con «-danado-<fecha>» y uno de una versión más nueva no se toca.
+- **La salud del laboratorio** (prompt 10.25) vive **solo en memoria** de la consola: el último
+  informe de cada equipo, su reloj, sus alertas y su autodiagnóstico se pierden al cerrarla o
+  cambiar de canal (privacidad, regla 95). En disco solo quedan los umbrales y los destinos de
+  Ajustes › Salud (`salud.json`), sin ningún dato de equipos. El agente no guarda nada: el
+  autodiagnóstico escribe y borra un archivo temporal en la carpeta temporal del agente.
 - **Logs** (no dibujados): `LOCALAPPDATA\Aula\<app>\aula-*.log` con rotación de 1 MiB, y
   `ProgramData\Aula\alumno\logs` con el agente como servicio. Nunca contienen código, textos,
   imágenes, nonces, firmas ni claves.

@@ -61,6 +61,29 @@ Dice el tamaño del salón del canal abierto, cuántos equipos están acomodados
 **Abrir el salón** lleva a [la pantalla Salón](salon); **Exportar…** e **Importar…** lo copian a
 las demás consolas del centro (ver [Exportar e importar](salon#exportar-e-importar)).
 
+## Salud
+
+Lo que se prueba en los equipos y cuándo un dato es alerta en
+[la pantalla Laboratorio](laboratorio). Se guarda en esta consola.
+
+- **Dirección para probar internet**: `nombre:puerto` o `IP:puerto`, por ejemplo
+  `www.google.com:443`. Cada equipo comprueba cada minuto que encuentra ese nombre y que llega a
+  ese puerto. Vacía, no se prueba internet.
+- **Servicios de la clase**: hasta 8, con un nombre y su dirección (el servidor de licencias,
+  un repositorio, la intranet: `licencias.escuela.local:27000`). Solo los prueba el
+  [autodiagnóstico](laboratorio#autodiagnóstico).
+- **Cuándo es alerta**: los umbrales. Por omisión, el disco con menos de 5 GB o menos del 10 %
+  libre; la memoria con menos del 10 % libre; el procesador arriba del 90 % de uso o limitado
+  abajo del 90 % de su frecuencia; el reloj desfasado más de 120 segundos; el cable a menos de
+  100 Mb/s; el Wi‑Fi con menos del 40 % de señal; la batería con menos del 20 % sin corriente o
+  con más del 50 % de desgaste.
+- **Alertas que se muestran**: apaga las que no apliquen a tu laboratorio, por ejemplo las de
+  batería si no hay laptops.
+
+**Restaurar valores** vuelve a los umbrales de fábrica sin borrar los destinos; nada cambia hasta
+que pulsas **Guardar**. Al guardar, las alertas se recalculan y los equipos reciben los nuevos
+destinos.
+
 ## Acerca de
 
 - **Versión** de Aula Consola.

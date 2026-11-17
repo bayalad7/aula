@@ -37,6 +37,7 @@
     for (const e of root.querySelectorAll("[data-t]")) e.textContent = T(e.dataset.t);
     for (const e of root.querySelectorAll("[data-t-aria-label]")) e.setAttribute("aria-label", T(e.dataset.tAriaLabel));
     for (const e of root.querySelectorAll("[data-t-title]")) e.title = T(e.dataset.tTitle);
+    for (const e of root.querySelectorAll("[data-t-tip]")) e.dataset.tip = T(e.dataset.tTip);
   }
 
   // --- Estado: tira de identidad, bandas y título ----------------------------------------------
@@ -109,6 +110,26 @@
     const porCausa = status.state !== "connected" && status.state !== "unconfigured" && status.cause;
     $("vacio-texto").textContent = porCausa ? T(CAUSA + status.cause, v) : T(VACIO + status.state + ".texto", v);
   }
+
+  // --- Tema (nota de interfaz v0.1.0 021) ----------------------------------------------------------
+  // Del sistema, claro u oscuro, en ese orden al pulsar; se recuerda en este equipo. Solo cambia
+  // cómo se ve la ventana: no observa ni controla nada.
+  const TEMAS = { sistema: ["pantalla", () => T("tema.sistema")], light: ["sol", () => T("tema.claro")], dark: ["luna", () => T("tema.oscuro")] };
+  let tema = "sistema";
+  try { tema = localStorage.getItem("aula-tema") || "sistema"; } catch { /* sin almacenamiento */ }
+  if (!(tema in TEMAS)) tema = "sistema";
+  function aplicarTema(t, guardar) {
+    tema = t;
+    if (t === "sistema") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = t;
+    const [icono, texto] = TEMAS[t];
+    $("tema-icono").setAttribute("href", "sistema/iconos.svg#" + icono);
+    $("tema-texto").textContent = texto();
+    $("tema").dataset.tip = T("tema.ayuda");
+    if (guardar) { try { localStorage.setItem("aula-tema", t); } catch { /* sin almacenamiento */ } }
+  }
+  aplicarTema(tema, false);
+  $("tema").addEventListener("click", () => aplicarTema({ sistema: "light", light: "dark", dark: "sistema" }[tema], true));
 
   // --- Modo compacto (prompt 19) ----------------------------------------------------------------
   // La ventana se encoge a una tira en una esquina: el estado, lo nuevo y la
@@ -1193,7 +1214,7 @@
     $("mano-estado-texto").textContent = texto;
     $("motivo-abrir").hidden = v.hand !== "up" || !$("motivo").hidden;
     $("motivo-abrir").textContent = v.note ? T("mano.cambiarMotivo") : T("mano.agregarMotivo");
-    if (v.hand !== "up") $("motivo").hidden = true;
+    if (v.hand !== "up" && !$("motivo").hidden) cerrarMotivo(); // la bajó el profesor: sin foco
     if (antes !== v.hand) anunciar(v.hand === "up" ? T("mano.anuncioArriba") : v.hand === "lowered_by_teacher" ? T(estadoMano(v.hand)) : T("mano.anuncioAbajo"));
     pintarEnviados();
     renderNotices(avisos); // una respuesta cita el mensaje: ya se conoce
@@ -1244,25 +1265,43 @@
   $("mano").addEventListener("click", alternarMano);
   $("compacto-mano").addEventListener("click", alternarMano);
 
-  // El motivo («pedir ayuda»): levanta otra vez la misma mano, que conserva su lugar.
-  $("motivo-abrir").addEventListener("click", () => {
+  // El motivo («pedir ayuda»), en su propio diálogo como el mensaje (nota de interfaz 020): levanta
+  // otra vez la misma mano, que conserva su lugar. El formulario lleva `hidden` mientras está cerrado.
+  function abrirMotivo() {
+    if (compacto) ponerCompacto(false, true); // lo pide el alumno: necesita la ventana
     $("motivo").hidden = false;
-    $("motivo-abrir").hidden = true;
+    $("motivo-error").hidden = true;
+    $("motivo-texto").removeAttribute("aria-invalid");
     $("motivo-texto").value = participacion.note || "";
+    if (!$("dlg-motivo").open) $("dlg-motivo").showModal();
+    $("motivo-abrir").hidden = true;
     $("motivo-texto").focus();
-  });
-  const cerrarMotivo = () => {
+  }
+  function cerrarMotivo() {
     $("motivo").hidden = true;
+    if ($("dlg-motivo").open) $("dlg-motivo").close();
     $("motivo-abrir").hidden = participacion.hand !== "up";
-    $("motivo-abrir").focus();
-  };
+    if (!$("motivo-abrir").hidden) $("motivo-abrir").focus();
+  }
+  $("motivo-abrir").addEventListener("click", abrirMotivo);
+  $("motivo-cancelar").addEventListener("click", cerrarMotivo);
+  $("motivo-cerrar").addEventListener("click", cerrarMotivo);
+  $("dlg-motivo").addEventListener("cancel", (e) => { e.preventDefault(); cerrarMotivo(); });
   $("motivo-texto").addEventListener("keydown", (e) => {
     if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cerrarMotivo(); }
   });
+  $("motivo-texto").addEventListener("input", () => { $("motivo-error").hidden = true; $("motivo-texto").removeAttribute("aria-invalid"); });
   $("motivo").addEventListener("submit", (e) => {
     e.preventDefault();
+    const b = $("motivo-enviar");
+    b.disabled = true;
     api.RaiseHand($("motivo-texto").value).then((v) => { renderParticipacion(v); cerrarMotivo(); },
-      (err) => { $("mano-estado-texto").textContent = errorDe(err); });
+      (err) => {
+        $("motivo-error").textContent = errorDe(err);
+        $("motivo-error").hidden = false;
+        $("motivo-texto").setAttribute("aria-invalid", "true");
+        $("motivo-texto").focus();
+      }).finally(() => { b.disabled = false; });
   });
 
   // El mensaje se escribe en su propio diálogo (nota de interfaz 12): Enter envía, Esc cancela.

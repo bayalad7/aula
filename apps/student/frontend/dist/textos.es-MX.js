@@ -6,6 +6,11 @@ window.AulaTextos = Object.freeze({
   // Página
   "app.titulo": "Aula",
   "app.contenido": "Código de la clase",
+  "acciones.etiqueta": "Tus acciones",
+  "tema.sistema": "Tema del sistema",
+  "tema.claro": "Tema claro",
+  "tema.oscuro": "Tema oscuro",
+  "tema.ayuda": "Cambia entre el tema del sistema, el claro y el oscuro; se recuerda en este equipo.",
 
   // Título de la ventana y de la barra de tareas (docs/privacidad.md, reglas 1, 6, 12, 20 y 26)
   "titulo.connected": "Aula — conectado (canal {canal} - {profesor})",
@@ -248,6 +253,8 @@ window.AulaTextos = Object.freeze({
   "mano.agregarMotivo": "Agregar un motivo",
   "mano.cambiarMotivo": "Cambiar el motivo",
   "mano.motivo": "Motivo: {texto}",
+  "mano.motivoTitulo": "Motivo de tu mano",
+  "mano.motivoEnviar": "Enviar",
   "mano.motivoEtiqueta": "¿En qué necesitas ayuda? (opcional)",
   "mano.motivoAyuda": "Enter lo envía; Esc cancela. Tu mano conserva su lugar.",
   "mano.sinSoporte": "Tu profesor usa una versión de Aula que no recibe manos ni mensajes.",

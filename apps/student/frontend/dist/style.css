@@ -35,7 +35,7 @@ body.compacto .avisos-flotantes { display: none; }
 
 /* Modo compacto: solo la tira; el resto vuelve al restaurar. */
 .modo-compacto[hidden] { display: none; }
-body.compacto .arriba, body.compacto #contenido, body.compacto .broadcast { display: none; }
+body.compacto .arriba, body.compacto #contenido, body.compacto .broadcast, body.compacto #acciones-alumno { display: none; }
 body.compacto .modo-compacto { min-height: 100vh; box-sizing: border-box; }
 .compacto-vista { display: inline-flex; align-items: center; gap: var(--e-1); background: var(--c-vista-solido); color: var(--c-vista-solido-texto); }
 .compacto-vista[hidden] { display: none; }
@@ -51,6 +51,20 @@ body.watching #contenido { display: none; }
 .bc-stage[data-fit="real"] video { width: auto; height: auto; max-width: none; object-fit: none; }
 .bc-wait { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--c-video-texto); }
 .bc-wait[hidden] { display: none; }
+
+/* Barra de acciones del alumno (nota de interfaz v0.1.0 021): abajo, como la de la consola. La
+   página es una columna para que la barra quede al pie aunque haya poco código; con tres botones
+   el texto cabe hasta en la ventana mínima (480 px), así que nunca pasa a solo iconos. */
+body:not(.watching) { display: flex; flex-direction: column; min-height: 100%; height: auto; }
+#contenido { flex: 1 0 auto; align-content: start; } /* crece hasta la barra sin estirar sus filas */
+/* Lo que recibe el foco o se desplaza a la vista no queda debajo de la barra (WCAG 2.4.11). */
+html:has(body:not(.compacto)) { scroll-padding-bottom: 6rem; }
+#acciones-alumno .btn { width: 8rem; min-height: 3.6rem; padding: var(--e-1); }
+#acciones-alumno .btn__texto { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; }
+#acciones-alumno .btn[data-tip]:hover::after, #acciones-alumno .btn[data-tip]:focus-visible::after { display: none; }
+/* Los avisos en la esquina, arriba de la barra. */
+.avisos-flotantes { bottom: calc(var(--e-4) + 5.5rem); }
+body.compacto .avisos-flotantes { bottom: var(--e-4); }
 
 /* Levantar la mano y escribir al profesor (prompt 10.6). */
 .mano-boton[aria-pressed="true"] { background: var(--c-advertencia-fondo); color: var(--c-advertencia); border-color: var(--c-advertencia-solido); }

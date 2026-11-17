@@ -25,12 +25,9 @@
       <!-- El temporizador del profesor (prompt 10.8): solo informa, sin animación; role="timer"
            no se anuncia a cada segundo. No es una banda: no observa ni controla el equipo. -->
       <span id="temporizador" class="insignia insignia--info temporizador" role="timer" hidden><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#reloj"/></svg><span id="temporizador-texto" class="cuenta"></span></span>
-      <!-- Lo que hace el alumno (prompt 10.6): no quita el foco a nadie. -->
-      <button type="button" id="mano" class="btn btn--sm mano-boton" aria-pressed="false"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span id="mano-texto"></span></button>
-      <button type="button" id="escribir" class="btn btn--sm" aria-expanded="false" aria-controls="redactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg><span data-t="mensaje.boton"></span></button>
       <!-- Qué puede hacer Aula en este equipo (nota de interfaz 13): transparencia para el alumno. -->
-      <button type="button" id="capacidades" class="btn btn--fantasma btn--icono btn--sm" aria-haspopup="dialog" aria-controls="dlg-capacidades" data-t-aria-label="capacidades.boton" data-t-title="capacidades.boton"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button>
-      <button type="button" id="compactar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.compactar" data-t-title="ventana.compactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#contraer"/></svg></button>
+      <button type="button" id="capacidades" class="btn btn--fantasma btn--icono btn--sm" aria-haspopup="dialog" aria-controls="dlg-capacidades" data-t-aria-label="capacidades.boton" data-t-tip="capacidades.boton"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button>
+      <button type="button" id="compactar" class="btn btn--fantasma btn--icono btn--sm" data-t-aria-label="ventana.compactar" data-t-tip="ventana.compactar"><svg class="icono icono--sm" aria-hidden="true"><use href="sistema/iconos.svg#contraer"/></svg></button>
     </span>
     <details id="estado-detalles" class="detalles estado-conexion__detalles" hidden>
       <summary data-t="estado.detalles"></summary>
@@ -125,12 +122,7 @@
     <section id="mano-estado" class="mano-estado" role="status" hidden>
       <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg>
       <span id="mano-estado-texto" class="mano-estado__texto"></span>
-      <button type="button" id="motivo-abrir" class="btn btn--sm btn--fantasma" data-t="mano.agregarMotivo" hidden data-icono="mas"></button>
-      <form id="motivo" class="mano-estado__motivo" hidden>
-        <label class="campo"><span class="campo__etiqueta" data-t="mano.motivoEtiqueta"></span>
-          <input id="motivo-texto" maxlength="140" autocomplete="off" data-icono="mano">
-          <span class="campo__ayuda" data-t="mano.motivoAyuda"></span></label>
-      </form>
+      <button type="button" id="motivo-abrir" class="btn btn--sm btn--fantasma" data-t="mano.agregarMotivo" hidden data-icono="mas" aria-haspopup="dialog" aria-controls="dlg-motivo"></button>
     </section>
     <section id="enviados" class="enviados" aria-labelledby="enviados-titulo" hidden>
       <h2 id="enviados-titulo" class="enviados__titulo" data-t="mensaje.enviados"></h2>
@@ -179,6 +171,17 @@
     <p id="anuncio" class="solo-lector" role="status"></p>
   </main>
 
+  <!-- Barra de acciones del alumno (nota de interfaz v0.1.0 021): lo que hace el alumno, abajo y
+       como la barra de la consola. No quita el foco a nadie (prompt 10.6). En el modo compacto no
+       se ve: ahí la mano y el mensaje siguen en su tira. -->
+  <footer id="acciones-alumno" class="barra-acciones" data-t-aria-label="acciones.etiqueta">
+    <div class="barra-acciones__dentro">
+      <button type="button" id="mano" class="btn mano-boton" aria-pressed="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><span id="mano-texto" class="btn__texto"></span></button>
+      <button type="button" id="escribir" class="btn" aria-expanded="false" aria-controls="redactar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mensaje"/></svg><span class="btn__texto" data-t="mensaje.boton"></span></button>
+      <button type="button" id="tema" class="btn"><svg class="icono" aria-hidden="true"><use id="tema-icono" href="sistema/iconos.svg#pantalla"/></svg><span id="tema-texto" class="btn__texto"></span></button>
+    </div>
+  </footer>
+
   <!-- Mensaje al profesor (prompt 10.6, nota de interfaz 12): su propio diálogo, que abre el alumno. -->
   <dialog class="dialogo dialogo--form" id="dlg-mensaje" aria-labelledby="redactar-titulo">
     <form id="redactar" class="dialogo__cuerpo pila" hidden>
@@ -191,6 +194,23 @@
       <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
         <button type="button" id="redactar-cancelar" class="btn" data-t="mensaje.cancelar" data-icono="cerrar"></button>
         <button type="submit" id="redactar-enviar" class="btn btn--primario"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="mensaje.enviar"></span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- El motivo de la mano (nota de interfaz v0.1.0 020): el mismo diálogo que el mensaje; lo abre
+       el alumno. Enviarlo vuelve a levantar la misma mano, que conserva su lugar. -->
+  <dialog class="dialogo dialogo--form" id="dlg-motivo" aria-labelledby="motivo-titulo">
+    <form id="motivo" class="dialogo__cuerpo pila" hidden>
+      <div class="dialogo__titulo"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#mano"/></svg><h2 id="motivo-titulo" class="crece" data-t="mano.motivoTitulo"></h2>
+        <button type="button" class="btn btn--fantasma btn--icono" id="motivo-cerrar" data-t-aria-label="mensaje.cancelar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cerrar"/></svg></button></div>
+      <label class="campo"><span class="campo__etiqueta" data-t="mano.motivoEtiqueta"></span>
+        <input id="motivo-texto" maxlength="140" autocomplete="off" aria-describedby="motivo-ayuda" data-icono="mano">
+        <span class="campo__ayuda" id="motivo-ayuda" data-t="mano.motivoAyuda"></span>
+        <span class="campo__error" id="motivo-error" role="alert" hidden></span></label>
+      <div class="grupo-botones grupo-botones--fin dialogo__pie-botones">
+        <button type="button" id="motivo-cancelar" class="btn" data-t="mensaje.cancelar" data-icono="cerrar"></button>
+        <button type="submit" id="motivo-enviar" class="btn btn--primario"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#enviar"/></svg><span data-t="mano.motivoEnviar"></span></button>
       </div>
     </form>
   </dialog>

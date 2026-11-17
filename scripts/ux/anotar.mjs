@@ -259,23 +259,25 @@ async function autoprueba() {
 
   // Navegando normal: el clic llega a la app y deja la selección; N anota; se elige el nivel.
   const shadow = (sel) => p.evaluateHandle((x) => document.getElementById("anotador-host").shadowRoot.querySelector(x), sel);
-  await p.click("#mano");
+  // «Levantar la mano» está en la barra de abajo del alumno, debajo de la barra del anotador:
+  // el clic va directo al botón, como lo haría el profesor tras mover la barra.
+  await p.$eval("#mano", (b) => b.click());
   await new Promise((r) => setTimeout(r, 200));
   ok(await p.$eval("#mano", (b) => b.getAttribute("aria-pressed") === "true"), "el clic normal no llegó a la app (la mano no se levantó)");
   const barraTexto = await p.evaluate(() => document.getElementById("anotador-host").shadowRoot.querySelector("#niveles-barra").textContent);
-  ok(barraTexto.includes("Tira de identidad") && barraTexto.includes("Botones de la tira"), "la barra no muestra la selección: " + barraTexto);
+  ok(barraTexto.includes("Barra de acciones del alumno"), "la barra no muestra la selección: " + barraTexto);
   await p.keyboard.press("n");
   await new Promise((r) => setTimeout(r, 100));
   const tira = await p.evaluateHandle(() => [...document.getElementById("anotador-host").shadowRoot.querySelectorAll("#niveles-form button")]
-    .find((b) => b.textContent === "Tira de identidad"));
+    .find((b) => b.textContent === "Barra de acciones del alumno"));
   await tira.click();
   if (process.env.ANOTADOR_CONSERVAR) await p.screenshot({ path: path.join(dirNotas, "ui-niveles.webp") });
   await (await shadow("#texto")).focus();
-  await p.keyboard.type("Prueba: la tira debería ser más baja");
+  await p.keyboard.type("Prueba: la barra debería ser más baja");
   await p.keyboard.down("Control"); await p.keyboard.press("Enter"); await p.keyboard.up("Control");
   for (let i = 0; i < 50 && leerNotas().length < 3; i++) await new Promise((r) => setTimeout(r, 100));
   const tercera = leerNotas()[2];
-  ok(tercera && tercera.zona.id === "tira" && tercera.zona.cadena === "Alumno › Tira de identidad", "nota por nivel: " + JSON.stringify(tercera && tercera.zona));
+  ok(tercera && tercera.zona.id === "acciones-alumno" && tercera.zona.cadena === "Alumno › Barra de acciones del alumno", "nota por nivel: " + JSON.stringify(tercera && tercera.zona));
 
   // Con un diálogo modal abierto (Pantalla grande), la barra sigue visible y se puede pulsar.
   await ir({ app: "profesor", escena: "lab", ruta: "" });

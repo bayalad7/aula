@@ -115,7 +115,7 @@ export const zonas = {
   alumno: [
     { id: "tira", nombre: "Tira de identidad", selector: "#estado", que: "Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo." },
     { id: "acciones-alumno", nombre: "Barra de acciones del alumno", selector: "#acciones-alumno", que: "Abajo, como la de la consola: Levantar la mano, Mensaje al profesor y el tema (del sistema, claro u oscuro). No se ve en el modo compacto (nota de interfaz v0.1.0 021)." },
-    { id: "tira-botones", dentro: "tira", nombre: "Botones de la tira", selector: "#mano, #escribir, #capacidades, #compactar", que: "Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto." },
+    { id: "tira-botones", dentro: "tira", nombre: "Botones de la tira", selector: "#capacidades, #compactar", que: "Qué puede hacer Aula en este equipo y Modo compacto (la mano y el mensaje están en la Barra de acciones del alumno)." },
     { id: "tira-temporizador", dentro: "tira", nombre: "Insignia del temporizador", selector: "#temporizador", que: "Cuánto falta del ejercicio." },
     { id: "bandas", nombre: "Bandas de transparencia", selector: "#bandas", que: "Lo que el profesor hace con el equipo (energía, control, pantalla en pausa, pantalla vista, tu pantalla mostrada a la clase, restricciones); no se cierran." },
     { id: "banda-mostrando", dentro: "bandas", nombre: "Banda «Tu pantalla se está mostrando»", selector: "#banda-mostrando", que: "Mientras sus compañeros ven su pantalla; sin botones: la termina el profesor." },

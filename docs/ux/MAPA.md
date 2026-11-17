@@ -255,7 +255,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | # | Zona | Qué es |
 |---|---|---|
 | 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
-| 2 | **Botones de la tira** | Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto. |
+| 2 | **Botones de la tira** | Qué puede hacer Aula en este equipo y Modo compacto (la mano y el mensaje están en la Barra de acciones del alumno). |
 | 3 | **Bandas de transparencia** | Lo que el profesor hace con el equipo (energía, control, pantalla en pausa, pantalla vista, tu pantalla mostrada a la clase, restricciones); no se cierran. |
 | 4 | **Estado vacío** | Lo que se ve cuando no hay código ni archivos. |
 
@@ -437,7 +437,7 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 |---|---|---|
 | `tira` | Tira de identidad | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | `acciones-alumno` | Barra de acciones del alumno | Abajo, como la de la consola: Levantar la mano, Mensaje al profesor y el tema (del sistema, claro u oscuro). No se ve en el modo compacto (nota de interfaz v0.1.0 021). |
-| `tira-botones` | Tira de identidad › Botones de la tira | Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto. |
+| `tira-botones` | Tira de identidad › Botones de la tira | Qué puede hacer Aula en este equipo y Modo compacto (la mano y el mensaje están en la Barra de acciones del alumno). |
 | `tira-temporizador` | Tira de identidad › Insignia del temporizador | Cuánto falta del ejercicio. |
 | `bandas` | Bandas de transparencia | Lo que el profesor hace con el equipo (energía, control, pantalla en pausa, pantalla vista, tu pantalla mostrada a la clase, restricciones); no se cierran. |
 | `banda-mostrando` | Bandas de transparencia › Banda «Tu pantalla se está mostrando» | Mientras sus compañeros ven su pantalla; sin botones: la termina el profesor. |

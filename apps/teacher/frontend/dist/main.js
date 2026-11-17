@@ -279,7 +279,7 @@
   const equiposReales = () => seleccionados().filter((s) => !s.simulated).map((s) => s.hostname);
 
   // --- Navegación ------------------------------------------------------------------------
-  const VISTAS = ["alumnos", "salon", "codigo", "archivos", "cuestionarios", "participacion", "simulada", "ayuda", "falta"];
+  const VISTAS = ["alumnos", "salon", "codigo", "archivos", "cuestionarios", "participacion", "laboratorio", "simulada", "ayuda", "falta"];
   function irA(ruta) {
     // «ayuda/pagina/seccion» abre una página del manual en una sección.
     const [base, pagina, seccion] = ruta.split("/");
@@ -301,6 +301,7 @@
     if (nueva === "codigo" && editor) editor.layout();
     if (nueva === "falta") pintarFalta();
     if (nueva === "simulada") pintarSimulada();
+    if (nueva === "laboratorio") pintarLab();
     if (nueva === "participacion") pintarParticipacion(participacion);
     if (nueva === "cuestionarios") cargarCuestionarios(); // pudieron cambiar en el Explorador
     if (nueva === "archivos") cargarArchivos(); // las plantillas pudieron cambiar en el Explorador
@@ -395,6 +396,8 @@
     api.ClassEnd().then((v) => { if (v.endId) finTerminar = v; }, () => {});
     api.AllowedApps().then(cargarAppsPermitidas, () => {});
     api.OpenOrders().then(pintarOrdenesAbrir, () => {});
+    api.Lab().then(alLab, () => {});
+    api.HealthSettings().then((s) => { saludAjustes = s; }, () => {}); // los nombres de los servicios
     if (!manual) {
       api.Manual().then(cargarManual, (e) => { $("ayuda-cargando").hidden = true; fallo(e); });
     }
@@ -411,6 +414,7 @@
     if (s.newMessages) n.push(insigniaParticipacion("info", "mensaje", P("alumnos.mensajes", s.newMessages), T("participacion.ver")));
     if (s.state !== "connected") return n;
     if (s.lastError) n.push(insignia("error", "error", T("alumnos.noPudo", { r: errorAlumno(s.lastError.code).titulo })));
+    if (s.healthAlerts) n.push(insigniaSalud(s)); // salud del equipo (prompt 10.25): lleva a Laboratorio
     if (s.appsActive || s.webActive) n.push(insignia("advertencia", "candado", T("alumnos.conRestricciones")));
     if (s.power) n.push(insigniaEnergia(s.power));
     if (s.pause === "paused") n.push(insignia("info", "pausa", T("alumnos.enPausa")));
@@ -648,7 +652,8 @@
       ["canFiles", "ficha.archivos", "archivo"], ["canCollect", "ficha.recoger", "carpeta"],
       ["canOpenUrl", "ficha.abrirPagina", "externo"], ["canOpenApp", "ficha.abrirApp", "app"],
       ["canPresent", "ficha.proyectar", "transmitir"], ["canPresentView", "ficha.verCompanero", "ojo"], ["canPause", "ficha.pausa", "pausa"],
-      ["canClassEnd", "ficha.terminar", "salir"], ["canWake", "ficha.encender", "encender"], ["canLabel", "ficha.verEtiqueta", "etiqueta"]];
+      ["canClassEnd", "ficha.terminar", "salir"], ["canWake", "ficha.encender", "encender"], ["canLabel", "ficha.verEtiqueta", "etiqueta"],
+      ["canHealth", "ficha.saludCap", "salud"], ["canSelfTest", "ficha.autodiagnostico", "prueba"]];
     $("ficha-puede").replaceChildren(...puede.map(([c, k, ic]) => {
       const si = !!s[c];
       const texto = T(si ? "ficha.puedeSi" : "ficha.puedeNo", { accion: T(k) });
@@ -657,6 +662,7 @@
       li.append(icono(ic), icono(si ? "hecho" : "cerrar", "capacidad__marca"), el("span", "solo-lector", texto));
       return li;
     }));
+    pintarFichaSalud(s);
     const e = s.lastError;
     $("ficha-error").hidden = !e;
     if (e) {
@@ -1077,6 +1083,7 @@
     m.setAttribute("aria-label", T("alumnos.seleccionar", { equipo: nombreEquipo(s) }));
     li.querySelector(".alumno__nombre").textContent = nombreEquipo(s);
     li.querySelector(".estado").replaceChildren(s.simulated ? insignia("simulado", "simulado", T("alumnos.simulado")) : estadoDe(s));
+    if (s.healthAlerts && s.state === "connected") li.querySelector(".estado").append(" ", insigniaSalud(s));
     const host = hostSecundario(s);
     li.querySelector(".alumno__sub").textContent = (s.username || T("alumnos.sinSesion")) + (host ? " · " + host : "");
     const img = li.querySelector("img");
@@ -3579,6 +3586,7 @@
     actualizarAccionesArchivos();
     actualizarAccionesReco();
     pintarDestinoCuest(); // y «Lanzar a» en Cuestionarios
+    pintarDestinoLab(); // y «Enviar a» en Laboratorio
   }
   const destinoCodigo = () => (document.querySelector('input[name="codigo-destino"]:checked').value === "seleccion" ? destinos() : []);
   const destinoArchivos = () => (document.querySelector('input[name="archivos-destino"]:checked').value === "seleccion" ? destinos() : []);
@@ -4112,7 +4120,7 @@
   const CAPS = { "code.view": "simulada.capCodigo", "msg.show": "simulada.capAvisos", "screen.thumb": "simulada.capPantalla", "screen.snapshot": "simulada.capCaptura",
     "hand": "simulada.capMano", "msg.student": "simulada.capMensajes", "file.push": "simulada.capArchivos",
     "file.collect": "simulada.capRecoger", "poll": "simulada.capEncuestas", "poll.quiz": "simulada.capCuestionarios",
-    "computer.label": "simulada.capEtiqueta" };
+    "computer.label": "simulada.capEtiqueta", "health": "simulada.capSalud", "health.selftest": "simulada.capAutodiagnostico" };
   function pintarSimulacion(v) {
     simulada = v;
     $("f-simulada").hidden = !v.active;
@@ -5033,6 +5041,393 @@
     });
   }
 
+  // --- Laboratorio: la salud de los equipos (prompt 10.25, docs/protocol.md §5.27) ----------------
+  // Go guarda el último informe de cada equipo, sus alertas y su autodiagnóstico (aula:lab); aquí
+  // solo se dibujan. Solo informa: nada de esto cambia un equipo.
+  let lab = { computers: [], withAlerts: 0, connected: 0, requestInMs: 0, hasTargets: false };
+  let labAbiertos = new Set(); // filas desplegadas
+  let labSoloAlertas = false;
+  try { labSoloAlertas = localStorage.getItem("aula-lab-alertas") === "1"; } catch { /* sin almacenamiento */ }
+  $("lab-solo-alertas").checked = labSoloAlertas;
+  $("lab-solo-alertas").addEventListener("change", (e) => {
+    labSoloAlertas = e.target.checked;
+    try { localStorage.setItem("aula-lab-alertas", labSoloAlertas ? "1" : "0"); } catch { /* sin almacenamiento */ }
+    pintarLab();
+  });
+  // Cada alerta: su texto «qué pasa + qué hacer» (saludAlerta.<id>.titulo/.texto) y su sección del
+  // manual (Go: healthAlerts del manual).
+  const ALERTA = {
+    diskSystem: "saludAlerta.diskSystem", diskDocuments: "saludAlerta.diskDocuments", diskFailing: "saludAlerta.diskFailing",
+    memory: "saludAlerta.memory", cpuBusy: "saludAlerta.cpuBusy", cpuHot: "saludAlerta.cpuHot", rebootPending: "saludAlerta.rebootPending",
+    clock: "saludAlerta.clock", noDns: "saludAlerta.noDns", noInternet: "saludAlerta.noInternet", linkSlow: "saludAlerta.linkSlow",
+    wifiWeak: "saludAlerta.wifiWeak", wifiCable: "saludAlerta.wifiCable", onBattery: "saludAlerta.onBattery",
+    batteryLow: "saludAlerta.batteryLow", batteryWorn: "saludAlerta.batteryWorn",
+  };
+  const PRUEBA = {
+    disk_write: "saludPrueba.disco", dns: "saludPrueba.dns", tcp: "saludPrueba.tcp", audio_out: "saludPrueba.audio",
+    nic: "saludPrueba.red", gpu: "saludPrueba.video", keyboard: "saludPrueba.teclado", mouse: "saludPrueba.mouse",
+  };
+  const MOTIVO = {
+    read_only: "saludMotivo.soloLectura", no_space: "saludMotivo.sinEspacio", mismatch: "saludMotivo.distinto",
+    not_found: "saludMotivo.noEncontrado", timeout: "saludMotivo.tiempo", refused: "saludMotivo.rechazo",
+    unreachable: "saludMotivo.inalcanzable", missing: "saludMotivo.falta", basic_driver: "saludMotivo.driverBasico",
+    not_supported: "saludMotivo.noSoportado", no_permission: "saludMotivo.sinPermiso",
+  };
+  const numero = (n, d) => Number(n).toLocaleString("es-MX", { maximumFractionDigits: d || 0 });
+  const gb = (b) => T("salud.gb", { n: numero(b / 1073741824, b < 10737418240 ? 1 : 0) });
+  const duracion = (s) => {
+    s = Math.abs(s);
+    if (s < 60) return T("salud.segundos", { n: Math.round(s) });
+    if (s < 3600) return T("salud.minutos", { n: Math.round(s / 60) });
+    if (s < 172800) return T("salud.horas", { n: Math.round(s / 3600) });
+    return T("salud.dias", { n: Math.round(s / 86400) });
+  };
+  const relojTexto = (ms) => {
+    if (ms === undefined || ms === null) return "—";
+    if (Math.abs(ms) < 2000) return T("salud.relojBien");
+    return T(ms > 0 ? "salud.relojAdelantado" : "salud.relojAtrasado", { t: duracion(ms / 1000) });
+  };
+  const discoDe = (r, rol) => (r && r.disks ? r.disks.find((d) => d.role === rol) : null);
+  const discoTexto = (d) => (d ? T("salud.libres", { libre: gb(d.free_bytes), total: gb(d.total_bytes) }) : "—");
+  const memoriaTexto = (m) => (m ? T("salud.disponible", { pct: Math.round((m.available_bytes * 100) / m.total_bytes), total: gb(m.total_bytes) }) : "—");
+  const cpuTexto = (c) => (c && c.load_pct !== undefined ? T("salud.uso", { pct: c.load_pct }) : "—");
+  function redTexto(n) {
+    if (!n) return "—";
+    const vel = n.link_mbps ? (n.link_mbps >= 1000 ? T("salud.gbps", { n: numero(n.link_mbps / 1000, 1) }) : T("salud.mbps", { n: n.link_mbps })) : "";
+    if (n.kind === "wifi") return [T("salud.wifi"), n.wifi_signal_pct !== undefined ? T("salud.senal", { pct: n.wifi_signal_pct }) : "", vel].filter(Boolean).join(" · ");
+    return [T(n.kind === "ethernet" ? "salud.cable" : "salud.otraRed"), vel].filter(Boolean).join(" · ");
+  }
+  const bateriaTexto = (b) => (b ? T(b.on_ac ? "salud.bateriaConectada" : "salud.bateriaSinCorriente", { pct: b.charge_pct }) : "—");
+  function haceTexto(iso) {
+    if (!iso || iso.startsWith("0001")) return "";
+    return T("salud.hace", { t: duracion((Date.now() - new Date(iso).getTime()) / 1000) });
+  }
+  // Los valores que muestra el texto de una alerta.
+  function valoresAlerta(a) {
+    const v = a.values || {};
+    return {
+      libre: v.free !== undefined ? gb(v.free) : "", total: v.total !== undefined ? gb(v.total) : "", pct: v.pct !== undefined ? v.pct : "",
+      t: v.seconds !== undefined ? duracion(v.seconds) : v.uptime !== undefined ? duracion(v.uptime) : "",
+      sentido: v.seconds !== undefined ? T(v.seconds > 0 ? "salud.adelantado" : "salud.atrasado") : "",
+      mbps: v.mbps !== undefined ? v.mbps : "", min: v.min !== undefined ? v.min : "",
+      disponible: v.available !== undefined ? gb(v.available) : "",
+    };
+  }
+  const tituloAlerta = (a) => T(ALERTA[a.id] + ".titulo", valoresAlerta(a));
+  // Una alerta con qué hacer y su enlace al manual.
+  function alertaDetalle(a) {
+    const li = el("li", "aviso-en-linea aviso-en-linea--" + (a.level === "error" ? "error" : "advertencia"));
+    li.append(icono(a.level === "error" ? "error" : "advertencia"));
+    const cuerpo = el("div", "pila-mini");
+    cuerpo.append(el("strong", "", tituloAlerta(a)), el("span", "", T(ALERTA[a.id] + ".texto", valoresAlerta(a))));
+    const href = manual && manual.healthAlerts ? manual.healthAlerts[a.id] : "";
+    if (href) cuerpo.append(Object.assign(el("a", "pequeno", T("salud.comoArreglar")), { href: rutaManual(href) }));
+    li.append(cuerpo);
+    return li;
+  }
+  const peor = (c) => (c.alerts.some((a) => a.level === "error") ? "error" : c.alerts.length ? "advertencia" : "");
+  const labDe = (s) => lab.computers.find((c) => c.key === claveEquipo(s.hostname, s.simulated));
+
+  function alLab(v) {
+    lab = v;
+    $("nav-lab-contador").textContent = v.withAlerts ? String(v.withAlerts) : "";
+    $("nav-lab-lector").textContent = v.withAlerts ? P("lab.conAlertas", v.withAlerts) : "";
+    if (vista === "laboratorio") pintarLab();
+    if (panel === "alumno") pintarFicha();
+  }
+  function pintarDestinoLab() {
+    const n = seleccion.size;
+    $("lab-destino-todos").textContent = T("codigo.destinoTodos", { n: conectados().length });
+    $("lab-destino-seleccion").textContent = n ? P("codigo.destinoSeleccion", n) : T("codigo.destinoSinSeleccion");
+    const radio = $("lab-destino-seleccion-radio");
+    radio.disabled = n === 0;
+    if (n === 0 && radio.checked) document.querySelector('input[name="lab-destino"][value="todos"]').checked = true;
+  }
+  const destinoLab = () => (document.querySelector('input[name="lab-destino"]:checked').value === "seleccion" ? destinos() : []);
+  let labEspera = null;
+  function pintarLab() {
+    pintarDestinoLab();
+    const v = lab;
+    const res = [insignia("conectado", "conectado", P("lab.conectados", v.connected))];
+    if (v.withAlerts) res.push(insignia("advertencia", "advertencia", P("lab.conAlertas", v.withAlerts)));
+    else if (v.connected) res.push(insignia("conectado", "hecho", T("lab.sinAlertas")));
+    $("lab-resumen").replaceChildren(...res);
+    // «Revisar ahora» espera 10 s entre una vez y otra (§5.27.4).
+    const espera = v.requestInMs > 0;
+    $("lab-revisar").disabled = espera || !v.connected;
+    clearTimeout(labEspera);
+    if (espera) labEspera = setTimeout(() => { lab.requestInMs = 0; pintarLab(); }, v.requestInMs);
+    $("lab-nota").textContent = espera ? T("lab.esperaRevisar") : v.hasTargets ? "" : T("lab.sinDestinos");
+    $("lab-autodiagnostico").disabled = !v.connected;
+    const lista = v.computers.filter((c) => !labSoloAlertas || c.alerts.length);
+    const vacio = lista.length === 0;
+    $("lab-vacio").hidden = !vacio;
+    $("lab-tabla-caja").hidden = vacio;
+    if (vacio) {
+      const nadie = v.computers.length === 0;
+      $("lab-vacio-titulo").textContent = T(nadie ? "lab.vacioTitulo" : "lab.todoBienTitulo");
+      $("lab-vacio-texto").textContent = T(nadie ? "lab.vacioTexto" : "lab.todoBienTexto");
+      return;
+    }
+    const orden = { error: 0, advertencia: 1, "": 2 };
+    lista.sort((a, b) => (a.connected === b.connected ? 0 : a.connected ? -1 : 1) || orden[peor(a)] - orden[peor(b)] ||
+      a.hostname.localeCompare(b.hostname, "es", { numeric: true }));
+    const conBateria = lista.some((c) => c.report && c.report.battery);
+    $("lab-tabla").classList.toggle("tabla-lab--sin-bateria", !conBateria);
+    const filas = [];
+    lista.forEach((c, i) => {
+      const r = c.report;
+      const tr = el("tr", c.connected ? "" : "tabla-lab__apagado");
+      tr.dataset.clave = c.key;
+      const abierto = labAbiertos.has(c.key);
+      const celda = (cls, etiqueta, ...hijos) => {
+        const td = el("td", cls);
+        if (etiqueta) td.dataset.etiqueta = T(etiqueta);
+        td.append(...hijos);
+        return td;
+      };
+      const nombre = el("td", "celda-principal");
+      const b = el("button", "btn btn--fantasma btn--sm tabla-lab__abrir");
+      b.type = "button";
+      b.setAttribute("aria-expanded", String(abierto));
+      b.setAttribute("aria-label", T(abierto ? "lab.ocultar" : "lab.ver", { equipo: nombreEquipo(c) }));
+      b.append(icono(abierto ? "flecha-abajo" : "flecha-der"), document.createTextNode(nombreEquipo(c)));
+      b.addEventListener("click", () => {
+        if (labAbiertos.has(c.key)) labAbiertos.delete(c.key); else labAbiertos.add(c.key);
+        pintarLab();
+        const otra = $$("#lab-filas button.tabla-lab__abrir").find((x) => x.closest("tr").dataset.clave === c.key);
+        if (otra) otra.focus();
+      });
+      nombre.append(b);
+      if (c.simulated) nombre.append(" ", insignia("simulado", "simulado", T("alumnos.simulado")));
+      // Un agente anterior (sin health) solo aparece por su reloj: lo dice en vez de esperar un informe.
+      const st = alumnos.students.find((x) => claveEquipo(x.hostname, x.simulated) === c.key && x.state === "connected");
+      const sinInforme = st && !st.canHealth ? T("lab.versionAnterior") : T("lab.sinInforme");
+      nombre.append(el("span", "celda-sub", c.connected ? (r ? haceTexto(c.at) : sinInforme) : T("lab.sinConexion", { t: haceTexto(c.at) || "—" })));
+      // En la tabla, el nombre corto de cada alerta; el detalle con qué hacer, al abrir la fila.
+      const alertas = el("div", "tabla-lab__alertas");
+      alertas.append(...(c.alerts.length
+        ? c.alerts.map((a) => insignia(a.level === "error" ? "error" : "advertencia", a.level === "error" ? "error" : "advertencia", T(ALERTA[a.id] + ".nombre")))
+        : [r ? insignia("conectado", "hecho", T("lab.sinAlertas")) : el("span", "suave", "—")]));
+      const doc = discoDe(r, "documents"), sys = discoDe(r, "system");
+      const corto = (d) => (d ? T("salud.libresCorto", { libre: gb(d.free_bytes) }) : "—");
+      const t = c.test;
+      let prueba;
+      if (!t) prueba = el("span", "suave", "—");
+      else if (t.status === "pending") prueba = insignia("info", "pendiente", T("lab.probando"));
+      else if (t.status === "done") prueba = t.failed ? insignia("error", "error", P("lab.fallos", t.failed)) : insignia("conectado", "hecho", T("lab.pruebaBien", { n: t.checks.length }));
+      else prueba = insignia("advertencia", "advertencia", T(t.status === "busy" ? "lab.pruebaOcupado" : t.status === "unsupported" ? "lab.pruebaNoSoportada" : "lab.pruebaSinRespuesta"));
+      tr.append(celdaNum(i), nombre, celda("", "lab.colAlertas", alertas),
+        celda("col-cantidad", "lab.colDisco", document.createTextNode(corto(sys)),
+          ...(doc && sys && doc.free_bytes !== sys.free_bytes ? [el("span", "celda-sub", T("salud.documentos", { d: corto(doc) }))] : [])),
+        celda("col-cantidad lab-col-extra", "lab.colMemoria", document.createTextNode(r && r.memory ? T("salud.libreCorto", { pct: Math.round((r.memory.available_bytes * 100) / r.memory.total_bytes) }) : "—")),
+        celda("col-cantidad lab-col-extra", "lab.colProcesador", document.createTextNode(cpuTexto(r && r.cpu))),
+        celda("col-fija lab-col-extra", "lab.colReloj", document.createTextNode(relojTexto(c.clockMs))),
+        celda("tabla-lab__red lab-col-extra", "lab.colRed", document.createTextNode(redTexto(r && r.network))),
+        celda("lab-col-bateria lab-col-extra", "lab.colBateria", document.createTextNode(bateriaTexto(r && r.battery))),
+        celda("", "lab.colAutodiagnostico", prueba));
+      filas.push(tr);
+      if (abierto) filas.push(detalleLab(c));
+    });
+    $("lab-filas").replaceChildren(...filas);
+  }
+  // La fila desplegada: cada alerta con qué hacer y el detalle del autodiagnóstico.
+  function detalleLab(c) {
+    const tr = el("tr", "tabla-lab__detalle");
+    const td = el("td");
+    td.colSpan = 10;
+    const caja = el("div", "pila");
+    if (c.alerts.length) {
+      const ul = el("ul", "lista-limpia pila-mini");
+      ul.append(...c.alerts.map(alertaDetalle));
+      caja.append(ul);
+    }
+    caja.append(datosSalud(c));
+    const t = c.test;
+    if (t && t.status === "done") {
+      const ul = el("ul", "lista-limpia tabla-lab__pruebas");
+      ul.setAttribute("aria-label", T("lab.colAutodiagnostico"));
+      ul.append(...t.checks.map((k) => {
+        const li = el("li", "insignia insignia--" + (k.status === "ok" ? "conectado" : k.status === "fail" ? "error" : ""));
+        let nombre = T(PRUEBA[k.id] || "saludPrueba.otra");
+        if (k.id === "dns" || k.id === "tcp") nombre += " · " + destinoNombre(k.service);
+        const motivo = k.reason ? " · " + T(MOTIVO[k.reason] || "saludMotivo.otro") : "";
+        li.append(icono(k.status === "ok" ? "hecho" : k.status === "fail" ? "error" : "info"), document.createTextNode(nombre + motivo));
+        return li;
+      }));
+      caja.append(ul);
+      if (t.failed && manual && manual.healthAlerts) {
+        caja.append(Object.assign(el("a", "pequeno", T("lab.pruebaManual")), { href: rutaManual("laboratorio#autodiagnóstico") }));
+      }
+    }
+    td.append(caja);
+    tr.append(td);
+    return tr;
+  }
+  // El nombre de un destino del autodiagnóstico: internet o un servicio de Ajustes › Salud.
+  function destinoNombre(i) {
+    if (i === undefined || i === null) return T("salud.internetCorto");
+    const sv = saludAjustes && saludAjustes.targets.services ? saludAjustes.targets.services[i] : null;
+    return sv ? sv.name : T("salud.servicioN", { n: i + 1 });
+  }
+  // Los datos de un equipo, como lista de definición (ficha y fila desplegada).
+  function datosSalud(c) {
+    const r = c.report || {};
+    const sys = discoDe(r, "system"), doc = discoDe(r, "documents");
+    const filas = [
+      ["salud.discoSistema", discoTexto(sys)],
+      ["salud.discoDocumentos", doc ? discoTexto(doc) : "—"],
+      ["salud.estadoDisco", r.disk_health ? T(r.disk_health === "ok" ? "salud.discoBien" : "salud.discoFallas") : T("salud.noSeLee")],
+      ["salud.memoria", memoriaTexto(r.memory)],
+      ["salud.procesador", cpuTexto(r.cpu)],
+      ["salud.frecuencia", r.cpu && r.cpu.limit_pct !== undefined ? T("salud.frecuenciaPct", { pct: r.cpu.limit_pct }) : T("salud.noSeLee")],
+      ["salud.encendido", r.uptime_s !== undefined ? duracion(r.uptime_s) : "—"],
+      ["salud.reinicio", r.reboot_pending === undefined ? T("salud.noSeLee") : T(r.reboot_pending ? "salud.si" : "salud.no")],
+      ["salud.reloj", relojTexto(c.clockMs)],
+      ["salud.red", redTexto(r.network)],
+      ["salud.internet", r.internet ? T(r.internet.dns === "fail" ? "salud.sinDns" : r.internet.reach === "fail" ? "salud.sinInternet" : "salud.conInternet") : T("salud.noSeProbo")],
+      ["salud.bateria", r.battery ? bateriaTexto(r.battery) + (r.battery.wear_pct !== undefined ? " · " + T("salud.desgaste", { pct: r.battery.wear_pct }) : "") : T("salud.sinBateria")],
+    ];
+    const dl = el("dl", "ficha");
+    dl.append(...filas.flatMap(([k, v]) => [el("dt", "", T(k)), el("dd", "", v)]));
+    return dl;
+  }
+  // La sección «Salud del equipo» de la ficha: solo informa.
+  function pintarFichaSalud(s) {
+    const c = labDe(s);
+    const sabe = s.canHealth && c && c.report;
+    $("ficha-salud-cuando").textContent = !s.canHealth ? T("ficha.saludNoInforma") : !sabe ? T("ficha.saludEsperando") : T("ficha.saludCuando", { t: haceTexto(c.at) });
+    $("ficha-salud-alertas").replaceChildren(...(c ? c.alerts.map(alertaDetalle) : []));
+    $("ficha-salud-datos").replaceChildren(...(sabe ? [...datosSalud(c).childNodes] : []));
+    $("ficha-salud-datos").hidden = !sabe;
+  }
+  // La insignia de la lista y del salón: cuántas alertas y la peor; lleva a Laboratorio.
+  function insigniaSalud(s) {
+    const tipo = s.healthLevel === "error" ? "error" : "advertencia";
+    const a = Object.assign(el("a", "insignia insignia--" + tipo), { href: "#laboratorio", title: T("alumnos.saludAyuda") });
+    a.append(icono("salud"), document.createTextNode(P("alumnos.alertasSalud", s.healthAlerts)));
+    return a;
+  }
+
+  $("lab-revisar").addEventListener("click", (e) => {
+    const b = e.currentTarget;
+    ocupado(b, true);
+    api.CheckHealth(destinoLab()).then((n) => toast("info", P("lab.revisando", n), T("lab.revisandoTexto")), fallo)
+      .finally(() => { ocupado(b, false); api.Lab().then(alLab, () => {}); });
+  });
+  $("lab-autodiagnostico").addEventListener("click", (e) => {
+    const b = e.currentTarget;
+    const n = destinoLab().length || conectados().filter((s) => s.canSelfTest).length;
+    confirmar({ titulo: P("lab.autodiagnosticoTitulo", n), texto: T("lab.autodiagnosticoTexto"), si: T("lab.autodiagnostico") }).then((si) => {
+      if (!si) return;
+      ocupado(b, true);
+      api.RunSelfTest(destinoLab()).then((k) => toast("info", P("lab.probandoN", k), T("lab.probandoTexto")), fallo)
+        .finally(() => ocupado(b, false));
+    });
+  });
+  for (const r of $$('input[name="lab-destino"]')) r.addEventListener("change", pintarLab);
+
+  // Ajustes › Salud: los destinos que se prueban y los umbrales de las alertas.
+  let saludAjustes = null;
+  const UMBRALES = [
+    ["diskMinGB", "salud.umbralDiscoGB", 1, 500, "archivo"], ["diskMinPct", "salud.umbralDiscoPct", 1, 50, "archivo"],
+    ["memoryMinPct", "salud.umbralMemoria", 1, 50, "app"], ["cpuMaxPct", "salud.umbralProcesador", 50, 100, "pantalla"],
+    ["cpuLimitMinPct", "salud.umbralFrecuencia", 10, 100, "pantalla"], ["clockMaxS", "salud.umbralReloj", 10, 3600, "reloj"],
+    ["wifiMinPct", "salud.umbralWifi", 1, 100, "red"], ["batteryMinPct", "salud.umbralBateria", 1, 90, "energia"],
+    ["batteryWearMaxPct", "salud.umbralDesgaste", 10, 90, "energia"],
+  ];
+  function filaServicio(sv) {
+    const li = el("li", "fila-app");
+    const nombre = Object.assign(el("input"), { type: "text", value: sv.name || "", maxLength: 40, autocomplete: "off" });
+    nombre.className = "control fila-app__nombre";
+    nombre.dataset.icono = "etiqueta";
+    nombre.setAttribute("aria-label", T("salud.servicioNombre"));
+    nombre.placeholder = T("salud.servicioNombreEjemplo");
+    const dir = Object.assign(el("input"), { type: "text", value: sv.address || "", maxLength: 260, autocomplete: "off", spellcheck: false });
+    dir.className = "control fila-app__ruta mono";
+    dir.dataset.icono = "red";
+    dir.setAttribute("aria-label", T("salud.servicioDireccion"));
+    dir.placeholder = T("salud.servicioDireccionEjemplo");
+    const quitar = el("button", "btn btn--fantasma btn--icono btn--sm");
+    quitar.type = "button";
+    quitar.setAttribute("aria-label", T("salud.quitarServicio", { nombre: sv.name || T("salud.servicioNombre") }));
+    quitar.append(icono("cerrar"));
+    quitar.addEventListener("click", () => { li.remove(); $("aj-salud-agregar").disabled = false; $("aj-salud-agregar").focus(); });
+    for (const i of [nombre, dir]) i.addEventListener("input", () => { $("aj-salud-error").hidden = true; });
+    li.append(nombre, dir, quitar);
+    return li;
+  }
+  function pintarAjustesSalud(s) {
+    saludAjustes = s;
+    $("aj-salud-internet").value = s.targets.internet || "";
+    $("aj-salud-servicios").replaceChildren(...(s.targets.services || []).map(filaServicio));
+    $("aj-salud-agregar").disabled = (s.targets.services || []).length >= 8;
+    const th = s.thresholds;
+    const campos = UMBRALES.map(([k, t, min, max, ic]) => {
+      const l = el("label", "campo");
+      const i = Object.assign(el("input"), { type: "number", min, max, step: 1, value: th[k] });
+      i.className = "control";
+      i.dataset.umbral = k;
+      i.dataset.icono = ic;
+      l.append(el("span", "campo__etiqueta", T(t)), i);
+      return l;
+    });
+    const cable = el("label", "campo");
+    const sel = el("select", "control");
+    sel.dataset.umbral = "linkMinMbps";
+    sel.dataset.icono = "red";
+    for (const v of [10, 100, 1000]) sel.append(Object.assign(el("option", "", T("salud.mbps", { n: v })), { value: String(v), selected: th.linkMinMbps === v }));
+    cable.append(el("span", "campo__etiqueta", T("salud.umbralCable")), sel);
+    $("aj-salud-umbrales").replaceChildren(...campos, cable);
+    const off = new Set(th.off || []);
+    $("aj-salud-alertas").replaceChildren(...Object.keys(ALERTA).map((id) => {
+      const li = el("li");
+      const l = el("label", "opcion");
+      const i = Object.assign(el("input"), { type: "checkbox", checked: !off.has(id) });
+      i.className = "interruptor";
+      i.setAttribute("role", "switch");
+      i.dataset.alerta = id;
+      l.append(i, icono("advertencia"), el("span", "", T(ALERTA[id] + ".nombre")));
+      li.append(l);
+      return li;
+    }));
+    $("aj-salud-error").hidden = true;
+  }
+  function leerAjustesSalud() {
+    const th = {};
+    for (const i of $$("#aj-salud-umbrales [data-umbral]")) th[i.dataset.umbral] = Number(i.value);
+    th.off = $$("#aj-salud-alertas [data-alerta]").filter((i) => !i.checked).map((i) => i.dataset.alerta);
+    const services = $$("#aj-salud-servicios .fila-app").map((li) => {
+      const [n, d] = li.querySelectorAll("input");
+      return { name: n.value.trim(), address: d.value.trim() };
+    }).filter((sv) => sv.name || sv.address);
+    return { thresholds: th, targets: { internet: $("aj-salud-internet").value.trim(), services } };
+  }
+  $("tab-salud").addEventListener("click", () => api.HealthSettings().then(pintarAjustesSalud, fallo));
+  $("aj-salud-agregar").addEventListener("click", () => {
+    const li = filaServicio({});
+    $("aj-salud-servicios").append(li);
+    $("aj-salud-agregar").disabled = $("aj-salud-servicios").children.length >= 8;
+    li.querySelector("input").focus();
+  });
+  $("aj-salud-restaurar").addEventListener("click", () => api.DefaultHealthSettings().then((d) => {
+    // Restaura los umbrales y las alertas; los destinos que escribiste se quedan hasta que guardes.
+    const actual = leerAjustesSalud();
+    pintarAjustesSalud({ thresholds: d.thresholds, targets: actual.targets });
+  }, fallo));
+  $("aj-salud-guardar").addEventListener("click", (e) => {
+    const b = e.currentTarget;
+    ocupado(b, true);
+    api.SaveHealthSettings(leerAjustesSalud()).then((s) => {
+      pintarAjustesSalud(s);
+      toast("exito", T("salud.guardado"), T("salud.guardadoTexto"));
+    }, (err) => {
+      const m = amable(err);
+      $("aj-salud-error").textContent = m.titulo + ". " + m.texto;
+      $("aj-salud-error").hidden = false;
+    }).finally(() => ocupado(b, false));
+  });
+
   // --- Ajustes ---------------------------------------------------------------------------
   const pestanas = $$("#ajustes [role=tab]");
   function elegirPestana(t, foco) {
@@ -5074,6 +5469,7 @@
     aplicarTema(tema);
     elegirPestana($("tab-" + (pestana || "clase")), false);
     if (pestana === "apps") api.AllowedApps().then(pintarAppsAjustes, fallo);
+    if (pestana === "salud") api.HealthSettings().then(pintarAjustesSalud, fallo);
     $("ajustes").showModal();
   }
   $("nav-ajustes").addEventListener("click", () => abrirAjustes());
@@ -5359,6 +5755,7 @@
   rt.EventsOn(ev.TIMER, alTemporizador);
   rt.EventsOn(ev.CLASS_END, pintarTerminar);
   rt.EventsOn(ev.ROOM, alSalon);
+  rt.EventsOn(ev.LAB, alLab);
   rt.EventsOn(ev.POLLS, pintarEncuestas);
   rt.EventsOn(ev.FILES, pintarArchivos);
   rt.EventsOn(ev.COLLECTIONS, pintarRecolecciones);

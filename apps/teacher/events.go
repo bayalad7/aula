@@ -80,6 +80,10 @@ const (
 	// label, a seat, the size, an import, a new or renamed computer, or the
 	// simulated students taking seats (prompt 10.15).
 	EventRoom = "aula:room"
+	// EventLab carries a LabView whenever a computer reports its health, its
+	// clock or alerts change, a self-test answers or Ajustes › Salud is
+	// saved (§5.27).
+	EventLab = "aula:lab"
 )
 
 // Setup is what the channel selection screen needs.
@@ -141,6 +145,12 @@ type Student struct {
 	CanPause       bool `json:"canPause"`    // screen.freeze (Windows agents; never simulated students)
 	CanClassEnd    bool `json:"canClassEnd"` // class.end: leaves its window clean when the class ends (§5.25)
 	CanLabel       bool `json:"canLabel"`    // computer.label: shows its label to the student (§5.26)
+	CanHealth      bool `json:"canHealth"`   // health: reports the health of its computer (§5.27)
+	CanSelfTest    bool `json:"canSelfTest"` // health.selftest: runs the self-test on demand
+	// HealthAlerts and HealthLevel are the badge of the list: how many health
+	// alerts its computer has and the worst ("warn", "error"; "" none).
+	HealthAlerts int    `json:"healthAlerts"`
+	HealthLevel  string `json:"healthLevel"`
 	// Pause is this student's pause (screen.Pause*: sent, paused, resuming,
 	// failed; "" without one) and PauseUnacked whether the agent has not
 	// answered within screen.AckWait.

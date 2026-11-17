@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bayalad7/aula/internal/health"
 	"github.com/bayalad7/aula/internal/protocol"
 )
 
@@ -138,6 +139,27 @@ func TestErrorCodesLinkToTheManual(t *testing.T) {
 	}
 	if r := app.ManualSearch("firewall"); len(r) == 0 {
 		t.Error("searching the manual for firewall found nothing")
+	}
+}
+
+// Every health alert of Laboratorio links to what to do in the manual
+// (prompt 10.25).
+func TestHealthAlertsLinkToTheManual(t *testing.T) {
+	app := NewApp(t.TempDir(), nil, nil, &fakeHotkeys{}, quiet)
+	v, err := app.Manual()
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, _, _ := app.loadManual()
+	for _, id := range health.AllAlerts {
+		href, ok := v.HealthAlerts[id]
+		if !ok {
+			t.Errorf("alert %q has no manual link in healthAlertHelp", id)
+			continue
+		}
+		if !m.Resolves(href, "", nil) {
+			t.Errorf("alert %q links to %q, which is not a section of the manual", id, href)
+		}
 	}
 }
 

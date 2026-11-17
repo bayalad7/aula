@@ -17,6 +17,7 @@ import (
 	"github.com/bayalad7/aula/internal/codedist"
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/filepush"
+	"github.com/bayalad7/aula/internal/health"
 	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/participation"
 	"github.com/bayalad7/aula/internal/platform"
@@ -125,6 +126,11 @@ type App struct {
 
 	checks *connectChecks // the connection checker (CheckConnection)
 
+	// lab is the health of the lab's computers (§5.27): only in memory;
+	// healthSt, who got the destinations of Ajustes › Salud.
+	lab      *health.Lab
+	healthSt *healthState
+
 	// roomSt is the plan of the open channel (prompt 10.15); guarded by mu.
 	// chooseSave and chooseOpen are the system dialogs of Exportar and
 	// Importar (replaced in tests).
@@ -177,6 +183,7 @@ func NewApp(dir string, clip platform.Clipboard, clipErr error, hotkeys platform
 	a.checks = newConnectChecks(log)
 	a.ends = classend.NewClass(func() time.Time { return a.now() })
 	a.chooseSave, a.chooseOpen = a.saveFileDialog, a.openFileDialog
+	a.initHealth()
 	return a
 }
 
@@ -201,6 +208,7 @@ func (a *App) startup(ctx context.Context) {
 	if err != nil {
 		a.log.Warn("capture hotkey unavailable", "err", err)
 	}
+	go a.healthLoop(ctx) // the clocks of the computers, from their heartbeats (§5.27.6)
 	if a.autoStart {
 		// Like LanSchool: open on the default channel right away.
 		go a.startDefault()
@@ -272,7 +280,7 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 		onBroadcast: a.onBroadcastMessage, onPolicyAck: a.onPolicyAck, onPower: a.onPowerMessage, onPause: a.onPauseMessage,
 		onRemote: a.onRemoteMessage, onSnapshot: a.onSnapshotMessage, onClassroom: a.onClassroomMessage,
 		onTimer: a.onTimerAck, onPoll: a.onPollMessage, onFile: a.onFileMessage, onOpen: a.onOpenMessage, onClassEnd: a.onClassEndAck,
-		onError: a.onAgentError}, a.log)
+		onHealth: a.onHealthMessage, onError: a.onAgentError}, a.log)
 	if err != nil {
 		return View{}, err
 	}
@@ -286,8 +294,9 @@ func (a *App) StartClass(channel, consoleName string) (View, error) {
 	a.pauses.Reset() // nor its pauses
 	a.opens.Clear()  // nor its openings
 	a.emit(EventOpens, a.OpenOrders())
-	a.resetTimer() // nor its timer
-	a.resetPolls() // nor its polls
+	a.resetTimer()  // nor its timer
+	a.resetPolls()  // nor its polls
+	a.resetHealth() // another channel is another lab
 	a.openRoom(info.Channel)
 
 	s := loadSettings(a.dir)
@@ -659,6 +668,7 @@ func (a *App) onChange() {
 	a.syncPolls(class)                                        // and the open poll, or how it ended
 	a.syncCollections(class)                                  // and the folders of the open collections
 	a.syncPauses(class)                                       // who left is not paused any more (rule 10)
+	a.syncHealth(class)                                       // who joins gets the destinations (§5.27.1)
 }
 
 // onFrame forwards a thumbnail of the stream in force to the screens view.
@@ -709,7 +719,8 @@ func studentsOf(list []session.Session) Students {
 			CanOpenURL: s.Can(protocol.CapOpenURL), CanOpenApp: s.Can(protocol.CapOpenApp),
 			CanPresent: s.Can(protocol.CapScreenPresent), CanPresentView: s.Can(protocol.CapScreenPresentView),
 			CanPause: s.Can(protocol.CapScreenFreeze), CanClassEnd: s.Can(protocol.CapClassEnd),
-			CanLabel: s.Can(protocol.CapComputerLabel),
+			CanLabel:  s.Can(protocol.CapComputerLabel),
+			CanHealth: s.Can(protocol.CapHealth), CanSelfTest: s.Can(protocol.CapHealthSelfTest),
 		}
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))

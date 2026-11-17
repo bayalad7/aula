@@ -326,4 +326,19 @@ a.insignia:hover { text-decoration: underline; }
   [data-vista-de=participacion] > .vista__cuerpo { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
   [data-vista-de=participacion] > .vista__cuerpo > section:first-of-type { grid-row: auto; }
 }
+
+/* --- Laboratorio: la salud de los equipos (prompt 10.25) --------------------------------- */
+.tabla-lab .tabla-lab__abrir { padding-inline: var(--e-1); font-weight: var(--peso-medio); white-space: nowrap; }
+.tabla-lab__alertas { display: flex; flex-wrap: wrap; gap: var(--e-1); }
+.tabla-lab .tabla-lab__red { white-space: nowrap; }
+.tabla-lab tr.tabla-lab__apagado td { color: var(--c-texto-suave); }
+.tabla-lab tr.tabla-lab__detalle td { background: var(--c-superficie-2); }
+.tabla-lab tr.tabla-lab__detalle:hover td { background: var(--c-superficie-2); }
+.tabla-lab__pruebas { display: flex; flex-wrap: wrap; gap: var(--e-1); }
+.tabla-lab--sin-bateria .lab-col-bateria { display: none; }
+/* En una ventana angosta, las alertas dicen lo importante: los demás datos, al abrir la fila. */
+@container (max-width: 58rem) { .tabla-lab .lab-col-extra { display: none; } }
+.rejilla-salud { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: var(--e-2) var(--e-3); }
+#aj-salud h4 { margin-top: var(--e-3); }
+#ficha-salud-alertas .aviso-en-linea { font-size: var(--t-sm); }
 }

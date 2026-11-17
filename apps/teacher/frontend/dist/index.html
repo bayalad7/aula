@@ -62,6 +62,8 @@
       <a href="#cuestionarios" data-vista="cuestionarios"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#cuestionario"/></svg><span class="nav-lateral__texto" data-t="nav.cuestionarios"></span></a>
       <a href="#participacion" data-vista="participacion"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#participacion"/></svg><span class="nav-lateral__texto"><span data-t="nav.participacion"></span><span class="solo-lector" id="nav-participacion-lector"></span></span><span class="nav-lateral__contador" id="nav-participacion-contador" aria-hidden="true"></span></a>
       <p class="nav-lateral__grupo" data-t="nav.grupoPruebas"></p>
+      <!-- Laboratorio (prompt 10.25): la salud de los equipos, antes de clase; su contador son los equipos con alertas. -->
+      <a href="#laboratorio" data-vista="laboratorio"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salud"/></svg><span class="nav-lateral__texto"><span data-t="nav.laboratorio"></span><span class="solo-lector" id="nav-lab-lector"></span></span><span class="nav-lateral__contador" id="nav-lab-contador" aria-hidden="true"></span></a>
       <a href="#simulada" data-vista="simulada"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#simulado"/></svg><span class="nav-lateral__texto" data-t="nav.simulada"></span></a>
       <div class="nav-lateral__pie">
         <a href="#ayuda" data-vista="ayuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg><span class="nav-lateral__texto" data-t="nav.ayuda"></span></a>
@@ -673,6 +675,50 @@
             </div>
           </section>
 
+          <!-- ============ Laboratorio: la salud de los equipos (prompt 10.25, §5.27) ============ -->
+          <section data-vista-de="laboratorio" aria-labelledby="h-laboratorio" class="vista__seccion" hidden>
+            <header class="vista__cabecera">
+              <h1 id="h-laboratorio" data-t="lab.titulo"></h1>
+              <div class="resumen" id="lab-resumen" aria-live="polite"></div>
+              <button type="button" class="btn btn--fantasma btn--icono" data-ayuda-contextual data-t-aria-label="ayuda.contextual" data-t-tip="ayuda.contextual"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#ayuda"/></svg></button>
+            </header>
+            <div class="vista__cuerpo pila">
+              <section class="tarjeta" aria-labelledby="h-lab-equipos">
+                <div class="tarjeta__cabecera"><h2 id="h-lab-equipos" data-t="lab.equipos"></h2>
+                  <label class="alternable" data-t-ayuda="lab.soloAlertasTip"><input type="checkbox" class="interruptor" id="lab-solo-alertas" role="switch"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#filtro"/></svg><span data-t="lab.soloAlertas"></span></label>
+                </div>
+                <div class="tarjeta__cuerpo pila">
+                  <p class="pequeno suave" data-t="lab.ayuda"></p>
+                  <div class="pie-envio">
+                    <fieldset class="pie-envio__destino">
+                      <legend class="campo__etiqueta" data-t="codigo.enviarA"></legend>
+                      <div class="opciones-seg">
+                        <label class="opcion-seg"><input type="radio" name="lab-destino" value="todos" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#alumnos"/></svg> <span id="lab-destino-todos"></span></label>
+                        <label class="opcion-seg"><input type="radio" name="lab-destino" value="seleccion" id="lab-destino-seleccion-radio"> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#filtro"/></svg> <span id="lab-destino-seleccion"></span></label>
+                      </div>
+                    </fieldset>
+                    <div class="pie-envio__acciones pie-envio__acciones--fila">
+                      <button type="button" class="btn btn--primario" id="lab-revisar" data-t-ayuda="lab.revisarAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#reiniciar"/></svg><span data-t="lab.revisar"></span></button>
+                      <button type="button" class="btn" id="lab-autodiagnostico" data-t-ayuda="lab.autodiagnosticoAyuda"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#prueba"/></svg><span data-t="lab.autodiagnostico"></span></button>
+                    </div>
+                  </div>
+                  <p class="pequeno suave" id="lab-nota" role="status"></p>
+                  <div class="vacio" id="lab-vacio" hidden>
+                    <svg class="icono icono--xl" aria-hidden="true"><use href="sistema/iconos.svg#salud"/></svg>
+                    <h2 id="lab-vacio-titulo"></h2>
+                    <p id="lab-vacio-texto"></p>
+                  </div>
+                  <div class="tabla-adaptable" id="lab-tabla-caja">
+                    <table class="tabla tabla-lab" id="lab-tabla" aria-labelledby="h-lab-equipos">
+                      <thead><tr><th class="col-num" scope="col">#</th><th scope="col" data-t="lab.colEquipo"></th><th scope="col" data-t="lab.colAlertas"></th><th scope="col" class="col-cantidad" data-t="lab.colDisco"></th><th scope="col" class="col-cantidad lab-col-extra" data-t="lab.colMemoria"></th><th scope="col" class="col-cantidad lab-col-extra" data-t="lab.colProcesador"></th><th scope="col" class="col-fija lab-col-extra" data-t="lab.colReloj"></th><th scope="col" class="lab-col-extra" data-t="lab.colRed"></th><th scope="col" class="lab-col-bateria lab-col-extra" data-t="lab.colBateria"></th><th scope="col" data-t="lab.colAutodiagnostico"></th></tr></thead>
+                      <tbody id="lab-filas"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
           <!-- ============ Ayuda: el manual (docs/administracion) ============ -->
           <section data-vista-de="ayuda" aria-labelledby="h-ayuda" class="vista__seccion" hidden>
             <header class="vista__cabecera">
@@ -781,6 +827,14 @@
               <div class="pila-mini"><strong id="ficha-error-titulo"></strong><span id="ficha-error-texto"></span><a id="ficha-error-ayuda" data-t="ayuda.verEnManual"></a></div>
             </div>
             <dl class="ficha" id="ficha-datos"></dl>
+            <!-- Salud del equipo (prompt 10.25): solo informa; «Revisar ahora» está en Laboratorio. -->
+            <div class="pila-mini" id="ficha-salud">
+              <h3 data-t="ficha.salud"></h3>
+              <p class="pequeno suave" id="ficha-salud-cuando"></p>
+              <ul class="lista-limpia pila-mini" id="ficha-salud-alertas"></ul>
+              <dl class="ficha" id="ficha-salud-datos"></dl>
+              <a class="pequeno" href="#laboratorio" data-t="ficha.saludVer"></a>
+            </div>
             <!-- Las acciones sobre el alumno están en la Pantalla grande (nota de interfaz 5). -->
             <div class="pila-mini">
               <h3 class="con-info"><span data-t="ficha.puede"></span><button type="button" class="info-boton" data-info="capacidades" aria-expanded="false"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg></button></h3>
@@ -1344,6 +1398,7 @@
         <button type="button" role="tab" id="tab-apariencia" aria-controls="aj-apariencia" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#sol"/></svg><span data-t="ajustes.apariencia"></span></button>
         <button type="button" role="tab" id="tab-apps" aria-controls="aj-apps" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#app"/></svg><span data-t="ajustes.apps"></span></button>
         <button type="button" role="tab" id="tab-salon" aria-controls="aj-salon" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salon"/></svg><span data-t="ajustes.salon"></span></button>
+        <button type="button" role="tab" id="tab-salud" aria-controls="aj-salud" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#salud"/></svg><span data-t="ajustes.salud"></span></button>
         <button type="button" role="tab" id="tab-acerca" aria-controls="aj-acerca" aria-selected="false" tabindex="-1"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#info"/></svg><span data-t="ajustes.acerca"></span></button>
       </div>
     </div>
@@ -1402,6 +1457,29 @@
             <button type="button" class="btn" id="aj-salon-exportar" data-icono="guardar" data-t="salon.exportar"></button>
             <button type="button" class="btn" id="aj-salon-importar" data-icono="archivo" data-t="salon.importar"></button>
           </div>
+        </div>
+      </section>
+      <!-- Salud (prompt 10.25): los destinos que se prueban y cuándo un dato es alerta. -->
+      <section role="tabpanel" id="aj-salud" aria-labelledby="tab-salud" hidden>
+        <h3 data-t="ajustes.salud"></h3>
+        <p class="pequeno" data-t="salud.ajustesAyuda"></p>
+        <h4 data-t="salud.destinos"></h4>
+        <label class="campo"><span class="campo__etiqueta" data-t="salud.internetDireccion"></span>
+          <input type="text" class="control mono" id="aj-salud-internet" maxlength="260" autocomplete="off" spellcheck="false" data-icono="red" aria-describedby="aj-salud-internet-ayuda">
+          <span class="pequeno suave" id="aj-salud-internet-ayuda" data-t="salud.internetAyuda"></span></label>
+        <p class="campo__etiqueta" data-t="salud.servicios"></p>
+        <p class="pequeno suave" data-t="salud.serviciosAyuda"></p>
+        <ul class="lista-limpia pila-mini" id="aj-salud-servicios"></ul>
+        <div class="grupo-botones"><button type="button" class="btn btn--sm" id="aj-salud-agregar" data-icono="mas" data-t="salud.agregarServicio"></button></div>
+        <h4 data-t="salud.umbrales"></h4>
+        <div class="rejilla-salud" id="aj-salud-umbrales"></div>
+        <h4 data-t="salud.alertas"></h4>
+        <p class="pequeno suave" data-t="salud.alertasAyuda"></p>
+        <ul class="lista-limpia rejilla-salud" id="aj-salud-alertas"></ul>
+        <p class="campo__error" id="aj-salud-error" role="alert" hidden></p>
+        <div class="grupo-botones">
+          <button type="button" class="btn btn--fantasma" id="aj-salud-restaurar" data-icono="reiniciar" data-t="salud.restaurar"></button>
+          <button type="button" class="btn btn--primario" id="aj-salud-guardar"><svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#guardar"/></svg><span data-t="salud.guardar"></span></button>
         </div>
       </section>
       <section role="tabpanel" id="aj-acerca" aria-labelledby="tab-acerca" hidden>

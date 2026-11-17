@@ -28,4 +28,5 @@ window.AulaEvents = Object.freeze({
   PRESENT_SIGNAL: "aula:present-signal",
   CLASS_END: "aula:class-end",
   ROOM: "aula:room",
+  LAB: "aula:lab",
 });

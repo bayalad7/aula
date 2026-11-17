@@ -69,6 +69,9 @@ type classHooks struct {
 	// onClassEnd receives class.end.ack, from real and simulated students
 	// (§5.25).
 	onClassEnd func(sessionID string, p protocol.ClassEndAck)
+	// onHealth receives health.report and health.selftest.result, from real
+	// and simulated students (§5.27).
+	onHealth func(sessionID string, env protocol.Envelope)
 	// onError receives every error message of a student, real or simulated.
 	onError func(sessionID string, p protocol.ErrorPayload)
 }
@@ -291,6 +294,10 @@ func simulatedMessages(h classHooks) func(context.Context, *transport.Conn, prot
 			if h.onClassEnd != nil {
 				h.onClassEnd(conn.ID(), p)
 			}
+		case protocol.HealthReport, protocol.HealthSelfTestResult:
+			if h.onHealth != nil {
+				h.onHealth(conn.ID(), env)
+			}
 		case protocol.FilePushAck, protocol.FileCollectAck, protocol.FileCollectResponse:
 			if h.onFile != nil {
 				h.onFile(conn.ID(), env)
@@ -379,6 +386,10 @@ func startLiveClass(ctx context.Context, cfg classConfig, hooks classHooks, log 
 			case protocol.ClassEndAck:
 				if hooks.onClassEnd != nil {
 					hooks.onClassEnd(conn.ID(), p)
+				}
+			case protocol.HealthReport, protocol.HealthSelfTestResult:
+				if hooks.onHealth != nil {
+					hooks.onHealth(conn.ID(), env)
 				}
 			case protocol.FilePushAck, protocol.FileCollectAck, protocol.FileCollectResponse:
 				if hooks.onFile != nil {

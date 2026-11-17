@@ -12,6 +12,7 @@ import (
 	"github.com/bayalad7/aula/internal/collect"
 	"github.com/bayalad7/aula/internal/connectcheck"
 	"github.com/bayalad7/aula/internal/filepush"
+	"github.com/bayalad7/aula/internal/health"
 	"github.com/bayalad7/aula/internal/openapp"
 	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/remote"
@@ -179,6 +180,13 @@ func TestTextsAreComplete(t *testing.T) {
 	}
 	for _, r := range []protocol.ClassEndReason{protocol.ClassEndRestrictions, protocol.ClassEndPause, protocol.ClassEndInternal} {
 		need("terminar.motivo."+string(r), "main.js (class.end.ack reason)")
+	}
+	// Laboratorio (internal/health): each alert has its title, what to do
+	// and its name in Ajustes › Salud.
+	for _, id := range health.AllAlerts {
+		for _, part := range []string{"titulo", "texto", "nombre"} {
+			need("saludAlerta."+string(id)+"."+part, "main.js (health.Alert)")
+		}
 	}
 	// Error texts are chosen by the code Go returns (errores.go).
 	for _, code := range errorCodes {

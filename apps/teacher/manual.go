@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/bayalad7/aula/docs"
+	"github.com/bayalad7/aula/internal/health"
 	"github.com/bayalad7/aula/internal/manual"
 	"github.com/bayalad7/aula/internal/protocol"
 )
@@ -26,6 +27,30 @@ type ManualView struct {
 	// AgentErrors links the protocol error codes the students send.
 	AgentErrors map[protocol.ErrorCode]string `json:"agentErrors"`
 	Tree        *manual.Tree                  `json:"diagnosis"` // «¿Falta un alumno?»; nil if it could not be read
+	// HealthAlerts links each health alert of Laboratorio to what to do
+	// (prompt 10.25).
+	HealthAlerts map[health.AlertID]string `json:"healthAlerts"`
+}
+
+// healthAlertHelp is the section of the manual each health alert links to.
+// TestHealthAlertsLinkToTheManual checks every alert has one and it exists.
+var healthAlertHelp = map[health.AlertID]string{
+	health.AlertDiskSystem:    "solucion-de-problemas#un-equipo-tiene-el-disco-casi-lleno",
+	health.AlertDiskDocuments: "solucion-de-problemas#un-equipo-tiene-el-disco-casi-lleno",
+	health.AlertDiskFailing:   "solucion-de-problemas#el-disco-de-un-equipo-tiene-fallas",
+	health.AlertMemory:        "solucion-de-problemas#un-equipo-tiene-poca-memoria-o-el-procesador-saturado",
+	health.AlertCPUBusy:       "solucion-de-problemas#un-equipo-tiene-poca-memoria-o-el-procesador-saturado",
+	health.AlertCPUHot:        "solucion-de-problemas#el-procesador-de-un-equipo-está-limitado",
+	health.AlertReboot:        "solucion-de-problemas#un-equipo-espera-un-reinicio",
+	health.AlertClock:         "solucion-de-problemas#el-reloj-de-un-equipo-está-desfasado",
+	health.AlertNoDNS:         "solucion-de-problemas#un-equipo-no-tiene-internet",
+	health.AlertNoInternet:    "solucion-de-problemas#un-equipo-no-tiene-internet",
+	health.AlertLinkSlow:      "solucion-de-problemas#el-cable-de-red-de-un-equipo-va-lento",
+	health.AlertWiFiWeak:      "solucion-de-problemas#un-equipo-se-conecta-por-wi-fi",
+	health.AlertWiFiCable:     "solucion-de-problemas#un-equipo-se-conecta-por-wi-fi",
+	health.AlertOnBattery:     "solucion-de-problemas#un-equipo-funciona-con-batería",
+	health.AlertBatteryLow:    "solucion-de-problemas#un-equipo-funciona-con-batería",
+	health.AlertBatteryWorn:   "solucion-de-problemas#un-equipo-funciona-con-batería",
 }
 
 var (
@@ -44,7 +69,7 @@ func (a *App) loadManual() (*manual.Manual, ManualView, error) {
 			return
 		}
 		v := ManualView{Pages: m.Pages, Diagrams: m.Diagrams, Images: map[string]string{}, Errors: errorHelp,
-			AgentErrors: agentAndFileHelp()}
+			AgentErrors: agentAndFileHelp(), HealthAlerts: healthAlertHelp}
 		for name, b := range m.Images {
 			v.Images[name] = "data:" + imageType(name) + ";base64," + base64.StdEncoding.EncodeToString(b)
 		}

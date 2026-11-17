@@ -108,6 +108,12 @@ const (
 	codeRoomComputerGone     = "roomComputerGone"
 	codeRoomSpecialPlace     = "roomSpecialPlace"
 	codeLabelInvalid         = "labelInvalid"
+	codeHealthNoTargets      = "healthNoTargets"
+	codeHealthTooSoon        = "healthTooSoon"
+	codeHealthBusy           = "healthBusy"
+	codeHealthThreshold      = "healthThreshold"
+	codeHealthTarget         = "healthTarget"
+	codeHealthNotSaved       = "healthNotSaved"
 )
 
 // errorCodes lists them all, for the test and the frontend contract.
@@ -130,6 +136,7 @@ var errorCodes = []string{
 	codeInvalidURL, codeNoOpenTargets, codeOpenAppGone, codeAllowedAppInvalid, codeAllowedAppsNotSaved,
 	codePresentUnsupported, codePresentFailed, codeEndBusy,
 	codeRoomInvalid, codeRoomOtherChannel, codeRoomNotSaved, codeRoomComputerGone, codeRoomSpecialPlace, codeLabelInvalid,
+	codeHealthNoTargets, codeHealthTooSoon, codeHealthBusy, codeHealthThreshold, codeHealthTarget, codeHealthNotSaved,
 }
 
 // errorHelp is the section of the manual (docs/administracion) that each
@@ -231,6 +238,12 @@ var errorHelp = map[string]string{
 	codeRoomComputerGone:     "salon#acomodar-el-salón",
 	codeRoomSpecialPlace:     "salon#lugares-especiales",
 	codeLabelInvalid:         "salon#etiquetas-de-los-equipos",
+	codeHealthNoTargets:      "laboratorio#revisar-ahora",
+	codeHealthTooSoon:        "laboratorio#revisar-ahora",
+	codeHealthBusy:           "laboratorio#autodiagnóstico",
+	codeHealthThreshold:      "ajustes#salud",
+	codeHealthTarget:         "ajustes#salud",
+	codeHealthNotSaved:       "ajustes#salud",
 }
 
 // codedError is an error the UI can explain by its code.

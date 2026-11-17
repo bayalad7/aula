@@ -107,6 +107,12 @@ const (
 	TypeClassEndAck Type = "class.end.ack"
 	// The label of the computer in the classroom plan (docs/protocol.md §5.26).
 	TypeComputerLabel Type = "computer.label"
+	// Health of the computer (docs/protocol.md §5.27).
+	TypeHealthConfig         Type = "health.config"
+	TypeHealthRequest        Type = "health.request"
+	TypeHealthReport         Type = "health.report"
+	TypeHealthSelfTest       Type = "health.selftest"
+	TypeHealthSelfTestResult Type = "health.selftest.result"
 )
 
 var typePattern = regexp.MustCompile(`^[a-z]+(\.[a-z]+)+$`)
@@ -352,6 +358,12 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeClassEndAck: decodeAs[ClassEndAck],
 
 	TypeComputerLabel: decodeAs[ComputerLabel],
+
+	TypeHealthConfig:         decodeAs[HealthConfig],
+	TypeHealthRequest:        decodeAs[HealthRequest],
+	TypeHealthReport:         decodeAs[HealthReport],
+	TypeHealthSelfTest:       decodeAs[HealthSelfTest],
+	TypeHealthSelfTestResult: decodeAs[HealthSelfTestResult],
 }
 
 func decodeAs[T Payload](raw json.RawMessage) (Payload, error) {

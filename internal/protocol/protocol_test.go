@@ -157,6 +157,15 @@ func samplePayloads() []Payload {
 		ClassEndAck{RefID: testRefID, EndID: testRefID, Status: ClassEndFailed, Reason: ClassEndRestrictions},
 		ComputerLabel{Label: "Fila 2 · PC07"},
 		ComputerLabel{Label: ""},
+		HealthConfig{},
+		HealthConfig{Internet: &HealthTarget{Host: "www.google.com", Port: 443},
+			Services: []HealthService{{Name: "Licencias", Host: "lic.escuela.local", Port: 27000}, {Name: "Git", Host: "10.0.0.5", Port: 22}}},
+		HealthRequest{},
+		sampleHealthReport(),
+		HealthReport{Seq: 2, Reason: HealthOnDemand, RefID: testRefID},
+		HealthSelfTest{TestID: testRefID},
+		sampleSelfTestResult(),
+		HealthSelfTestResult{RefID: testSnippetID, TestID: testRefID, Status: SelfTestBusy},
 		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15,
 			Source: &BroadcastSource{Kind: BroadcastSourceStudent, Hostname: "LAB3-PC07"}},
 		ScreenBroadcastStart{BroadcastID: testRefID, Width: 1280, Height: 720, FPS: 15, Mode: BroadcastWindow},
@@ -606,17 +615,19 @@ func TestRequiredCapability(t *testing.T) {
 		TypeStudentPresentStart: CapScreenPresent, TypeStudentPresentOffer: CapScreenPresent,
 		TypeStudentPresentICE: CapScreenPresent, TypeStudentPresentStop: CapScreenPresent,
 		TypeClassEnd: CapClassEnd, TypeComputerLabel: CapComputerLabel,
+		TypeHealthConfig: CapHealth, TypeHealthRequest: CapHealth, TypeHealthSelfTest: CapHealthSelfTest,
 	} {
 		if c, ok := RequiredCapability(typ); !ok || c != want {
 			t.Errorf("%s requires %q, %v; want %q", typ, c, ok, want)
 		}
 	}
-	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote, TypeStudentPresentAck, TypeStudentPresentAnswer, TypeScreenFreezeAck, TypeClassEndAck} {
+	for _, typ := range []Type{TypeScreenThumbFrame, TypeScreenBroadcastAnswer, TypeAppBlockAck, TypeWebFilterAck, TypePowerAck, TypeRemoteAck, TypeScreenSnapshotResponse, TypeTimerAck, TypeOpenAck, TypePollAck, TypePollVote, TypeStudentPresentAck, TypeStudentPresentAnswer, TypeScreenFreezeAck, TypeClassEndAck, TypeHealthReport, TypeHealthSelfTestResult} {
 		if _, ok := RequiredCapability(typ); ok {
 			t.Errorf("%s goes to the console and must not require a capability", typ)
 		}
 	}
-	for typ, want := range map[Type]Capability{TypeHandRaise: CapHand, TypeHandLower: CapHand, TypeMsgStudent: CapMsgStudent, TypePollVote: CapPoll} {
+	for typ, want := range map[Type]Capability{TypeHandRaise: CapHand, TypeHandLower: CapHand, TypeMsgStudent: CapMsgStudent, TypePollVote: CapPoll,
+		TypeHealthReport: CapHealth, TypeHealthSelfTestResult: CapHealthSelfTest} {
 		if c, ok := AgentCapability(typ); !ok || c != want {
 			t.Errorf("agent-started %s requires %q, %v; want %q", typ, c, ok, want)
 		}

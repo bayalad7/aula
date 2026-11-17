@@ -63,6 +63,12 @@ const (
 	// CapComputerLabel shows the label of the computer in the capabilities
 	// dialog (§5.26). Every OS, whenever the agent has a window.
 	CapComputerLabel Capability = "computer.label"
+	// CapHealth reports the health of the computer and accepts health.config
+	// and health.request (§5.27). Every OS, also without a session; a datum
+	// the OS cannot read does not travel.
+	CapHealth Capability = "health"
+	// CapHealthSelfTest runs the self-test on demand (§5.27.5). Windows.
+	CapHealthSelfTest Capability = "health.selftest"
 )
 
 // Capabilities reserved for future phases. No message requires them yet.
@@ -132,6 +138,10 @@ var requiredCapability = map[Type]Capability{
 	TypeClassEnd: CapClassEnd,
 
 	TypeComputerLabel: CapComputerLabel,
+
+	TypeHealthConfig:   CapHealth,
+	TypeHealthRequest:  CapHealth,
+	TypeHealthSelfTest: CapHealthSelfTest,
 }
 
 // agentCapability lists the capability an agent must have declared before the
@@ -141,6 +151,9 @@ var agentCapability = map[Type]Capability{
 	TypeHandLower:  CapHand,
 	TypeMsgStudent: CapMsgStudent,
 	TypePollVote:   CapPoll,
+
+	TypeHealthReport:         CapHealth,
+	TypeHealthSelfTestResult: CapHealthSelfTest,
 }
 
 // AgentCapability reports the capability an agent must have declared for the

@@ -3,7 +3,9 @@
  * Solo usa los tokens de tokens.css. Clases en español con modificadores
  * (bloque, bloque__parte, bloque--variante). El estado nunca se comunica solo
  * con color: siempre hay texto o icono. Catálogo: apps/teacher/frontend/dev.
+ * Capa «componentes» (orden en tokens.css, D-022).
  */
+@layer componentes {
 
 /* --- Base ---------------------------------------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
@@ -504,10 +506,25 @@ input.interruptor:focus-visible { outline: 2px solid var(--c-foco); outline-offs
 
 /* --- Estructura de la consola -------------------------------------------------------------------- */
 .app { display: grid; grid-template-columns: var(--ancho-nav) minmax(0, 1fr); height: 100%; }
+/* El Menú va sobre el secundario (el 30 % del 60-30-10, D-022): dentro de él, los tokens base
+   toman los del secundario y las reglas de abajo se leen igual sin reescribirlas. */
 .nav-lateral {
+  --c-texto: var(--c-secundario-texto);
+  --c-texto-suave: var(--c-secundario-suave);
+  --c-superficie-2: var(--c-secundario-2);
+  --c-borde: var(--c-secundario-borde);
+  --c-borde-fuerte: var(--c-secundario-suave);
+  --c-acento-suave: var(--c-secundario-elegido);
+  --c-acento-sobre-suave: var(--c-secundario-texto);
+  --c-marca-tinta: var(--c-secundario-texto);
+  --c-marca-nodo: var(--c-secundario-nodo);
+  --c-foco: var(--c-secundario-foco);
+  --c-error: var(--c-secundario-error);
+  color-scheme: dark;
   display: flex; flex-direction: column; gap: 2px;
   padding: var(--e-3) var(--e-2);
-  background: var(--c-superficie);
+  background: var(--c-secundario);
+  color: var(--c-texto);
   border-right: 1px solid var(--c-borde);
   overflow: auto;
 }
@@ -947,3 +964,34 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
 .capacidades > :nth-child(5n)[data-tip]:hover::after, #ficha-puede > :nth-child(5n)[data-tip]:hover::after { left: auto; right: 0; transform: none; }
 .dialogo__titulo { display: flex; align-items: center; gap: var(--e-2); }
 .dialogo__titulo h2 { flex: 1; min-width: 0; margin: 0; }
+
+/* --- Movimiento al aparecer (prompt 10.27, D-022) -------------------------------------------------
+   Sutil y solo CSS: el diálogo y su velo con fundido y un ligero acercamiento, también al cerrar
+   (allow-discrete mantiene el display mientras sale); el panel entra deslizándose y el aviso sube.
+   Sin @starting-style se abre sin animación. Las franjas y bandas no se animan (una banda de
+   transparencia se ve en el instante) y nada se mueve dentro de .alumno. «Reducir movimiento»
+   pone las duraciones en 0 (tokens.css). */
+.dialogo, .modal-ajustes {
+  transition:
+    opacity var(--mov-dialogo) var(--mov-curva),
+    scale var(--mov-dialogo) var(--mov-curva),
+    overlay var(--mov-dialogo) allow-discrete,
+    display var(--mov-dialogo) allow-discrete;
+}
+.dialogo:not([open]), .modal-ajustes:not([open]) { opacity: 0; scale: var(--mov-escala); }
+.dialogo::backdrop, .modal-ajustes::backdrop {
+  transition:
+    opacity var(--mov-dialogo) var(--mov-curva),
+    overlay var(--mov-dialogo) allow-discrete,
+    display var(--mov-dialogo) allow-discrete;
+}
+.dialogo:not([open])::backdrop, .modal-ajustes:not([open])::backdrop { opacity: 0; }
+@starting-style {
+  .dialogo[open], .modal-ajustes[open] { opacity: 0; scale: var(--mov-escala); }
+  .dialogo[open]::backdrop, .modal-ajustes[open]::backdrop { opacity: 0; }
+}
+.panel-lateral { transition: opacity var(--mov-panel) var(--mov-curva), translate var(--mov-panel) var(--mov-curva); }
+@starting-style { .panel-lateral { opacity: 0; translate: var(--mov-desliz-panel) 0; } }
+.toast { transition: opacity var(--mov-panel) var(--mov-curva), translate var(--mov-panel) var(--mov-curva); }
+@starting-style { .toast { opacity: 0; translate: 0 var(--mov-desliz-aviso); } }
+}

@@ -8,6 +8,11 @@
  * Referencia: docs/ux/DESIGN_SYSTEM.md.
  */
 
+/* El orden de la cascada (D-022): entre capas no cuenta la especificidad. La vista (style.css de
+   cada app) le gana a las utilidades, y estas a los componentes. */
+@layer tokens, componentes, utilidades, vista;
+
+@layer tokens {
 /* Plus Jakarta Sans (OFL, fuentes/OFL.txt) para los títulos: va dentro del binario, sin
    internet. Variable 200–800, solo el subconjunto latino (español incluido); lo demás cae a la
    pila del sistema. */
@@ -37,6 +42,18 @@
   /* Marca (logo Nodo): pantallas en la tinta del texto, punto en el acento */
   --c-marca-tinta: #1a1f2b;
   --c-marca-nodo: #1d4ed8;
+
+  /* Secundario: el 30 % del reparto 60-30-10, la estructura (el Menú; D-022). Es la tinta del
+     logo llevada a superficie; en oscuro, más hondo que el fondo. */
+  --c-secundario: #17213a;
+  --c-secundario-2: #222e4c;
+  --c-secundario-borde: #2c3858;
+  --c-secundario-texto: #e8ecf5;
+  --c-secundario-suave: #a9b4ca;
+  --c-secundario-elegido: #2b3f78;
+  --c-secundario-nodo: #7b9bff;
+  --c-secundario-foco: #8db4ff;
+  --c-secundario-error: #ff9b91;
 
   /* Acción principal */
   --c-acento: #1d4ed8;
@@ -130,6 +147,13 @@
   --ancho-panel: 25rem;
   --alto-control: 2.25rem;
   --transicion: 140ms ease-out;
+  /* Movimiento al aparecer (diálogos, paneles, avisos): sutil y corto; nunca en .alumno. */
+  --mov-dialogo: 180ms;
+  --mov-panel: 200ms;
+  --mov-curva: cubic-bezier(0.2, 0, 0, 1);
+  --mov-escala: 0.98;
+  --mov-desliz-panel: 1rem;
+  --mov-desliz-aviso: 0.5rem;
 }
 
 /* Oscuro: por el sistema, salvo que el usuario fije el claro. */
@@ -147,6 +171,15 @@
     --c-sombra-barra: rgb(0 0 0 / 0.35);
     --c-marca-tinta: #e7eaf0;
     --c-marca-nodo: #6b8cff;
+    --c-secundario: #0b0f19;
+    --c-secundario-2: #161d30;
+    --c-secundario-borde: #1f2940;
+    --c-secundario-texto: #e7eaf0;
+    --c-secundario-suave: #9aa6bd;
+    --c-secundario-elegido: #22356a;
+    --c-secundario-nodo: #6b8cff;
+    --c-secundario-foco: #8db4ff;
+    --c-secundario-error: #ff9b91;
     --c-acento: #3a66dd;
     --c-acento-hover: #2f5fd8;
     --c-acento-texto: #ffffff;
@@ -206,6 +239,15 @@
   --c-sombra-barra: rgb(0 0 0 / 0.35);
   --c-marca-tinta: #e7eaf0;
   --c-marca-nodo: #6b8cff;
+  --c-secundario: #0b0f19;
+  --c-secundario-2: #161d30;
+  --c-secundario-borde: #1f2940;
+  --c-secundario-texto: #e7eaf0;
+  --c-secundario-suave: #9aa6bd;
+  --c-secundario-elegido: #22356a;
+  --c-secundario-nodo: #6b8cff;
+  --c-secundario-foco: #8db4ff;
+  --c-secundario-error: #ff9b91;
   --c-acento: #3a66dd;
   --c-acento-hover: #2f5fd8;
   --c-acento-texto: #ffffff;
@@ -251,5 +293,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --transicion: 0ms; }
+  :root { --transicion: 0ms; --mov-dialogo: 0ms; --mov-panel: 0ms; }
+}
 }

@@ -1,0 +1,48 @@
+/* Sistema de diseño de Aula: utilidades de composición.
+ *
+ * Solo acomodan: dirección, hueco, rejilla y recorte de texto, siempre con tokens. Nunca color,
+ * sombra, radio, tamaño de título ni transición: eso es de los componentes (componentes.css).
+ * Ninguna anima, así que también valen dentro de .alumno (cuadrícula en vivo).
+ * Es una lista cerrada: una utilidad nueva se agrega aquí y en docs/ux/DESIGN_SYSTEM.md §6, y
+ * ui_test.go revisa que no traiga valores sueltos. Las de texto (.suave, .pequeno, .mono,
+ * .solo-lector) siguen en componentes.css.
+ *
+ * Capa «utilidades» (orden en tokens.css): le gana a los componentes y pierde contra la vista
+ * (style.css de cada app).
+ */
+@layer utilidades {
+  /* Apilar: una columna con hueco. */
+  .pila { display: grid; gap: var(--e-4); align-content: start; }
+  .pila-mini { display: grid; gap: var(--e-1); }
+
+  /* Una fila que envuelve, alineada abajo (campos con su etiqueta encima). */
+  .fila { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e-2) var(--e-3); }
+  .fila--centro { align-items: center; }
+  .fila > .crece, .crece { flex: 1; min-width: 12rem; }
+  /* Lo que sigue va al extremo de la fila. */
+  .empujar { margin-inline-start: auto; }
+  /* Ocupa lo que sobra y deja que su texto se recorte. */
+  .estirar { flex: 1 1 0; min-width: 0; }
+
+  /* Hueco de una pila, fila o rejilla (van después para ganarles). */
+  .gap-0 { gap: 0; }
+  .gap-1 { gap: var(--e-1); }
+  .gap-2 { gap: var(--e-2); }
+  .gap-3 { gap: var(--e-3); }
+  .gap-4 { gap: var(--e-4); }
+  .gap-5 { gap: var(--e-5); }
+  .gap-6 { gap: var(--e-6); }
+
+  /* Rejilla que se llena sola; el ancho mínimo de cada celda viene de --rejilla-min. */
+  .rejilla-auto {
+    display: grid; gap: var(--e-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(var(--rejilla-min, 14rem), 100%), 1fr));
+  }
+
+  .lista-limpia { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-2); }
+  .ancho-completo { width: 100%; }
+  .truncar { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .num { font-variant-numeric: tabular-nums; }
+  /* Lo de adentro puede preguntar por su ancho con @container. */
+  .contenedor { container-type: inline-size; }
+}

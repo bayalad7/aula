@@ -96,6 +96,11 @@ func TestTokensContrast(t *testing.T) {
 		{"c-sintaxis-cadena", "c-superficie-2"}, {"c-sintaxis-numero", "c-superficie-2"},
 		{"c-sintaxis-funcion", "c-superficie-2"}, {"c-sintaxis-tipo", "c-superficie-2"},
 		{"c-sintaxis-operador", "c-superficie-2"},
+		// The console's Menú, on the secondary color (the 30 % of 60-30-10).
+		{"c-secundario-texto", "c-secundario"}, {"c-secundario-texto", "c-secundario-2"},
+		{"c-secundario-suave", "c-secundario"}, {"c-secundario-suave", "c-secundario-2"},
+		{"c-secundario-texto", "c-secundario-elegido"},
+		{"c-secundario-error", "c-secundario"}, {"c-secundario-error", "c-secundario-2"},
 	}
 	ui := [][2]string{
 		{"c-borde-fuerte", "c-superficie"}, {"c-foco", "c-superficie"}, {"c-foco", "c-fondo"},
@@ -107,6 +112,10 @@ func TestTokensContrast(t *testing.T) {
 		{"c-marca-tinta", "c-fondo"}, {"c-marca-tinta", "c-superficie"},
 		{"c-marca-nodo", "c-fondo"}, {"c-marca-nodo", "c-superficie"},
 		{"c-sobre-solido", "c-error-solido"},
+		// The logo, the focus ring and the selected item on the Menú.
+		{"c-secundario-texto", "c-secundario"}, {"c-secundario-nodo", "c-secundario"},
+		{"c-secundario-foco", "c-secundario"}, {"c-secundario-foco", "c-secundario-2"},
+		{"c-secundario-foco", "c-secundario-elegido"},
 	}
 	light, darkAuto, darkManual := themeBlocks(t)
 	for name, theme := range map[string]map[string]string{"claro": light, "oscuro": darkManual} {

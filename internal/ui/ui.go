@@ -1,6 +1,7 @@
 // Package ui is the design system shared by the teacher console and the
 // student app: CSS tokens with light and dark themes (tokens.css), the
-// components (componentes.css) and the icon sprite (iconos.svg). There is a
+// components (componentes.css), the layout utilities (utilidades.css) and the
+// icon sprite (iconos.svg). There is a
 // single copy, here; each Wails frontend gets it under sistema/ through
 // Assets, so its HTML keeps linking "sistema/tokens.css".
 //
@@ -17,7 +18,7 @@ import (
 // Dir is where the design system appears in each frontend.
 const Dir = "sistema"
 
-//go:embed tokens.css componentes.css iconos.svg receptor-video.js iconos.js fuentes
+//go:embed tokens.css componentes.css utilidades.css iconos.svg receptor-video.js iconos.js fuentes
 var files embed.FS
 
 // Files returns the design system, with its files at the root.

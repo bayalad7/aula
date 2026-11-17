@@ -1,5 +1,7 @@
 /* Consola del profesor: solo lo propio de sus pantallas. Lo común (tokens,
-   botones, tablas, paneles, diálogos…) está en sistema/. */
+   botones, tablas, paneles, diálogos…) está en sistema/, y las utilidades de
+   composición (.pila, .fila…) en sistema/utilidades.css. Capa «vista» (D-022). */
+@layer vista {
 
 /* --- Arranque ---------------------------------------------------------------------------- */
 .arranque { display: grid; place-items: center; min-height: 100%; padding: var(--e-4); }
@@ -13,20 +15,12 @@
 /* El cuerpo crece con su contenido y nunca se encoge (notas 011 y 013): si no, una lista larga o
    el salón quedan debajo de la barra de acciones, sin desplazamiento, y la barra a media pantalla. */
 .vista__seccion > .vista__cuerpo { flex: 1 0 auto; }
-.ancho-completo { width: 100%; }
 /* Cabecera de Alumnos en una línea (nota 007): el título no se estira; los controles van a la derecha. */
 [data-vista-de=alumnos] > .vista__cabecera { column-gap: var(--e-3); }
 [data-vista-de=alumnos] > .vista__cabecera h1 { flex: 0 0 auto; min-width: 0; }
 [data-vista-de=alumnos] > .vista__cabecera .segmentado { margin-left: auto; }
 /* Barra de acciones (nota 008): el icono arriba, un poco más grande que en un botón en línea. */
 .barra-acciones .btn .icono { width: 1.2rem; height: 1.2rem; }
-
-/* --- Utilidades de composición ----------------------------------------------------------- */
-.pila { display: grid; gap: var(--e-4); align-content: start; }
-.pila-mini { display: grid; gap: var(--e-1); }
-.fila { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e-2) var(--e-3); }
-.fila > .crece, .crece { flex: 1; min-width: 12rem; }
-.lista-limpia { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--e-2); }
 
 /* --- Código ------------------------------------------------------------------------------ */
 .codigo-rejilla { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: var(--e-4); align-items: stretch; }
@@ -75,7 +69,7 @@
 .indice-manual .celda-sub { display: block; }
 
 /* --- Lista de alumnos: columna de la ficha y ficha de un alumno -------------------------- */
-.col-accion { width: 3rem; text-align: end; }
+.col-accion { width: 3rem; } /* su alineación es la de .tabla (componentes.css) */
 /* Con un panel lateral abierto o en ventana angosta, el sistema queda en la ficha. */
 body[data-panel] .col-sistema { display: none; }
 @media (max-width: 1100px) { .col-sistema { display: none; } }
@@ -218,8 +212,9 @@ a.insignia:hover { text-decoration: underline; }
 .tabla tbody tr[data-ficha="true"] td { background: var(--c-superficie-2); }
 .alumno[data-ficha="true"] { outline: 3px solid var(--c-acento); outline-offset: 2px; }
 .dialogo--form .privado-texto { min-height: 6rem; }
-/* 3 y 9: los títulos de las tablas, centrados. */
-.tabla thead th { text-align: center; }
+/* 3 y 9: los títulos de las tablas, centrados; los de cantidades y acciones siguen a sus datos
+   (componentes.css; con las capas de D-022 la especificidad ya no los separa). */
+.tabla thead th:not(.col-cantidad, .col-accion) { text-align: center; }
 /* 6: los conteos de la cabecera de Alumnos, de la altura de los botones de al lado. */
 #alumnos-resumen { align-items: center; }
 /* Los contadores y la selección (nota de interfaz v0.1.0 006) miden lo mismo que los controles. */
@@ -326,4 +321,5 @@ a.insignia:hover { text-decoration: underline; }
 @media (max-width: 1100px) {
   [data-vista-de=participacion] > .vista__cuerpo { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
   [data-vista-de=participacion] > .vista__cuerpo > section:first-of-type { grid-row: auto; }
+}
 }

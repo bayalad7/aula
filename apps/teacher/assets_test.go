@@ -16,7 +16,7 @@ func TestFrontendServesTheSharedDesignSystem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"index.html", "main.js", "textos.es-MX.js", "sistema/tokens.css", "sistema/componentes.css", "sistema/iconos.svg"} {
+	for _, name := range []string{"index.html", "main.js", "textos.es-MX.js", "sistema/tokens.css", "sistema/componentes.css", "sistema/utilidades.css", "sistema/iconos.svg"} {
 		if _, err := fs.Stat(files, name); err != nil {
 			t.Errorf("the console does not serve %s: %v", name, err)
 		}

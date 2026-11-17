@@ -330,10 +330,10 @@ La consola funciona a **900 × 600**.
 | Familia | Clases | Notas |
 |---|---|---|
 | Acción | `.btn` (`--primario`, `--fantasma`, `--peligro`, `--peligro-texto`, `--icono`, `--sm`, `--lg`, `--sobre-color`), `.grupo-botones`, `.segmentado`, `.rejilla-opciones` | Todo botón lleva icono (`data-icono`); deshabilitado sin opacidad; `aria-busy` muestra el giro |
-| Formularios | `.campo`, `.entrada` (`--area`, `--prefijo`), `.control`, `.opciones-seg` / `.opcion-seg`, `.interruptor`, `.opciones-tarjeta`, `.buscador`, `.zona-archivos` | Todo campo lleva icono; una casilla es un interruptor; los radios son opciones agrupadas |
+| Formularios | `.campo`, `.entrada` (`--area`, `--prefijo`), `.control`, `.opciones-seg` / `.opcion-seg`, `.interruptor`, `.alternable`, `.opciones-tarjeta`, `.buscador`, `.zona-archivos` | Todo campo lleva icono; una casilla es un interruptor; los radios son opciones agrupadas. `.alternable` es una casilla `role="switch"` que se ve como botón y toma el acento suave al activarse, para filtros de una vista (nota 019) |
 | Estado | `.insignia--*`, `.estado-conexion`, `.capacidades`, `.paso--*`, `.cargador`, `.esqueleto`, `.vacio` | Color + icono + texto |
 | Contenedores | `.tarjeta`, `.panel-lateral`, `.dialogo` (`--form`, `--peligro`), `.modal-ajustes`, `.detalles` | |
-| Avisos | `.toast--*`, `.aviso-en-linea--*`, `.franja--*`, `.bandas` | Franjas globales arriba del contenido; las bandas del alumno no se cierran |
+| Avisos | `.toast--*`, `.aviso-en-linea--*`, `.franja--*`, `.bandas`, `[data-tip]` | Franjas globales arriba del contenido; las bandas del alumno no se cierran. El tooltip `[data-tip]` sale arriba y centrado; en la Cabecera de la vista y en la tira del alumno sale abajo, y los últimos botones lo alinean a la derecha (nota 017) |
 | Datos | `.tabla`, `.tabla-adaptable`, `.barras` / `.barra-opcion`, `.bloque-codigo`, `.visor-diagrama` | La tabla pasa a tarjetas en ventana angosta |
 | Conversación | `.hilo`, `.burbuja` (`--propia`), `.burbuja__texto`, `.burbuja__cita`, `.burbuja__meta` | Un chat en orden: lo del otro a la izquierda y lo propio a la derecha con el acento suave; la hora y el estado en `__meta` (prompt 10.26, en las dos apps) |
 | Alumno (miniatura) | `.alumno`, `.alumno__monitor`, `.alumno__pantalla`, `.alumno__pie`, `.cuadricula-alumnos` | Ver reglas de rendimiento |

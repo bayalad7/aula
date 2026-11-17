@@ -1,0 +1,27 @@
+{
+  "n": 17,
+  "version": "v0.1.0",
+  "fecha": "2026-11-17T12:20:45.661Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "cabecera",
+    "nombre": "Cabecera de la vista",
+    "cadena": "Consola › Vista Alumnos › Cabecera de la vista"
+  },
+  "elemento": {
+    "etiqueta": "button#seleccionar-todos",
+    "texto": "Quitar selección",
+    "claveTexto": "",
+    "selector": "#seleccionar-todos"
+  },
+  "tipo": "estilo",
+  "texto": "Cuando se muestran los tooltips de ayuda para este botón y el \"¿Falta un alumno?\" y \"?\" no se visualizan completamente, solamente se ven a la mitad por que sale de la pantalla del navegador, no se si es recomendable cambiar la posición del tooltip cuando aparecen abajo o a mi izquierda"
+}

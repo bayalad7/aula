@@ -1,0 +1,27 @@
+{
+  "n": 19,
+  "version": "v0.1.0",
+  "fecha": "2026-11-17T12:26:56.927Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "alumnos",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "alumnos-apagados",
+    "nombre": "Mostrar apagados",
+    "cadena": "Consola › Vista Alumnos › Cabecera de la vista › Mostrar apagados"
+  },
+  "elemento": {
+    "etiqueta": "label#alumnos-apagados-campo",
+    "texto": "Mostrar en la lista los equipos que Aula conoce y no están conectados",
+    "claveTexto": "",
+    "selector": "#alumnos-apagados-campo"
+  },
+  "tipo": "estilo",
+  "texto": "Cambia el estilo input de check a y botón para que no abarque mucho ancho, el botón puede empezar desde el icono + el texto puede ser un botón que cuando se le de click para ver los apagados cambie su color de apariencia así igual como se ve cuando se activa el check o no un boton toggle"
+}

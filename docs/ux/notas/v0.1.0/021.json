@@ -1,0 +1,27 @@
+{
+  "n": 21,
+  "version": "v0.1.0",
+  "fecha": "2026-11-17T12:36:20.653Z",
+  "estado": "hecha",
+  "app": "alumno",
+  "escena": "conectado",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "tira",
+    "nombre": "Tira de identidad",
+    "cadena": "Alumno › Tira de identidad"
+  },
+  "elemento": {
+    "etiqueta": "span",
+    "texto": "Tiempo · 0:00 Levantar la mano Mensaje al profesor",
+    "claveTexto": "",
+    "selector": "#estado > span.estado-conexion__acciones:nth-of-type(3)"
+  },
+  "tipo": "mover",
+  "texto": "Los botones de \"Levantar la mano\" y \"Mensaje al profesor\" no se podría crear como una \"Barra de acciones\" exactamente igual como la de la consola del profesor en la vista que esta en la vista de Alumnos y que esos botones pasarán a la parte inferior del alumno igual como en tira, y tambien ahí se podría agregar el botón para cambiar la vista del modo claro o oscuro.\n\nEl icono de \"i\" y \"hacer pequeña la ventana\" quedan perfectos en la parte superior no los muevas, solamente agregale tooltips para sus mensajes de ayuda y verifica su posición para que se vayan a ver  por que si se muestran por la parte de arriba puede que se corten a la mitad."
+}

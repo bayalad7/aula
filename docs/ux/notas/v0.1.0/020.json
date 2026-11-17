@@ -1,0 +1,27 @@
+{
+  "n": 20,
+  "version": "v0.1.0",
+  "fecha": "2026-11-17T12:30:14.814Z",
+  "estado": "hecha",
+  "app": "alumno",
+  "escena": "conectado",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "mano-estado",
+    "nombre": "Estado de la mano",
+    "cadena": "Alumno › Estado de la mano"
+  },
+  "elemento": {
+    "etiqueta": "section#mano-estado",
+    "texto": "Tu mano está levantada. Tu profesor la ve en el orden en que llegó. Agregar un m",
+    "claveTexto": "app.contenido",
+    "selector": "#mano-estado"
+  },
+  "tipo": "estilo",
+  "texto": "Cuando se le da click en \"Agregar un motivo\" se habilita un input abajo para enviar el mensaje, quisiera que cambiara y se viera igual que cuando se abre el modal para enviar el \"Mensaje a profesor\""
+}

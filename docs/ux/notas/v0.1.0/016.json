@@ -1,0 +1,27 @@
+{
+  "n": 16,
+  "version": "v0.1.0",
+  "fecha": "2026-11-17T12:17:42.513Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "alumnos-tamano",
+    "nombre": "Tamaño de las miniaturas",
+    "cadena": "Consola › Vista Alumnos › Cabecera de la vista › Tamaño de las miniaturas"
+  },
+  "elemento": {
+    "etiqueta": "label#tamano-miniaturas",
+    "texto": "Tamaño Pequeño Mediano Grande Extra grande Ajustar a la pantalla",
+    "claveTexto": "",
+    "selector": "#tamano-miniaturas"
+  },
+  "tipo": "estilo",
+  "texto": "El diseño del input de ejemplo que pusiste en la interface en el artefacto de https://claude.ai/artifact/JEZ2DSDGnAf6gKBEQCvNyM\n\n\"\n<button type=\"button\" class=\"btn btn--sm\" aria-pressed=\"false\"><svg class=\"icono\"><use href=\"#i-tamano\"></use></svg>Mediano</button>\n\"\n\nSe ve mucho mejor, que el que tenemos actualmente.\n1. Elimina la etiqueta \"Tamaño\"\n2. Cambia el icono como se ve en el del artefacto\n3. Para que el select no sea muy ancho cambia el texto de la opción de \"Ajustar a la pantalla\" por \"Ajustar\""
+}

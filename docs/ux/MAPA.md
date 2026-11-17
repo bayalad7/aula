@@ -20,7 +20,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 | 4 | **Cabecera de la vista** | Título de la vista, su resumen y el «?» de ayuda contextual. |
 | 5 | **Selección** | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
 | 6 | **Selector Lista | Miniaturas | Salón** | Cambia entre la tabla, las miniaturas de pantalla y los alumnos en su lugar del salón. |
-| 7 | **Mostrar apagados** | El interruptor «Apagados (n)»: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19). |
+| 7 | **Mostrar apagados** | El botón alternable «Apagados (n)», resaltado cuando está activo: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19). |
 | 8 | **Lista de alumnos** | Tabla con un alumno por fila. |
 | 9 | **Fila del alumno** | Un alumno: número, casilla, equipo, estado, insignias y sus Acciones (ficha, Encender y Olvidar, solo iconos con su tooltip). |
 | 10 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
@@ -31,7 +31,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tamaño de las miniaturas** | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda. |
+| 1 | **Tamaño de las miniaturas** | Selector con el icono de tamaño: Pequeño, Mediano, Grande, Extra grande o Ajustar; en Miniaturas y en Salón, y se recuerda. |
 | 2 | **Miniaturas** | Cuadrícula con la pantalla de cada alumno. |
 | 3 | **Tarjeta del alumno** | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
 | 4 | **Barra de acciones** | Abajo: lo que se aplica a la selección (aviso, transmitir, pausar, restricciones, captura, temporizador, encuesta, energía, encender…), un botón por acción, todos del mismo tamaño. |
@@ -225,7 +225,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | 2 | **Botones de la tira** | Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto. |
 | 3 | **Bandas de transparencia** | Lo que el profesor hace con el equipo (energía, control, pantalla en pausa, pantalla vista, tu pantalla mostrada a la clase, restricciones); no se cierran. |
 | 4 | **Estado vacío** | Lo que se ve cuando no hay código ni archivos. |
@@ -236,7 +236,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | 2 | **Tarjeta «La clase terminó»** | Cuándo terminó la clase y qué se quitó, con «Entendido»; no es una banda (prompt 10.14). |
 | 3 | **Estado vacío** | Lo que se ve cuando no hay código ni archivos. |
 
@@ -246,7 +246,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | 2 | **Lista de código** | El código que mandó el profesor, lo más nuevo arriba. |
 | 3 | **Tarjeta de código** | Un fragmento con su ejercicio, título, lenguaje y Copiar. |
 
@@ -256,7 +256,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | 2 | **Diálogo Mensaje al profesor** | El diálogo para escribirle al profesor. |
 | 3 | **Archivos recibidos** | Una tarjeta por envío de archivos. |
 | 4 | **Tarjeta de archivo** | Qué llegó, dónde quedó y Abrir carpeta. |
@@ -267,7 +267,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | 2 | **Encuestas** | Una tarjeta por encuesta del profesor, arriba de la lista. |
 | 3 | **Tarjeta de encuesta** | La pregunta, si es anónima, las opciones con Enviar y, si el profesor los comparte, los resultados de la clase. |
 
@@ -277,7 +277,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | 2 | **Tarjeta de cuestionario** | Una pregunta a la vez con Anterior, Siguiente y cuántas lleva, y Entregar; si el profesor lo comparte, solo su resultado (prompt 10.20). |
 
 ### Alumno · Recolección
@@ -286,7 +286,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | 2 | **Tarjeta de recolección** | Dónde guardar el ejercicio, qué se recogió y cuándo, y Abrir carpeta. |
 | 3 | **Avisos en la esquina** | Avisos del profesor y de Aula, abajo a la derecha. |
 
@@ -296,7 +296,7 @@ archivo y sus imágenes los genera `node scripts/ux/mapa.mjs` (no se editan a ma
 
 | # | Zona | Qué es |
 |---|---|---|
-| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| 1 | **Tira de identidad** | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
 | 2 | **Estado de la mano** | «Tu mano está levantada» y el motivo. |
 | 3 | **Avisos en la esquina** | Avisos del profesor y de Aula, abajo a la derecha. |
 
@@ -328,8 +328,8 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 | `alumnos-lista` | Vista Alumnos › Lista de alumnos | Tabla con un alumno por fila. |
 | `fila-alumno` | Vista Alumnos › Lista de alumnos › Fila del alumno | Un alumno: número, casilla, equipo, estado, insignias y sus Acciones (ficha, Encender y Olvidar, solo iconos con su tooltip). |
 | `alumnos-seleccion` | Vista Alumnos › Selección | A quién van las acciones de la barra: «Todos (n)» o «n seleccionados», con su explicación en el tooltip. |
-| `alumnos-apagados` | Vista Alumnos › Mostrar apagados | El interruptor «Apagados (n)»: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19). |
-| `alumnos-tamano` | Vista Alumnos › Tamaño de las miniaturas | Pequeño, Mediano, Grande, Extra grande o Ajustar a la pantalla; en Miniaturas y en Salón, y se recuerda. |
+| `alumnos-apagados` | Vista Alumnos › Mostrar apagados | El botón alternable «Apagados (n)», resaltado cuando está activo: muestra en la lista los equipos que la consola conoce y no están conectados, con una casilla para marcarlos todos; solo en Lista y se recuerda (prompt 10.19). |
+| `alumnos-tamano` | Vista Alumnos › Tamaño de las miniaturas | Selector con el icono de tamaño: Pequeño, Mediano, Grande, Extra grande o Ajustar; en Miniaturas y en Salón, y se recuerda. |
 | `alumnos-miniaturas` | Vista Alumnos › Miniaturas | Cuadrícula con la pantalla de cada alumno. |
 | `tarjeta-alumno` | Vista Alumnos › Miniaturas › Tarjeta del alumno | La miniatura de un alumno como un monitor, con su nombre; un clic en la pantalla abre la Pantalla grande. |
 | `alumnos-salon` | Vista Alumnos › Alumnos en el salón | Las tarjetas de los alumnos en su lugar del salón; el lugar de un equipo sin conexión se ve vacío, con Encender. Los números de fila y columna seleccionan a los de esa fila o columna (prompt 10.15). |
@@ -399,7 +399,8 @@ También las que no salen en una imagen (diálogos y paneles). El `id` es el que
 
 | id | Zona | Qué es |
 |---|---|---|
-| `tira` | Tira de identidad | Arriba: a qué clase está conectado, el temporizador y los botones del alumno. |
+| `tira` | Tira de identidad | Arriba: a qué clase está conectado, el temporizador, «Qué puede hacer Aula en este equipo» y compactar, con sus tooltips hacia abajo. |
+| `acciones-alumno` | Barra de acciones del alumno | Abajo, como la de la consola: Levantar la mano, Mensaje al profesor y el tema (del sistema, claro u oscuro). No se ve en el modo compacto (nota de interfaz v0.1.0 021). |
 | `tira-botones` | Tira de identidad › Botones de la tira | Levantar la mano, Mensaje al profesor, Qué puede hacer Aula en este equipo y Modo compacto. |
 | `tira-temporizador` | Tira de identidad › Insignia del temporizador | Cuánto falta del ejercicio. |
 | `bandas` | Bandas de transparencia | Lo que el profesor hace con el equipo (energía, control, pantalla en pausa, pantalla vista, tu pantalla mostrada a la clase, restricciones); no se cierran. |

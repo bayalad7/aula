@@ -1,0 +1,27 @@
+{
+  "n": 18,
+  "version": "v0.1.0",
+  "fecha": "2026-11-17T12:22:45.874Z",
+  "estado": "hecha",
+  "app": "profesor",
+  "escena": "lab",
+  "ruta": "codigo",
+  "tema": "ambos",
+  "vista": {
+    "ancho": 1366,
+    "alto": 641
+  },
+  "zona": {
+    "id": "codigo",
+    "nombre": "Vista Código",
+    "cadena": "Consola › Vista Código"
+  },
+  "elemento": {
+    "etiqueta": "section",
+    "texto": "Código Ejercicio 4 Borrador: aún no se envía Título (opcional) LenguajePythonJav",
+    "claveTexto": "",
+    "selector": "#contenido > section.vista__seccion:nth-of-type(3)"
+  },
+  "tipo": "estilo",
+  "texto": "Cuando doy click en el botón de ayuda \"?\", el formulario se sale de su sección / contenedor, no se adapta al ancho"
+}

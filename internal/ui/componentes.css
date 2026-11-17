@@ -181,6 +181,23 @@ input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; m
 .opcion-seg:has(input:focus-visible) { outline: 2px solid var(--c-foco); outline-offset: 1px; }
 .opcion-seg:has(input:disabled) { opacity: 0.55; cursor: not-allowed; }
 .opcion-seg .icono { width: 1.05rem; height: 1.05rem; }
+/* Botón alternable (nota de interfaz v0.1.0 019): una casilla role="switch" que se ve como un
+   botón; encendido toma el acento suave, como la opción elegida de un segmentado. La casilla
+   sigue ahí (teclado, lector de pantalla y el JS de siempre), solo oculta a la vista. */
+.alternable {
+  position: relative; display: inline-flex; align-items: center; gap: var(--e-2);
+  min-height: var(--alto-control); padding: 0 var(--e-3);
+  border: 1px solid var(--c-borde-fuerte); border-radius: var(--r-md);
+  background: var(--c-superficie); color: var(--c-texto);
+  font-weight: var(--peso-medio); white-space: nowrap; cursor: pointer;
+  transition: background var(--transicion), border-color var(--transicion);
+}
+.alternable > input[type] { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.alternable .icono { width: 1.05rem; height: 1.05rem; }
+.alternable:hover { background: var(--c-superficie-2); }
+.alternable:has(input:checked) { background: var(--c-acento-suave); border-color: var(--c-acento); color: var(--c-acento-sobre-suave); }
+.alternable:has(input:focus-visible) { outline: 2px solid var(--c-foco); outline-offset: 2px; }
+.alternable > input[type]:focus-visible { outline: none; }
 
 /* Interruptor: una casilla de formulario (sí o no) con forma de interruptor. */
 input.interruptor { appearance: none; -webkit-appearance: none; position: relative; flex: none;
@@ -913,6 +930,17 @@ fieldset.campo .opcion { margin-top: var(--e-1); }
   background: var(--c-texto); color: var(--c-superficie); font-size: var(--t-sm); font-weight: var(--peso-normal, 400);
   line-height: 1.3; text-align: center; box-shadow: var(--sombra-1); pointer-events: none;
   white-space: normal; /* un botón no parte líneas; su tooltip sí */
+}
+/* Lo que está pegado arriba (la Cabecera de la vista, la tira del alumno) abre su tooltip hacia
+   abajo, y los últimos botones de la fila lo alinean a su derecha: así no se sale de la ventana
+   (nota de interfaz v0.1.0 017). */
+.vista__cabecera [data-tip]:hover::after, .vista__cabecera [data-tip]:focus-visible::after,
+.estado-conexion [data-tip]:hover::after, .estado-conexion [data-tip]:focus-visible::after {
+  top: calc(100% + 6px); bottom: auto;
+}
+.vista__cabecera > [data-tip]:nth-last-child(-n + 3):hover::after, .vista__cabecera > [data-tip]:nth-last-child(-n + 3):focus-visible::after,
+.estado-conexion__acciones > [data-tip]:nth-last-child(-n + 2):hover::after, .estado-conexion__acciones > [data-tip]:nth-last-child(-n + 2):focus-visible::after {
+  left: auto; right: 0; transform: none;
 }
 
 /* Pie de envío: el final de un formulario que manda algo a los alumnos (Código, Archivos). A quién a

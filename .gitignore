@@ -1,3 +1,8 @@
+# Ejecutables: en local todo sale de scripts/compilar.ps1 a dist\local
+# (qué es cada uno: docs/desarrollo/ejecutables.md). Ninguno se sube; los publicados salen
+# del workflow de release. Un teacher.exe o student.exe suelto viene de `go build ./apps/...`,
+# no abre (le faltan las etiquetas de Wails) y se puede borrar.
+
 # Go
 *.exe
 *.exe~
@@ -10,7 +15,7 @@ coverage.*
 go.work
 go.work.sum
 
-# Wails: build output and generated bindings
+# Wails: build output (paso intermedio; el script lo copia a dist\local\bin) and generated bindings
 apps/*/build/bin/
 apps/*/frontend/wailsjs/
 
@@ -29,7 +34,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Local builds for manual tests
+# Local builds for manual tests: dist\local (apps e instaladores) y los archivos de docs/prueba-vms.md
 /dist/
 
 # Arnés web (scripts/ux)

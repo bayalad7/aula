@@ -138,6 +138,8 @@ retiraron; esta es la primera.
   ventana en la sesión del alumno.
 - Las versiones van firmadas (`checksums.txt` con la llave de releases del repositorio).
 - La consola no carga nada de Internet; compilar no necesita Node.
+- Para probar sin publicar, un solo comando (`scripts\compilar.ps1`) deja las apps y los
+  instaladores en `dist\local`, compilados igual que una versión publicada.
 
 ### Todavía no
 

@@ -17,44 +17,19 @@ Si solo quieres probar la consola (sin alumnos reales), no necesitas instaladore
 
 ## Compilar
 
-En PowerShell, desde la raíz del repositorio (`C:\aula`). Cambia `$version` a lo que quieras ver
-en las apps (`aula-consola version`, la barra del alumno y el `hello`); usa un sufijo `-dev` para
-no confundirlo con una versión publicada.
+En PowerShell, desde la raíz del repositorio (`C:\aula`):
 
 ```powershell
-$version = "0.6.0-dev"                  # lo que reportan las apps
-$numeric = ($version -split "-")[0]      # metadatos del .exe: solo números
-$out     = "dist\local"                  # dist/ está en .gitignore
-
-# 1. Las dos apps, como en el release (sin cgo, rutas recortadas, versión embebida)
-Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force "$out\bin" | Out-Null
-foreach ($app in "student", "teacher") {
-    Push-Location "apps\$app"
-    wails build -clean -trimpath -ldflags "-X main.version=$version"
-    Pop-Location
-    if ($LASTEXITCODE -ne 0) { throw "wails build de $app falló" }
-}
-Copy-Item apps\teacher\build\bin\aula-consola.exe, apps\student\build\bin\aula-cliente.exe "$out\bin"
-
-# 2. Comprobar la versión que quedó dentro
-& "$out\bin\aula-consola.exe" version      # aula-consola 0.6.0-dev
-& "$out\bin\aula-cliente.exe" -version     # aula-cliente 0.6.0-dev
-
-# 3. Los instaladores (Inno Setup)
-$iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
-          "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $iscc) { throw "No se encontró ISCC.exe: instala Inno Setup 6" }
-Push-Location empaquetado\windows
-foreach ($iss in "aula-alumno.iss", "aula-consola.iss") {
-    & $iscc /Q "/DAppVersion=$version" "/DNumericVersion=$numeric" "/DSourceDir=..\..\$out\bin" "/O..\..\$out" $iss
-    if ($LASTEXITCODE -ne 0) { Pop-Location; throw "ISCC $iss falló" }
-}
-Pop-Location
-Get-ChildItem $out -Filter *.exe | Select-Object Name, @{n="MB"; e={[math]::Round($_.Length/1MB, 1)}}
+.\scripts\compilar.ps1                      # versión en preparación + "-dev" (docs/ux/notas/VERSION)
+.\scripts\compilar.ps1 -Version 0.2.0-dev   # o la que quieras ver en las apps
 ```
 
-Tarda entre 1 y 2 minutos. Resultado en `dist\local`:
+La versión es lo que muestran las apps (`aula-consola version`, la barra del alumno y el
+`hello`); deja un sufijo `-dev` para no confundirla con una versión publicada. El script vacía
+`dist\local`, compila las dos apps como el release (sin cgo, rutas recortadas, versión
+embebida), comprueba la versión que quedó dentro y genera los instaladores con Inno Setup.
+
+Tarda unos 4 minutos. Resultado en `dist\local` (detalle en `ejecutables.md`):
 
 | Archivo | Uso |
 |---|---|

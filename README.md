@@ -32,12 +32,17 @@ wails dev         # abre la ventana con recarga en vivo
 
 ## Compilar
 
-```sh
-cd apps/teacher && wails build   # -> apps/teacher/build/bin/aula-consola(.exe)
-cd apps/student && wails build   # -> apps/student/build/bin/aula-cliente(.exe)
+En Windows, un solo comando deja todo en `dist\local` (qué es cada ejecutable:
+`docs/desarrollo/ejecutables.md`):
+
+```powershell
+.\scripts\compilar.ps1                  # las dos apps y los dos instaladores
+.\scripts\compilar.ps1 -Solo consola    # solo dist\local\bin\aula-consola.exe
 ```
 
-En Linux: `wails build -tags webkit2_41`.
+En Linux y macOS, `wails build` dentro de `apps/teacher` y `apps/student` (en Linux,
+`wails build -tags webkit2_41`); queda en `apps/*/build/bin/`. Para comprobar que todo compila,
+`go build ./...`: no uses `go build ./apps/...`, que deja un ejecutable suelto que no abre.
 
 ## Instalar (Windows, modelo tipo LanSchool)
 

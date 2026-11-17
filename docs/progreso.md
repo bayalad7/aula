@@ -1,6 +1,9 @@
 # Progreso
 
-Última actualización: 2026-11-17 (10.27 sistema de diseño implementado, sin commit: sin Tailwind
+Última actualización: 2026-11-17 (compilación local unificada: `scripts/compilar.ps1` deja
+todo en `dist\local`, sin cgo como el release; qué es cada ejecutable en
+`docs/desarrollo/ejecutables.md`; se borraron los `teacher.exe`/`student.exe` sueltos de
+`go build ./apps/...`, que no abren. 10.27 sistema de diseño implementado, sin commit: sin Tailwind
 (D-022), utilidades propias, cascada en capas, Menú en el color secundario, icono de app y
 movimiento sutil; faltan los casos C-144 a C-146 y A-61; 10.26 bandeja de mensajes tipo chat implementada como mejora de
 10.6 y 10.7, sin commit, faltan los casos C-139 a C-143 y A-59 y A-60; 10.15 etiquetas de los equipos y salón implementados, sin commit,

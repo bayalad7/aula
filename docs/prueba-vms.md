@@ -45,13 +45,11 @@ New-Item -ItemType Directory -Force dist | Out-Null
 # Profesor de ejemplo con comandos para emitir código (y alumno de consola para la etapa 04)
 $env:CGO_ENABLED = '0'; go build -o dist\dos_alumnos.exe ./examples/dos_alumnos; Remove-Item Env:CGO_ENABLED
 
-# App real del alumno (ventana Wails)
-Push-Location apps\student; wails build; Pop-Location
-Copy-Item apps\student\build\bin\aula-cliente.exe dist\
-
-# App real de la consola del profesor (ventana Wails, etapa 07)
-Push-Location apps\teacher; wails build; Pop-Location
-Copy-Item apps\teacher\build\bin\aula-consola.exe dist\
+# Apps reales del alumno y de la consola (ventanas Wails, etapas 06 y 07),
+# compiladas con el script (docs/desarrollo/ejecutables.md)
+.\scripts\compilar.ps1 -Solo alumno
+.\scripts\compilar.ps1 -Solo consola
+Copy-Item dist\local\bin\aula-cliente.exe, dist\local\bin\aula-consola.exe dist\
 
 # Código de muestra para enviar
 Copy-Item examples\snippets\*.py dist\
@@ -724,7 +722,7 @@ casos para ella.
 ### 11.1 Preparación
 
 La etapa 09 todavía no tiene versión publicada: compila las dos apps como en §2.1
-(`wails build` en `apps\student` y `apps\teacher`).
+(`.\scripts\compilar.ps1 -Solo alumno` y `-Solo consola`, en `dist\local\bin`).
 
 - **Si las VMs ya tienen instalada la v0.2** (§10), reemplaza solo los ejecutables. La
   configuración (canal y clave del centro) se conserva. En cada VM, en PowerShell **como

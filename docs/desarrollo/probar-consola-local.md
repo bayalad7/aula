@@ -23,11 +23,11 @@ que dice.
 En PowerShell, desde `C:\aula`:
 
 ```powershell
-Push-Location apps\teacher
-wails build -clean -ldflags "-X main.version=0.6.0-dev"
-Pop-Location
-& apps\teacher\build\bin\aula-consola.exe
+.\scripts\compilar.ps1 -Solo consola -Abrir
 ```
+
+La consola queda en `dist\local\bin\aula-consola.exe`; para volver a abrirla sin compilar,
+`& dist\local\bin\aula-consola.exe`. Qué es cada ejecutable: `ejecutables.md`.
 
 Antes de abrirla:
 
@@ -39,7 +39,7 @@ Antes de abrirla:
   franja amarilla. Es lo esperado (caso C-14).
 - **Datos de la consola:** guarda canales recientes y nombre en `%AppData%\Aula\consola`. Para no
   tocar los tuyos, ábrela con otro directorio:
-  `$env:AULA_CONSOLE_DIR = "$env:TEMP\aula-prueba"; & apps\teacher\build\bin\aula-consola.exe`.
+  `$env:AULA_CONSOLE_DIR = "$env:TEMP\aula-prueba"; & dist\local\bin\aula-consola.exe`.
 
 **Regla del proyecto:** estas pruebas las hace una persona. No se automatizan con clics o
 teclas sintéticas sobre el escritorio (ver la memoria del proyecto). Las capturas automáticas se

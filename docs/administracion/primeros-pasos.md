@@ -55,3 +55,37 @@ pantalla, por ejemplo «7 de 8». Si falta alguien, abre **Quién falta** y, si 
 Pulsa **Terminar la clase**, debajo de la tarjeta «Clase abierta · canal»: detiene lo que dejaste
 activo y limpia la ventana de cada alumno, sin borrar archivos. Más en
 [Tareas frecuentes](tareas-frecuentes#terminar-la-clase).
+
+## Instalar en Linux
+
+Esta parte es para quien instala los equipos (el responsable de TI). Aula funciona en Ubuntu
+24.04 y en distribuciones parecidas (Debian 12, Fedora 41 o más nuevas). En Linux todavía no
+están todas las funciones de Windows; la lista completa está en la tabla de compatibilidad del
+repositorio (`docs/compatibilidad.md`).
+
+**En el equipo del profesor**, instala `aula-consola` (el `.deb` en Ubuntu, el `.rpm` en
+Fedora) y crea o importa la clave del centro. Luego agrega al grupo `aula` a cada maestro que
+use ese equipo; debe cerrar sesión y volver a entrar:
+
+```
+sudo apt install ./aula-consola_X.Y.Z_amd64.deb
+sudo aula-consola centro crear
+sudo aula-consola centro publica -o aula-centro.pub
+sudo usermod -aG aula maestra
+```
+
+Si el maestro no puede instalar nada, la consola también viene como AppImage: se marca como
+ejecutable y se abre con doble clic.
+
+**En cada equipo de alumno**, instala `aula-cliente` y configura su canal con la clave pública
+del centro. Arranca solo con cada sesión:
+
+```
+sudo apt install ./aula-cliente_X.Y.Z_amd64.deb
+sudo aula-cliente configurar -canal 1 -clave aula-centro.pub
+```
+
+**Elige la sesión X11.** Para ver la pantalla de los alumnos, cada equipo debe entrar en
+**«Ubuntu en Xorg»** (la rueda de la pantalla de inicio de sesión). En la sesión normal
+(Wayland), el alumno recibe código, avisos, encuestas y archivos, pero su pantalla no se puede
+ver. Más en [Solución de problemas](solucion-de-problemas#en-linux-no-se-ve-la-pantalla-del-alumno).

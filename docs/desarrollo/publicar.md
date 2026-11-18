@@ -34,6 +34,9 @@ Al publicar una estable, las notas de interfaz de esa versión quedan cerradas: 
 
 ## 2. Qué hace el workflow
 
+Cuatro jobs; la versión sale solo si todos terminan bien.
+
+**`windows`** (Windows):
 1. Deriva la versión del tag (`${GITHUB_REF_NAME#v}`) y la valida (`X.Y.Z` o `X.Y.Z-pre`).
 2. Corre `go test ./...`.
 3. Compila las dos apps con `wails build -trimpath -ldflags "-X main.version=<versión>"`, sin
@@ -43,10 +46,19 @@ Al publicar una estable, las notas de interfaz de esa versión quedan cerradas: 
 5. Si existe el certificado, firma los binarios con Authenticode.
 6. Genera los instaladores Inno Setup (`empaquetado/windows/*.iss`) y, si hay certificado, los
    firma.
-7. Escribe `checksums.txt` (SHA-256 de todos los `.exe`) y lo firma con la llave Ed25519 de
-   releases (`checksums.txt.sig`). **Verifica la firma** con la llave pública versionada antes de
-   seguir.
-8. Publica con `gh release create "$TAG" --generate-notes` (prerelease si el tag lleva guion).
+
+**`linux`** (Ubuntu 24.04, D-023): corre `go test ./...` bajo Xvfb, compila con cgo y
+`-tags webkit2_41`, comprueba las versiones y genera `.deb`, `.rpm` y la AppImage de la consola
+con `empaquetado/linux/empaquetar.sh` (`docs/desarrollo/empaquetar-linux.md`).
+
+**`linux-instalar`**: instala el `.deb` en un Ubuntu limpio y el `.rpm` en Fedora, crea la clave
+del centro, configura el agente, abre la AppImage y lo quita todo
+(`empaquetado/linux/probar-paquetes.sh`).
+
+**`publicar`**: junta los archivos de los otros jobs, escribe `checksums.txt` (SHA-256 de
+**todos**) y lo firma con la llave Ed25519 de releases (`checksums.txt.sig`). **Verifica la
+firma** con la llave pública versionada antes de seguir y publica con
+`gh release create "$TAG" --generate-notes` (prerelease si el tag lleva guion).
 
 Artefactos de cada versión:
 
@@ -54,11 +66,15 @@ Artefactos de cada versión:
 |---|---|
 | `Aula-Alumno-Setup-X.Y.Z.exe` | Instalador del agente (admite `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART`, `/CANAL=`, `/CLAVECENTRO=` y `/DIRECTO=`). |
 | `Aula-Consola-Setup-X.Y.Z.exe` | Instalador de la consola (pide canal predeterminado y crea o importa la clave del centro; silencioso: `/CANAL=`, `/CENTRO=` (`crear`, `mantener` o la ruta de `aula-centro.key`), `/SALIDA=`). |
-| `aula-cliente-X.Y.Z-windows-amd64.exe`, `aula-consola-X.Y.Z-windows-amd64.exe` | Portables. |
-| `checksums.txt`, `checksums.txt.sig` | SHA-256 y su firma Ed25519. |
+| `aula-cliente-X.Y.Z-windows-amd64.exe`, `aula-consola-X.Y.Z-windows-amd64.exe` | Portables de Windows. |
+| `aula-cliente_X.Y.Z_amd64.deb`, `aula-cliente-X.Y.Z-1.x86_64.rpm` | Agente para Linux (se configura con `sudo aula-cliente configurar -canal N -clave aula-centro.pub`). |
+| `aula-consola_X.Y.Z_amd64.deb`, `aula-consola-X.Y.Z-1.x86_64.rpm` | Consola para Linux (grupo `aula`, `/etc/Aula/centro`, firewall). |
+| `aula-consola-X.Y.Z-x86_64.AppImage` | Consola para Linux sin instalar. |
+| `aula-cliente-X.Y.Z-linux-amd64`, `aula-consola-X.Y.Z-linux-amd64` | Binarios sueltos de Linux. |
+| `checksums.txt`, `checksums.txt.sig` | SHA-256 de todo lo anterior y su firma Ed25519. |
 
-Los paquetes de Linux (`.deb`/`.rpm`) y de macOS (`.pkg`) se agregan en la etapa 13 como jobs
-nuevos del mismo workflow.
+El paquete de macOS (`.pkg`) se agregará en la parte de macOS de la etapa 13 como otro job que
+alimente a `publicar`.
 
 ## 3. Secretos del repositorio
 

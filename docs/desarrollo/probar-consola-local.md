@@ -376,6 +376,23 @@ Lo que cambió con las correcciones de `docs/auditoria-2026-11-17.md`.
 | C-160 | Go 1.27 (10.29): `go version` dice 1.27.x; compila con `scripts\compilar.ps1`, abre `dist\local\bin\aula-consola.exe` y, en una VM, el agente instalado con el instalador de `dist\local` | El alumno aparece (mDNS), se conecta por TLS con la clave del centro, recibe un snippet y **Copiar** funciona; **Transmitir** arranca y **Detener** la quita, como con Go 1.26 |
 | C-161 | Go 1.27: en la VM, reinicia con el agente como servicio y entra con un usuario de alumno | El servicio «Aula — agente del aula» arranca y el ayudante abre la ventana en la sesión del alumno, con su icono en el área de notificación; la consola lo ve con todas sus capacidades |
 
+### Linux, capa 1 (13)
+
+En una VM o un equipo con **Ubuntu 24.04** e instalados los `.deb` del release (o los de
+`empaquetado/linux/empaquetar.sh`, `docs/desarrollo/empaquetar-linux.md`). Lo nativo se revisa a
+ojo; nunca con clics ni teclas sintéticas en tu escritorio. La prueba completa con dos equipos
+está en `docs/prueba-vms.md` §31.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| C-162 | Consola en Linux, sesión «Ubuntu en Xorg»: `sudo apt install ./aula-consola_*.deb`, `sudo aula-consola centro crear`, `sudo usermod -aG aula <tú>`, cierra y abre sesión; abre **Aula Consola** desde Actividades | Abre con su tema y su menú, sin el aviso de «no tiene la clave del centro», y su icono en Actividades |
+| C-163 | En otro programa (p. ej. el editor de texto), copia código y pulsa **Ctrl+Alt+Mayús+C** | La consola trae el código a Código («Código cargado del portapapeles»). En una sesión Wayland, Ajustes › Acerca de dice que no hay atajo global y **Pegar** sigue funcionando |
+| C-164 | Con un alumno de Linux en X11 conectado, abre la vista de pantallas y su Pantalla grande; toma una **Captura** | Ves su miniatura y la captura con el distintivo rojo arriba al centro; **Guardar** la deja en `~/Documentos/Aula/capturas/…` (o `~/Documents`, según `xdg-user-dir DOCUMENTS`) y **Abrir carpeta** la muestra en el gestor de archivos |
+| C-165 | Mismo alumno, pero entrando con la sesión **Wayland** («Ubuntu») | Su ficha muestra «Ver su pantalla» y «Captura» como no disponibles; código, avisos, encuestas y archivos siguen funcionando |
+| A-66 | En el equipo del alumno (Ubuntu, X11): `sudo apt install ./aula-cliente_*.deb`, `sudo aula-cliente configurar -canal 1 -clave aula-centro.pub`; cierra y abre sesión | Aula Cliente arranca solo con la sesión y se conecta; `aula-cliente diagnostico` dice «Sesión gráfica: X11», «Conectado y autenticado» y lista lo que puede hacer |
+| A-67 | Llega un snippet: **Copiar** y pegar en el editor de texto y en la terminal; cierra la ventana con la X | El código llega intacto (sangría y saltos); cerrar **minimiza** la ventana (no hay icono en el área de notificación) y el alumno sigue conectado en la consola |
+| A-68 | El profesor abre la vista de pantallas | Antes de la primera miniatura aparece arriba al centro «● Tu pantalla está siendo vista por el profesor», encima de las demás ventanas, sin robar clics ni el foco (hacer clic en él actúa sobre lo de abajo); la banda de la ventana dice lo mismo. Al cerrar la vista, el distintivo se va |
+
 ### Encender equipos (10.19)
 
 Solo en el laboratorio (en una VM hace falta configurar el hipervisor): dos equipos con Windows,

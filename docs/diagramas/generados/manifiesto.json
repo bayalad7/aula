@@ -27,7 +27,7 @@
         "desarrollador"
       ],
       "pantallas": [],
-      "hash": "sha256:16387f200a062a4878cb333ffaa876a04eeb1f5973468ff4ff6f03c939f964a2",
+      "hash": "sha256:7c7e7e2bb1c649f223c2643a27844b41c5733c3947c3927ebedf7e435af06834",
       "alt": "Componentes y dependencias: Cómo se reparten las dos aplicaciones en paquetes y por qué solo uno toca el sistema operativo",
       "claro": "generados/02-componentes.claro.svg",
       "oscuro": "generados/02-componentes.oscuro.svg"

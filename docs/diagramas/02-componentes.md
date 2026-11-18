@@ -35,6 +35,7 @@ flowchart TB
     subgraph so["Frontera con el SO"]
         platform["platform<br/>interfaces Go"]
         win["*_windows.go<br/>captura, portapapeles, servicio,<br/>named pipe, NRPT, apagado"]
+        linux["*_linux.go<br/>X11 con xgb: captura, distintivo,<br/>atajo; Documentos/Aula"]
         other["*_other.go<br/>no soportado"]
     end
 
@@ -53,14 +54,15 @@ flowchart TB
     agentsvc --> session & platform
     simclass --> session & codedist & screen & platform
     security --> platform & protocol
-    platform --> win & other
+    platform --> win & linux & other
     win --> sistema
+    linux --> sistema
 
     classDef externo fill:#dbeafe,stroke:#1d4ed8,color:#111827
     classDef aula fill:#dcfce7,stroke:#15803d,color:#111827
     classDef datos fill:#ffedd5,stroke:#c2410c,color:#111827
     classDef seguridad fill:#fee2e2,stroke:#b91c1c,color:#111827
-    class teacher,student,session,transport,discovery,protocol,codedist,screen,broadcast,policy,power,agentsvc,simclass,platform,win,other aula
+    class teacher,student,session,transport,discovery,protocol,codedist,screen,broadcast,policy,power,agentsvc,simclass,platform,win,linux,other aula
     class security seguridad
     class sistema externo
 ```
@@ -70,8 +72,13 @@ flowchart TB
 - **La regla de oro**: `protocol`, `discovery`, `transport`, `session`, `codedist`, `screen`,
   `broadcast`, `agentsvc`, `policy`, `power` y `simclass` no llaman APIs del SO. Lo que toca pantalla,
   portapapeles, teclado, servicios, DNS o energía pasa por una interfaz de `internal/platform`,
-  con una implementación por SO (`*_windows.go`) y un fallback `*_other.go` que devuelve
-  `ErrNotSupported`. Por eso esos paquetes se prueban con dobles en los tres SO del CI.
+  con una implementación por SO (`*_windows.go`, `*_linux.go`) y un fallback `*_other.go` que
+  devuelve `ErrNotSupported`. Por eso esos paquetes se prueban con dobles en los tres SO del CI.
+- **Linux por capas** (D-023): `*_linux.go` trae la captura, el distintivo y el atajo **solo en
+  X11** (Go puro con `jezek/xgb`; en Wayland, `ErrNotSupported` y no se declaran) y la carpeta
+  de trabajo con `openat`/`O_NOFOLLOW`. El resto cae en `*_other.go`, que ahora excluye a Linux
+  donde ya hay implementación (`!windows && !linux`). Qué hay en cada SO:
+  `docs/compatibilidad.md`.
 - `discovery` y `transport` sí usan red (sockets UDP y TCP de la biblioteca estándar y sus
   librerías), que es portable; no es "SO" en el sentido de la regla.
 - `security` usa `platform` solo para proteger archivos con la ACL correcta
@@ -85,7 +92,8 @@ flowchart TB
 ## Fuentes en el código
 
 - `internal/*/doc.go` de cada paquete
-- `internal/platform/platform.go` (`ErrNotSupported`) y sus pares `*_windows.go` / `*_other.go`
+- `internal/platform/platform.go` (`ErrNotSupported`) y sus pares `*_windows.go` / `*_linux.go` /
+  `*_other.go`; `internal/platform/display.go` (`DisplayServer`: X11, Wayland o nativo)
 - `apps/teacher/main.go`, `apps/student/main.go`
 - `go.mod`
 - CLAUDE.md, sección «Arquitectura»

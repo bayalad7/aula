@@ -267,8 +267,10 @@ Referencia completa en `docs/ux/DESIGN_SYSTEM.md`; la fuente de verdad es `inter
   `go run honnef.co/go/tools/cmd/staticcheck@<versión fija> ./...`), `govulncheck` (vía
   `go run golang.org/x/vuln/cmd/govulncheck@<versión fija> ./...`, en las tres plataformas porque
   el análisis sigue los build tags; falla si el código llama una función vulnerable de la stdlib
-  o de un módulo), `go test -race ./...` (con `CGO_ENABLED=1`, que `-race` requiere; los binarios
-  publicados se compilan sin cgo).
+  o de un módulo), `go test -race ./...` (con `CGO_ENABLED=1`, que `-race` requiere; en Linux
+  bajo Xvfb para las pruebas de X11). Los binarios publicados de Windows se compilan sin cgo; los
+  de Linux con cgo y `-tags webkit2_41`, porque Wails lo exige ahí (D-023). El job
+  `linux-paquetes` compila con Wails, empaqueta y prueba el `.deb` en cada push.
 - **Dependencias:** se ponen al día dentro de su versión mayor con `go get -u ./...` y
   `go mod tidy` (prompt 10.28), sin `replace`. Wails se queda en v2 hasta que una etapa propia
   decida la migración a v3. La CLI de Wails de `release.yml` y `scripts/compilar.ps1` es la misma
@@ -277,7 +279,9 @@ Referencia completa en `docs/ux/DESIGN_SYSTEM.md`; la fuente de verdad es `inter
   la consola en Chromium headless y falla con errores de JS o violaciones serias de axe-core. Sube
   las capturas como artefacto.
 - **Workflow de release** (`.github/workflows/release.yml`): se dispara al empujar un tag `v*`.
-  Compila todas las plataformas, genera los instaladores, produce `checksums.txt` firmado con
+  Compila Windows (Inno Setup) y Linux (`.deb`, `.rpm` y AppImage de la consola con
+  `empaquetado/linux/empaquetar.sh`), prueba los paquetes de Linux en máquinas limpias
+  (`linux-instalar`), y el job `publicar` produce un solo `checksums.txt` firmado con
   una llave Ed25519 de releases (secreto del repo) y publica con `gh release create`
   (prerelease si el tag lleva guion, p. ej. `v1.2.0-rc.1`). La llave PÚBLICA de releases se
   versiona en el repo (`empaquetado/llave-releases.pub`) y los binarios la embeben para que la
@@ -299,6 +303,9 @@ Referencia completa en `docs/ux/DESIGN_SYSTEM.md`; la fuente de verdad es `inter
 ## Plataformas
 Prioridad: Windows 10/11 → Linux (X11) → macOS. Toda función que toca el SO define primero su
 interfaz en `platform` y una implementación por defecto que devuelve "no soportado".
+Qué funciona en cada SO: `docs/compatibilidad.md` (una fila por función visible); una función
+nueva que toca el SO agrega su fila. Linux va por capas (D-023): la capa 1 (pantalla y atajo solo
+en X11, `Documentos/Aula`, paquetes) está hecha; lo no portado no se declara.
 
 ## Privacidad (no negociable)
 Monitoreo transparente: cuando la pantalla del alumno se ve o transmite, su equipo muestra un

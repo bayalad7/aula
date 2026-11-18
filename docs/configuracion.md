@@ -28,6 +28,12 @@ aula-consola centro importar aula-centro.key   :: en cada consola adicional
 aula-consola pubkey                            :: muestra qué clave usa esta consola
 ```
 
+**En Linux** (paquete `aula-consola`, prompt 13): la privada vive en
+`/etc/Aula/centro/clave-centro.pem`, del dueño `root` y el grupo de sistema **`aula`** (carpeta
+`0750`, archivo `0640`). El paquete crea el grupo; cada maestro que use el equipo entra con
+`sudo usermod -aG aula <usuario>` y vuelve a iniciar sesión. Los comandos de arriba se corren con
+`sudo`. Quitar el paquete nunca borra la clave.
+
 Si un equipo de profesor no tiene clave del centro, la consola usa una **clave personal**
 (`%AppData%\Aula\consola\identidad-ed25519.pem`) y muestra un aviso: los alumnos instalados con
 la clave del centro no la reconocerán.
@@ -81,6 +87,19 @@ Aula-Alumno-Setup-X.Y.Z.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CANAL=2
 
 Conserva la clave del centro que ya tenía la computadora.
 
+**En Linux** no hay asistente: el archivo de la máquina lo escribe el subcomando `configurar`, que
+pide `sudo`, valida el canal y la clave antes de guardar y solo cambia lo que se le pasa:
+
+```sh
+sudo aula-cliente configurar -canal 1 -clave aula-centro.pub     # al instalar
+sudo aula-cliente configurar -canal 2                             # cambiar solo el canal
+sudo aula-cliente configurar -directo 192.168.1.10:47830          # si mDNS no llega
+```
+
+El archivo queda `0644` (la configuración es pública; solo root la cambia). Quitar el paquete con
+`apt purge` o `dnf remove` lo borra, como el desinstalador de Windows. El agente arranca con cada
+sesión gráfica (`/etc/xdg/autostart/aula-cliente.desktop`); todavía no hay servicio de systemd.
+
 ### Si no conecta
 
 La ventana muestra el **motivo** debajo de "buscando la clase…": no encontró ninguna consola del
@@ -91,8 +110,10 @@ mismo texto queda en `%LOCALAPPDATA%\Aula\alumno\aula-cliente.log`. Para un diag
 "C:\Program Files\Aula\Cliente\aula-cliente.exe" diagnostico
 ```
 
-Imprime la configuración usada, las consolas del canal que ve por mDNS y el resultado de un
-intento de conexión.
+Imprime la configuración usada, qué puede hacer Aula en ese equipo y esa sesión, las consolas del
+canal que ve por mDNS y el resultado de un intento de conexión. En Linux también dice si la
+sesión es X11 o Wayland (en Wayland no se ve la pantalla; `docs/compatibilidad.md`) y el registro
+queda en `~/.cache/Aula/alumno/aula-cliente.log`.
 
 ### Como servicio de Windows (D-016)
 

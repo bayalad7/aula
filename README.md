@@ -43,6 +43,16 @@ En Windows, un solo comando deja todo en `dist\local` (qué es cada ejecutable:
 En Linux y macOS, `wails build` dentro de `apps/teacher` y `apps/student` (en Linux,
 `wails build -tags webkit2_41`); queda en `apps/*/build/bin/`. Para comprobar que todo compila,
 `go build ./...`: no uses `go build ./apps/...`, que deja un ejecutable suelto que no abre.
+Los paquetes de Linux (`.deb`, `.rpm`, AppImage de la consola) se hacen con
+`empaquetado/linux/empaquetar.sh` (`docs/desarrollo/empaquetar-linux.md`).
+
+## Instalar en Linux
+
+Ubuntu 24.04 o parecidas: `aula-consola_X.Y.Z_amd64.deb` (profesores) y
+`aula-cliente_X.Y.Z_amd64.deb` (alumnos), o los `.rpm` en Fedora. Después,
+`sudo aula-cliente configurar -canal 1 -clave aula-centro.pub` en cada alumno. Para ver la
+pantalla de los alumnos, la sesión debe ser «Ubuntu en Xorg». Qué funciona en cada sistema:
+`docs/compatibilidad.md`.
 
 ## Instalar (Windows, modelo tipo LanSchool)
 

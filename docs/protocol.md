@@ -301,20 +301,20 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 |---|---|---|
 | `code.view` | `code.share`, `code.clear` | v0 |
 | `msg.show` | `msg.show` | v0 |
-| `screen.thumb` | `screen.thumb.start`, `screen.thumb.stop` | v0.3 (Windows) |
-| `screen.snapshot` | `screen.snapshot.request` | v0.7 (§5.17). Windows, con la misma condición que `screen.thumb` (captura y distintivo); también los alumnos simulados. Linux y macOS no la declaran. |
+| `screen.thumb` | `screen.thumb.start`, `screen.thumb.stop` | v0.3 (Windows); Linux solo en sesión X11 (prompt 13) |
+| `screen.snapshot` | `screen.snapshot.request` | v0.7 (§5.17). Windows, con la misma condición que `screen.thumb` (captura y distintivo); también los alumnos simulados. Linux solo en sesión X11 (prompt 13); macOS no la declara. |
 | `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Sin publicar (§5.9–5.11). Windows, en modo ventana y como servicio con su ayudante (la pausa se muestra en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
-| `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). Linux y macOS no la declaran. |
+| `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). En Linux, solo si su WebKitGTK los tiene (el de Ubuntu 24.04 no); macOS no la declara. |
 | `app.block` | `app.block.set`, `app.block.clear` | v0.4 (§5.13). Windows, solo con el agente como servicio y su ayudante (D-016). |
 | `web.filter` | `web.filter.set`, `web.filter.clear` | v0.4 (§5.14). Windows, solo con el agente como servicio y su ayudante. |
-| `file.collect` | `file.collect.open`, `file.collect.request`, `file.collect.response.ack` | v0.11 (§5.21). Windows, en modo ventana y como servicio con su ayudante (lee en la sesión del alumno); también los alumnos simulados, que devuelven su último código. Linux y macOS no la declaran. |
+| `file.collect` | `file.collect.open`, `file.collect.request`, `file.collect.response.ack` | v0.11 (§5.21). Windows, en modo ventana y como servicio con su ayudante (lee en la sesión del alumno); también los alumnos simulados, que devuelven su último código. Linux en modo ventana (prompt 13); macOS no la declara. |
 | `code.collect` | `code.collect` | Reservada |
 | `power` | `power.action`, `power.cancel` | v0.5 (§5.15). Windows, en modo ventana y como servicio (también sin sesión iniciada). Linux y macOS no la declaran. |
 | `remote` | `remote.start`, `remote.input`, `remote.stop` | v0.6 (§5.16). Windows, en modo ventana y como servicio con su ayudante (la entrada se inyecta en la sesión del alumno). Linux y macOS no la declaran. |
 | `hand` | `hand.raise`, `hand.lower` | v0.8 (§5.18). Todos los SO: no toca el sistema, solo la ventana del alumno. Se declara cuando hay ventana (en modo servicio, con el ayudante en la sesión del alumno); también los alumnos simulados. |
 | `msg.student` | `msg.student`, `msg.student.ack` | v0.8 (§5.18). Igual que `hand`. |
 | `timer` | `timer.start`, `timer.extend`, `timer.stop` | v0.9 (§5.19). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana; también los alumnos simulados. |
-| `file.push` | `file.push` | v0.10 (§5.20). Windows, en modo ventana y como servicio con su ayudante (escribe en la sesión del alumno); también los alumnos simulados, que acusan sin escribir. Linux y macOS no la declaran. |
+| `file.push` | `file.push` | v0.10 (§5.20). Windows, en modo ventana y como servicio con su ayudante (escribe en la sesión del alumno); también los alumnos simulados, que acusan sin escribir. Linux en modo ventana (prompt 13); macOS no la declara. |
 | `open.url` | `open.url` | v0.12 (§5.22). Windows, en modo ventana y como servicio con su ayudante (abre en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
 | `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`. |
 | `poll` | `poll.open`, `poll.close`, `poll.results`, `poll.vote.ack`; y acepta `poll.vote` | v0.13 (§5.23). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |

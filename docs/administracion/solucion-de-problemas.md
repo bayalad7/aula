@@ -215,6 +215,25 @@ clásico de un **cable dañado o mal ponchado**, o de un puerto del switch con p
 - **Batería gastada:** perdió más capacidad de la que fijaste (por omisión, la mitad). Que
   trabaje siempre conectada o pide que cambien la batería.
 
+## En Linux no se ve la pantalla del alumno
+
+Si en la ficha del alumno «Ver su pantalla» y «Captura» salen como no disponibles y su equipo
+usa Linux, ese equipo está en una sesión **Wayland**, donde ninguna app puede ver la pantalla de
+las demás ni dejar el aviso para el alumno siempre encima. Pide que el alumno cierre sesión y,
+en la pantalla de inicio, elija **«Ubuntu en Xorg»** con la rueda junto al botón de entrar. Para
+todo el laboratorio, el responsable de TI puede desactivar Wayland en el inicio de sesión
+(`WaylandEnable=false` en `/etc/gdm3/custom.conf`). En el equipo, `aula-cliente diagnostico`
+dice qué sesión usa y qué falta.
+
+Tampoco funciona en Wayland el atajo del teclado de la consola para traer código: copia con Ctrl+C y pulsa
+**Pegar** en la vista Código.
+
+## En Linux la consola no reconoce la clave del centro
+
+Si la consola de un equipo Linux dice que no tiene la clave del centro aunque se creó, el
+maestro no está en el grupo `aula`, que es el único que puede leerla. El responsable de TI lo
+agrega con `sudo usermod -aG aula <usuario>` y el maestro cierra sesión y vuelve a entrar.
+
 ## El portapapeles no funciona
 
 Si «Pegar» dice que no hay texto copiado, copia el código con Ctrl+C y vuelve a

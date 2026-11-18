@@ -790,8 +790,40 @@ observa al alumno ni cambia el equipo: por eso **no lleva banda** ni aviso cuand
     los valores. Los alumnos simulados informan valores inventados, con algunas alertas, marcados
     y contados aparte (regla 32): no leen ningún equipo.
 
+## Linux, primera parte (sin publicar; etapa 13, capa 1)
+
+Aprobadas el 2026-11-18 con el prompt 13. En Linux el agente corre en la sesión gráfica del
+alumno (arranque automático de XDG; todavía sin servicio de systemd). Valen las mismas reglas que
+en Windows; esto es lo que cambia o se precisa. Qué funciona en cada sistema:
+`docs/compatibilidad.md`.
+
+96. **Miniaturas y captura solo en una sesión X11, con el mismo distintivo.** En una sesión X11
+    (`XDG_SESSION_TYPE=x11`) el agente declara `screen.thumb` y `screen.snapshot` y cumple las
+    reglas 6–8 y 44–49 igual que en Windows: antes del primer cuadro aparece el distintivo
+    «● Tu pantalla está siendo vista por el profesor» arriba al centro del monitor principal, en
+    una ventana de X11 que queda encima de las demás, no recibe clics ni el foco y no se puede
+    cerrar desde Aula. La banda de la ventana y su título son los mismos. Si el agente no puede
+    mostrar el distintivo, **no declara** las miniaturas ni la captura: nunca se ve una pantalla
+    sin aviso.
+97. **En Wayland no se observa la pantalla.** En una sesión Wayland las ventanas de otras apps no
+    se pueden capturar sin que el sistema pida permiso cada vez, y no hay una ventana «siempre
+    encima» confiable para el distintivo. Por eso el agente **no declara** `screen.thumb` ni
+    `screen.snapshot` y la consola muestra esas acciones como no disponibles en ese equipo. El
+    manual recomienda la sesión «Ubuntu en Xorg» en el laboratorio; Aula nunca cambia la sesión
+    del equipo por su cuenta.
+98. **Archivos como el alumno, en su carpeta Documentos.** La carpeta de trabajo es
+    `Documentos/Aula` del usuario con la sesión iniciada, según `xdg-user-dir DOCUMENTS` (en
+    español, `~/Documentos/Aula`). Valen las reglas 55–65: el agente corre como el alumno, no
+    sigue enlaces simbólicos (los omite o rechaza y lo dice) y no escribe fuera de esa carpeta.
+99. **Lo demás no se declara.** Mientras no esté portado, el agente de Linux **no declara**
+    energía, control remoto, pantalla en blanco, proyectar, restricciones ni abrir páginas o apps,
+    y recibir la transmisión solo si el WebView del equipo trae WebRTC y H.264 (el de Ubuntu
+    24.04 no): la ficha «Qué puede hacer su equipo» lo muestra como no disponible y el
+    alumno lo ve igual en «Qué puede hacer Aula en este equipo». Lo prueba
+    `TestLinuxDeclaresOnlyWhatItDoes`.
+
 ## Pendiente para etapas futuras
 
-- Linux y macOS (incluida la recepción de la transmisión, las restricciones, el control remoto
-  y la captura de pantalla): sus textos de aviso se agregarán aquí antes de implementarlos, con
-  las mismas reglas 6–49.
+- Linux, siguientes partes (servicio de systemd, recepción de la transmisión, restricciones,
+  control remoto, energía, pantalla en blanco) y macOS: sus textos de aviso se agregarán aquí
+  antes de implementarlos, con las mismas reglas 6–49.

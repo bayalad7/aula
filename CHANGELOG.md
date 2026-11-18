@@ -175,7 +175,23 @@ retiraron; esta es la primera.
 - Las apps se compilan con **Go 1.27**, con su último parche de seguridad; para compilarlas en
   tu equipo hace falta Go 1.27 o más reciente.
 
+### Linux (primera parte)
+
+- **Aula en Linux** (Ubuntu 24.04 y parecidas): paquetes `.deb` y `.rpm` de la consola y del
+  agente, y la consola también como **AppImage**, sin instalar. El agente arranca con cada sesión
+  y se configura con `sudo aula-cliente configurar -canal 1 -clave aula-centro.pub`.
+- En Linux funcionan el código y **Copiar**, avisos, mensajes, manos, temporizador, encuestas y
+  cuestionarios, enviar y recoger archivos (en `~/Documentos/Aula`), terminar la clase y el
+  atajo para traer código a la consola.
+- **Ver la pantalla del alumno** y la captura, con el mismo aviso rojo siempre visible, en la
+  sesión **«Ubuntu en Xorg»**. En la sesión Wayland, Aula no ve la pantalla y lo dice: la ficha
+  lo muestra como no disponible y `aula-cliente diagnostico` explica qué hacer.
+- La clave del centro de una consola Linux la leen los maestros del grupo `aula`; el paquete
+  abre el firewall (`ufw` o `firewalld`) si está activo. Lo que falta en Linux está en la tabla
+  de compatibilidad (`docs/compatibilidad.md`).
+
 ### Todavía no
 
-- La pantalla en blanco de la clase, la asistencia y bitácora, Linux y macOS en las funciones que
-  tocan el sistema, y la auto-actualización.
+- La asistencia y bitácora, la auto-actualización, macOS y, en Linux, el control remoto, la
+  energía, las restricciones, pausar, transmitir y proyectar pantallas, abrir apps, encender
+  equipos, la salud del equipo y el agente como servicio.

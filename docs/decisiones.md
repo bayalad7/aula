@@ -818,3 +818,45 @@ blanco como el contenido.
 calculado de cada elemento en todas las escenas del arnés antes y después (historial
 `docs/ux/historial/menu-secundario.md`). El Menú y el icono de app cambian en las capturas del
 manual y del mapa.
+
+## D-023: Linux por capas; la pantalla solo en X11, en Go puro, y paquetes con nfpm
+
+**Fecha:** 2026-11-18 · **Estado:** aprobada (prompt 13, capa 1 de Linux; Ubuntu 24.04 LTS de
+referencia).
+
+**Contexto.** `internal/platform` tenía 22 interfaces con implementación solo de Windows. Portar
+todo a Linux de una vez (servicio, entrada, energía, restricciones, H.264) es largo y difícil de
+probar sin un laboratorio Linux. Ubuntu 24.04 entra por defecto en **Wayland**, donde una app no
+puede capturar la pantalla de las demás sin que el portal pida permiso cada vez, ni dejar una
+ventana siempre encima, ni registrar un atajo global. Wails en Linux necesita cgo (GTK y
+WebKitGTK 4.1), mientras que los binarios de Windows se publican sin cgo.
+
+**Decisión.**
+- **Por capas.** La capa 1 trae lo que hace útil un laboratorio Linux: compilar las dos apps,
+  portapapeles (ya era multiplataforma), miniaturas y captura con su distintivo, el atajo de la
+  consola, `Documentos/Aula` (enviar y recoger archivos), la clave del centro y los paquetes. El
+  resto sigue en «no soportado» y **no se declara**; `docs/compatibilidad.md` lo dice fila por
+  fila. Lo siguiente es el servicio de systemd con ayudante por sesión.
+- **La pantalla solo en X11.** Captura (`kbinani/screenshot`), distintivo (ventana
+  *override-redirect* con forma de entrada vacía, que vuelve encima cada 2 s) y atajo
+  (`XGrabKey`) usan `jezek/xgb`, en Go puro, sin cgo propio. En Wayland fallan con
+  `ErrNotSupported` antes de tocar el portal: el agente no declara `screen.thumb` ni
+  `screen.snapshot` (privacidad, reglas 96–97) y el manual recomienda «Ubuntu en Xorg».
+- **Arranque con la sesión** (`/etc/xdg/autostart`) mientras no haya servicio.
+- **Carpeta de trabajo con `openat`/`O_NOFOLLOW`** nivel por nivel: un enlace simbólico nunca se
+  sigue, ni aunque aparezca a mitad del recorrido; sin `RENAME_NOREPLACE`, un enlace duro.
+- **Clave del centro con el grupo `aula`** (`root:aula`, `0640`), que crea el paquete de la
+  consola: el equivalente de «Usuarios del equipo: solo lectura» de Windows, sin abrirla a todos.
+- **Configurar sin asistente:** `aula-cliente configurar -canal N -clave …` (con `sudo`), igual
+  en `.deb` y `.rpm` y fácil de automatizar.
+- **Paquetes con nfpm** (`.deb` y `.rpm`, versión fija) y **AppImage solo de la consola**
+  (appimagetool 1.9.1 y el runtime type2 `20251108`, fijados por SHA-256): el agente debe
+  instalarse en el sistema para arrancar con cada sesión. Flatpak se descartó: su sandbox choca
+  con la captura, el portapapeles global y el servicio. La AppImage usa el WebKitGTK del sistema.
+- **cgo solo en Linux:** los binarios de Linux se compilan con `CGO_ENABLED=1 -tags webkit2_41`,
+  porque Wails lo exige; los de Windows siguen sin cgo.
+
+**Consecuencias.** El release suma los jobs `linux` y `linux-instalar` (instala el `.deb` en un
+Ubuntu limpio y el `.rpm` en Fedora, los configura y los quita) y un job final que firma un solo
+`checksums.txt` para todos. Las pruebas de X11 corren bajo Xvfb en el CI. Falta la prueba en un
+equipo Linux real (`docs/prueba-vms.md` §31).

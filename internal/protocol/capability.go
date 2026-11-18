@@ -7,7 +7,7 @@ type Capability string
 const (
 	CapCodeView    Capability = "code.view"
 	CapMsgShow     Capability = "msg.show"
-	CapScreenThumb Capability = "screen.thumb" // Windows (docs/protocol.md §5.6)
+	CapScreenThumb Capability = "screen.thumb" // Windows, Linux X11 (docs/protocol.md §5.6)
 	// CapScreenBroadcast receives the teacher's screen (§5.12). Windows.
 	CapScreenBroadcast Capability = "screen.broadcast"
 	// CapAppBlock and CapWebFilter apply the class restrictions (§5.13–5.14).
@@ -19,8 +19,8 @@ const (
 	// CapRemote lets the teacher see and control the keyboard and mouse (§5.16).
 	// Windows, in window mode or as a service with its helper.
 	CapRemote Capability = "remote"
-	// CapScreenSnapshot sends one still image of the screen (§5.17). Windows,
-	// with the same capture and indicator as screen.thumb.
+	// CapScreenSnapshot sends one still image of the screen (§5.17). Windows
+	// and Linux X11, with the same capture and indicator as screen.thumb.
 	CapScreenSnapshot Capability = "screen.snapshot"
 	// CapHand and CapMsgStudent let the student raise a hand and write to the
 	// teacher (§5.18). Every OS, whenever the agent has a window.
@@ -30,10 +30,10 @@ const (
 	// whenever the agent has a window.
 	CapTimer Capability = "timer"
 	// CapFilePush saves the files the teacher sends in the work folder (§5.20).
-	// Windows, in window mode or as a service with its helper.
+	// Windows, in window mode or as a service with its helper; Linux.
 	CapFilePush Capability = "file.push"
 	// CapFileCollect reads the activity folder of a collection (§5.21).
-	// Windows, in window mode or as a service with its helper.
+	// Windows, in window mode or as a service with its helper; Linux.
 	CapFileCollect Capability = "file.collect"
 	// CapOpenURL and CapOpenApp open a page or an allowed app in the student's
 	// session (§5.22). Windows, in window mode or as a service with its helper;

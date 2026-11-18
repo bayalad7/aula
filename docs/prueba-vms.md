@@ -1364,3 +1364,30 @@ VM 1, en modo ventana en la VM 2) y en Ajustes › Salud la dirección `www.goog
 | **SL-F** Autodiagnóstico | **Autodiagnóstico** a las dos VMs. | Las dos responden en menos de 20 s; en una VM sin driver de video, «Tarjeta de video · sin su driver». No queda ningún `aula-prueba-*.tmp` en la carpeta temporal. |
 
 **Para aceptar** bastan SL-A a SL-D en ✅.
+
+## 31. Linux, capa 1 (13)
+
+Comprueba los criterios de aceptación del prompt 13 en Linux: un alumno con **Ubuntu 24.04** se
+conecta al canal, recibe código y lo pega intacto; existe el paquete instalable; la tabla de
+`docs/compatibilidad.md` es honesta. Dos VMs con Ubuntu 24.04 Desktop en la misma red, con los
+paquetes del release (o los de `docs/desarrollo/empaquetar-linux.md`):
+
+- **VM L1 (profesor):** `sudo apt install ./aula-consola_*.deb`, `sudo aula-consola centro crear`,
+  `sudo aula-consola centro publica -o aula-centro.pub`, `sudo usermod -aG aula <usuario>` y
+  volver a iniciar sesión.
+- **VM L2 (alumno):** `sudo apt install ./aula-cliente_*.deb` y
+  `sudo aula-cliente configurar -canal 1 -clave aula-centro.pub` (copia el `.pub` desde L1).
+
+Una tercera VM Windows con la consola de Windows sirve para LX-E. Todo se revisa a ojo en cada
+VM; nunca con clics ni teclas sintéticas en tu escritorio.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **LX-A** Conectar y copiar (**aceptación**) | En L2 entra con «Ubuntu en Xorg». Abre la consola en L1 y emite un snippet con sangría, tildes y una línea vacía. En L2, **Copiar** y pega en el editor de texto. | L2 aparece solo en Alumnos (mDNS) y conectado; el snippet llega y se pega **intacto**. La ficha de L2 dice Linux y su versión. |
+| **LX-B** Pantalla con aviso (**aceptación**) | Abre la vista de pantallas en L1 y toma una captura de L2. | En L2, antes del primer cuadro, el distintivo rojo arriba al centro y la banda de la ventana; la miniatura lo muestra. Haz clic encima del distintivo en L2: el clic llega a la ventana de abajo. Al cerrar la vista, se va. |
+| **LX-C** Wayland honesto (**aceptación**) | En L2 cierra sesión y entra con «Ubuntu» (Wayland). Corre `aula-cliente diagnostico`. | La consola ya no ofrece ver su pantalla (no disponible en la ficha); el diagnóstico dice «Sesión gráfica: Wayland» y qué hacer. Código, avisos y encuestas siguen llegando. Nunca aparece un diálogo del sistema pidiendo compartir la pantalla. |
+| **LX-D** Archivos | Envía un archivo y abre una recolección; en L2 guarda un `.py` en la carpeta de la actividad y recoge. | Llega a `~/Documentos/Aula/…` (con la carpeta en español); se recoge el `.py`. Un enlace simbólico dentro de la carpeta se lista como enlace y no se sigue. |
+| **LX-E** Mezcla con Windows | Con la consola de Windows en el mismo canal y L2 instalado con la misma clave del centro. | L2 aparece en la consola de Windows igual que un alumno de Windows, con «Qué puede hacer su equipo» sin control remoto, energía ni restricciones. |
+| **LX-F** Quitar | En L2 `sudo apt purge aula-cliente`; en L1 `sudo apt purge aula-consola`. | Ya no arrancan con la sesión ni aparecen en Actividades; `/etc/Aula/alumno/config.json` se borra; en L1 la clave del centro sigue en `/etc/Aula/centro` y las reglas de `ufw` (si estaba activo) se quitan. |
+
+**Para aceptar** bastan LX-A a LX-C en ✅.

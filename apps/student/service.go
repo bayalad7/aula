@@ -322,8 +322,9 @@ type emitted struct {
 }
 
 // hello is the hello of the next connection: the session's user and the
-// capabilities its helper can honour; without a helper only power (no window,
-// no screen, nobody's work to lose: docs/privacidad.md rules 17 and 29).
+// capabilities its helper can honour; without a helper only power and the
+// health the service reads itself (no window, no screen, nobody's work to
+// lose: docs/privacidad.md rules 17, 29 and 92).
 func (sa *serviceAgent) hello() protocol.HelloInfo {
 	sa.mu.Lock()
 	defer sa.mu.Unlock()
@@ -459,7 +460,10 @@ func (sa *serviceAgent) serve(ctx context.Context, s platform.Session, conn net.
 		sa.app.viewer.Stop()
 		sa.pub.HelperGone() // the presentation fails: nothing is captured any more
 		if sa.policy != nil {
-			_ = sa.policy.Clear("helper gone")
+			if err := sa.policy.Clear("helper gone"); err != nil {
+				// Retried by the policy itself (docs/privacidad.md rule 24).
+				sa.app.log.Warn("restrictions not fully removed", "err_kind", platform.ErrorKind(err))
+			}
 		}
 		sa.app.requestRestart()
 	}

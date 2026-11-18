@@ -245,6 +245,7 @@ type machine struct {
 	rules     int
 	values    map[string]string // "key\name" → value; absent: does not exist
 	failApply bool
+	failClear int    // how many Clear calls fail, keeping the rule
 	journal   string // to check it is written before anything changes
 	order     []string
 }
@@ -265,9 +266,13 @@ func (d fakeDNS) Apply(server string) error {
 }
 func (d fakeDNS) Clear() error {
 	d.m.mu.Lock()
-	d.m.rules = 0
+	defer d.m.mu.Unlock()
 	d.m.log("nrpt.clear")
-	d.m.mu.Unlock()
+	if d.m.failClear > 0 {
+		d.m.failClear--
+		return errors.New("Remove-DnsClientNrptRule falló")
+	}
+	d.m.rules = 0
 	return nil
 }
 func (d fakeDNS) Flush() error { return nil }
@@ -426,6 +431,79 @@ func TestManagerUndoesAFailedApply(t *testing.T) {
 	}
 	if m.State().Active() || (*states)[len(*states)-1].Active() {
 		t.Fatal("notice says active after a failed apply")
+	}
+}
+
+// Rule 24: if the DNS rule cannot be removed, the student keeps resolving names
+// (the resolver stays up with no policy) and the removal is tried again until
+// the computer is as it was.
+func TestManagerFailedRemovalKeepsTheNetworkAndRetries(t *testing.T) {
+	mach := newMachine(t)
+	rules0, vals0 := mach.snapshot()
+	port, _ := fakeUpstream(t)
+	m, states := newManager(t, mach, nil)
+	m.upstreamPort, m.retryEvery = port, 50*time.Millisecond
+	m.Handle(webSet(protocol.PolicyDeny, "youtube.com"))
+	addr := m.resolver.LocalAddr()
+
+	mach.mu.Lock()
+	mach.failClear = 2 // the clear and the first retry fail
+	mach.mu.Unlock()
+	reply, _ := m.Handle(protocol.New(protocol.WebFilterClear{}))
+	if e, ok := reply.(protocol.ErrorPayload); !ok || e.Code != protocol.CodeInternal {
+		t.Fatalf("clear reply %#v", reply)
+	}
+	if last := (*states)[len(*states)-1]; last.Active() {
+		t.Fatalf("notice still active: %+v", last)
+	}
+	// The rule still points at the resolver: it answers, and no longer filters.
+	if r := query(t, "udp", addr, "youtube.com"); r.Rcode != dns.RcodeSuccess {
+		t.Fatalf("after a failed removal: rcode %d, want the name resolved", r.Rcode)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		rules, vals := mach.snapshot()
+		_, jerr := os.Stat(mach.journal)
+		if rules == rules0 && reflect.DeepEqual(vals, vals0) && errors.Is(jerr, os.ErrNotExist) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("not restored by the retries: %d rules %v, journal %v", rules, vals, jerr)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	m.mu.Lock()
+	left, pending := m.resolver, m.retry
+	m.mu.Unlock()
+	if left != nil || pending != nil {
+		t.Fatalf("resolver %v or retry %v left after the removal", left, pending)
+	}
+}
+
+// A filter applied while a removal is still pending takes over: it keeps the
+// student's browser settings saved the first time, not the disabled ones.
+func TestManagerNewFilterAfterAFailedRemoval(t *testing.T) {
+	mach := newMachine(t)
+	_, vals0 := mach.snapshot()
+	port, _ := fakeUpstream(t)
+	m, _ := newManager(t, mach, nil)
+	m.upstreamPort, m.retryEvery = port, time.Hour
+	m.Handle(webSet(protocol.PolicyDeny, "youtube.com"))
+	mach.mu.Lock()
+	mach.failClear = 1
+	mach.mu.Unlock()
+	m.Handle(protocol.New(protocol.WebFilterClear{}))
+	if reply, _ := m.Handle(webSet(protocol.PolicyDeny, "youtube.com")); reply == nil {
+		t.Fatal("no reply")
+	} else if a, ok := reply.(protocol.WebFilterAck); !ok || !a.Active {
+		t.Fatalf("new filter reply %#v", reply)
+	}
+	if r := query(t, "udp", m.resolver.LocalAddr(), "youtube.com"); r.Rcode != dns.RcodeNameError {
+		t.Fatal("the new filter does not block")
+	}
+	m.Handle(protocol.New(protocol.WebFilterClear{}))
+	if _, vals := mach.snapshot(); !reflect.DeepEqual(vals, vals0) {
+		t.Fatalf("browser settings %v, want the student's %v", vals, vals0)
 	}
 }
 

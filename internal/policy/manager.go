@@ -16,6 +16,10 @@ import (
 // while the filter is on (the laptop may change network).
 const upstreamsEvery = 30 * time.Second
 
+// teardownRetry is how often a web filter that could not be fully removed is
+// removed again (docs/privacidad.md rule 24).
+const teardownRetry = 30 * time.Second
+
 // State is what the student's notice shows (docs/privacidad.md rules 20-21).
 type State struct {
 	Apps *Summary `json:"apps"` // nil without an app policy
@@ -34,8 +38,9 @@ type Manager struct {
 	DNS          platform.DNSRedirect // nil: no web.filter
 	DoH          platform.BrowserDoH
 	Journal      Journal
-	ResolverAddr string // DefaultResolverAddr if empty
-	upstreamPort int    // tests
+	ResolverAddr string        // DefaultResolverAddr if empty
+	upstreamPort int           // tests
+	retryEvery   time.Duration // teardownRetry if zero (tests)
 
 	// OnChange is called with the new state before it is applied, so the
 	// student sees the notice first, and again if applying fails.
@@ -47,6 +52,7 @@ type Manager struct {
 	web      *WebPolicy
 	resolver *Resolver
 	saved    []platform.SavedSetting
+	retry    *time.Timer // a removal that failed, tried again
 
 	// Read by the resolver's goroutines without m.mu: teardown holds m.mu
 	// while it shuts the resolver down, which waits for them.
@@ -129,7 +135,7 @@ func (m *Manager) Handle(env protocol.Envelope) (reply protocol.Payload, handled
 		defer m.mu.Unlock()
 		if err := m.clearWeb("clear"); err != nil {
 			m.log().Warn("web filter not fully removed", "err", err)
-			return protocol.NewError(env.ID, protocol.CodeInternal, "no se pudo quitar del todo el filtro web; se reintentará al reiniciar el agente"), true
+			return protocol.NewError(env.ID, protocol.CodeInternal, "no se pudo quitar del todo el filtro web; se reintentará en 30 segundos"), true
 		}
 		return protocol.WebFilterAck{RefID: env.ID}, true
 	}
@@ -206,6 +212,10 @@ func (m *Manager) applyWeb(p *WebPolicy) error {
 	if prev != nil {
 		return m.DNS.Flush() // already on: only the list changes
 	}
+	if m.retry != nil { // a removal still pending: this filter takes over
+		m.retry.Stop()
+		m.retry = nil
+	}
 	fail := func(err error) error {
 		if uerr := m.teardown(); uerr != nil {
 			err = errors.Join(err, uerr)
@@ -226,14 +236,22 @@ func (m *Manager) applyWeb(p *WebPolicy) error {
 	if addr == "" {
 		addr = DefaultResolverAddr
 	}
-	r := &Resolver{Addr: addr, Policy: m.currentWeb, Upstreams: m.currentUpstreams, UpstreamPort: m.upstreamPort}
-	if err := r.Start(); err != nil {
-		return fail(err)
+	// A resolver and browser settings left by a removal that failed are kept:
+	// the settings saved then are the student's own, not the disabled ones.
+	r := m.resolver
+	if r == nil {
+		r = &Resolver{Addr: addr, Policy: m.currentWeb, Upstreams: m.currentUpstreams, UpstreamPort: m.upstreamPort}
+		if err := r.Start(); err != nil {
+			return fail(err)
+		}
+		m.resolver = r
 	}
-	m.resolver = r
-	saved, err := m.DoH.Snapshot()
-	if err != nil {
-		return fail(err)
+	saved := m.saved
+	if saved == nil {
+		var err error
+		if saved, err = m.DoH.Snapshot(); err != nil {
+			return fail(err)
+		}
 	}
 	if err := m.Journal.Write(Record{NRPT: true, DoH: saved, Since: time.Now()}); err != nil {
 		return fail(err)
@@ -266,23 +284,50 @@ func (m *Manager) clearWeb(why string) error {
 }
 
 // teardown undoes the computer changes in reverse order. The journal is
-// removed only if everything was undone, so a failure is retried at the
-// next start. m.mu is held.
+// removed only if everything was undone. If something fails, the removal is
+// tried again every teardownRetry (and at the next start, from the journal);
+// meanwhile, if the DNS rule could not be removed, the resolver stays up with
+// no policy, so names still resolve: the student is never left without
+// network and without a notice (docs/privacidad.md rule 24). m.mu is held.
 func (m *Manager) teardown() error {
-	errs := []error{m.DNS.Clear()}
+	cleared := m.DNS.Clear()
+	errs := []error{cleared}
 	if m.saved != nil {
-		errs = append(errs, m.DoH.Restore(m.saved))
+		if err := m.DoH.Restore(m.saved); err != nil {
+			errs = append(errs, err)
+		} else {
+			m.saved = nil
+		}
 	}
 	errs = append(errs, m.DNS.Flush())
-	if m.resolver != nil {
+	if m.resolver != nil && cleared == nil { // nothing points at it any more
 		_ = m.resolver.Close()
 		m.resolver = nil
 	}
-	if err := errors.Join(errs...); err != nil {
-		return err
+	err := errors.Join(errs...)
+	if err == nil {
+		err = m.Journal.Remove()
 	}
-	m.saved = nil
-	return m.Journal.Remove()
+	if err != nil && m.retry == nil {
+		every := m.retryEvery
+		if every <= 0 {
+			every = teardownRetry
+		}
+		m.retry = time.AfterFunc(every, m.retryTeardown)
+	}
+	return err
+}
+
+// retryTeardown removes again a web filter whose removal failed.
+func (m *Manager) retryTeardown() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.retry = nil
+	if m.web != nil { // a new filter took over
+		return
+	}
+	err := m.teardown()
+	m.log().Info("web filter removal retried", "clean", err == nil)
 }
 
 func (m *Manager) currentWeb() *WebPolicy { return m.webNow.Load() }

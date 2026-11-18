@@ -45,7 +45,9 @@ getent group aula
 test "$($SUDO stat -c '%U:%G %a' /etc/Aula/centro)" = "root:aula 750"
 $SUDO aula-consola centro crear
 test "$($SUDO stat -c '%U:%G %a' /etc/Aula/centro/clave-centro.pem)" = "root:aula 640"
-PUB="$(mktemp)"
+# A new file in a fresh folder: with fs.protected_regular (Ubuntu), root may
+# not write a file another user created in /tmp.
+PUB="$(mktemp -d)/aula-centro.pub"
 $SUDO aula-consola centro publica -o "$PUB"
 $SUDO aula-cliente configurar -canal 1 -clave "$PUB"
 grep -q '"channel": "1"' /etc/Aula/alumno/config.json

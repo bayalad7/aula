@@ -40,7 +40,7 @@ siendo vista por el profesor». Las imágenes no se guardan: al volver a Lista s
 
 El botón ⓘ de la columna Acciones abre su **ficha** a la derecha: usuario, estado,
 la etiqueta y el nombre de su equipo, su lugar en el salón, sistema, versión de Aula, canal, desde
-qué hora está conectado y sus restricciones. Abajo dice
+qué hora está conectado, desde qué dirección y sus restricciones. Abajo dice
 **qué puede hacer su equipo** (recibir código, mostrar su pantalla, energía, control remoto…), y
 arriba, si su equipo contestó con un problema, cuál fue y qué hacer.
 
@@ -111,5 +111,28 @@ la derecha, sin tapar la lista:
 - **En pausa** (insignia en Notas): su pantalla está cubierta por la pausa. **Pausando…** o **Sin
   acusar la pausa** dicen que su equipo aún no la confirma; **No se pudo pausar**, que su equipo no
   pudo mostrarla.
+- **Duplicado** (insignia en Notas): otra conexión dice ser el mismo equipo. Ver
+  [Dos conexiones dicen ser el mismo equipo](#dos-conexiones-dicen-ser-el-mismo-equipo).
 
 Si un alumno no aparece, abre [¿Falta un alumno?](pantalla:falta).
+
+## Dos conexiones dicen ser el mismo equipo
+
+Aula comprueba que la consola es la del centro, pero no comprueba a los alumnos: un programa
+modificado podría entrar al canal con el nombre de otro equipo. Cuando dos conexiones dicen ser el
+mismo equipo (el mismo nombre y usuario, o la misma tarjeta de red), las dos filas llevan la
+insignia **Duplicado**, su ficha dice desde qué dirección se conecta cada una y la consola te avisa
+la primera vez.
+
+Aula no descarta nada: tú decides. Mientras dure, lo que respondan en un cuestionario lleva
+«Otra conexión dijo ser este equipo» en la columna **Aviso** de las calificaciones, y lo que se
+recoja guarda la dirección y la marca en `aula-recoleccion.json`.
+
+Qué revisar:
+
+1. **Dos equipos con el mismo nombre** (por ejemplo, clonados de la misma imagen): pide al
+   administrador que les ponga nombres distintos. Es lo más común.
+2. **Un equipo que no es del salón**: compara la dirección de cada ficha con la del equipo del
+   alumno (en ese equipo, `ipconfig` en una terminal dice su «Dirección IPv4»). La que no coincide
+   es la que se hace pasar por él: revisa a mano sus respuestas y su entrega y avisa al
+   administrador.

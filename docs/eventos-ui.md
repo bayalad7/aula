@@ -221,7 +221,7 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
 
 | Evento | Datos | Cuándo |
 |---|---|---|
-| `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código, responde a una orden de energía (`power`) o a una pausa (`pause`: `sent`, `paused`, `resuming`, `failed` o `""`, y `pauseUnacked` si no la acusó en 5 s), o manda un error del protocolo (`lastError`). `canPause` y el contador `canPause`: equipos reales con `screen.freeze`. Salud del laboratorio (§5.27): `canHealth`, `canSelfTest`, y la insignia `healthAlerts` (cuántas alertas tiene su equipo) y `healthLevel` (`""`, `warn` o `error`). Encender (§5.15.2): `canWake` (se conoce su MAC), `wake` (`null` o `{state: "waking"|"noresponse", deadline_ms, other_subnet}`) y `off`, los equipos conocidos sin sesión (`{hostname, lastSeen, wake}`, para «Mostrar apagados»); llega también cuando se acaban los 3 min de «Encendiendo…». |
+| `aula:students` | `Students` | Un agente entra, sale, se queda mudo, confirma código, responde a una orden de energía (`power`) o a una pausa (`pause`: `sent`, `paused`, `resuming`, `failed` o `""`, y `pauseUnacked` si no la acusó en 5 s), o manda un error del protocolo (`lastError`). `canPause` y el contador `canPause`: equipos reales con `screen.freeze`. Salud del laboratorio (§5.27): `canHealth`, `canSelfTest`, y la insignia `healthAlerts` (cuántas alertas tiene su equipo) y `healthLevel` (`""`, `warn` o `error`). Encender (§5.15.2): `canWake` (se conoce su MAC), `wake` (`null` o `{state: "waking"|"noresponse", deadline_ms, other_subnet}`) y `off`, los equipos conocidos sin sesión (`{hostname, lastSeen, wake}`, para «Mostrar apagados»); llega también cuando se acaban los 3 min de «Encendiendo…». Duplicados (revisión 11): `address` y `duplicateOf`, las otras conexiones conectadas que dicen ser el mismo equipo (mismo nombre y usuario o una MAC en común); la consola pone la insignia «Duplicado» y avisa una vez por equipo. |
 | `aula:pauses` | `screen.PauseSummary` | Se pausan o se reanudan pantallas, cambia el mensaje, un agente acusa (`screen.freeze.ack`) o falla, se cumplen 5 s sin acuse, o un alumno en pausa se desconecta (docs/protocol.md §5.9). `{paused, unacked, failed, message}`: la franja «N pantallas en pausa» con «Cambiar mensaje» y «Reanudar todo». También en `View().pauses`. |
 | `aula:history` | `History` | Tras cada emisión o reemisión. |
 | `aula:deliveries` | `Deliveries` | Tras cada envío, cada acuse (`code.ack`, `msg.ack`) y cada error con que un alumno contesta a un envío (`rejected`). |
@@ -262,6 +262,8 @@ interfaz ──App.StopBroadcast()──▶ screen.broadcast.stop a todos; la co
                   "lastCodeAck": "0c9a…", "ackedAt": "10:00:05",
                   "connectedAt": "09:58",          // hora en que abrió esta sesión
                   "lastError": { "code": "unsupported_capability", "at": "10:03:12" },  // null si no ha mandado ninguno
+                  "address": "192.168.1.47",       // IP de esta conexión
+                  "duplicateOf": ["192.168.1.90"], // IP de otras conexiones que dicen ser el mismo equipo (revisión 11, I-2); [] si ninguna
                   "canHand": true, "canMessage": true,   // hand y msg.student
                   "hand": 2,                       // su lugar en la fila de manos (0: abajo): «Mano levantada · 2»
                   "newMessages": 1,                // sus mensajes sin responder: «1 mensaje»

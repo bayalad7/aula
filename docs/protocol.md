@@ -2586,7 +2586,7 @@ paso 3.
 | Lectura del tráfico (código, mensajes) | TLS 1.3. |
 | Repetición de una prueba antigua | Nonce aleatorio de 32 bytes por conexión. |
 | Robo de la clave privada del equipo del profesor | **No cubierto**: quien la tenga puede suplantar la consola. Protegerla con la cuenta del SO; si se filtra, generar otra y reconfigurar agentes. |
-| Agente no autorizado que se une al canal | **No cubierto en v0**: la consola no autentica agentes (§3.2). El profesor ve hostname y usuario. |
+| Agente no autorizado que se une al canal | **No cubierto en v0**: la consola no autentica agentes (§3.2). El profesor ve hostname, usuario y dirección. Puede recibir lo que recibe la clase (código, transmisión, encuestas) y, desde 10.10 y 10.20, **hacerse pasar por otro equipo** para responder un cuestionario o entregar una recolección. Mitigación (revisión 11): la consola marca «Duplicado» a dos sesiones conectadas que dicen ser el mismo equipo (mismo nombre y usuario, o una MAC en común), y el CSV de calificaciones (columna «Aviso») y `aula-recoleccion.json` (`address`, `duplicate`) lo registran; no descarta nada. Un impostor que entra cuando el alumno real no está conectado no se detecta: autenticar a los agentes es la propuesta P-06 (`docs/ux/PROPUESTAS.md`). |
 | Saturación (DoS) en la LAN | Solo límites de tamaño y timeouts (§7). |
 | Orden de apagado falsa | `power.*` solo se procesa después de `auth.ok` (§3.1), como todo mensaje de la consola; antes → `unauthorized` y cierre. |
 | Video de transmisión falso o interceptado | El SDP (con la huella DTLS) viaja por la sesión autenticada (§3.2), así que el agente solo acepta medios de la consola legítima; el video va cifrado con DTLS-SRTP. |

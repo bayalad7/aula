@@ -79,6 +79,27 @@ SemVer).
   clic. Recomendación: empezar por `aula-cliente diagnostico --interactivo` (sin red, sin consola)
   y llevarlo a la consola solo si los técnicos lo piden.
 
+## P-06 · Autenticar a los agentes
+
+- **Pide:** la revisión 11 (`docs/auditoria-2026-11-17.md`, I-2): la consola no autentica a los
+  agentes (`docs/protocol.md` §10.3), y desde los cuestionarios (10.20) y las recolecciones (10.10)
+  un cliente modificado con la clave **pública** del centro puede entrar como otro equipo y
+  responder o entregar por él.
+- **Hoy:** la consola marca «Duplicado» a dos sesiones conectadas que dicen ser el mismo equipo, y
+  el CSV y `aula-recoleccion.json` lo registran. No detecta a un impostor que entra cuando el
+  alumno real no está conectado.
+- **Necesitaría:** cambiar el modelo de seguridad. Cada equipo de alumno genera al instalarse su
+  propia clave Ed25519 (en `ProgramData`, legible solo por SYSTEM, así que exige el agente como
+  servicio); el `hello` lleva su pública y una firma sobre un nonce de la consola (`auth.challenge`
+  en sentido inverso); la consola recuerda la pública de cada equipo la primera vez que lo ve
+  (como `equipos-conocidos.json`) y marca «Equipo distinto» si cambia. Es un cambio de ruptura del
+  protocolo (versión mayor) y de la configuración del agente, con su decisión en
+  `docs/decisiones.md`.
+- **Privacidad y riesgo:** la clave identifica al **equipo**, no al alumno, como la MAC (regla 31
+  bis). Riesgo: reinstalar un equipo cambia su clave y daría un falso aviso; el administrador
+  necesitaría «Olvidar» ese equipo. Recomendación: decidirlo antes de usar los cuestionarios para
+  calificaciones que cuenten.
+
 ## Notas (no son cambios de protocolo)
 
 - **Columna «Canal»** (Fase 3, punto 2): no se agrega a la lista porque todos los alumnos que ve la

@@ -28,8 +28,8 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
    la ventana la oculta y deja el icono de Aula en el área de notificación de Windows («Mostrar
    iconos ocultos»), con el estado al pasar el puntero y «Abrir Aula». Mientras está oculta, el
    código y los avisos que llegan solo marcan el icono; la ventana no reaparece sola, salvo por
-   una acción del profesor sobre el equipo (energía, restricciones, su transmisión o el control remoto, reglas 12, 20,
-   26 y 36). El distintivo de pantalla vista (regla 6) no depende de la ventana: se ve igual. Donde no
+   una acción del profesor sobre el equipo (energía, restricciones, su transmisión, el control remoto, la
+   pausa o mostrar tu pantalla a la clase, reglas 9, 12, 20, 26, 36 y 75). El distintivo de pantalla vista (regla 6) no depende de la ventana: se ve igual. Donde no
    hay área de notificación (Linux y macOS por ahora), cerrar minimiza. **Excepción:** mientras el
    profesor transmite su pantalla en una ventana o en pantalla completa, cerrar no hace nada hasta
    que la transmisión termine (regla 12).
@@ -39,10 +39,13 @@ conectado a un canal y a cuál. No hay modo oculto ni evasión de detección.
    la ventana de Aula, pero nunca le quitan el foco ni la mueven (prompt 19). Si está visible, se
    actualizan en su lugar; si está minimizada, el botón de la barra de tareas parpadea y el título
    dice cuántos hay nuevos; si está cerrada al área de notificación, el icono se marca. Solo las
-   acciones del profesor sobre el equipo traen la ventana al frente (reglas 12, 20, 26 y 36). Las
+   acciones del profesor sobre el equipo traen la ventana al frente (reglas 9, 12, 20, 26, 36 y
+   75). Las
    confirmaciones (`code.ack`, `msg.ack`) solo dicen "se mostró", no "se leyó" ni "se copió".
-5. **Registros.** No se registran el código, los textos de los avisos, las claves, los nonces ni
-   las firmas. Sí el tipo de mensaje, los identificadores, el equipo y los tamaños.
+5. **Registros.** No se registran el código, los textos de los avisos, las claves, los nonces, las
+   firmas ni las rutas o nombres de archivos y carpetas: cuando algo falla, el registro dice la
+   clase del error («acceso denegado», «disco lleno»), nunca su texto, que lleva la ruta
+   (`platform.ErrorKind`). Sí el tipo de mensaje, los identificadores, el equipo y los tamaños.
 
 ## Monitoreo de pantalla (etapa 09, Windows)
 
@@ -178,8 +181,9 @@ Reglas para `screen.broadcast.*` (`docs/protocol.md` §5.12), aprobadas el 2026-
     servicio lanza en la sesión del alumno con sus permisos normales. El servicio **no puede
     capturar la pantalla ni mostrar nada por sí mismo**: la captura solo existe en el ayudante,
     que muestra el distintivo antes. Sin ayudante (nadie inició sesión, o se acaba de cerrar), el
-    agente se conecta **sin capacidades**, salvo `power` (regla 29): la consola solo ve que el
-    equipo está encendido y no puede pedirle pantalla ni código.
+    agente se conecta **sin capacidades**, salvo `power` (regla 29) y la salud del equipo (`health`
+    y `health.selftest`, reglas 92–95), que lee el propio servicio: la consola solo ve que el
+    equipo está encendido y su estado, y no puede pedirle pantalla ni código.
 18. **El alumno ve el agente.** El servicio se llama "Aula — agente del aula" en
     `services.msc`, con una descripción clara, y el ayudante aparece como `aula-cliente.exe` en el
     Administrador de tareas. No hay nombres engañosos ni procesos escondidos. Si el alumno cierra
@@ -187,8 +191,11 @@ Reglas para `screen.broadcast.*` (`docs/protocol.md` §5.12), aprobadas el 2026-
 19. **Lo que cambia con los privilegios.** Antes, el alumno podía cerrar el agente; ahora solo un
     administrador puede detener el servicio. Correr como SYSTEM no habilita por sí mismo ninguna
     función nueva: cada una que use esos privilegios se documenta aquí, con su aviso visible,
-    antes de implementarse. Ya lo están `app.block` y `web.filter` (reglas 20–25) y `power.*`
-    (reglas 26–31); falta `remote.*`.
+    antes de implementarse. Ya lo están `app.block` y `web.filter` (reglas 20–25), `power.*`
+    (reglas 26–31) y la salud del equipo (`health.*`, reglas 92–95: el servicio lee el equipo y, en
+    el autodiagnóstico, se conecta a los destinos de Ajustes y escribe un archivo temporal que
+    borra). Lo que ve o maneja la pantalla del alumno (captura, control remoto, abrir, archivos)
+    nunca corre como SYSTEM: lo hace el ayudante, con los permisos del alumno.
 
 ## Bloqueo de aplicaciones y filtro web (v0.4, Windows)
 
@@ -210,7 +217,7 @@ Reglas para `app.block.*` y `web.filter.*` (`docs/protocol.md` §5.13–5.14), a
     banda de restricciones "Aula cerró «steam.exe»: está bloqueada durante la clase". El aviso
     se agrupa (uno por app cada 30 s; varias apps en una sola línea) y se queda hasta que el
     alumno pulsa «Entendido» o se quitan las restricciones: si no estaba mirando, sabe por qué se
-    cerró su app.
+    cerró su app. El registro del agente dice que se cerró una app y por qué política, nunca cuál.
 23. **No se vigila la navegación.** El filtro decide por nombre de dominio y no guarda ni envía a
     la consola qué sitios intentó abrir el alumno, ni cuántos. La consola solo sabe si la
     política está aplicada (`active`). Los logs registran altas y bajas de políticas, nunca
@@ -218,7 +225,9 @@ Reglas para `app.block.*` y `web.filter.*` (`docs/protocol.md` §5.13–5.14), a
 24. **Todo se restablece solo.** Las restricciones se quitan con "Quitar restricciones", al
     perder la conexión con la consola, al cerrar la clase, al cerrar sesión y al detener el
     servicio. Si el agente se cae o el equipo se apaga a mitad de clase, el agente las quita al
-    volver a arrancar, antes de conectarse (D-017). No hay filtrado permanente ni oculto, y no
+    volver a arrancar, antes de conectarse (D-017). Si Windows no deja quitar el filtro a la
+    primera, el agente lo reintenta cada 30 s y, mientras tanto, los sitios cargan sin filtrar:
+    el alumno nunca se queda sin red ni sin saber por qué. No hay filtrado permanente ni oculto, y no
     quedan entradas en `hosts`, DNS ni proxy.
 25. **Lo que no se puede garantizar** se le dice al profesor en la consola:
     - un alumno con permisos de administrador puede detener el agente;
@@ -549,7 +558,8 @@ notificación.
     un archivo por ruta.
 64. **Dónde lo guarda el profesor.** Al llegar, en su carpeta Documentos:
     `Documentos\Aula\recolecciones\<fecha>\<actividad>\<equipo> (<usuario>)\`, con un
-    `aula-recoleccion.json` que dice de qué ronda y hora es cada archivo y su huella. Los de un
+    `aula-recoleccion.json` que dice de qué ronda y hora es cada archivo y su huella, desde qué
+    dirección llegó y si otra conexión decía ser el mismo equipo (revisión 11). Los de un
     simulado van en `… (simulado)`. La carpeta está en Ajustes › Acerca de. Recoger otra vez
     reemplaza la copia del profesor de ese alumno, nunca el original. Aula no los sube ni los
     comparte; el manual recomienda borrarlos cuando ya no se necesiten.
@@ -731,7 +741,8 @@ controla el equipo (sin banda ni aviso fijo) y llega sin interrumpir (regla 71).
     material, no datos de alumnos. Las respuestas y los puntajes viven **solo en memoria**, como
     las encuestas (regla 74), y se borran al cerrar la clase o cambiar de canal. Solo se escriben
     en disco cuando el profesor pulsa **«Exportar calificaciones»**: un CSV con equipo, usuario,
-    puntaje, el máximo, si entregó y los puntos de cada pregunta (nunca respuestas abiertas, que
+    puntaje, el máximo, si entregó, los puntos de cada pregunta y un «Aviso» si otra conexión dijo
+    ser ese equipo mientras estaba abierto (revisión 11) (nunca respuestas abiertas, que
     un cuestionario no tiene) en `Documentos\Aula\calificaciones\<fecha>\`. Aula no borra ese
     archivo: es del profesor, que lo guarda o lo borra según las reglas de su escuela.
 90. **Cada quien ve solo lo suyo.** Con «Compartir resultados» cada alumno recibe **solo su**

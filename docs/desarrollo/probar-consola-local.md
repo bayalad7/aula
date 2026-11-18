@@ -93,6 +93,7 @@ consola agrega aquí sus casos.
 | C-17 | Encoge la ventana al mínimo (900×600) | El menú queda en iconos y el canal como «1»; los paneles se abren encima; la barra de acciones queda solo con iconos |
 | C-18 | Recorre con Tab desde el inicio | El primer Tab ofrece «Saltar al contenido». En el editor, Ctrl+M y luego Tab sale del editor |
 | C-19 | En Alumnos, Ctrl+A | Selecciona a todos; el botón cambia a «Quitar selección» |
+| C-20 | Con 1 VM de alumno y los simulados abiertos | El real cuenta en «conectados» y los simulados aparte. Energía, Restricciones, Pausar, Abrir, Transmitir, Proyectar y Tomar control solo se ofrecen para el real (regla 34); restaurado en la revisión 11 |
 
 ### Manual y ayuda
 
@@ -362,6 +363,16 @@ pide la CLI de Wails v2.17.1 (`wails version`).
 | C-155 | Con la consola abierta, ábrela otra vez (doble clic en el `.exe` o desde Inicio) | No se abre una segunda consola: la que ya estaba vuelve al frente |
 | C-156 | **Transmitir** a ese alumno y luego **Detener**; después, en **Archivos**, elige un archivo para enviar con el diálogo de Windows | La transmisión arranca y se detiene; el diálogo para elegir archivo se abre y lo elegido aparece como antes |
 | A-65 | En el equipo del alumno: llega el snippet de C-154; pulsa **Copiar** y pega en un editor; ábrelo otra vez desde Inicio | Se copia formateado; abrir de nuevo trae la ventana que ya estaba (no abre otra). Durante la transmisión de C-156 la banda de transparencia aparece y se va al detener |
+
+### Revisión 11 (2026-11-17)
+
+Lo que cambió con las correcciones de `docs/auditoria-2026-11-17.md`.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| C-157 | Con dos VM de alumno con el **mismo nombre de equipo** (clonadas) en el canal | Las dos filas llevan «Duplicado»; sale **un** aviso «Dos conexiones dicen ser …»; la insignia abre la ficha, que dice arriba «Aviso · Duplicado · Otra conexión dice ser este equipo, desde <IP>» y en «Dirección» la suya. Al cerrar Aula en una VM, la marca se quita de la otra |
+| C-158 | Con las dos VM duplicadas, lanza un cuestionario, responde en las dos, ciérralo y **Exportar calificaciones**; luego abre una recolección y **Recoger** | El CSV tiene la columna «Aviso» con «Otra conexión dijo ser este equipo» en esa fila (vacía en las demás). En `aula-recoleccion.json` de ese equipo: `"address"` y `"duplicate": true`. Nada se descartó |
+| C-159 | En una VM, haz de solo lectura `Documentos\Aula` y envía un archivo; con restricciones de apps, abre una app bloqueada; luego abre `aula-agente.log` (o `aula-cliente.log`) | La tarjeta dice que no se pudo guardar; el registro dice `file push not saved reason=… err_kind="platform: access denied"`, sin la ruta, el nombre del archivo ni el usuario. «blocked app closed» lleva la política, nunca el nombre de la app |
 
 ### Encender equipos (10.19)
 

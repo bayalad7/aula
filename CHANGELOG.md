@@ -23,6 +23,10 @@ retiraron; esta es la primera.
   atoraría un alumno (anuncio, puerto, conexión segura, red y firewall).
 - **Aula simulada:** alumnos de prueba dentro de la consola para probarla sin laboratorio, con
   fallas a propósito. Siempre marcados y contados aparte; nunca reciben nada que cambie un equipo.
+- **Duplicado:** si dos conexiones dicen ser el mismo equipo (un equipo clonado o alguien
+  haciéndose pasar por otro), las dos filas lo marcan, la ficha dice desde qué dirección se conecta
+  cada una y la consola avisa una vez. Las calificaciones (columna «Aviso») y lo recogido lo
+  registran; nada se descarta. La ficha muestra también la dirección de cada alumno.
 
 ### Código
 
@@ -97,7 +101,9 @@ retiraron; esta es la primera.
 
 ### Control del equipo (Windows)
 
-- **Restricciones** de la clase: bloquear apps y filtrar sitios web, siempre reversibles.
+- **Restricciones** de la clase: bloquear apps y filtrar sitios web, siempre reversibles. Si
+  Windows no deja quitar el filtro a la primera, Aula lo reintenta cada 30 s y mientras tanto los
+  sitios cargan: el alumno nunca se queda sin red.
 - **Energía:** apagar, reiniciar o cerrar sesión con cuenta regresiva que el alumno ve y puede
   posponer.
 - **Encender los equipos** desde la consola (Wake-on-LAN): **Energía › Encender** para todos los
@@ -124,6 +130,9 @@ retiraron; esta es la primera.
   También dice el nombre del equipo y la etiqueta que le puso el profesor, para decírsela al soporte.
   Y que el equipo informa su estado (disco, memoria, red, batería) y se prueba cuando el profesor lo
   pide, nunca sus apps, sitios ni archivos.
+- **Registros más privados:** cuando algo falla al guardar, recoger o enviar archivos, el registro
+  dice qué tipo de error fue («acceso denegado», «disco lleno»), nunca la ruta ni el nombre del
+  archivo; tampoco qué programa bloqueado se cerró.
 
 ### Consola
 

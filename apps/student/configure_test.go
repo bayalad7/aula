@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -87,5 +88,26 @@ func TestConfigureRefusesInvalid(t *testing.T) {
 	}
 	if _, err := os.Stat(path); err == nil {
 		t.Error("an invalid configuration was written")
+	}
+}
+
+// A service has no user folder (systemd gives root no $HOME): the machine
+// file must still be read, or the agent stays "not configured" for ever.
+func TestLoadConfigWithoutUserFolder(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	oldM, oldU := machineConfigPath, userConfigPath
+	machineConfigPath = func() string { return path }
+	userConfigPath = func() (string, error) { return "", errors.New("neither $XDG_CONFIG_HOME nor $HOME are defined") }
+	t.Cleanup(func() { machineConfigPath, userConfigPath = oldM, oldU })
+	id, err := security.GenerateIdentity()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	if code := runConfigure([]string{"-canal", "3", "-clave", security.EncodePublicKey(id.Public())}, &out, &errOut); code != 0 {
+		t.Fatalf("configure: %s", errOut.String())
+	}
+	if cfg, _, err := loadConfig(nil); err != nil || cfg.Channel != "3" {
+		t.Fatalf("loadConfig = %+v, %v", cfg, err)
 	}
 }

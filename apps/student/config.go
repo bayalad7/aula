@@ -54,11 +54,12 @@ func loadConfig(args []string) (Config, ed25519.PublicKey, error) {
 
 	candidates := []string{*path}
 	if *path == "" {
-		user, err := userConfigPath()
-		if err != nil {
-			return Config{}, nil, err
+		candidates = []string{machineConfigPath()}
+		// A service has no user folder (systemd gives root no $HOME): then
+		// only the machine file counts.
+		if user, err := userConfigPath(); err == nil {
+			candidates = append(candidates, user)
 		}
-		candidates = []string{machineConfigPath(), user}
 	}
 	var cfg Config
 	used := ""

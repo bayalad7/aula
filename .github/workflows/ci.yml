@@ -63,6 +63,47 @@ jobs:
           CGO_ENABLED: '1'
         run: $XVFB go test -race ./...
 
+  # The agent as a systemd service on a real runner (D-024): installs the test
+  # unit aula-agente-prueba (never aula-agente), runs its lifecycle (start,
+  # crash and restart, stop, uninstall) and the root-only platform tests
+  # (helper launched as another user). The last step removes the unit always.
+  servicio-linux:
+    name: Servicio de Linux (systemd)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+
+      - name: Install Wails Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev
+          sudo useradd -m ana
+
+      - name: Ciclo del servicio y pruebas como root
+        env:
+          AULA_SERVICE_TEST: '1'
+          GOFLAGS: -tags=webkit2_41
+          CGO_ENABLED: '1'
+        run: |
+          sudo -E env "PATH=$PATH" go test -tags servicetest -run TestServiceLifecycle -v ./apps/student/
+          sudo -E env "PATH=$PATH" go test -run 'TestLaunchAsTheStudent|TestServiceInstallWritesTheUnit|TestLocalChannel' -v ./internal/platform/
+
+      - name: Quitar la unidad de prueba
+        if: always()
+        run: |
+          sudo systemctl disable --now aula-agente-prueba.service 2>/dev/null || true
+          sudo rm -f /etc/systemd/system/aula-agente-prueba.service
+          sudo systemctl daemon-reload
+          if systemctl cat aula-agente-prueba.service >/dev/null 2>&1; then echo "quedó la unidad de prueba"; exit 1; fi
+
   # The Linux packages as the release builds them (prompt 13): wails build with
   # cgo, empaquetar.sh, and the .deb installed, configured and removed on this
   # runner. A broken package shows here, not when a tag is pushed.

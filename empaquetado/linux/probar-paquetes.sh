@@ -40,6 +40,14 @@ test -f /etc/xdg/autostart/aula-cliente.desktop
 test -f /usr/share/applications/aula-cliente.desktop
 test -f /usr/share/applications/aula-consola.desktop
 
+# With systemd (a runner or a VM; not a container), the agent is a service
+# that starts with the computer (D-024).
+if [ -d /run/systemd/system ]; then
+  test "$(systemctl is-enabled aula-agente.service)" = enabled
+  systemctl is-active --quiet aula-agente.service
+  aula-cliente servicio estado
+fi
+
 # The "aula" group reads the site key; the guide's steps work as written.
 getent group aula
 test "$($SUDO stat -c '%U:%G %a' /etc/Aula/centro)" = "root:aula 750"
@@ -69,6 +77,7 @@ esac
 test ! -e /usr/bin/aula-cliente
 test ! -e /usr/bin/aula-consola
 test ! -e /etc/xdg/autostart/aula-cliente.desktop
+test ! -e /etc/systemd/system/aula-agente.service
 # Purging the agent removes its configuration, as the Windows uninstaller does.
 test ! -e /etc/Aula/alumno/config.json
 # Removing Aula never deletes the site key.

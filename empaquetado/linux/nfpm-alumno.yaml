@@ -37,7 +37,8 @@ contents:
   - src: ./aula-cliente.desktop
     dst: /usr/share/applications/aula-cliente.desktop
     file_info: {mode: 0644}
-  # Arranca con cada sesión gráfica de cada usuario (capa 1: sin systemd).
+  # Arranca con cada sesión: con el servicio instalado solo trae al frente la
+  # ventana del ayudante; sin systemd (capa 1) es el agente mismo.
   - src: ./aula-cliente-autostart.desktop
     dst: /etc/xdg/autostart/aula-cliente.desktop
     type: config
@@ -52,6 +53,7 @@ contents:
 
 scripts:
   postinstall: ./scripts/alumno-postinstall.sh
+  preremove: ./scripts/alumno-preremove.sh
   postremove: ./scripts/alumno-postremove.sh
 
 deb:

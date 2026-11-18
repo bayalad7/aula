@@ -3,6 +3,13 @@
 # The agent starts with every graphical session (/etc/xdg/autostart). It needs
 # its channel and the site key; without them its window says what is missing.
 set -e
+# The agent as a systemd service (D-024): installed and started on every
+# install or upgrade, like the Windows installer. Without systemd (a
+# container) it keeps starting with each session, as in layer 1.
+if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
+  /usr/bin/aula-cliente servicio instalar >/dev/null
+  systemctl restart aula-agente.service || true
+fi
 if [ ! -f /etc/Aula/alumno/config.json ]; then
   cat <<'MSG'
 

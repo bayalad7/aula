@@ -7,6 +7,7 @@ set -e
 case "$1" in
   purge|0)
     rm -f /etc/Aula/alumno/config.json
+    rm -rf /var/log/aula /run/aula
     rmdir /etc/Aula/alumno 2>/dev/null || true
     rmdir /etc/Aula 2>/dev/null || true
     ;;

@@ -1,0 +1,59 @@
+# Aula Cliente (agente del alumno) para Linux: .deb y .rpm con nfpm.
+# Lo usa empaquetar.sh desde una copia de esta carpeta; del entorno:
+#   VERSION  versión SemVer (x.y.z o x.y.z-pre)
+#   (empaquetar.sh copia a ./bin el binario y a ./icons el icono de apps/student/build)
+# Guía: docs/desarrollo/empaquetar-linux.md
+name: aula-cliente
+arch: amd64
+platform: linux
+version: ${VERSION}
+version_schema: semver
+section: education
+priority: optional
+maintainer: Aula <aula@localhost>
+description: |
+  Agente del alumno de Aula.
+  Recibe el código que distribuye la consola del profesor, sus avisos,
+  encuestas y archivos, y lo muestra en una ventana que se copia con un clic.
+  Se identifica siempre y avisa cuando el profesor ve la pantalla.
+vendor: Aula
+homepage: https://github.com/bayalad7/aula
+license: Propietaria
+
+# Wails en Linux: GTK 3 y WebKitGTK 4.1 (Ubuntu 22.04+, Debian 12+, Fedora 39+).
+depends:
+  - libgtk-3-0 | libgtk-3-0t64
+  - libwebkit2gtk-4.1-0
+overrides:
+  rpm:
+    depends:
+      - gtk3
+      - webkit2gtk4.1
+
+contents:
+  - src: ./bin/aula-cliente
+    dst: /usr/bin/aula-cliente
+    file_info: {mode: 0755}
+  - src: ./aula-cliente.desktop
+    dst: /usr/share/applications/aula-cliente.desktop
+    file_info: {mode: 0644}
+  # Arranca con cada sesión gráfica de cada usuario (capa 1: sin systemd).
+  - src: ./aula-cliente-autostart.desktop
+    dst: /etc/xdg/autostart/aula-cliente.desktop
+    type: config
+    file_info: {mode: 0644}
+  - src: ./icons/aula-cliente.png
+    dst: /usr/share/pixmaps/aula-cliente.png
+    file_info: {mode: 0644}
+  # La configuración (canal y clave) la escribe "aula-cliente configurar".
+  - dst: /etc/Aula/alumno
+    type: dir
+    file_info: {mode: 0755}
+
+scripts:
+  postinstall: ./scripts/alumno-postinstall.sh
+  postremove: ./scripts/alumno-postremove.sh
+
+deb:
+  fields:
+    Bugs: https://github.com/bayalad7/aula/issues

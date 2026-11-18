@@ -1,8 +1,10 @@
 name: Release
 
 # Pushing a tag vX.Y.Z (or vX.Y.Z-rc.N, published as a prerelease) builds the
-# Windows apps and installers, signs checksums.txt with the release key and
-# publishes a GitHub release. Secrets: docs/desarrollo/publicar.md.
+# Windows apps and installers and the Linux packages (.deb, .rpm, AppImage of
+# the console), tests the Linux packages on clean machines, signs one
+# checksums.txt for all of them with the release key and publishes a GitHub
+# release. Secrets: docs/desarrollo/publicar.md.
 on:
   push:
     tags: ['v*']
@@ -18,8 +20,6 @@ jobs:
   windows:
     name: Windows (instaladores)
     runs-on: windows-latest
-    permissions:
-      contents: write # gh release create
     env:
       # Authenticode is optional: only when the certificate secret exists.
       HAS_CODESIGN: ${{ secrets.WINDOWS_CERT_PFX != '' }}
@@ -124,11 +124,139 @@ jobs:
           cp dist/bin/aula-cliente.exe "dist/release/aula-cliente-$VERSION-windows-amd64.exe"
           ls -la dist/release
 
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-windows
+          path: dist/release/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Linux (prompt 13, capa 1). Wails needs cgo and WebKitGTK 4.1 here, so these
+  # are the only binaries built with CGO_ENABLED=1 (docs/desarrollo/empaquetar-linux.md).
+  linux:
+    name: Linux (paquetes)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+
+      - name: Version from the tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::El tag $GITHUB_REF_NAME no es vX.Y.Z ni vX.Y.Z-pre"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Install Wails Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev xvfb
+
+      # The X11 parts (notice, capture, hotkey) run under Xvfb, never on a desktop.
+      - name: Tests (X11 under Xvfb)
+        env:
+          GOFLAGS: -tags=webkit2_41
+        run: xvfb-run -a go test ./...
+
+      - name: Install the Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1
+
+      - name: Build the apps
+        env:
+          CGO_ENABLED: '1' # Wails on Linux links GTK and WebKitGTK
+        run: |
+          mkdir -p dist/bin dist/release
+          for app in teacher student; do
+            (cd "apps/$app" && wails build -clean -trimpath -tags webkit2_41 -ldflags "-X main.version=$VERSION")
+          done
+          cp apps/teacher/build/bin/aula-consola apps/student/build/bin/aula-cliente dist/bin/
+
+      - name: Check that the binaries report the version
+        run: |
+          test "$(dist/bin/aula-consola version)" = "aula-consola $VERSION"
+          test "$(dist/bin/aula-cliente -version)" = "aula-cliente $VERSION"
+
+      - name: Build the packages (.deb, .rpm, AppImage)
+        run: bash empaquetado/linux/empaquetar.sh "$VERSION" dist/bin dist/release
+
+      - name: Portable binaries
+        run: |
+          cp dist/bin/aula-consola "dist/release/aula-consola-$VERSION-linux-amd64"
+          cp dist/bin/aula-cliente "dist/release/aula-cliente-$VERSION-linux-amd64"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-linux
+          path: dist/release/*
+          if-no-files-found: error
+          retention-days: 7
+
+  # Installs the .deb on a clean Ubuntu (no -dev packages, as in a lab) and the
+  # .rpm on Fedora, runs both apps and removes them: the release is published
+  # only if every package installs, starts and uninstalls.
+  linux-instalar:
+    name: Linux (instalar y quitar)
+    needs: linux
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-linux
+          path: paquetes
+
+      - name: .deb and AppImage on Ubuntu 24.04
+        run: bash empaquetado/linux/probar-paquetes.sh deb paquetes "${GITHUB_REF_NAME#v}"
+
+      - name: .rpm on Fedora
+        run: |
+          docker run --rm -v "$PWD:/src:ro" fedora:42 \
+            bash /src/empaquetado/linux/probar-paquetes.sh rpm /src/paquetes "${GITHUB_REF_NAME#v}"
+
+  # One checksums.txt for every file of the release, signed with the release
+  # key and checked against the public key in the repository before publishing.
+  publicar:
+    name: Firmar y publicar
+    needs: [windows, linux, linux-instalar]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # gh release create
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: dist/release
+          merge-multiple: true
+
       - name: checksums.txt signed with the release key
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
         run: |
-          go run ./tools/relsign sums -o dist/release/checksums.txt dist/release/*.exe
+          ls -la dist/release
+          go run ./tools/relsign sums -o dist/release/checksums.txt dist/release/*
           go run ./tools/relsign sign -in dist/release/checksums.txt -out dist/release/checksums.txt.sig
           # Verify with the public key versioned in the repository before publishing.
           go run ./tools/relsign verify -in dist/release/checksums.txt -sig dist/release/checksums.txt.sig \
@@ -140,8 +268,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           flags=(--generate-notes --title "Aula $GITHUB_REF_NAME")
-          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
           gh release create "$GITHUB_REF_NAME" "${flags[@]}" dist/release/*
 
-  # Etapa 13: paquetes de Linux (.deb/.rpm) y de macOS (.pkg) como jobs nuevos de
-  # este workflow; sus artefactos entrarán en el mismo checksums.txt firmado.
+  # Etapa 13 (macOS): un job que construya el .pkg y se sume a «publicar».

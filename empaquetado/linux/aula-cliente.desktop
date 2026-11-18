@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Aula Cliente
+GenericName=Agente del alumno
+Comment=Recibe el código y los avisos de la consola del profesor
+Exec=/usr/bin/aula-cliente
+Icon=aula-cliente
+Terminal=false
+Categories=Education;Network;
+Keywords=aula;clase;código;profesor;
+StartupNotify=false
+StartupWMClass=aula-cliente

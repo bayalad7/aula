@@ -1,0 +1,49 @@
+# Aula Consola (profesor) para Linux: .deb y .rpm con nfpm.
+# Lo usa empaquetar.sh desde una copia de esta carpeta; del entorno:
+#   VERSION  versión SemVer (x.y.z o x.y.z-pre)
+#   (empaquetar.sh copia a ./bin el binario y a ./icons el icono de apps/teacher/build)
+# Guía: docs/desarrollo/empaquetar-linux.md
+name: aula-consola
+arch: amd64
+platform: linux
+version: ${VERSION}
+version_schema: semver
+section: education
+priority: optional
+maintainer: Aula <aula@localhost>
+description: |
+  Consola del profesor de Aula.
+  Distribuye código a los equipos del centro de cómputo, ve sus pantallas con
+  aviso visible al alumno y acompaña la clase (avisos, encuestas, archivos).
+vendor: Aula
+homepage: https://github.com/bayalad7/aula
+license: Propietaria
+
+depends:
+  - libgtk-3-0 | libgtk-3-0t64
+  - libwebkit2gtk-4.1-0
+overrides:
+  rpm:
+    depends:
+      - gtk3
+      - webkit2gtk4.1
+
+contents:
+  - src: ./bin/aula-consola
+    dst: /usr/bin/aula-consola
+    file_info: {mode: 0755}
+  - src: ./aula-consola.desktop
+    dst: /usr/share/applications/aula-consola.desktop
+    file_info: {mode: 0644}
+  - src: ./icons/aula-consola.png
+    dst: /usr/share/pixmaps/aula-consola.png
+    file_info: {mode: 0644}
+
+scripts:
+  # Crea el grupo aula y /etc/Aula/centro, y abre el firewall si está activo.
+  postinstall: ./scripts/consola-postinstall.sh
+  postremove: ./scripts/consola-postremove.sh
+
+deb:
+  fields:
+    Bugs: https://github.com/bayalad7/aula/issues

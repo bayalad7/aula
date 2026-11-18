@@ -1,0 +1,5 @@
+#!/bin/sh
+# AppRun of the Aula Consola AppImage: runs the console from inside the image.
+# WebKitGTK and GTK come from the system (Ubuntu and Fedora desktops have them).
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "$HERE/usr/bin/aula-consola" "$@"

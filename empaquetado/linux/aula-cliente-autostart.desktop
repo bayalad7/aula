@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Aula Cliente
+Comment=Agente del alumno de Aula: arranca con cada sesión
+Exec=/usr/bin/aula-cliente
+Icon=aula-cliente
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=2

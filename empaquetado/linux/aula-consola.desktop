@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Aula Consola
+GenericName=Consola del profesor
+Comment=Distribuye código y acompaña la clase en el centro de cómputo
+Exec=/usr/bin/aula-consola
+Icon=aula-consola
+Terminal=false
+Categories=Education;Network;
+Keywords=aula;clase;código;alumnos;
+StartupWMClass=aula-consola

@@ -120,7 +120,9 @@ type harness struct {
 
 func newHarness() *harness {
 	h := &harness{in: &fakeInput{}, video: &fakeVideo{}, out: newSink()}
-	h.a = &Agent{Input: h.in, Video: h.video, PollEvery: 5 * time.Millisecond, PauseFor: 60 * time.Millisecond,
+	// PauseFor: 300 ms. With 60 ms, the pause sometimes ended before the next input under -race with
+	// the whole suite (TestTheStudentHasPriority saw it injected).
+	h.a = &Agent{Input: h.in, Video: h.video, PollEvery: 5 * time.Millisecond, PauseFor: 300 * time.Millisecond,
 		OnState: func(s State) { h.mu.Lock(); h.states = append(h.states, s); h.mu.Unlock() }}
 	return h
 }

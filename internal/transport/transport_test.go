@@ -163,10 +163,30 @@ func TestOversizedMessageClosesWith1009(t *testing.T) {
 	nextEvent(t, srv, EventConnect)
 	big := make([]byte, protocol.MaxMessageSize+1)
 	_ = ws.Write(context.Background(), websocket.MessageText, big)
-	if got := closeStatus(t, ws); got != websocket.StatusMessageTooBig {
-		t.Fatalf("peer saw close status %v, want 1009", got)
+	// The server closes with 1009 while the client may still be sending the
+	// rest of the message. Windows then drops those unread bytes with a TCP
+	// reset, and the close frame can be lost: the connection still closes,
+	// which is what matters (EventDisconnect below).
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	for {
+		_, _, err := ws.Read(ctx)
+		if err == nil {
+			continue
+		}
+		if got := websocket.CloseStatus(err); got != websocket.StatusMessageTooBig && !connReset(err) {
+			t.Fatalf("peer saw close status %v (%v), want 1009 or a reset", got, err)
+		}
+		break
 	}
 	nextEvent(t, srv, EventDisconnect)
+}
+
+// connReset reports a connection the peer reset or aborted instead of
+// closing it cleanly: a failed TCP read that is not a timeout.
+func connReset(err error) bool {
+	var op *net.OpError
+	return errors.As(err, &op) && op.Op == "read" && !op.Timeout()
 }
 
 // closeStatus reads until the connection closes and returns the close code the

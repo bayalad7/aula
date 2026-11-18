@@ -43,7 +43,7 @@ type WorkFolder interface {
 	Open(rel string) error
 }
 
-// NewWorkFolder returns the work folder of the current user: Windows today;
+// NewWorkFolder returns the work folder of the current user: Windows and Linux;
 // elsewhere it fails with ErrNotSupported and the agent does not declare
 // file.push.
 func NewWorkFolder() (WorkFolder, error) { return newWorkFolder() }
@@ -92,6 +92,6 @@ type WorkFolderReader interface {
 }
 
 // NewWorkFolderReader returns the reader of the current user's work folder:
-// Windows today; elsewhere it fails with ErrNotSupported and the agent does
+// Windows and Linux; elsewhere it fails with ErrNotSupported and the agent does
 // not declare file.collect.
 func NewWorkFolderReader() (WorkFolderReader, error) { return newWorkFolderReader() }

@@ -42,7 +42,8 @@ type ScreenIndicator interface {
 	Hide() error
 }
 
-// NewScreenCapture returns the OS screen capture: Windows today; elsewhere it
+// NewScreenCapture returns the OS screen capture: Windows, and Linux in an X11
+// session (never Wayland: docs/privacidad.md rule 97); elsewhere it
 // fails with ErrNotSupported, and the agent does not declare screen.thumb.
 func NewScreenCapture() (ScreenCapture, error) { return newScreenCapture() }
 

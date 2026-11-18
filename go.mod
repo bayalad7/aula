@@ -6,6 +6,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.4
 	github.com/coder/websocket v1.8.15
 	github.com/grandcat/zeroconf v1.0.0
+	github.com/jezek/xgb v1.3.1
 	github.com/kbinani/screenshot v0.0.0-20250624051815-089614a94018
 	github.com/miekg/dns v1.1.73
 	github.com/pion/ice/v4 v4.4.9
@@ -35,7 +36,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
-	github.com/jezek/xgb v1.3.1 // indirect
 	github.com/labstack/echo/v4 v4.16.5 // indirect
 	github.com/labstack/gommon v0.5.0 // indirect
 	github.com/leaanthony/go-ansi-parser v1.6.1 // indirect

@@ -19,7 +19,7 @@ func TestDocumentsDir(t *testing.T) {
 // OpenFolder is not called on a real folder: it would open a window on the
 // desktop of whoever runs the tests (manual case C-51).
 func TestOpenFolderRejectsMissingOrFiles(t *testing.T) {
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && runtime.GOOS != "linux" {
 		if err := OpenFolder(t.TempDir()); err != ErrNotSupported {
 			t.Fatalf("OpenFolder = %v, want ErrNotSupported", err)
 		}

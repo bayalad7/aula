@@ -65,7 +65,7 @@ type Hotkeys interface {
 	Register(ctx context.Context, h Hotkey, fn func()) error
 }
 
-// SystemHotkeys returns the OS implementation: Windows today; elsewhere
+// SystemHotkeys returns the OS implementation: Windows and Linux X11; elsewhere
 // Register returns ErrNotSupported (the console keeps its on-screen button).
 func SystemHotkeys() Hotkeys { return systemHotkeys{} }
 

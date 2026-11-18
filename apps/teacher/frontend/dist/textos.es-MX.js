@@ -343,7 +343,7 @@ window.AulaTextos = Object.freeze({
   "info.puertos.etiqueta": "¿Para qué son estos datos?",
   "info.puertos.texto": "Son los que necesita el responsable de TI: los alumnos llegan a esta consola por esos puertos (TCP para todo, UDP para mostrar tu pantalla) y el firewall debe permitirlos.",
   "info.capacidades.etiqueta": "¿Por qué un equipo no puede hacer algo?",
-  "info.capacidades.texto": "Cada equipo dice al conectarse qué sabe hacer. Depende de su sistema y de cómo se instaló Aula: por ejemplo, las restricciones y la energía solo están en Windows con Aula como servicio.",
+  "info.capacidades.texto": "Cada equipo dice al conectarse qué sabe hacer. Depende de su sistema y de cómo se instaló Aula: por ejemplo, las restricciones solo están en Windows con Aula como servicio, y en Linux ver, controlar o pausar la pantalla necesita una sesión X11.",
 
   // Navegación
   "nav.etiqueta": "Secciones",

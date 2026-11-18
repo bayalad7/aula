@@ -42,7 +42,7 @@ func TestNICsFromKeepsUpCardsWithMACAndIPv4(t *testing.T) {
 
 func TestInterfaces(t *testing.T) {
 	nics, err := Interfaces()
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && runtime.GOOS != "linux" {
 		if !errors.Is(err, ErrNotSupported) {
 			t.Fatalf("err = %v, want ErrNotSupported", err)
 		}

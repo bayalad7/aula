@@ -45,6 +45,9 @@ func ConsoleMachineConfigPath() string {
 // C:\ProgramData\Aula\alumno\logs: administrators and the service write,
 // users read (the installer sets the ACL of the parent directory).
 func AgentServiceLogDir() string {
+	if runtime.GOOS == "linux" {
+		return "/var/log/aula" // logs do not belong in /etc
+	}
 	return filepath.Join(MachineConfigDir(), "Aula", "alumno", "logs")
 }
 

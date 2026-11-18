@@ -95,7 +95,7 @@ func (s *sink) next(t *testing.T) protocol.Payload {
 	select {
 	case p := <-s.ch:
 		return p
-	case <-time.After(3 * time.Second):
+	case <-time.After(10 * time.Second): // generous: -race with the whole suite is slow
 		t.Fatal("nothing sent")
 		return nil
 	}

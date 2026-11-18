@@ -1,6 +1,6 @@
 module github.com/bayalad7/aula
 
-go 1.26.0
+go 1.27.0
 
 require (
 	github.com/Microsoft/go-winio v0.6.4

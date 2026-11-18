@@ -34,6 +34,10 @@ func main() {
 		fmt.Println("aula-cliente " + version)
 		return
 	}
+	if len(os.Args) >= 2 && os.Args[1] == "configurar" {
+		platform.AttachParentConsole()
+		os.Exit(runConfigure(os.Args[2:], os.Stdout, os.Stderr))
+	}
 	if len(os.Args) >= 2 && os.Args[1] == "servicio" {
 		platform.AttachParentConsole()
 		os.Exit(runServiceCLI(os.Args[2:], os.Stdout, os.Stderr))
@@ -64,6 +68,27 @@ func main() {
 	}
 	app := NewApp(cfg, pub, cfgErr, localHelloWithHealth(), clip, clipErr, log)
 	app.mediaWait = 5 * time.Second // the frontend reports its WebRTC support on load
+	enablePlatform(app, log)
+	if len(os.Args) == 1 {
+		// Configured by files (installer): follow their changes. Flags pin it.
+		app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }
+	}
+	if err := runWindow(app, func(ctx context.Context) {
+		// The window sets its own title from the status (rule 1: visible in
+		// the taskbar too).
+		app.emit = func(event string, data any) { runtime.EventsEmit(ctx, event, data) }
+		app.start(ctx)
+	}, func() { app.stop() }); err != nil {
+		log.Error("wails run failed", "err", err)
+		os.Exit(1)
+	}
+}
+
+// enablePlatform turns on what this operating system offers and declares only
+// that in hello (docs/compatibilidad.md): each feature whose platform piece
+// fails with ErrNotSupported stays off and undeclared. In Linux, for example,
+// the screen needs an X11 session (docs/privacidad.md rules 96-99).
+func enablePlatform(app *App, log *slog.Logger) {
 	capture, capErr := platform.NewScreenCapture()
 	indicator, indErr := platform.NewScreenIndicator()
 	if capErr == nil && indErr == nil {
@@ -107,19 +132,6 @@ func main() {
 		app.enablePower(p)
 	} else {
 		log.Info("power actions not available", "err", err)
-	}
-	if len(os.Args) == 1 {
-		// Configured by files (installer): follow their changes. Flags pin it.
-		app.reload = func() (Config, ed25519.PublicKey, error) { return loadConfig(nil) }
-	}
-	if err := runWindow(app, func(ctx context.Context) {
-		// The window sets its own title from the status (rule 1: visible in
-		// the taskbar too).
-		app.emit = func(event string, data any) { runtime.EventsEmit(ctx, event, data) }
-		app.start(ctx)
-	}, func() { app.stop() }); err != nil {
-		log.Error("wails run failed", "err", err)
-		os.Exit(1)
 	}
 }
 

@@ -125,6 +125,9 @@ func TestDiagnoseCommand(t *testing.T) {
 	if code := runDiagnose(&out, quiet); code != 0 || !strings.Contains(out.String(), "Conectado y autenticado") {
 		t.Fatalf("exit %d:\n%s", code, out.String())
 	}
+	if !strings.Contains(out.String(), "Qué puede hacer Aula en este equipo") {
+		t.Errorf("the diagnosis does not say what this computer can do:\n%s", out.String())
+	}
 	if !strings.Contains(out.String(), machine) || !strings.Contains(out.String(), "Canal: 1") {
 		t.Fatalf("config not reported:\n%s", out.String())
 	}

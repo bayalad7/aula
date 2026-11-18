@@ -8,11 +8,13 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/bayalad7/aula/internal/discovery"
 	"github.com/bayalad7/aula/internal/platform"
+	"github.com/bayalad7/aula/internal/protocol"
 	"github.com/bayalad7/aula/internal/security"
 	"github.com/bayalad7/aula/internal/session"
 )
@@ -42,6 +44,7 @@ func runDiagnose(out io.Writer, log *slog.Logger) int {
 	if dir, err := platform.LogDir("alumno"); err == nil {
 		fmt.Fprintf(out, "  Log: %s\n", dir)
 	}
+	printAbilities(out, platform.DisplayServer(), platformCapabilities(log))
 
 	if cfg.Direct == "" {
 		fmt.Fprintf(out, "\n1. Consolas del canal %s visibles por mDNS (%s)…\n", cfg.Channel, diagBrowseFor)
@@ -94,6 +97,63 @@ func runDiagnose(out io.Writer, log *slog.Logger) int {
 	}
 	fmt.Fprintln(out, "\nTodo bien: si la ventana de Aula Cliente sigue sin conectar, ciérrala y vuelve a abrirla.")
 	return 0
+}
+
+// platformCapabilities is what this agent declares in this session with
+// what the operating system offers (enablePlatform), without connecting.
+func platformCapabilities(log *slog.Logger) []protocol.Capability {
+	a := NewApp(Config{}, nil, nil, localHelloWithHealth(), nil, nil, log)
+	enablePlatform(a, slog.New(slog.DiscardHandler))
+	return a.hello.Capabilities
+}
+
+// abilities are the functions the diagnosis lists, in the order of «Qué
+// puede hacer su equipo»: the ones that depend on the operating system
+// (docs/compatibilidad.md). Code, notices, hands, timer and polls work on
+// every system and are not listed.
+var abilities = []struct {
+	cap   protocol.Capability
+	label string
+}{
+	{protocol.CapScreenThumb, "Ver su pantalla en miniatura"},
+	{protocol.CapScreenSnapshot, "Captura de su pantalla"},
+	{protocol.CapRemote, "Control remoto"},
+	{protocol.CapScreenFreeze, "Pausar su pantalla"},
+	{protocol.CapScreenPresent, "Proyectar su pantalla a la clase"},
+	{protocol.CapFilePush, "Recibir archivos"},
+	{protocol.CapFileCollect, "Recoger su trabajo"},
+	{protocol.CapOpenURL, "Abrir páginas"},
+	{protocol.CapOpenApp, "Abrir apps permitidas"},
+	{protocol.CapPower, "Apagar, reiniciar y cerrar sesión"},
+	{protocol.CapAppBlock, "Bloquear apps"},
+	{protocol.CapWebFilter, "Filtro web"},
+}
+
+// printAbilities says what this computer can do and, on Linux, why the
+// screen is missing (docs/compatibilidad.md). The transmission of the
+// teacher's screen depends on the window and is not listed here.
+func printAbilities(out io.Writer, display string, caps []protocol.Capability) {
+	fmt.Fprintln(out, "\nQué puede hacer Aula en este equipo (en esta sesión):")
+	switch display {
+	case platform.DisplayX11:
+		fmt.Fprintln(out, "  Sesión gráfica: X11.")
+	case platform.DisplayWayland:
+		fmt.Fprintln(out, "  Sesión gráfica: Wayland. Ver la pantalla y capturarla necesitan una sesión X11:")
+		fmt.Fprintln(out, "  cierra la sesión y elige «Ubuntu en Xorg» (o desactiva Wayland en el equipo).")
+	case "":
+		fmt.Fprintln(out, "  Sin sesión gráfica: ejecuta el diagnóstico desde la sesión del alumno para ver su pantalla.")
+	}
+	var missing []string
+	for _, a := range abilities {
+		if slices.Contains(caps, a.cap) {
+			fmt.Fprintf(out, "  ✓ %s\n", a.label)
+		} else {
+			missing = append(missing, a.label)
+		}
+	}
+	if len(missing) > 0 {
+		fmt.Fprintf(out, "  No disponible en este sistema o sesión: %s.\n", strings.Join(missing, ", "))
+	}
 }
 
 // usedConfigPath reports which configuration file loadConfig(nil) reads.

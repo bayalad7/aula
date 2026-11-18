@@ -303,14 +303,14 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `msg.show` | `msg.show` | v0 |
 | `screen.thumb` | `screen.thumb.start`, `screen.thumb.stop` | v0.3 (Windows); Linux solo en sesión X11 (prompt 13) |
 | `screen.snapshot` | `screen.snapshot.request` | v0.7 (§5.17). Windows, con la misma condición que `screen.thumb` (captura y distintivo); también los alumnos simulados. Linux solo en sesión X11 (prompt 13); macOS no la declara. |
-| `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Sin publicar (§5.9–5.11). Windows, en modo ventana y como servicio con su ayudante (la pausa se muestra en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
+| `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Sin publicar (§5.9–5.11). Windows, en modo ventana y como servicio con su ayudante (la pausa se muestra en la sesión del alumno); Linux solo en sesión X11 (prompt 13). Nunca los alumnos simulados. macOS no la declara. |
 | `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). En Linux, solo si su WebKitGTK los tiene (el de Ubuntu 24.04 no); macOS no la declara. |
 | `app.block` | `app.block.set`, `app.block.clear` | v0.4 (§5.13). Windows, solo con el agente como servicio y su ayudante (D-016). |
 | `web.filter` | `web.filter.set`, `web.filter.clear` | v0.4 (§5.14). Windows, solo con el agente como servicio y su ayudante. |
 | `file.collect` | `file.collect.open`, `file.collect.request`, `file.collect.response.ack` | v0.11 (§5.21). Windows, en modo ventana y como servicio con su ayudante (lee en la sesión del alumno); también los alumnos simulados, que devuelven su último código. Linux en modo ventana (prompt 13); macOS no la declara. |
 | `code.collect` | `code.collect` | Reservada |
-| `power` | `power.action`, `power.cancel` | v0.5 (§5.15). Windows, en modo ventana y como servicio (también sin sesión iniciada). Linux y macOS no la declaran. |
-| `remote` | `remote.start`, `remote.input`, `remote.stop` | v0.6 (§5.16). Windows, en modo ventana y como servicio con su ayudante (la entrada se inyecta en la sesión del alumno). Linux y macOS no la declaran. |
+| `power` | `power.action`, `power.cancel` | v0.5 (§5.15). Windows, en modo ventana y como servicio (también sin sesión iniciada); Linux con systemd, igual (prompt 13). macOS no la declara. |
+| `remote` | `remote.start`, `remote.input`, `remote.stop` | v0.6 (§5.16). Windows, en modo ventana y como servicio con su ayudante (la entrada se inyecta en la sesión del alumno); Linux solo en sesión X11 (XTEST, prompt 13). macOS no la declara. |
 | `hand` | `hand.raise`, `hand.lower` | v0.8 (§5.18). Todos los SO: no toca el sistema, solo la ventana del alumno. Se declara cuando hay ventana (en modo servicio, con el ayudante en la sesión del alumno); también los alumnos simulados. |
 | `msg.student` | `msg.student`, `msg.student.ack` | v0.8 (§5.18). Igual que `hand`. |
 | `timer` | `timer.start`, `timer.extend`, `timer.stop` | v0.9 (§5.19). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana; también los alumnos simulados. |
@@ -324,7 +324,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `class.end` | `class.end` | Sin publicar (§5.25). Todos los SO: no toca el sistema, limpia la ventana. Se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 | `computer.label` | `computer.label` | Sin publicar (§5.26). Todos los SO: no toca el sistema, solo la ventana del alumno. Se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 | `health` | `health.config`, `health.request`; y acepta `health.report` | Sin publicar (§5.27). Todos los SO: cada dato que el SO no sabe leer simplemente no viaja. En modo ventana y como servicio, **también sin sesión iniciada** (lo lee el servicio, sin el ayudante, como `power`); también los alumnos simulados. |
-| `health.selftest` | `health.selftest` | Sin publicar (§5.27.5). Windows, en modo ventana y como servicio (también sin sesión iniciada); también los alumnos simulados. Linux y macOS no la declaran. |
+| `health.selftest` | `health.selftest` | Sin publicar (§5.27.5). Windows, en modo ventana y como servicio (también sin sesión iniciada); Linux igual (prompt 13); también los alumnos simulados. macOS no la declara. |
 
 `hand`, `msg.student`, `poll` y `health` habilitan mensajes que **inicia el agente**: la consola
 acepta `hand.*`, `msg.student`, `poll.vote` y `health.report` solo de un agente que declaró la

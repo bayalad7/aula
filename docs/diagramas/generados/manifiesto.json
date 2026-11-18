@@ -197,7 +197,7 @@
     },
     {
       "id": "13-agente-servicio",
-      "titulo": "El agente como servicio de Windows",
+      "titulo": "El agente como servicio (Windows y Linux)",
       "descripcion": "Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
       "audiencia": [
         "instalador",
@@ -207,8 +207,8 @@
       "pantallas": [
         "falta"
       ],
-      "hash": "sha256:8cb18aea6039dbc267c2f9b64fac7d8e10d5a79429fb3068eee9c90ca386a9a2",
-      "alt": "El agente como servicio de Windows: Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
+      "hash": "sha256:6b1879aaac03d3bf573f48bdad6f8a566137dc6983ec581ccdc254ccfbe4cf17",
+      "alt": "El agente como servicio (Windows y Linux): Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno",
       "claro": "generados/13-agente-servicio.claro.svg",
       "oscuro": "generados/13-agente-servicio.oscuro.svg"
     },

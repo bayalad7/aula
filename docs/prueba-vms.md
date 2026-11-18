@@ -1391,3 +1391,21 @@ VM; nunca con clics ni teclas sintéticas en tu escritorio.
 | **LX-F** Quitar | En L2 `sudo apt purge aula-cliente`; en L1 `sudo apt purge aula-consola`. | Ya no arrancan con la sesión ni aparecen en Actividades; `/etc/Aula/alumno/config.json` se borra; en L1 la clave del centro sigue en `/etc/Aula/centro` y las reglas de `ufw` (si estaba activo) se quitan. |
 
 **Para aceptar** bastan LX-A a LX-C en ✅.
+
+## 32. Linux, capa 2: servicio, control remoto, pausa, energía y salud (13)
+
+Comprueba el agente de Linux **como servicio de systemd** con su ayudante en la sesión del alumno
+(D-024) y las funciones que suma. Las mismas VMs L1 y L2 de §31, con los paquetes nuevos; L2 con
+Wake-on-LAN en el hipervisor si se prueba LX2-F. Todo a ojo en cada VM.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **LX2-A** Servicio (**aceptación**) | Reinicia L2 y **no** entres. Mira la consola. Luego entra con «Ubuntu en Xorg». | Sin sesión, L2 aparece conectado con solo energía y salud. Al entrar, la ventana de Aula aparece sola (el ayudante) y la ficha suma código, pantalla, control remoto y pausa. `systemctl status aula-agente` está activo. |
+| **LX2-B** Control remoto (**aceptación**) | Toma el control de L2, escribe en su editor y luego mueve el ratón de L2. | Aviso antes de la primera entrada y banda; lo escrito llega; el control se pausa cuando el alumno usa su equipo. Al detener, ninguna tecla queda presionada. |
+| **LX2-C** Pausa (**aceptación**) | Pausa L2 con un mensaje; con la pausa puesta, transmite (si la consola es Windows) o lanza una cuenta regresiva de energía y cancélala. | La pausa cubre todos los monitores de L2 y recibe los clics; la cuenta regresiva queda encima de la pausa; al reanudar, desaparece. |
+| **LX2-D** Wayland | Entra en L2 con «Ubuntu» (Wayland). | El ayudante abre la ventana; la consola no ofrece pantalla, control remoto ni pausa para L2. |
+| **LX2-E** Energía | Apaga L2 sin «forzar» con un documento sin guardar; vuelve a encenderla. Luego **Cerrar sesión**. | El apagado espera la cuenta regresiva; cerrar sesión termina la sesión (Linux no pregunta si guardar: regla 102). |
+| **LX2-F** Encender | Con L2 apagada, **Encender** desde la consola. | L2 enciende (si el hipervisor o la BIOS tienen Wake-on-LAN). |
+| **LX2-G** Quitar | `sudo apt purge aula-cliente` en L2. | El servicio se detiene y desaparece (`systemctl status aula-agente`: no existe), la ventana se cierra y `/var/log/aula` se borra. |
+
+**Para aceptar** bastan LX2-A a LX2-C en ✅.

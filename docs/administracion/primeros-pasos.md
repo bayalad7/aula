@@ -78,14 +78,15 @@ Si el maestro no puede instalar nada, la consola también viene como AppImage: s
 ejecutable y se abre con doble clic.
 
 **En cada equipo de alumno**, instala `aula-cliente` y configura su canal con la clave pública
-del centro. Arranca solo con cada sesión:
+del centro. Queda como servicio: arranca con el equipo y abre la ventana de Aula en la sesión del
+alumno:
 
 ```
 sudo apt install ./aula-cliente_X.Y.Z_amd64.deb
 sudo aula-cliente configurar -canal 1 -clave aula-centro.pub
 ```
 
-**Elige la sesión X11.** Para ver la pantalla de los alumnos, cada equipo debe entrar en
-**«Ubuntu en Xorg»** (la rueda de la pantalla de inicio de sesión). En la sesión normal
-(Wayland), el alumno recibe código, avisos, encuestas y archivos, pero su pantalla no se puede
-ver. Más en [Solución de problemas](solucion-de-problemas#en-linux-no-se-ve-la-pantalla-del-alumno).
+**Elige la sesión X11.** Para ver la pantalla de los alumnos, tomar el control o pausarlos,
+cada equipo debe entrar en **«Ubuntu en Xorg»** (la rueda de la pantalla de inicio de sesión). En
+la sesión normal (Wayland), el alumno recibe código, avisos, encuestas y archivos, y lo puedes
+apagar, pero su pantalla no se puede ver ni controlar. Más en [Solución de problemas](solucion-de-problemas#en-linux-no-se-ve-la-pantalla-del-alumno).

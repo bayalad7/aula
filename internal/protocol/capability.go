@@ -14,10 +14,10 @@ const (
 	// Windows, with the agent running as a service.
 	CapAppBlock  Capability = "app.block"
 	CapWebFilter Capability = "web.filter"
-	// CapPower shuts down, reboots or logs off (§5.15). Windows.
+	// CapPower shuts down, reboots or logs off (§5.15). Windows and Linux.
 	CapPower Capability = "power"
 	// CapRemote lets the teacher see and control the keyboard and mouse (§5.16).
-	// Windows, in window mode or as a service with its helper.
+	// Windows, in window mode or as a service with its helper; Linux X11.
 	CapRemote Capability = "remote"
 	// CapScreenSnapshot sends one still image of the screen (§5.17). Windows
 	// and Linux X11, with the same capture and indicator as screen.thumb.
@@ -55,7 +55,7 @@ const (
 	CapScreenPresentView Capability = "screen.present.view"
 	// CapScreenFreeze pauses the screen with the pause window on every
 	// monitor (§5.9–5.11). Windows, in window mode or as a service with its
-	// helper; never the simulated students.
+	// helper, and Linux X11; never the simulated students.
 	CapScreenFreeze Capability = "screen.freeze"
 	// CapClassEnd leaves the window as freshly opened when the teacher ends
 	// the class (§5.25). Every OS, whenever the agent has a window.
@@ -67,7 +67,7 @@ const (
 	// and health.request (§5.27). Every OS, also without a session; a datum
 	// the OS cannot read does not travel.
 	CapHealth Capability = "health"
-	// CapHealthSelfTest runs the self-test on demand (§5.27.5). Windows.
+	// CapHealthSelfTest runs the self-test on demand (§5.27.5). Windows and Linux.
 	CapHealthSelfTest Capability = "health.selftest"
 )
 

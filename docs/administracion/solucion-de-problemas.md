@@ -217,8 +217,9 @@ clásico de un **cable dañado o mal ponchado**, o de un puerto del switch con p
 
 ## En Linux no se ve la pantalla del alumno
 
-Si en la ficha del alumno «Ver su pantalla» y «Captura» salen como no disponibles y su equipo
-usa Linux, ese equipo está en una sesión **Wayland**, donde ninguna app puede ver la pantalla de
+Si en la ficha del alumno «Mostrar su pantalla en miniaturas», «Tomar una captura de su
+pantalla», «Control remoto» y «Pausar su pantalla» salen como no disponibles y su equipo usa
+Linux, ese equipo está en una sesión **Wayland**, donde ninguna app puede ver la pantalla de
 las demás ni dejar el aviso para el alumno siempre encima. Pide que el alumno cierre sesión y,
 en la pantalla de inicio, elija **«Ubuntu en Xorg»** con la rueda junto al botón de entrar. Para
 todo el laboratorio, el responsable de TI puede desactivar Wayland en el inicio de sesión

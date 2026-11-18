@@ -46,7 +46,7 @@ lleve `foreignObject`.
 | 10 | [Aula simulada y simulación de fallas](10-aula-simulada.md) | `flowchart` | profesor, desarrollador |
 | 11 | [Modelo de datos local](11-modelo-datos.md) | `erDiagram` | desarrollador, auditor |
 | 12 | [Diagnóstico: «Mi alumno no conecta»](12-diagnostico-conexion.md) | `flowchart` | profesor, instalador |
-| 13 | [El agente como servicio de Windows](13-agente-servicio.md) | `flowchart` | instalador, desarrollador, auditor |
+| 13 | [El agente como servicio (Windows y Linux)](13-agente-servicio.md) | `flowchart` | instalador, desarrollador, auditor |
 | 14 | [Transmisión de la pantalla del profesor](14-transmision-pantalla.md) | `sequenceDiagram` | profesor, desarrollador |
 | 15 | [Restricciones de la clase: apps y filtro web](15-restricciones.md) | `flowchart` | profesor, desarrollador, auditor |
 | 16 | [Energía: apagar, reiniciar, cerrar sesión y encender](16-energia.md) | `stateDiagram-v2` | profesor, alumno, desarrollador |

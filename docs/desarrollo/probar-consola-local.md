@@ -393,6 +393,20 @@ está en `docs/prueba-vms.md` §31.
 | A-67 | Llega un snippet: **Copiar** y pegar en el editor de texto y en la terminal; cierra la ventana con la X | El código llega intacto (sangría y saltos); cerrar **minimiza** la ventana (no hay icono en el área de notificación) y el alumno sigue conectado en la consola |
 | A-68 | El profesor abre la vista de pantallas | Antes de la primera miniatura aparece arriba al centro «● Tu pantalla está siendo vista por el profesor», encima de las demás ventanas, sin robar clics ni el foco (hacer clic en él actúa sobre lo de abajo); la banda de la ventana dice lo mismo. Al cerrar la vista, el distintivo se va |
 
+### Linux, capa 2 (13)
+
+El mismo Ubuntu 24.04 de la capa 1, ahora con el agente **como servicio** (el paquete lo instala).
+La prueba completa con dos equipos está en `docs/prueba-vms.md` §32.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| C-166 | Con un alumno Linux en X11, **Tomar el control** desde la Pantalla grande; mueve el ratón y escribe «hola» en su editor | En el alumno aparece el aviso del control remoto antes de la primera entrada, con su banda; el puntero se mueve y «hola» se escribe con la distribución del alumno. **Detener** suelta todo |
+| C-167 | **Pausar** a ese alumno con un mensaje; luego **Reanudar** | Su pantalla queda cubierta en cada monitor con el título, el mensaje, quién la pausó y la hora; al reanudar, desaparece |
+| C-168 | En Laboratorio, **Revisar ahora** y **Autodiagnóstico** para el alumno Linux; luego **Apagar** con cuenta regresiva y **Posponer**, y después **Encender** | Aparecen disco, memoria, procesador, red y batería (si la hay) sin la línea de S.M.A.R.T.; el autodiagnóstico responde. La cuenta regresiva se pospone; tras apagarlo, «Encender» lo prende si su BIOS tiene Wake-on-LAN |
+| A-69 | Reinicia el equipo del alumno y entra con su usuario («Ubuntu en Xorg») | `systemctl status aula-agente` dice *active (running)*; la ventana de Aula aparece sola en la sesión (el ayudante) y la consola lo ve con energía, control remoto, pausa y salud. Abrir Aula Cliente desde Actividades trae esa misma ventana, no otra |
+| A-70 | Durante C-166, mueve el ratón del alumno | La franja de la consola dice «el alumno está usando su equipo» y el control se pausa hasta que deja de usarlo, como en Windows |
+| A-71 | Cierra sesión en el equipo del alumno (sin apagar) | La consola lo sigue viendo conectado, solo con energía y salud; al volver a entrar, el ayudante abre la ventana otra vez |
+
 ### Encender equipos (10.19)
 
 Solo en el laboratorio (en una VM hace falta configurar el hipervisor): dos equipos con Windows,

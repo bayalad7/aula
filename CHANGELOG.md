@@ -175,23 +175,29 @@ retiraron; esta es la primera.
 - Las apps se compilan con **Go 1.27**, con su último parche de seguridad; para compilarlas en
   tu equipo hace falta Go 1.27 o más reciente.
 
-### Linux (primera parte)
+### Linux
 
 - **Aula en Linux** (Ubuntu 24.04 y parecidas): paquetes `.deb` y `.rpm` de la consola y del
   agente, y la consola también como **AppImage**, sin instalar. El agente arranca con cada sesión
   y se configura con `sudo aula-cliente configurar -canal 1 -clave aula-centro.pub`.
+- El agente de Linux queda como **servicio** (`aula-agente`): arranca con el equipo, también sin
+  nadie conectado, y abre la ventana de Aula en la sesión del alumno, como en Windows.
 - En Linux funcionan el código y **Copiar**, avisos, mensajes, manos, temporizador, encuestas y
   cuestionarios, enviar y recoger archivos (en `~/Documentos/Aula`), terminar la clase y el
   atajo para traer código a la consola.
-- **Ver la pantalla del alumno** y la captura, con el mismo aviso rojo siempre visible, en la
-  sesión **«Ubuntu en Xorg»**. En la sesión Wayland, Aula no ve la pantalla y lo dice: la ficha
-  lo muestra como no disponible y `aula-cliente diagnostico` explica qué hacer.
+- **Ver la pantalla del alumno**, la captura, **tomar el control** y **pausar pantallas**, con
+  los mismos avisos que en Windows, en la sesión **«Ubuntu en Xorg»**. En la sesión Wayland, Aula
+  no ve ni controla la pantalla y lo dice: la ficha lo muestra como no disponible y
+  `aula-cliente diagnostico` explica qué hacer.
+- **Apagar, reiniciar y cerrar sesión**, **encender equipos** y la **salud del laboratorio** con
+  su autodiagnóstico también en Linux (sin la revisión S.M.A.R.T. del disco). En Linux, cerrar
+  sesión no les pregunta a los programas si guardar.
 - La clave del centro de una consola Linux la leen los maestros del grupo `aula`; el paquete
   abre el firewall (`ufw` o `firewalld`) si está activo. Lo que falta en Linux está en la tabla
   de compatibilidad (`docs/compatibilidad.md`).
 
 ### Todavía no
 
-- La asistencia y bitácora, la auto-actualización, macOS y, en Linux, el control remoto, la
-  energía, las restricciones, pausar, transmitir y proyectar pantallas, abrir apps, encender
-  equipos, la salud del equipo y el agente como servicio.
+- La asistencia y bitácora, la auto-actualización, macOS y, en Linux, las restricciones, abrir
+  apps, transmitir y proyectar pantallas, el comprobador de red y el icono del área de
+  notificación.

@@ -8,7 +8,7 @@ solo al empujar una etiqueta `v*` (`.github/workflows/release.yml`, jobs `linux`
 
 | Archivo | Qué es |
 |---|---|
-| `aula-cliente_X.Y.Z_amd64.deb`, `aula-cliente-X.Y.Z-1.x86_64.rpm` | Agente del alumno: `/usr/bin/aula-cliente`, arranque con cada sesión (`/etc/xdg/autostart`) y su lanzador. |
+| `aula-cliente_X.Y.Z_amd64.deb`, `aula-cliente-X.Y.Z-1.x86_64.rpm` | Agente del alumno: `/usr/bin/aula-cliente`, el servicio `aula-agente.service` (lo instala y arranca el paquete si hay systemd), el arranque con cada sesión (`/etc/xdg/autostart`) y su lanzador. |
 | `aula-consola_X.Y.Z_amd64.deb`, `aula-consola-X.Y.Z-1.x86_64.rpm` | Consola: `/usr/bin/aula-consola`, su lanzador, el grupo `aula` y `/etc/Aula/centro`, y el firewall (`ufw` o `firewalld`, solo si está activo: TCP 47830 y mDNS). |
 | `aula-consola-X.Y.Z-x86_64.AppImage` | La consola sin instalar (usa el GTK y el WebKitGTK del sistema). El agente no tiene AppImage: debe arrancar con cada sesión. |
 | `aula-cliente-X.Y.Z-linux-amd64`, `aula-consola-X.Y.Z-linux-amd64` | Binarios sueltos (los del release). |
@@ -88,8 +88,26 @@ atajo se prueba con teclas sintéticas de XTEST):
 GOFLAGS=-tags=webkit2_41 xvfb-run -a go test ./internal/platform/ ./apps/student/
 ```
 
+## El servicio con systemd real
+
+El job `servicio-linux` del CI instala la unidad de prueba `aula-agente-prueba` y corre su ciclo
+(arrancar, matarlo y ver que systemd lo levanta, detener, quitar), y las pruebas que lanzan el
+ayudante como otro usuario (`TestLaunchAsTheStudent`), como root. En local sirve un contenedor
+con systemd como PID 1 (privilegiado; nunca en el equipo de un maestro):
+
+```sh
+docker run -d --name aula-sd --privileged --cgroupns=host \
+  -v /sys/fs/cgroup:/sys/fs/cgroup:rw -v "$PWD:/src" <imagen con systemd> /lib/systemd/systemd
+docker exec aula-sd bash -c 'cd /src && AULA_SERVICE_TEST=1 \
+  go test -tags servicetest -run TestServiceLifecycle ./apps/student/'
+```
+
+`probar-paquetes.sh` también comprueba el servicio (habilitado y en marcha) donde hay systemd: un
+runner o una VM, no un contenedor común.
+
 ## Lo que se prueba a mano
 
 Lo que Xvfb no ve (un gestor de ventanas real, la sesión «Ubuntu en Xorg» frente a Wayland, el
-arranque con la sesión, el portapapeles con otras apps) está en `docs/prueba-vms.md` §31 y en
-los casos C-162 a C-165 y A-66 a A-68 de `probar-consola-local.md`.
+servicio con una sesión gráfica real de logind, el portapapeles con otras apps) está en
+`docs/prueba-vms.md` §31 y §32 y en los casos C-162 a C-168 y A-66 a A-71 de
+`probar-consola-local.md`.

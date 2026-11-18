@@ -1,35 +1,35 @@
 ---
-titulo: "El agente como servicio de Windows"
+titulo: "El agente como servicio (Windows y Linux)"
 descripcion: "Cómo se reparte el agente entre un servicio sin ventana y un ayudante visible en la sesión del alumno"
 audiencia: [instalador, desarrollador, auditor]
 pantallas: [falta]
 secciones_manual: [administracion/como-funciona, privacidad, configuracion]
 ---
 
-# El agente como servicio de Windows
+# El agente como servicio (Windows y Linux)
 
-¿Qué corre como SYSTEM, qué corre en la sesión del alumno y cómo se hablan?
+¿Qué corre como SYSTEM (o root en Linux), qué corre en la sesión del alumno y cómo se hablan?
 
 ```mermaid
 %%{init: {"htmlLabels": false, "flowchart": {"htmlLabels": false}}}%%
 flowchart LR
     consola["Consola del profesor"]
 
-    subgraph svc["Servicio «Aula — agente del aula» (SYSTEM, sesión 0)"]
+    subgraph svc["Servicio «Aula — agente del aula»<br/>(SYSTEM en la sesión 0, o root con systemd)"]
         agente["session.Agent<br/>conexión con la consola"]
         sup["agentsvc.Supervisor<br/>lanza, vigila y mueve al ayudante"]
         proxies["Proxies Clipboard, Capture, Indicator,<br/>Input, WorkFolder, Opener, Pause y power.run"]
         pol["policy.Manager y power.Countdown"]
     end
 
-    pipe["Named pipe local<br/>platform.ListenLocal<br/>solo SYSTEM y el SID del alumno"]
+    pipe["Canal local platform.ListenLocal<br/>named pipe o socket Unix en /run/aula<br/>solo el servicio y el alumno"]
 
     subgraph user["Sesión del alumno (sus permisos)"]
-        ayud["aula-cliente.exe --ayudante<br/>ventana, distintivo, avisos y pausa"]
+        ayud["aula-cliente --ayudante<br/>ventana, distintivo, avisos y pausa"]
         so["Portapapeles, captura, entrada<br/>del control remoto, apagado sin force,<br/>Documentos\Aula del alumno,<br/>abrir una página o una app permitida,<br/>ventana de pausa en sus monitores"]
     end
 
-    sesiones["platform.SessionManager<br/>sesión activa, Launch con el token del usuario"]
+    sesiones["platform.SessionManager<br/>sesión activa (WTS o logind),<br/>Launch con el token o el uid del alumno"]
 
     consola <-- "wss:// (diagrama 04)" --> agente
     agente --> proxies
@@ -53,6 +53,12 @@ flowchart LR
 
 ## Lo que no es obvio
 
+- **En Linux** (D-024) el servicio es `aula-agente.service` de systemd, como root. La sesión del
+  alumno es la activa de `seat0` según logind (local, gráfica, de usuario). El ayudante arranca
+  con el uid, el gid y los grupos del alumno y solo el entorno de su sesión (`DISPLAY`,
+  `XAUTHORITY`…, del gestor de systemd del usuario). El canal es un socket Unix en `/run/aula`,
+  dueño el alumno y modo `0600`, y el servicio comprueba el PID con `SO_PEERCRED`. Los cambios
+  de sesión se ven sondeando logind cada 2 s.
 - **El servicio no ve la pantalla.** Corre en la sesión 0, sin ventana: captura, portapapeles,
   distintivo y avisos solo existen en el ayudante, que es un `aula-cliente.exe` con los permisos
   normales del alumno. El servicio los usa a través del canal local (`agentsvc` Clipboard,

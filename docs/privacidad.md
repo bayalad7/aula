@@ -816,14 +816,42 @@ en Windows; esto es lo que cambia o se precisa. Qué funciona en cada sistema:
     español, `~/Documentos/Aula`). Valen las reglas 55–65: el agente corre como el alumno, no
     sigue enlaces simbólicos (los omite o rechaza y lo dice) y no escribe fuera de esa carpeta.
 99. **Lo demás no se declara.** Mientras no esté portado, el agente de Linux **no declara**
-    energía, control remoto, pantalla en blanco, proyectar, restricciones ni abrir páginas o apps,
+    proyectar, restricciones ni abrir páginas o apps (la energía, el control remoto y la pantalla
+    en blanco llegaron con la segunda parte, reglas 100–103),
     y recibir la transmisión solo si el WebView del equipo trae WebRTC y H.264 (el de Ubuntu
     24.04 no): la ficha «Qué puede hacer su equipo» lo muestra como no disponible y el
     alumno lo ve igual en «Qué puede hacer Aula en este equipo». Lo prueba
     `TestLinuxDeclaresOnlyWhatItDoes`.
 
+## Linux, segunda parte (sin publicar; etapa 13, capa 2)
+
+Aprobadas el 2026-11-18 con el prompt 13. El agente de Linux pasa a ser un servicio de systemd
+con un ayudante en la sesión del alumno, como en Windows (D-016, D-024), y suma el control
+remoto, la pausa, la energía, encender equipos y la salud. Valen las reglas de Windows de cada
+función; esto es lo que se precisa en Linux.
+
+100. **El servicio se identifica.** Es `aula-agente.service` («Aula — agente del aula»), visible
+     en `systemctl status aula-agente` y en la lista de procesos como `aula-cliente`; el ayudante
+     corre como el alumno, con su ventana. Nada se oculta ni cambia de nombre. Quitar el paquete
+     detiene y borra el servicio.
+101. **Control remoto y pausa, solo en una sesión X11 y con los mismos avisos.** El control
+     remoto cumple las reglas 36–43 (aviso antes de la primera entrada, banda y título, pausa
+     cuando el alumno usa su teclado o ratón, soltar todo al terminar); la entrada se inyecta con
+     XTEST en la sesión del alumno, por el ayudante, y Aula nunca lee lo que el alumno teclea:
+     solo sabe *cuándo* hubo entrada que no inyectó. La pausa cumple las reglas 9–11 y tapa cada
+     monitor. En Wayland no se declaran (regla 97).
+102. **Energía con la misma cuenta regresiva.** Apagar, reiniciar y cerrar sesión cumplen las
+     reglas 26–30; en Linux los ejecuta systemd (`systemctl`, `loginctl`). Sin «forzar», los
+     programas que lo pidan pueden retrasar el apagado y el reinicio; con «forzar», no. **Cerrar
+     sesión** termina la sesión del alumno con o sin «forzar»: Linux no les pregunta a los
+     programas si guardar. La cuenta regresiva y su aviso son la oportunidad de guardar.
+103. **Salud: la misma lista cerrada.** El agente de Linux informa los datos de la regla 92 que
+     el sistema le da sin permisos especiales (disco, memoria, procesador, encendido, reinicio
+     pendiente, red y batería); la falla del disco (S.M.A.R.T.) no se lee. Nunca procesos,
+     archivos, sitios ni el nombre de la red.
+
 ## Pendiente para etapas futuras
 
-- Linux, siguientes partes (servicio de systemd, recepción de la transmisión, restricciones,
-  control remoto, energía, pantalla en blanco) y macOS: sus textos de aviso se agregarán aquí
-  antes de implementarlos, con las mismas reglas 6–49.
+- Linux, tercera parte (recepción y envío de transmisiones, restricciones, abrir apps, red y
+  firewall, icono del área de notificación) y macOS: sus textos de aviso se agregarán aquí antes
+  de implementarlos, con las mismas reglas 6–49.

@@ -97,8 +97,23 @@ sudo aula-cliente configurar -directo 192.168.1.10:47830          # si mDNS no l
 ```
 
 El archivo queda `0644` (la configuración es pública; solo root la cambia). Quitar el paquete con
-`apt purge` o `dnf remove` lo borra, como el desinstalador de Windows. El agente arranca con cada
-sesión gráfica (`/etc/xdg/autostart/aula-cliente.desktop`); todavía no hay servicio de systemd.
+`apt purge` o `dnf remove` lo borra, como el desinstalador de Windows.
+
+### Como servicio de systemd (Linux, D-024)
+
+El paquete deja el agente como servicio **`aula-agente.service`** («Aula — agente del aula»), como
+root: arranca con el equipo, se reinicia 5 s después de una falla y lanza el ayudante en la
+sesión gráfica del alumno, con sus permisos. Se opera igual que en Windows:
+
+```sh
+sudo aula-cliente servicio instalar|desinstalar|iniciar|detener
+aula-cliente servicio estado          # o: systemctl status aula-agente
+```
+
+Su registro está en `/var/log/aula/aula-agente.log`; el del ayudante, en
+`~/.cache/Aula/alumno/aula-cliente.log` del alumno. El arranque con la sesión
+(`/etc/xdg/autostart/aula-cliente.desktop`) se queda: con el servicio en marcha solo trae al
+frente la ventana del ayudante. Sin systemd (un contenedor), ese arranque es el agente mismo.
 
 ### Si no conecta
 

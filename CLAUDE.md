@@ -270,7 +270,8 @@ Referencia completa en `docs/ux/DESIGN_SYSTEM.md`; la fuente de verdad es `inter
   o de un módulo), `go test -race ./...` (con `CGO_ENABLED=1`, que `-race` requiere; en Linux
   bajo Xvfb para las pruebas de X11). Los binarios publicados de Windows se compilan sin cgo; los
   de Linux con cgo y `-tags webkit2_41`, porque Wails lo exige ahí (D-023). El job
-  `linux-paquetes` compila con Wails, empaqueta y prueba el `.deb` en cada push.
+  `linux-paquetes` compila con Wails, empaqueta y prueba el `.deb` en cada push, y
+  `servicio-linux` corre el ciclo del servicio con systemd real (unidad `aula-agente-prueba`).
 - **Dependencias:** se ponen al día dentro de su versión mayor con `go get -u ./...` y
   `go mod tidy` (prompt 10.28), sin `replace`. Wails se queda en v2 hasta que una etapa propia
   decida la migración a v3. La CLI de Wails de `release.yml` y `scripts/compilar.ps1` es la misma
@@ -305,7 +306,8 @@ Prioridad: Windows 10/11 → Linux (X11) → macOS. Toda función que toca el SO
 interfaz en `platform` y una implementación por defecto que devuelve "no soportado".
 Qué funciona en cada SO: `docs/compatibilidad.md` (una fila por función visible); una función
 nueva que toca el SO agrega su fila. Linux va por capas (D-023): la capa 1 (pantalla y atajo solo
-en X11, `Documentos/Aula`, paquetes) está hecha; lo no portado no se declara.
+en X11, `Documentos/Aula`, paquetes) y la 2 (servicio de systemd con ayudante, D-024; control
+remoto y pausa en X11; energía, encender y salud) están hechas; lo no portado no se declara.
 
 ## Privacidad (no negociable)
 Monitoreo transparente: cuando la pantalla del alumno se ve o transmite, su equipo muestra un

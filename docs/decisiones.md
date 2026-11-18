@@ -860,3 +860,43 @@ WebKitGTK 4.1), mientras que los binarios de Windows se publican sin cgo.
 Ubuntu limpio y el `.rpm` en Fedora, los configura y los quita) y un job final que firma un solo
 `checksums.txt` para todos. Las pruebas de X11 corren bajo Xvfb en el CI. Falta la prueba en un
 equipo Linux real (`docs/prueba-vms.md` §31).
+
+## D-024: En Linux, el agente es un servicio de systemd con un ayudante lanzado por root
+
+**Fecha:** 2026-11-18 · **Estado:** aprobada (prompt 13, capa 2 de Linux).
+
+**Contexto.** En la capa 1 el agente de Linux arrancaba con cada sesión (XDG autostart): sin
+sesión no había agente, no podía apagar un equipo sin nadie conectado y cualquier alumno podía
+cerrarlo. En Windows el agente es un servicio con un ayudante en la sesión (D-016), y
+`agentsvc.Supervisor` exige que el PID del que se conecta al canal sea el del ayudante que lanzó.
+Ese diseño necesita, en Linux, lanzar un proceso en la sesión gráfica de otro usuario y conocer su
+PID real.
+
+**Decisión.**
+- **Unidad de sistema** `aula-agente.service` (root, `Restart=on-failure`, `RestartSec=5`,
+  `KillMode=control-group`): detenerla también termina el ayudante. Se maneja con `systemctl`; el
+  paquete la instala y la arranca, y la quita al desinstalar.
+- **La sesión del alumno la dice logind:** la activa de `seat0`, local, gráfica (`x11` o
+  `wayland`) y de clase `user`. Los cambios se ven sondeando cada 2 s, sin depender de D-Bus.
+- **El ayudante lo lanza el servicio con `fork`:** con el uid, el gid y los grupos del alumno,
+  `setsid`, su carpeta y **solo** las variables de su sesión (`DISPLAY`, `XAUTHORITY`,
+  `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`, el bus de D-Bus, el idioma…), leídas del gestor de systemd
+  del usuario (`systemctl --user -M <usuario>@ show-environment`). Así el PID es el real. Se
+  descartó `systemd-run --user`: el PID sería el de la unidad transitoria, no el del ayudante.
+- **Canal local:** socket Unix en `/run/aula`, que nace en una carpeta privada, recibe dueño (el
+  alumno) y modo `0600` y solo entonces se mueve a su lugar; el servicio comprueba el PID del par
+  con `SO_PEERCRED`. Sin tocar la `umask` del proceso.
+- **El arranque con la sesión se queda:** con el servicio en marcha solo trae al frente la
+  ventana del ayudante (`serviceRunning`), como el acceso directo de Windows.
+- **Control remoto** con XTEST y **pausa** con ventanas *override-redirect*, solo en X11; la
+  entrada del alumno se detecta con la extensión ScreenSaver (cuánto hace de la última entrada),
+  descontando la que inyectó Aula. **Energía** con `systemctl poweroff/reboot` (`-i` al forzar) y
+  `loginctl terminate-session`. **Salud** desde `/proc` y `/sys`, sin S.M.A.R.T.
+- **Registros del servicio** en `/var/log/aula`, no en `/etc`.
+
+**Consecuencias.** Un job del CI con systemd real (`servicio-linux`) instala la unidad de prueba
+`aula-agente-prueba` y corre su ciclo; las pruebas que lanzan el ayudante como otro usuario
+corren como root. Se encontró y corrigió que, bajo systemd, root no tiene `$HOME` y el agente no
+leía la configuración de la máquina. Cerrar sesión no pregunta a los programas si guardar
+(regla 102). Lo que sigue (capa 3): restricciones, abrir apps, red y firewall, icono del área de
+notificación; transmitir y proyectar esperan una decisión sobre el codificador H.264.

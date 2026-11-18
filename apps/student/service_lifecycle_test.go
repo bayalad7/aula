@@ -1,4 +1,4 @@
-//go:build windows && servicetest
+//go:build (windows || linux) && servicetest
 
 package main
 
@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -18,8 +19,9 @@ import (
 // real installation.
 const testServiceName = "AulaAgentePrueba"
 
-// TestServiceLifecycle installs a real service, so it only runs in CI (job
-// "servicio") or in a VM, as an administrator, with AULA_SERVICE_TEST=1:
+// TestServiceLifecycle installs a real service (Windows, or a systemd unit on
+// Linux), so it only runs in CI (jobs "servicio" and "servicio-linux") or in
+// a VM, as an administrator or root, with AULA_SERVICE_TEST=1:
 //
 //	go test -tags servicetest -run TestServiceLifecycle ./apps/student/
 //
@@ -31,7 +33,11 @@ func TestServiceLifecycle(t *testing.T) {
 	if os.Getenv("AULA_SERVICE_TEST") != "1" {
 		t.Skip("set AULA_SERVICE_TEST=1 (administrator, CI or VM only)")
 	}
-	exe := filepath.Join(t.TempDir(), "aula-cliente.exe")
+	name := "aula-cliente"
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+	exe := filepath.Join(t.TempDir(), name)
 	build := exec.Command("go", "build", "-o", exe, ".")
 	if out, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("go build: %v\n%s", err, out)
@@ -108,10 +114,19 @@ func TestServiceLifecycle(t *testing.T) {
 	})
 	t.Logf("killed PID %d; the service manager restarted it as PID %d", first.PID, second.PID)
 
-	// It ran as the service: its log is in ProgramData, not in a profile.
+	// It ran as the service: its log is in ProgramData (/var/log/aula on
+	// Linux), not in a profile.
+	// The restarted process may not have written it yet: wait a little.
 	logPath := filepath.Join(platform.AgentServiceLogDir(), "aula-agente.log")
-	if data, err := os.ReadFile(logPath); err != nil || !strings.Contains(string(data), "aula-cliente service starting") {
-		t.Errorf("service log %s: %v", logPath, err)
+	for deadline := time.Now().Add(10 * time.Second); ; time.Sleep(250 * time.Millisecond) {
+		data, err := os.ReadFile(logPath)
+		if err == nil && strings.Contains(string(data), "aula-cliente service starting") {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Errorf("service log %s: %v", logPath, err)
+			break
+		}
 	}
 
 	if code, out := cli("detener"); code != 0 {

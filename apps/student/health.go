@@ -24,7 +24,7 @@ import (
 
 // healthCapabilities are the capabilities of the health of this computer:
 // health everywhere (what the OS cannot read does not travel) and the
-// self-test where it runs (Windows).
+// self-test where it runs (Windows and Linux).
 func healthCapabilities() []protocol.Capability {
 	caps := []protocol.Capability{protocol.CapHealth}
 	if selfTestSupported() {
@@ -33,7 +33,7 @@ func healthCapabilities() []protocol.Capability {
 	return caps
 }
 
-func selfTestSupported() bool { return runtime.GOOS == "windows" }
+func selfTestSupported() bool { return runtime.GOOS == "windows" || runtime.GOOS == "linux" }
 
 // newHealth builds the health agent of this App. documents gives the
 // Documents folder of the session's user ("" without one).

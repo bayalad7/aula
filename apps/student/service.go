@@ -61,9 +61,9 @@ func runServiceCLI(args []string, out, errOut io.Writer) int {
 	fail := func(what string, err error) int {
 		fmt.Fprintf(errOut, "%s: %v\n", what, err)
 		if errors.Is(err, platform.ErrNotSupported) {
-			fmt.Fprintln(errOut, "El agente como servicio solo existe en Windows por ahora.")
+			fmt.Fprintln(errOut, "El agente como servicio existe en Windows y en Linux con systemd.")
 		} else if isAccessDenied(err) {
-			fmt.Fprintln(errOut, "Ejecuta la orden como administrador.")
+			fmt.Fprintln(errOut, "Ejecuta la orden como administrador (en Linux, con sudo).")
 		}
 		return exitFailure
 	}
@@ -125,7 +125,7 @@ func runServiceCLI(args []string, out, errOut io.Writer) int {
 		}
 	case "ejecutar":
 		if is, err := platform.IsService(); err != nil || !is {
-			fmt.Fprintln(errOut, "\"servicio ejecutar\" lo usa el administrador de servicios de Windows; para instalarlo usa \"servicio instalar\".")
+			fmt.Fprintln(errOut, "\"servicio ejecutar\" lo usa el administrador de servicios (Windows o systemd); para instalarlo usa \"servicio instalar\".")
 			return exitUsage
 		}
 		if err := platform.RunAsService(*name, runService); err != nil {

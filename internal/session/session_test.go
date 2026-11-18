@@ -3,6 +3,7 @@ package session
 import (
 	"io"
 	"log/slog"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -93,6 +94,45 @@ func TestRegistryListByChannelAndReconnect(t *testing.T) {
 	list = r.List(testChannel)
 	if len(list) != 2 || list[1].ID != "4" || list[1].State != StateConnected {
 		t.Fatalf("after reconnect List = %+v", list)
+	}
+}
+
+// Audit 2026-11-17, I-2: two connected sessions that claim the same computer
+// are both marked; a disconnected one, another channel or another computer
+// are not.
+func TestRegistryMarksDuplicates(t *testing.T) {
+	r, _ := newTestRegistry()
+	r.Connect("a", testChannel, "10.0.0.7:5000", hello("LAB3-PC07"))
+	if s, _ := r.Get("a"); s.DuplicateOf != nil {
+		t.Fatalf("alone: DuplicateOf = %v", s.DuplicateOf)
+	}
+	other := hello("lab3-pc07") // the same, without case
+	other.Username = "ALUMNO"
+	r.Connect("b", testChannel, "10.0.0.90:6000", other)
+	r.Connect("c", "3", "10.0.0.8:5000", hello("LAB3-PC07")) // another channel
+	byMAC := hello("PC-CLON")
+	byMAC.MACs = []string{"00:1a:2b:3c:4d:5e"}
+	r.Connect("d", testChannel, "10.0.0.9:5000", byMAC)
+	sameMAC := hello("PC-OTRO")
+	sameMAC.MACs = []string{"00:1A:2B:3C:4D:5E"}
+	r.Connect("e", testChannel, "10.0.0.10:5000", sameMAC)
+	got := map[string][]string{}
+	for _, s := range r.List(testChannel) {
+		got[s.ID] = s.DuplicateOf
+	}
+	want := map[string][]string{
+		"a": {"10.0.0.90:6000"}, "b": {"10.0.0.7:5000"},
+		"d": {"10.0.0.10:5000"}, "e": {"10.0.0.9:5000"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("DuplicateOf = %v, want %v", got, want)
+	}
+	if s, _ := r.Get("c"); s.DuplicateOf != nil {
+		t.Fatalf("another channel marked: %v", s.DuplicateOf)
+	}
+	r.Disconnect("b")
+	if s, _ := r.Get("a"); s.DuplicateOf != nil {
+		t.Fatalf("after the other left: DuplicateOf = %v", s.DuplicateOf)
 	}
 }
 

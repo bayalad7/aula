@@ -5,7 +5,9 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -28,6 +30,7 @@ type memReader struct {
 	offline map[string]bool
 	reads   []string
 	denied  map[string]bool
+	mkdir   error // returned by MkdirAll when set
 }
 
 func newMem() *memReader {
@@ -38,6 +41,9 @@ func newMem() *memReader {
 func (m *memReader) MkdirAll(rel string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.mkdir != nil {
+		return m.mkdir
+	}
 	m.dirs[rel] = true
 	return nil
 }
@@ -183,7 +189,11 @@ func (l *lab) mem(session string) *memReader { return l.agents[session].Reader.(
 func (l *lab) students() []Student {
 	var out []Student
 	for s := range l.agents {
-		out = append(out, Student{Session: s, Hostname: "LAB-" + s, Username: "alumno-" + s})
+		st := Student{Session: s, Hostname: "LAB-" + s, Username: "alumno-" + s, Address: "10.0.0.1"}
+		if s == "b" { // another connection claims LAB-b (I-2)
+			st.Address, st.Duplicate = "10.0.0.2", true
+		}
+		out = append(out, st)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Session < out[j].Session })
 	return out
@@ -266,8 +276,14 @@ func TestCollectTwoStudentsWithALargeFile(t *testing.T) {
 		}
 	}
 	m, err := ReadManifest(dirA)
-	if err != nil || m.Round != 1 || len(m.Files) != 2 || m.Hostname != "LAB-a" {
+	if err != nil || m.Round != 1 || len(m.Files) != 2 || m.Hostname != "LAB-a" || m.Address != "10.0.0.1" || m.Duplicate {
 		t.Fatalf("manifest = %+v, %v", m, err)
+	}
+	// The manifest says where the files came from and that LAB-b was claimed
+	// twice; its files are kept (the teacher decides).
+	if mb, err := ReadManifest(StudentDir(sum.Dir, Student{Hostname: "LAB-b", Username: "alumno-b"})); err != nil ||
+		!mb.Duplicate || mb.Address != "10.0.0.2" || len(mb.Files) != 1 {
+		t.Fatalf("manifest of the duplicated one = %+v, %v", mb, err)
 	}
 	if b, _ := os.ReadFile(filepath.Join(StudentDir(sum.Dir, Student{Hostname: "LAB-b", Username: "alumno-b"}), "20231235-Luis.py")); string(b) != "x = 1\n" {
 		t.Fatalf("second student = %q", b)
@@ -474,6 +490,29 @@ func TestResponderBusyAndUnavailable(t *testing.T) {
 	reply, _ = none.Handle(context.Background(), send, protocol.New(req))
 	if e, ok := reply.(protocol.ErrorPayload); !ok || e.Code != protocol.CodeUnsupportedCapability {
 		t.Fatalf("unavailable = %+v", reply)
+	}
+}
+
+// Rule 65: a failure is logged with its kind, never the activity, the folder
+// or the student's user (the error carries them).
+func TestResponderLogsNoPaths(t *testing.T) {
+	var logs bytes.Buffer
+	mem := newMem()
+	mem.mkdir = fmt.Errorf("work folder: %s: %w", "Actividad-secreta",
+		&fs.PathError{Op: "mkdir", Path: `C:\Users\usuario-secreto\Documents\Aula\recolecciones`, Err: platform.ErrDenied})
+	r := &Responder{Reader: mem, Logger: slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug}))}
+	open := protocol.FileCollectOpen{CollectID: protocol.NewID(), Date: "2026-11-06", Activity: "Actividad-secreta"}
+	reply, _ := r.Handle(context.Background(), func(context.Context, protocol.Payload) error { return nil }, protocol.New(open))
+	if a, ok := reply.(protocol.FileCollectAck); !ok || a.Status != protocol.FileCollectFailed {
+		t.Fatalf("open with a failing folder = %+v", reply)
+	}
+	if !strings.Contains(logs.String(), "collection folder not created") {
+		t.Fatalf("the failure is not logged: %s", logs.String())
+	}
+	for _, s := range []string{"Actividad-secreta", "usuario-secreto", "recolecciones"} {
+		if strings.Contains(logs.String(), s) {
+			t.Errorf("the log has %q: %s", s, logs.String())
+		}
 	}
 }
 

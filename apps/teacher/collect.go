@@ -122,7 +122,8 @@ func (a *App) collectStudents(class classroom) (out []collect.Student, noCap int
 				noCap++
 				continue
 			}
-			out = append(out, collect.Student{Session: s.ID, Hostname: s.Hostname, Username: s.Username, Simulated: sim})
+			out = append(out, collect.Student{Session: s.ID, Hostname: s.Hostname, Username: s.Username, Simulated: sim,
+				Address: ipOf(s.RemoteAddr), Duplicate: len(s.DuplicateOf) > 0})
 		}
 	}
 	add(class.Sessions(), false)

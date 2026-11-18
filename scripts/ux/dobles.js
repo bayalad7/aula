@@ -39,6 +39,7 @@
     state: "connected", capabilities: [], power: null, appsActive: false, webActive: false,
     lastCodeAck: "", ackedAt: "", simulated: false, connectedAt: "10:31", lastError: null, hand: 0, newMessages: 0,
     pause: "", pauseUnacked: false, canWake: false, wake: null, healthAlerts: 0, healthLevel: "",
+    address: "192.168.1." + (40 + (o.hostname.length * 7) % 50), duplicateOf: [],
   }, o, caps(o));
 
   // muchos_alumnos -n 2: SIM-01, SIM-02 (code.view y msg.show).
@@ -82,6 +83,14 @@
     osVersion: "simulado", agentVersion: "0.6.0-dev+sim", simulated: true,
     capabilities: ["code.view", "msg.show", "screen.thumb", "screen.snapshot", "poll", "class.end", "computer.label"] }));
   if (scene === "lab-salon" || scene === "lab-bandeja") list = [...lab, ...treinta];
+  // Revisión 11, I-2: en lab-duplicado, otra conexión dice ser LAB3-PC07 (Session.DuplicateOf).
+  if (scene === "lab-duplicado") {
+    const otro = student({ hostname: "LAB3-PC07", username: "alumno07", capabilities: ALL, id: "s-LAB3-PC07-b",
+      address: "192.168.1.90", duplicateOf: ["192.168.1.47"], connectedAt: "10:44" });
+    lab[0].address = "192.168.1.47";
+    lab[0].duplicateOf = ["192.168.1.90"];
+    list = [lab[0], otro, ...lab.slice(1)];
+  }
   if (scene === "lab-energia-pendiente") {
     lab[0].power = { action_id: "p1", action: "reboot", force: false, status: "countdown", deadline_ms: now + 24000, postpones_left: 2 };
     lab[1].power = { action_id: "p1", action: "reboot", force: false, status: "postponed", deadline_ms: now + 318000, postpones_left: 1 };

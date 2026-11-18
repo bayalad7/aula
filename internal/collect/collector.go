@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
 )
 
@@ -51,6 +52,11 @@ type Student struct {
 	Hostname  string `json:"hostname"`
 	Username  string `json:"username"`
 	Simulated bool   `json:"simulated"`
+	// Address is the IP it connects from; Duplicate, that another connection
+	// claimed the same computer when the round was asked (audit 2026-11-17,
+	// I-2). Both go to the manifest; nothing is discarded.
+	Address   string `json:"address,omitempty"`
+	Duplicate bool   `json:"duplicate,omitempty"`
 }
 
 // Key names a student across reconnections.
@@ -416,9 +422,10 @@ func (c *Collector) collectFrom(ctx context.Context, col *collection, st *studen
 	}
 	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
 	m := Manifest{CollectID: sum.ID, Date: sum.Date, Activity: sum.Activity, Round: round,
-		Hostname: s.Hostname, Username: s.Username, Simulated: s.Simulated, At: c.now(), Files: files, Skipped: skipped}
+		Hostname: s.Hostname, Username: s.Username, Simulated: s.Simulated, Address: s.Address, Duplicate: s.Duplicate,
+		At: c.now(), Files: files, Skipped: skipped}
 	if err := stage.commit(m); err != nil {
-		log.Warn("collection not saved", "err", err)
+		log.Warn("collection not saved", "err_kind", platform.ErrorKind(err, ErrInvalid))
 		end(StatusFailed, ReasonSave)
 		return
 	}
@@ -478,7 +485,7 @@ func (c *Collector) Ack(session string, ack protocol.FileCollectAck) bool {
 		stage, err := newStaging(dir)
 		c.mu.Lock()
 		if err != nil {
-			c.log().Warn("collection not saved", "collect_id", ack.CollectID, "err", err)
+			c.log().Warn("collection not saved", "collect_id", ack.CollectID, "err_kind", platform.ErrorKind(err, ErrInvalid))
 			select {
 			case r.failed <- ReasonSave:
 			default:
@@ -591,7 +598,7 @@ func (c *Collector) Response(session, envID string, p protocol.FileCollectRespon
 	default:
 		if err := stage.write(a.head.Path, data); err != nil {
 			reason = saveReason(err)
-			c.log().Warn("collected file not saved", "collect_id", p.CollectID, "file_id", p.FileID, "err", err)
+			c.log().Warn("collected file not saved", "collect_id", p.CollectID, "file_id", p.FileID, "err_kind", platform.ErrorKind(err, ErrInvalid))
 		}
 	}
 	c.mu.Lock()

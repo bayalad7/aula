@@ -227,6 +227,7 @@
   let setup = { recentChannels: [], version: "", defaultChannel: "1" };
   let clase = { channel: "", consoleName: "", fingerprint: "", keySource: "centro" };
   let alumnos = { students: [], connected: 0, simulated: 0, canCode: 0, canNotice: 0, canPower: 0, canAppBlock: 0, canWebFilter: 0 };
+  const duplicadosAvisados = new Set(); // conexiones duplicadas ya avisadas (revisión 11, I-2)
   let historial = [];
   let envios = [];
   let hotkey = { combo: "", active: true, error: "" };
@@ -414,6 +415,7 @@
     if (s.newMessages) n.push(insigniaParticipacion("info", "mensaje", P("alumnos.mensajes", s.newMessages), T("participacion.ver")));
     if (s.state !== "connected") return n;
     if (s.lastError) n.push(insignia("error", "error", T("alumnos.noPudo", { r: errorAlumno(s.lastError.code).titulo })));
+    if (s.duplicateOf && s.duplicateOf.length) n.push(insigniaDuplicado(s)); // revisión 11, I-2: lleva a su ficha
     if (s.healthAlerts) n.push(insigniaSalud(s)); // salud del equipo (prompt 10.25): lleva a Laboratorio
     if (s.appsActive || s.webActive) n.push(insignia("advertencia", "candado", T("alumnos.conRestricciones")));
     if (s.power) n.push(insigniaEnergia(s.power));
@@ -494,6 +496,7 @@
 
   function pintarAlumnos(st) {
     alumnos = st;
+    avisarDuplicados(st);
     const apagados = (st.off || []).map(aApagado);
     const verApagados = mostrarApagados && modo === "lista";
     // La selección olvida a quien ya no está en la lista.
@@ -635,9 +638,20 @@
       ["ficha.version", s.agentVersion || "—"],
       ["ficha.canal", String(clase.channel)],
       ["ficha.desde", s.state === "connected" && s.connectedAt ? s.connectedAt : "—"],
+      ["ficha.direccion", s.state === "connected" && s.address ? s.address : "—"],
       ["ficha.restricciones", s.appsActive || s.webActive ? T("alumnos.conRestricciones") : T("ficha.ninguna")],
     ];
     if (s.simulated) filas.unshift(["ficha.tipo", insignia("simulado", "simulado", T("alumnos.simulado"))]);
+    if (s.state === "connected" && s.duplicateOf && s.duplicateOf.length) {
+      // Revisión 11, I-2: arriba, para que se vea antes que lo demás. La ficha solo informa.
+      const dup = el("div", "pila-mini");
+      const a = Object.assign(el("a", "pequeno", T("ayuda.verEnManual")),
+        { href: rutaManual("alumnos#dos-conexiones-dicen-ser-el-mismo-equipo") });
+      const ins = el("div");
+      ins.append(insignia("advertencia", "advertencia", T("alumnos.duplicado")));
+      dup.append(ins, el("div", "pequeno", T("ficha.duplicadoTexto", { ips: s.duplicateOf.join(", ") })), a);
+      filas.unshift(["ficha.duplicado", dup]);
+    }
     $("ficha-datos").replaceChildren(...filas.flatMap(([k, v]) => {
       const dd = el("dd");
       dd.append(typeof v === "string" ? document.createTextNode(v) : v);
@@ -5302,6 +5316,25 @@
     $("ficha-salud-datos").hidden = !sabe;
   }
   // La insignia de la lista y del salón: cuántas alertas y la peor; lleva a Laboratorio.
+  // Revisión 11, I-2: dos conexiones dicen ser el mismo equipo. Un clic abre su ficha, con las
+  // direcciones; el aviso flotante sale una vez por conexión.
+  function insigniaDuplicado(s) {
+    const a = Object.assign(el("a", "insignia insignia--advertencia"),
+      { href: "#alumnos", title: T("alumnos.duplicadoAyuda", { ips: s.duplicateOf.join(", ") }) });
+    a.append(icono("advertencia"), document.createTextNode(T("alumnos.duplicado")));
+    a.addEventListener("click", (e) => { e.preventDefault(); abrirFicha(clave(s)); });
+    return a;
+  }
+  function avisarDuplicados(st) {
+    for (const s of st.students) {
+      // Uno por equipo, no por conexión: las dos conexiones comparten clave.
+      if (s.simulated || s.state !== "connected" || !(s.duplicateOf && s.duplicateOf.length) || duplicadosAvisados.has(clave(s))) continue;
+      duplicadosAvisados.add(clave(s));
+      toast("advertencia", T("alumnos.duplicadoAviso", { equipo: nombreEquipo(s) }), T("alumnos.duplicadoAvisoTexto"), null,
+        "alumnos#dos-conexiones-dicen-ser-el-mismo-equipo");
+    }
+  }
+
   function insigniaSalud(s) {
     const tipo = s.healthLevel === "error" ? "error" : "advertencia";
     const a = Object.assign(el("a", "insignia insignia--" + tipo), { href: "#laboratorio", title: T("alumnos.saludAyuda") });

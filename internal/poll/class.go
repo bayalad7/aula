@@ -132,6 +132,10 @@ type poll struct {
 	votes     map[Student]vote
 	delivered map[Student]bool // poll.open was sent to them
 	shown     map[Student]bool // their window acked it
+	// duplicated: while it was open, another connection claimed the same
+	// computer (session.Session.DuplicateOf). The grades say so; nothing is
+	// discarded (audit 2026-11-17, I-2).
+	duplicated map[Student]bool
 }
 
 // studentState is what one student's agent has of the polls.
@@ -196,7 +200,7 @@ func (c *Class) Open(req Request) (string, error) {
 	}
 	p := &poll{id: msg.PollID, kind: msg.Kind, question: msg.Question, options: msg.Options,
 		named: msg.Named, open: true, openedAt: now,
-		votes: map[Student]vote{}, delivered: map[Student]bool{}, shown: map[Student]bool{}}
+		votes: map[Student]vote{}, delivered: map[Student]bool{}, shown: map[Student]bool{}, duplicated: map[Student]bool{}}
 	p.setHosts(req.Hosts)
 	c.add(p)
 	return p.id, nil
@@ -218,7 +222,7 @@ func (c *Class) OpenQuiz(q Quiz, hosts []string) (string, error) {
 	}
 	p := &poll{id: protocol.NewID(), kind: protocol.PollKindQuiz, question: q.Title, named: true,
 		open: true, openedAt: now, quiz: &q,
-		votes: map[Student]vote{}, delivered: map[Student]bool{}, shown: map[Student]bool{}}
+		votes: map[Student]vote{}, delivered: map[Student]bool{}, shown: map[Student]bool{}, duplicated: map[Student]bool{}}
 	p.setHosts(hosts)
 	c.add(p)
 	return p.id, nil
@@ -344,6 +348,13 @@ func (c *Class) Plan(real, sims []session.Session) []Command {
 			live[s.ID] = true
 			who := Student{Hostname: s.Hostname, Username: s.Username, Simulated: simulated}
 			c.bySession[s.ID] = who
+			if len(s.DuplicateOf) > 0 {
+				for _, p := range c.polls {
+					if p.open && p.targets(who.Hostname) {
+						p.duplicated[who] = true
+					}
+				}
+			}
 			cmds = append(cmds, c.planFor(s.ID, who, s.Can(protocol.CapPollQuiz))...)
 		}
 	}

@@ -334,6 +334,9 @@ func TestQuizGradesCSV(t *testing.T) {
 	s3.Username = "=HYPERLINK(1)"
 	sim := quizStudent("sim1", "SIM-01")
 	c.Plan([]session.Session{s1, s2, s3}, []session.Session{sim})
+	// While it is open, another connection claims PC01 (I-2): its row says so.
+	s2.DuplicateOf = []string{"10.0.0.90:6000"}
+	c.Plan([]session.Session{s1, s2, s3}, []session.Session{sim})
 	if _, _, err := c.Grades(id); !errors.Is(err, ErrStillOpen) {
 		t.Fatalf("grades while open = %v", err)
 	}
@@ -345,10 +348,10 @@ func TestQuizGradesCSV(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "\uFEFFEquipo;Usuario;Puntaje;Máximo;Entregó;P1 (2);P2 (3);P3 (1)\r\n" +
-		"PC01;alumno;0;6;no;0;0;0\r\n" +
-		"PC02;alumno;6;6;sí;2;3;1\r\n" +
-		"PC03;'=HYPERLINK(1);0;6;no;0;0;0\r\n"
+	want := "\uFEFFEquipo;Usuario;Puntaje;Máximo;Entregó;P1 (2);P2 (3);P3 (1);Aviso\r\n" +
+		"PC01;alumno;0;6;no;0;0;0;" + DuplicateNotice + "\r\n" +
+		"PC02;alumno;6;6;sí;2;3;1;\r\n" +
+		"PC03;'=HYPERLINK(1);0;6;no;0;0;0;\r\n"
 	if string(data) != want || title != "Repaso de bucles" {
 		t.Errorf("CSV =\n%q\nwant\n%q (title %q)", data, want, title)
 	}

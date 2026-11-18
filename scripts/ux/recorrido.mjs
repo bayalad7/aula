@@ -506,6 +506,12 @@ await f("228-laboratorio-ajustes-error", "lab-laboratorio", { h: 1000, pasos: se
 }) });
 await f("229-laboratorio-oscuro-900x600", "lab-laboratorio", { oscuro: true, w: 900, h: 600, ruta: "laboratorio" });
 
+// Revisión 11, I-2: dos conexiones dicen ser LAB3-PC07. Las dos filas con «Duplicado», el aviso de
+// la primera vez y la ficha con las direcciones.
+await f("230-duplicado-lista", "lab-duplicado");
+await f("231-duplicado-ficha", "lab-duplicado", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+await f("232-duplicado-oscuro-900x600", "lab-duplicado", { oscuro: true, w: 900, h: 600, pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+
 await cerrar();
 let graves = 0;
 for (const [nombre, r] of Object.entries(informe)) {

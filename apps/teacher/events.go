@@ -177,6 +177,12 @@ type Student struct {
 	// protocol error it reported, nil if none.
 	ConnectedAt string      `json:"connectedAt"`
 	LastError   *AgentError `json:"lastError"`
+	// Address is the IP this session connects from. DuplicateOf, the IPs of
+	// the other connected sessions that claim the same computer (the badge
+	// «Duplicado»: agents are not authenticated, docs/protocol.md §10.3);
+	// empty if none.
+	Address     string   `json:"address"`
+	DuplicateOf []string `json:"duplicateOf"`
 }
 
 // Students is the list for the channel plus the counts that enable actions.

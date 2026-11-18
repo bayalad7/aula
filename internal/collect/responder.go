@@ -190,7 +190,7 @@ func (r *Responder) open(refID string, p protocol.FileCollectOpen) protocol.Payl
 	}
 	if err := r.Reader.MkdirAll(folder); err != nil {
 		reason := reasonFor(err)
-		log.Warn("collection folder not created", "reason", reason, "err", err)
+		log.Warn("collection folder not created", "reason", reason, "err_kind", platform.ErrorKind(err, ErrInvalid))
 		return failedAck(refID, p.CollectID, 0, reason)
 	}
 	r.mu.Lock()
@@ -296,7 +296,7 @@ func (r *Responder) run(ctx context.Context, send Sender, refID string, p protoc
 		}
 	}
 	fail := func(reason protocol.FileCollectReason, err error) {
-		log.Warn("collection round failed", "reason", reason, "err", err)
+		log.Warn("collection round failed", "reason", reason, "err_kind", platform.ErrorKind(err, ErrInvalid))
 		round.Failed = reason
 		_ = send(ctx, failedAck(refID, p.CollectID, p.Round, reason))
 		finish()

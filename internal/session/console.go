@@ -221,6 +221,9 @@ func (c *Console) handshake(ctx context.Context, log *slog.Logger, p *pendingCon
 		c.track(ev.Conn)
 		ev.Conn.StartHeartbeat()
 		log.Info("agent joined", "conn", s.ID, "hostname", s.Hostname, "os", s.OS, "version", s.AgentVersion)
+		if len(s.DuplicateOf) > 0 {
+			log.Warn("another connection claims the same computer", "conn", s.ID, "others", len(s.DuplicateOf))
+		}
 		c.changed()
 		return true
 	}

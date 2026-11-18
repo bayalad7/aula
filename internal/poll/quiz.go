@@ -365,6 +365,7 @@ func (c *Class) Grades(pollID string) (data []byte, title string, err error) {
 	for i, qq := range q.Questions {
 		head = append(head, fmt.Sprintf("P%d (%d)", i+1, qq.Points))
 	}
+	head = append(head, "Aviso")
 	if err := w.Write(head); err != nil {
 		return nil, "", fmt.Errorf("grades: %w", err)
 	}
@@ -379,6 +380,11 @@ func (c *Class) Grades(pollID string) (data []byte, title string, err error) {
 		for _, e := range earned {
 			row = append(row, strconv.Itoa(e))
 		}
+		aviso := ""
+		if p.duplicated[who] {
+			aviso = DuplicateNotice
+		}
+		row = append(row, aviso)
 		if err := w.Write(row); err != nil {
 			return nil, "", fmt.Errorf("grades: %w", err)
 		}
@@ -389,6 +395,11 @@ func (c *Class) Grades(pollID string) (data []byte, title string, err error) {
 	}
 	return buf.Bytes(), q.Title, nil
 }
+
+// DuplicateNotice is the «Aviso» of a student whose computer another
+// connection claimed while the quiz was open: the answers may be someone
+// else's (audit 2026-11-17, I-2).
+const DuplicateNotice = "Otra conexión dijo ser este equipo"
 
 // csvSafe keeps a spreadsheet from reading a value as a formula.
 func csvSafe(s string) string {

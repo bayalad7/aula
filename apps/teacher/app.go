@@ -725,6 +725,10 @@ func studentsOf(list []session.Session) Students {
 		for _, c := range s.Capabilities {
 			st.Capabilities = append(st.Capabilities, string(c))
 		}
+		st.Address, st.DuplicateOf = ipOf(s.RemoteAddr), []string{}
+		for _, d := range s.DuplicateOf {
+			st.DuplicateOf = append(st.DuplicateOf, ipOf(d))
+		}
 		if !s.LastCodeAckAt.IsZero() {
 			st.AckedAt = s.LastCodeAckAt.Format("15:04:05")
 		}

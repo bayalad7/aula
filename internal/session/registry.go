@@ -58,8 +58,41 @@ type Session struct {
 	// (docs/protocol.md §5.27.6). ClockSamples is 0 until one arrives.
 	ClockSkew    time.Duration
 	ClockSamples int
+	// DuplicateOf lists the remote addresses of the other connected sessions
+	// of the channel that claim the same computer: the same hostname and user
+	// (without case) or a MAC in common. Agents are not authenticated
+	// (docs/protocol.md §10.3), so two of them may be one impersonating the
+	// other; the console marks both and decides nothing. Nil if none.
+	DuplicateOf []string
 
 	clock []time.Duration // the last clockWindow samples, oldest first
+}
+
+// sameComputer reports whether a and b claim the same computer.
+func sameComputer(a, b *Session) bool {
+	if strings.EqualFold(a.Hostname, b.Hostname) && strings.EqualFold(a.Username, b.Username) {
+		return true
+	}
+	for _, m := range a.MACs {
+		if slices.ContainsFunc(b.MACs, func(n string) bool { return strings.EqualFold(m, n) }) {
+			return true
+		}
+	}
+	return false
+}
+
+// duplicatesLocked fills DuplicateOf in c, the snapshot of s. r.mu is held.
+func (r *Registry) duplicatesLocked(s *Session, c *Session) {
+	c.DuplicateOf = nil
+	if s.State != StateConnected {
+		return
+	}
+	for _, o := range r.sessions {
+		if o != s && o.State == StateConnected && o.Channel == s.Channel && sameComputer(s, o) {
+			c.DuplicateOf = append(c.DuplicateOf, o.RemoteAddr)
+		}
+	}
+	slices.Sort(c.DuplicateOf)
 }
 
 // clockWindow is how many heartbeats the clock skew is the median of.
@@ -115,7 +148,7 @@ func (r *Registry) Connect(id, channel, remote string, h protocol.HelloInfo) Ses
 		State:        StateConnected,
 	}
 	r.sessions[id] = s
-	return s.snapshot()
+	return r.snapshotLocked(s)
 }
 
 // Touch records a sign of life (any message) from a connected session. It
@@ -202,7 +235,7 @@ func (r *Registry) Get(id string) (Session, bool) {
 	if !ok {
 		return Session{}, false
 	}
-	return s.snapshot(), true
+	return r.snapshotLocked(s), true
 }
 
 // List returns snapshots of the sessions of a channel, sorted by hostname and
@@ -213,7 +246,7 @@ func (r *Registry) List(channel string) []Session {
 	var out []Session
 	for _, s := range r.sessions {
 		if s.Channel == channel {
-			out = append(out, s.snapshot())
+			out = append(out, r.snapshotLocked(s))
 		}
 	}
 	slices.SortFunc(out, func(a, b Session) int {
@@ -231,6 +264,14 @@ func (r *Registry) List(channel string) []Session {
 func (s *Session) snapshot() Session {
 	c := *s
 	c.Capabilities = slices.Clone(s.Capabilities)
+	c.MACs = slices.Clone(s.MACs)
 	c.clock = nil
+	return c
+}
+
+// snapshotLocked is s.snapshot with DuplicateOf. r.mu is held.
+func (r *Registry) snapshotLocked(s *Session) Session {
+	c := s.snapshot()
+	r.duplicatesLocked(s, &c)
 	return c
 }

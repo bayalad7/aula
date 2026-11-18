@@ -37,13 +37,17 @@ func StudentDir(activityDir string, s Student) string {
 
 // Manifest is the content of ManifestName.
 type Manifest struct {
-	CollectID string         `json:"collect_id"`
-	Date      string         `json:"date"`
-	Activity  string         `json:"activity"`
-	Round     int            `json:"round"`
-	Hostname  string         `json:"hostname"`
-	Username  string         `json:"username"`
-	Simulated bool           `json:"simulated,omitempty"`
+	CollectID string `json:"collect_id"`
+	Date      string `json:"date"`
+	Activity  string `json:"activity"`
+	Round     int    `json:"round"`
+	Hostname  string `json:"hostname"`
+	Username  string `json:"username"`
+	Simulated bool   `json:"simulated,omitempty"`
+	// Address and Duplicate: where the files came from and whether another
+	// connection claimed the same computer (Student).
+	Address   string         `json:"address,omitempty"`
+	Duplicate bool           `json:"duplicate,omitempty"`
 	At        time.Time      `json:"at"` // when the round ended
 	Files     []ManifestFile `json:"files"`
 	Skipped   []SkippedFile  `json:"skipped,omitempty"`

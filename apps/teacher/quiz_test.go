@@ -143,7 +143,7 @@ func TestQuizLaunchAnswerShareExport(t *testing.T) {
 		t.Errorf("path = %s", path)
 	}
 	csv, _ := os.ReadFile(path)
-	if !strings.Contains(string(csv), "PC01;;3;3;sí;2;1\r\n") || !strings.Contains(string(csv), "PC02;;0;3;no;0;0\r\n") {
+	if !strings.Contains(string(csv), "PC01;;3;3;sí;2;1;\r\n") || !strings.Contains(string(csv), "PC02;;0;3;no;0;0;\r\n") {
 		t.Errorf("CSV =\n%s", csv)
 	}
 	// A second export does not replace the first.

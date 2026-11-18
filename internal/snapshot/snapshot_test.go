@@ -567,6 +567,31 @@ func TestSaveOrganizesByStudentAndDate(t *testing.T) {
 	assertNoImage(t, logs.String(), jpeg)
 }
 
+// Rule 48: a failed save logs why, never the path (it names the student).
+func TestFailedSaveKeepsThePathOutOfTheLog(t *testing.T) {
+	docs := t.TempDir()
+	root := Root(docs)
+	var logs bytes.Buffer
+	store, snap, _ := readyStore(t, root)
+	store.Logger = slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	// A file where the student's folder goes: MkdirAll fails with a PathError.
+	if err := os.MkdirAll(root, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "LAB3-PC07 (alumno07)"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Save(snap.ID, root); err == nil {
+		t.Fatal("Save over a file succeeded")
+	}
+	if !strings.Contains(logs.String(), "screenshot not saved") {
+		t.Fatalf("the failure is not logged: %s", logs.String())
+	}
+	if strings.Contains(logs.String(), "alumno07") || strings.Contains(logs.String(), docs) {
+		t.Fatalf("the log carries the path: %s", logs.String())
+	}
+}
+
 func TestNothingOnDiskWithoutSave(t *testing.T) {
 	docs := t.TempDir()
 	store, snap, _ := readyStore(t, Root(docs))

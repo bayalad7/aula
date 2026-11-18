@@ -384,7 +384,7 @@ func (a *App) DeleteTemplate(name string) (FilesView, error) {
 		return FilesView{}, codedf(codeTemplateInvalid, "no se encontró la carpeta Documentos")
 	}
 	if err := t.Delete(name); err != nil {
-		a.log.Warn("template not deleted", "err", err)
+		a.log.Warn("template not deleted", "err_kind", platform.ErrorKind(err, filepush.ErrTemplateMissing, filepush.ErrTemplateNotDeleted))
 		return FilesView{}, templateError(err)
 	}
 	a.log.Info("template deleted")

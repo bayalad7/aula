@@ -81,7 +81,7 @@ func (a *App) OpenCollectionFolder(id string) error {
 		return errNoFolder
 	}
 	if err := a.work.Open(rel); err != nil {
-		a.log.Warn("cannot open the collection folder", "collect_id", id, "err", err)
+		a.log.Warn("cannot open the collection folder", "collect_id", id, "err_kind", platform.ErrorKind(err))
 		return errNoFolder
 	}
 	return nil

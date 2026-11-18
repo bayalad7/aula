@@ -253,7 +253,7 @@ func (r *Receiver) save(refID string, head protocol.FilePush, data []byte) proto
 
 func (r *Receiver) writeFailed(log *slog.Logger, refID string, head protocol.FilePush, err error) protocol.FilePushAck {
 	reason := ReasonFor(err)
-	log.Warn("file push not saved", "reason", reason, "err", err)
+	log.Warn("file push not saved", "reason", reason, "err_kind", platform.ErrorKind(err, ErrInvalidPath))
 	return failed(refID, head, reason)
 }
 

@@ -150,10 +150,11 @@ func (e *AppEnforcer) Enforce() {
 			continue
 		}
 		if err := e.Procs.Kill(proc.PID); err != nil {
-			e.log().Warn("cannot close a blocked app", "app", proc.Name, "err", err)
+			// Never the app's name: it is what the student opened (rule 22).
+			e.log().Warn("cannot close a blocked app", "policy", p.ID, "err_kind", platform.ErrorKind(err))
 			continue
 		}
-		e.log().Info("blocked app closed", "app", proc.Name, "policy", p.ID)
+		e.log().Info("blocked app closed", "policy", p.ID)
 		e.notice(proc.Name)
 	}
 }

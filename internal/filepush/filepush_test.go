@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -318,8 +320,17 @@ func TestReceiverLogsNoNames(t *testing.T) {
 	r := &Receiver{Writer: disk, Logger: slogTo(&log)}
 	feed(t, r, w, parts(t, "secreto-nombre.csv", "carpeta-secreta", []byte("contenido-secreto"), false))
 	w.next(t)
+	// A failed write: the error carries the path, as the work folder makes it
+	// (rule 59).
+	disk.fail = fmt.Errorf("work folder: %q: %w", "carpeta-secreta/secreto-nombre.csv",
+		&fs.PathError{Op: "open", Path: `C:\Users\usuario-secreto\Documents\Aula\carpeta-secreta`, Err: platform.ErrDenied})
+	feed(t, r, w, parts(t, "secreto-nombre.csv", "carpeta-secreta", []byte("contenido-secreto"), true))
+	w.next(t)
 	r.Wait()
-	for _, s := range []string{"secreto-nombre", "carpeta-secreta", "contenido-secreto", "Ejercicio 4"} {
+	if !strings.Contains(log.String(), "file push not saved") {
+		t.Fatalf("the failure is not logged: %s", log.String())
+	}
+	for _, s := range []string{"secreto-nombre", "carpeta-secreta", "contenido-secreto", "usuario-secreto", "Ejercicio 4"} {
 		if strings.Contains(log.String(), s) {
 			t.Errorf("the log has %q: %s", s, log.String())
 		}
@@ -467,7 +478,9 @@ func TestPusherDeliversToEverySession(t *testing.T) {
 	p.disks["pc5"].fail = platform.ErrNoSpace
 	var mu sync.Mutex
 	outcomes := map[string]Outcome{}
-	p.push = &Pusher{Send: p.send, AckWait: 300 * time.Millisecond, Parallel: 2,
+	// 2 s: a 1.6 MB file under -race with the whole suite took longer than
+	// 300 ms to ack («lento» never acks, so it only waits once).
+	p.push = &Pusher{Send: p.send, AckWait: 2 * time.Second, Parallel: 2,
 		OnOutcome: func(o Outcome) { mu.Lock(); outcomes[o.Session] = o; mu.Unlock() }}
 	p.push.Deliver(context.Background(), push, []string{"pc1", "pc2", "pc3", "pc4", "pc5", "lento", "ido"})
 	p.push.Wait()

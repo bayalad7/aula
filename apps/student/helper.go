@@ -206,7 +206,7 @@ func (h *helper) call(ctx context.Context, name string, data json.RawMessage) (a
 		}
 		replaced, err := h.work.Create(a.Rel, a.Data, a.Overwrite)
 		if err != nil {
-			h.log.Warn("file not written", "err", err)
+			h.log.Warn("file not written", "err_kind", platform.ErrorKind(err))
 		}
 		return agentsvc.FileWriteResult{Replaced: replaced, Error: agentsvc.FileWriteError(err)}, nil
 	case agentsvc.CallFolderOpen:
@@ -396,7 +396,7 @@ func (h *helper) collectCall(name string, data json.RawMessage) (any, error) {
 		}
 		b, err := h.read.Read(a.Rel, a.Max)
 		if err != nil {
-			h.log.Info("collected file not read", "err", err)
+			h.log.Info("collected file not read", "err_kind", platform.ErrorKind(err))
 		}
 		return agentsvc.FileReadResult{Data: b, Error: agentsvc.FileWriteError(err)}, nil
 	}

@@ -62,7 +62,7 @@ func (a *App) OpenReceivedFolder(pushID string) error {
 		return errNoFolder
 	}
 	if err := a.work.Open(rel); err != nil {
-		a.log.Warn("cannot open the received folder", "push_id", pushID, "err", err)
+		a.log.Warn("cannot open the received folder", "push_id", pushID, "err_kind", platform.ErrorKind(err))
 		return errNoFolder
 	}
 	return nil

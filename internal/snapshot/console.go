@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
 )
 
@@ -320,7 +321,7 @@ func (s *Store) Save(id, root string) (Snapshot, error) {
 
 	path, err := WriteFile(root, snap, data)
 	if err != nil {
-		s.log().Warn("screenshot not saved", "snapshot_id", id, "err", errors.Unwrap(err))
+		s.log().Warn("screenshot not saved", "snapshot_id", id, "err_kind", platform.ErrorKind(err))
 		return Snapshot{}, err
 	}
 	s.mu.Lock()

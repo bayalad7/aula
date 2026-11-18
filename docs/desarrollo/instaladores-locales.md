@@ -9,7 +9,7 @@ Si solo quieres probar la consola (sin alumnos reales), no necesitas instaladore
 
 ## Qué necesitas (una sola vez)
 
-- Go 1.26 o posterior y la CLI de Wails v2 (`wails doctor` debe terminar en *SUCCESS*; ver
+- Go 1.27 o posterior y la CLI de Wails v2 (`wails doctor` debe terminar en *SUCCESS*; ver
   "Entorno de desarrollo" en `docs/progreso.md`).
 - **Inno Setup 6**: `winget install JRSoftware.InnoSetup`. Se instala en
   `%LOCALAPPDATA%\Programs\Inno Setup 6` (por usuario) o en `C:\Program Files (x86)\Inno Setup 6`.

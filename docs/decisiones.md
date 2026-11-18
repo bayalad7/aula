@@ -41,10 +41,15 @@ primera opción.
 
 ## D-003: Versión mínima de Go en `go.mod`
 
-**Fecha:** 2026-10-23 · **Etapa:** 02
+**Fecha:** 2026-10-23 · **Etapa:** 02 · **Actualizada:** 2026-11-17 (10.29)
 
-`go.mod` declara `go 1.26.0`, el mínimo que garantiza CI (`1.26.x`, último parche). Los equipos
+`go.mod` declara `go 1.27.0`, el mínimo que garantiza CI (`1.27.x`, último parche). Los equipos
 de desarrollo pueden usar un Go más nuevo sin forzar a CI a descargar otro toolchain.
+
+El 2026-11-17 (prompt 10.29) se movieron juntos el CI, el release y el mínimo de 1.26 a 1.27:
+subir solo `go.mod` no agrega seguridad, y el mínimo debe ser el que prueba el CI. Sin línea
+`toolchain` ni `GOTOOLCHAIN`: el Go lo elige `setup-go`. Ningún ajuste GODEBUG que cambia entre
+1.26 y 1.27 cambia lo que hace Aula (detalle en `docs/ux/historial/dependencias-al-dia.md`).
 
 ## D-004: Deserialización del protocolo en dos pasos
 

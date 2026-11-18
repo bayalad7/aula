@@ -312,4 +312,4 @@ escribió el código, repase las secciones 1 y 2 (nota del prompt 11).
 | **M-5** | Hecho: C-20 restaurado, con Pausar, Abrir, Transmitir, Proyectar y Tomar control |
 | **M-6** | Hecho: `TestMain` en `transport`, `session` y `screen` falla si quedan goroutines (comprobado con una sonda que deja una viva) |
 | **M-7** | Hecho: `TestLoadIdentityRefusesBadFiles` y `TestWriteSecretFileFailures`; `security` de 76,6 a 80,8 % |
-| **M-8** | Hecho por el usuario: Go local 1.27.4, `govulncheck` sin hallazgos. Pasar el CI a 1.27.x queda para su propio prompt (`docs/prompts/10.29-go-1-27.md`) |
+| **M-8** | Hecho: el usuario instaló Go 1.27.4 (`govulncheck` sin hallazgos) y la 10.29 pasó el CI, el release y el mínimo de `go.mod` a Go 1.27 (`docs/prompts/10.29-go-1-27.md`) |

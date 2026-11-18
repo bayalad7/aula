@@ -172,6 +172,8 @@ retiraron; esta es la primera.
 - Componentes de red, cifrado, imagen y ventana al día con sus correcciones de seguridad (entre
   ellas, varias del servidor HTTP/2 y de WebKit en Linux); cada cambio del código se revisa contra
   la base de vulnerabilidades conocidas de Go antes de integrarse.
+- Las apps se compilan con **Go 1.27**, con su último parche de seguridad; para compilarlas en
+  tu equipo hace falta Go 1.27 o más reciente.
 
 ### Todavía no
 

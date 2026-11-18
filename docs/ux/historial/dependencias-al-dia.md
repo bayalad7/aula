@@ -95,3 +95,39 @@ plataformas porque el análisis sigue los build tags: en Linux no revisa los `*_
 - Actualizar Go en el equipo de desarrollo a 1.27.4 o superior.
 - Si las pruebas de `internal/screen` también fallan en el CI, darles más margen es otra
   corrección, fuera de esta etapa.
+
+## Go 1.27 (10.29, 17/11/2026)
+
+El CI, el release y el mínimo de `go.mod` pasaron juntos de Go 1.26 a 1.27 (D-003): `go 1.27.0`
+en `go.mod` (sin `toolchain`; `go mod tidy` no cambió `go.sum` ni ninguna dependencia) y
+`go-version: '1.27.x'` con `check-latest` en los tres jobs de `ci.yml` y en `release.yml`. Atiende
+el M-8 de la revisión 11 (`docs/auditoria-2026-11-17.md`). Lo pendiente de arriba («Go local a
+1.27.4» y el margen de `internal/screen`) quedó hecho en la revisión 11.
+
+### GODEBUG que cambian de 1.26 a 1.27 (tabla de `doc/godebug.md` de Go 1.27.4)
+
+Aula no fija ningún ajuste (ni `godebug` en `go.mod`, ni `//go:debug`, ni `GODEBUG` en los
+workflows o los scripts), así que vale el valor por omisión de la línea `go`.
+
+| Ajuste | Qué cambia en 1.27 | ¿Lo usa Aula? | Decisión |
+|---|---|---|---|
+| `gotypesalias`, `tlsunsafeekm`, `tlsrsakex`, `tls3des`, `tls10server`, `x509keypairleaf`, `asynctimerchan` | Se eliminan: ya no se puede volver al valor viejo | Con `go 1.26.0` ya valía el nuevo (son de 1.22–1.23) y Aula no los fija. TLS es 1.3 mínimo (`security/tls.go`), así que RSA KEX, 3DES y TLS 1.0 nunca se usaban | Sin efecto |
+| `tracebacklabels` | Por omisión `1`: las etiquetas de goroutine salen en los volcados de pánico | Aula no pone etiquetas (`runtime/pprof`): no hay nada que salga | Sin efecto. Si algún día se etiquetan goroutines, nunca con datos del alumno (regla 5) |
+| `htmlmetacontenturlescape` (nuevo) | `html/template` escapa la URL de `<meta content="url=…">` | Aula no usa `html/template` (las páginas son archivos fijos de Wails) | Sin efecto |
+| `x509sslcertoverrideplatform` (nuevo) | En Windows y macOS, con `SSL_CERT_FILE`/`SSL_CERT_DIR`, carga las raíces de disco | Aula no usa raíces del sistema: la consola se fija por huella y la firma de releases es Ed25519 | Sin efecto |
+| `fips140ems` (nuevo) | En modo FIPS 140-3, desactivar la exigencia de Extended Master Secret | No cambia el valor por omisión; Aula no corre en modo FIPS | Sin efecto |
+
+**Versión: patch.** Nada cambia lo que hace Aula.
+
+### Dos pruebas frágiles que aparecieron con la suite completa
+
+No las causa Go 1.27: fallan igual con `go 1.26.0` en el mismo Go 1.27.4, y solas pasan siempre.
+Se arreglaron en la prueba, sin tocar el código:
+
+- `internal/remote` `TestTheStudentHasPriority`: la pausa del arnés (`PauseFor`) duraba 60 ms y,
+  con `-race` y todo en paralelo, a veces terminaba antes de la entrada siguiente. Ahora 300 ms.
+- `internal/transport` `TestOversizedMessageClosesWith1009`: el servidor cierra con 1009 mientras
+  el cliente aún envía el mensaje de 1 MiB; Windows descarta esos bytes con un reinicio de TCP
+  (`WSAECONNABORTED`/`WSAECONNRESET`) y la trama de cierre se pierde. La conexión se cierra igual,
+  que es la garantía (§7); la prueba acepta 1009 o el reinicio y sigue exigiendo la desconexión en
+  el servidor. 40 de 40 corridas del paquete en verde.

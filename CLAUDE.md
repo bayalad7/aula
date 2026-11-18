@@ -259,7 +259,7 @@ Referencia completa en `docs/ux/DESIGN_SYSTEM.md`; la fuente de verdad es `inter
 - Remoto: `origin` = `https://github.com/bayalad7/aula.git`.
 - Acciones ancladas a versión mayor (`actions/checkout@v7`, `actions/setup-go@v7`,
   `actions/setup-node@v7`, `upload/download-artifact@v7/@v8`). No usar versiones flotantes.
-- `setup-go` con `go-version: '1.26.x'` y `check-latest: true` (último parche, no el mínimo de
+- `setup-go` con `go-version: '1.27.x'` y `check-latest: true` (último parche, no el mínimo de
   `go.mod`): los binarios llevan los parches de seguridad de la stdlib.
 - **Workflow de CI** (`.github/workflows/ci.yml`): se dispara en `push` a `main`/`develop` y en
   `pull_request`; `permissions: contents: read`; matriz `ubuntu-latest`, `windows-latest`,

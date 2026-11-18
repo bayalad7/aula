@@ -10,7 +10,7 @@ equipos de forma transparente. Está hecho en Go + [Wails v2](https://wails.io).
 
 ## Requisitos
 
-- Go 1.26 o más reciente.
+- Go 1.27 o más reciente.
 - Wails CLI v2: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
   (`wails doctor` debe terminar en *SUCCESS*).
 - Node.js LTS. Wails lo pide, aunque el frontend actual no necesita `npm install`.

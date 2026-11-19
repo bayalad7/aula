@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,11 +14,33 @@ import (
 
 func TestXDGLauncher(t *testing.T) {
 	l := xdgLauncher{}
-	if _, err := l.Folders(); !errors.Is(err, ErrNotSupported) {
-		t.Errorf("Folders = %v, want ErrNotSupported (no app rules on Linux yet)", err)
+	// Apps go by the system's .desktop folders, and only with gio.
+	folders, err := l.Folders()
+	if _, gioErr := exec.LookPath("gio"); gioErr != nil {
+		if !errors.Is(err, ErrNotSupported) {
+			t.Errorf("Folders without gio = %v, want ErrNotSupported", err)
+		}
+	} else if err != nil || len(folders.DesktopDirs) == 0 || len(folders.Roots) != 0 {
+		t.Errorf("Folders = %+v, %v", folders, err)
+	} else {
+		for _, d := range folders.DesktopDirs {
+			if strings.Contains(d, ".local") || !strings.HasPrefix(d, "/usr/") && !strings.HasPrefix(d, "/var/lib/") {
+				t.Errorf("%s is not a system folder", d)
+			}
+		}
 	}
-	if err := l.StartApp("/usr/bin/true"); !errors.Is(err, ErrNotSupported) {
-		t.Errorf("StartApp = %v, want ErrNotSupported", err)
+	// Never a program, never a relative path: only an absolute .desktop.
+	for _, p := range []string{"/usr/bin/true", "thonny.desktop", "/no/existe.desktop"} {
+		if err := l.StartApp(p); err == nil {
+			t.Errorf("StartApp(%q) accepted", p)
+		}
+	}
+	big := filepath.Join(t.TempDir(), "big.desktop")
+	if err := os.WriteFile(big, []byte(strings.Repeat("#", maxEntry+1)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := l.ReadEntry(big); err == nil {
+		t.Error("a .desktop larger than 64 KiB was read")
 	}
 	// Never handed to xdg-open: it is not a web page.
 	for _, u := range []string{"file:///etc/passwd", "-h", "javascript:x"} {

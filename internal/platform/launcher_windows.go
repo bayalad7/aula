@@ -141,3 +141,8 @@ func (winLauncher) StartApp(path string) error {
 	}
 	return cmd.Process.Release()
 }
+
+// ReadEntry: Windows opens apps by their .exe, never by a .desktop file.
+func (winLauncher) ReadEntry(string) ([]byte, error) {
+	return nil, fmt.Errorf("read entry: %w", ErrNotSupported)
+}

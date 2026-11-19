@@ -18,6 +18,10 @@ type AppFolders struct {
 	// Folders it must never be inside, even under a root: Documents (and the
 	// work folder in it), Desktop, Downloads and the temporary folder.
 	Forbidden []string
+	// DesktopDirs are, on Linux, the system folders of .desktop files where
+	// open.app looks for an app by its id (never one the student can write).
+	// When set, apps are opened by their .desktop, not by an executable path.
+	DesktopDirs []string
 }
 
 // Launcher opens a page or starts an app in the session that runs it
@@ -33,8 +37,11 @@ type Launcher interface {
 	// OpenURL opens an http/https URL in the default browser.
 	OpenURL(url string) error
 	// StartApp starts the executable at path with no arguments, in its own
-	// folder.
+	// folder; on Linux, the app of the .desktop file at path.
 	StartApp(path string) error
+	// ReadEntry returns the content of the .desktop file at path (at most
+	// 64 KiB), or ErrNotSupported where apps are not opened by .desktop.
+	ReadEntry(path string) ([]byte, error)
 }
 
 // NewLauncher returns the launcher of the current session: Windows today;

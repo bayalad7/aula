@@ -900,3 +900,31 @@ corren como root. Se encontró y corrigió que, bajo systemd, root no tiene `$HO
 leía la configuración de la máquina. Cerrar sesión no pregunta a los programas si guardar
 (regla 102). Lo que sigue (capa 3): restricciones, abrir apps, red y firewall, icono del área de
 notificación; transmitir y proyectar esperan una decisión sobre el codificador H.264.
+
+## D-025: Restricciones en Linux: apps por cgroup y DNS con una tabla de nftables
+
+**Fecha:** 2026-11-19 · **Estado:** aprobada (prompt 13, capa 3 de Linux).
+
+**Contexto.** En Windows las restricciones (D-017) cierran procesos de la sesión salvo
+`%SystemRoot%` y el shell, y llevan el DNS al resolvedor de Aula con una regla NRPT. En Linux no
+hay `%SystemRoot%` ni NRPT, y un «solo permitidas» mal protegido tumbaría la sesión del alumno.
+
+**Decisión.**
+- **Apps:** candidatos = procesos del uid del alumno **en `app.slice`** (GNOME lanza cada app en
+  su scope) o en el scope de su sesión (otros escritorios). Lo de `session.slice` (gnome-shell,
+  gsd-*, sonido), una lista fija del escritorio, lo que vive bajo `/usr/lib*` o `/usr/libexec` y
+  Aula nunca se cierran. El nombre es el del ejecutable, o el del script (`comm`) para un
+  intérprete: Thonny se bloquea como `thonny`, no como `python3`. Se cierra con SIGTERM.
+- **Filtro web:** una tabla `inet aula` de `nftables` hace DNAT del puerto 53 de todo programa que
+  no sea de root al resolvedor (`127.0.0.1:53`), corta el DNS por IPv6 y el 853. Root (Aula y los
+  servicios del sistema) queda fuera, así no hay ciclo. Se carga y borra en una transacción
+  (`nft -f`), y **no se guarda en disco**: reiniciar la quita aunque Aula falle. Se descartó un
+  archivo de systemd-resolved: un programa con su propio DNS lo saltaba y quedaba en disco.
+- **Navegadores:** un `aula-doh.json` propio en las carpetas de políticas de Chrome, Chromium y
+  Edge, y la política `DNSOverHTTPS` combinada en `/etc/firefox/policies/policies.json`; antes se
+  guarda el contenido exacto y se devuelve igual (`SavedSetting` de tipo `file`).
+- El paquete del alumno depende de `nftables`.
+
+**Consecuencias.** La prueba de punta a punta del filtro (`-tags admintest`) corre en Windows y
+en Linux; en Linux resuelve como un usuario común (`setpriv`), porque root no pasa por la tabla.
+El job `servicio-linux` la corre con systemd real. Lo nativo (GNOME real) queda para la VM.

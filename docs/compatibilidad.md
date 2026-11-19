@@ -36,7 +36,7 @@ ventana siempre encima. Por eso, para ver la pantalla del alumno, el laboratorio
 | Control remoto | ✓ | ✓ (XTEST; se pausa cuando el alumno usa su teclado o ratón) | ✗ (Wayland no permite inyectar teclado y ratón sin portal) | ✗ (falta el permiso de Accesibilidad) |
 | Pausar su pantalla | ✓ | ✓ (una ventana por monitor) | ✗ (Wayland no deja una ventana encima de todo) | ✗ |
 | Apagar, reiniciar y cerrar sesión | ✓ | parcial: apagar y reiniciar ✓ (systemd); cerrar sesión sin «forzar» también cierra los programas abiertos, sin dejarles guardar | igual que X11 | ✗ |
-| Bloquear apps y filtro web | ✓ | ✗ (pendiente: procesos y DNS local con systemd-resolved) | ✗ | ✗ |
+| Bloquear apps y filtro web | ✓ (como servicio) | ✓ como servicio: apps del alumno (`app.slice` en GNOME; nunca el escritorio) y DNS con una tabla de `nftables` que reiniciar quita | ✓ (igual que X11: no dependen de la pantalla) | ✗ |
 | Abrir una página o una app permitida | ✓ | ✓ páginas con `xdg-open`; apps por su `.desktop` del sistema con `gio launch` (en Ajustes › Apps permitidas, el campo «App de Linux») | igual que X11 | ✗ |
 | Encender el equipo desde la consola (Wake-on-LAN: el agente informa su MAC) | ✓ | ✓ (Wake-on-LAN activado en la BIOS y en la tarjeta) | ✓ | ✗ |
 | Salud del laboratorio | ✓ | parcial: todo menos la falla del disco (S.M.A.R.T.), que necesita root y una herramienta aparte; autodiagnóstico ✓ | igual que X11 | ✗ (se declara sin datos) |

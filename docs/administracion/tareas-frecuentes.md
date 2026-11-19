@@ -200,7 +200,9 @@ su equipo, responder desde su conversación hace lo mismo y además cita su mens
 - **Aplicaciones**: el nombre del programa, como `steam` o `steam.exe`.
 
 Los alumnos ven un aviso mientras haya restricciones, y todo se quita solo al cerrar la clase o
-si se pierde la conexión. Solo funcionan en equipos con Windows y Aula instalada como servicio.
+si se pierde la conexión. Funcionan en equipos con Aula instalada como servicio, con Windows o con
+Linux. En Linux nunca se cierra el escritorio (la barra, el gestor de archivos, el sonido), aunque
+uses «solo permitidas», y reiniciar el equipo quita el filtro de sitios siempre.
 
 > **Lo que no se puede garantizar:** un alumno con permisos de administrador puede detener Aula;
 > renombrar un programa evita el bloqueo por nombre; entrar a un sitio por su dirección IP o con

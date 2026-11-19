@@ -1409,3 +1409,18 @@ Wake-on-LAN en el hipervisor si se prueba LX2-F. Todo a ojo en cada VM.
 | **LX2-G** Quitar | `sudo apt purge aula-cliente` en L2. | El servicio se detiene y desaparece (`systemctl status aula-agente`: no existe), la ventana se cierra y `/var/log/aula` se borra. |
 
 **Para aceptar** bastan LX2-A a LX2-C en ✅.
+
+## 33. Linux: restricciones de la clase (13, D-025)
+
+Las VMs L1 y L2 de §31 y §32, con el agente de L2 **como servicio** y Firefox, Thonny y la
+Calculadora instalados. Todo a ojo en L2.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **LXR-A** Bloquear apps (**aceptación**) | En L2 abre Firefox. Desde L1, Restricciones › bloquear `firefox`. | Firefox se cierra en segundos; aviso de la app cerrada y banda de restricciones. Abrirlo otra vez lo cierra de nuevo. |
+| **LXR-B** Solo permitidas (**aceptación**) | «Solo permitidas» con `thonny`; en L2 abre la Calculadora y Thonny. | La Calculadora se cierra, Thonny no. La barra de GNOME, el gestor de archivos, el sonido y la ventana de Aula **siguen**: la sesión nunca se cae. |
+| **LXR-C** Filtro web (**aceptación**) | Bloquear `youtube.com`; en L2 abre youtube.com y python.org en Firefox (con DNS por HTTPS activado antes en sus ajustes). | YouTube no carga y python.org sí; en `about:policies` de Firefox aparece `DNSOverHTTPS` bloqueado. |
+| **LXR-D** Quitar | Quita las restricciones. | Firefox vuelve a abrir y YouTube carga; `sudo nft list table inet aula` no existe; `/etc/firefox/policies/policies.json` está como antes (o no existe). |
+| **LXR-E** Reinicio a mitad | Con el filtro puesto, apaga L2 de golpe (sin cerrar Aula) y vuelve a encenderla. | Al arrancar no hay tabla `aula` y YouTube carga; el servicio restaura los archivos de los navegadores desde el diario. |
+
+**Para aceptar** bastan LXR-A a LXR-C en ✅.

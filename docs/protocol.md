@@ -305,8 +305,8 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `screen.snapshot` | `screen.snapshot.request` | v0.7 (§5.17). Windows, con la misma condición que `screen.thumb` (captura y distintivo); también los alumnos simulados. Linux solo en sesión X11 (prompt 13); macOS no la declara. |
 | `screen.freeze` | `screen.freeze`, `screen.unfreeze` | Sin publicar (§5.9–5.11). Windows, en modo ventana y como servicio con su ayudante (la pausa se muestra en la sesión del alumno); Linux solo en sesión X11 (prompt 13). Nunca los alumnos simulados. macOS no la declara. |
 | `screen.broadcast` | `screen.broadcast.start`, `.offer`, `.ice`, `.stop` | v0.4 (Windows, si el WebView2 tiene RTCPeerConnection y decodificador H.264; §5.12). En Linux, solo si su WebKitGTK los tiene (el de Ubuntu 24.04 no); macOS no la declara. |
-| `app.block` | `app.block.set`, `app.block.clear` | v0.4 (§5.13). Windows, solo con el agente como servicio y su ayudante (D-016). |
-| `web.filter` | `web.filter.set`, `web.filter.clear` | v0.4 (§5.14). Windows, solo con el agente como servicio y su ayudante. |
+| `app.block` | `app.block.set`, `app.block.clear` | v0.4 (§5.13). Windows, solo con el agente como servicio y su ayudante (D-016); Linux igual, con el servicio de systemd (D-025). |
+| `web.filter` | `web.filter.set`, `web.filter.clear` | v0.4 (§5.14). Windows, solo con el agente como servicio y su ayudante; Linux igual, con `nftables` (D-025). |
 | `file.collect` | `file.collect.open`, `file.collect.request`, `file.collect.response.ack` | v0.11 (§5.21). Windows, en modo ventana y como servicio con su ayudante (lee en la sesión del alumno); también los alumnos simulados, que devuelven su último código. Linux en modo ventana (prompt 13); macOS no la declara. |
 | `code.collect` | `code.collect` | Reservada |
 | `power` | `power.action`, `power.cancel` | v0.5 (§5.15). Windows, en modo ventana y como servicio (también sin sesión iniciada); Linux con systemd, igual (prompt 13). macOS no la declara. |

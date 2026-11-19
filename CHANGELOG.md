@@ -195,6 +195,8 @@ retiraron; esta es la primera.
 - **Abrir una página o una app** también en Linux. En Ajustes › Apps permitidas, cada app suma
   su nombre en Linux (por ejemplo `org.thonny.Thonny.desktop`); una misma lista sirve a un
   laboratorio con Windows y Linux.
+- **Bloquear apps y sitios** también en Linux, con los mismos avisos: nunca se cierra el
+  escritorio y reiniciar el equipo siempre quita el filtro de sitios.
 - **Comprobar la conexión** lee el firewall de una consola Linux (`firewalld`; con `ufw`, sin
   permisos de administrador lo deja sin juzgar).
 - La clave del centro de una consola Linux la leen los maestros del grupo `aula`; el paquete
@@ -203,5 +205,5 @@ retiraron; esta es la primera.
 
 ### Todavía no
 
-- La asistencia y bitácora, la auto-actualización, macOS y, en Linux, las restricciones,
-  transmitir y proyectar pantallas y el icono del área de notificación.
+- La asistencia y bitácora, la auto-actualización, macOS y, en Linux, transmitir y proyectar
+  pantallas y el icono del área de notificación.

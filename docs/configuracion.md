@@ -179,6 +179,22 @@ Test-Path C:\ProgramData\Aula\alumno\politica-activa.json          # False
 reg query HKLM\SOFTWARE\Policies\Google\Chrome /v DnsOverHttpsMode  # lo que había antes (o no existe)
 ```
 
+**En Linux** (D-025, con el servicio de systemd):
+
+| Qué | Dónde | Cuándo se deshace |
+|---|---|---|
+| Bloqueo de apps | Nada en disco: cierra (SIGTERM) las apps del alumno (`app.slice` en GNOME) cada 500 ms; nunca el escritorio ni lo de `/usr/lib` | Igual que en Windows |
+| Filtro web: resolvedor | `127.0.0.1:53` | Al quitar el filtro |
+| Filtro web: tabla `inet aula` de `nftables` | Lleva el DNS (puerto 53) de los programas del alumno al resolvedor y corta el 853; **no se guarda en disco** | Al quitar el filtro, al arrancar el servicio, al desinstalar y **siempre al reiniciar** |
+| Filtro web: DNS sobre HTTPS apagado | `/etc/opt/chrome/…`, `/etc/chromium/…`, `/etc/opt/edge/policies/managed/aula-doh.json` y `/etc/firefox/policies/policies.json` (combinado) | Se devuelve el contenido exacto que había, o se borra lo que no existía |
+| Diario | `/etc/Aula/alumno/politica-activa.json` | Se borra al deshacer todo |
+
+```sh
+sudo nft list table inet aula                    # «No such file»: no hay filtro
+ls /etc/Aula/alumno/politica-activa.json         # no existe
+ls /etc/opt/chrome/policies/managed/aula-doh.json  # no existe
+```
+
 ## Consola del profesor (`aula-consola`)
 
 ### De la máquina: `C:\ProgramData\Aula\consola\config.json`

@@ -864,8 +864,22 @@ Aprobada el 2026-11-18 con el prompt 13.
      nunca llevan la URL ni el nombre de la app. El comprobador de conexión de la consola solo **lee** el firewall (`ufw` o
      `firewalld`) y nunca lo cambia.
 
+105. **Restricciones de la clase en Linux, con las reglas 18–25.** Solo con el agente como
+     servicio y su ayudante, que muestra la banda y avisa cada app cerrada, igual que en Windows.
+     - **Apps:** se cierran (SIGTERM) solo procesos **del alumno** que son apps: en GNOME, las
+       que corren en `app.slice`. **Nunca** el escritorio ni sus servicios (`gnome-shell`,
+       `Xorg`, sonido, teclado, el gestor de archivos), nada bajo `/usr/lib` o `/usr/libexec`,
+       ni el propio Aula, aunque estén en la lista o falten en «solo permitidas».
+     - **Sitios web:** una tabla propia de `nftables` (`inet aula`) lleva las consultas DNS de
+       los programas al resolvedor local de Aula y corta el DNS cifrado del sistema (puerto
+       853). Las políticas de Chrome, Chromium, Edge y Firefox apagan su DNS por HTTPS; antes se
+       guarda el contenido exacto de esos archivos, y se devuelve igual al quitar el filtro.
+     - **Siempre se deshace:** al terminar, al desconectarse o al detener el servicio, la tabla
+       se borra y los archivos vuelven a ser los de antes (el diario de la regla 24). La tabla
+       no se guarda en disco: **reiniciar el equipo la quita siempre**, aunque Aula fallara.
+
 ## Pendiente para etapas futuras
 
-- Linux, siguientes partes (recepción y envío de transmisiones, restricciones, icono del área
-  de notificación) y macOS: sus textos de aviso se agregarán aquí antes
+- Linux, siguientes partes (recepción y envío de transmisiones, icono del área de
+  notificación) y macOS: sus textos de aviso se agregarán aquí antes
   de implementarlos, con las mismas reglas 6–49.

@@ -55,6 +55,10 @@ flowchart TD
 
 ## Lo que no es obvio
 
+- **En Linux** (D-025) el flujo es el mismo con otras piezas: la regla NRPT es una tabla
+  `inet aula` de `nftables` (DNAT del puerto 53 al resolvedor, fuera de root), que no se guarda en
+  disco y desaparece al reiniciar; las políticas de los navegadores son archivos JSON; y solo se
+  cierran apps del alumno (`app.slice`), nunca el escritorio.
 - **Una política por tipo, de la clase**: un `set` nuevo reemplaza al anterior. La consola lleva
   qué tiene cada alumno y **la reenvía al reconectar**; el agente nunca la conserva entre
   sesiones.

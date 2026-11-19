@@ -123,6 +123,12 @@ func friendlyAllowedApp(err error, apps []openapp.App) error {
 	if ee.Field == openapp.FieldName {
 		return codedf(codeAllowedAppInvalid, "app %d (%s): el nombre falta, es muy largo o ya lo tiene otra app", ee.Index+1, name)
 	}
+	if ee.Field == openapp.FieldDesktop {
+		return codedf(codeAllowedAppInvalid, "app %d (%s): la app de Linux debe ser solo el nombre de su archivo, como org.thonny.Thonny.desktop, sin carpetas", ee.Index+1, name)
+	}
+	if strings.TrimSpace(apps[ee.Index].Path) == "" && strings.TrimSpace(apps[ee.Index].Desktop) == "" {
+		return codedf(codeAllowedAppInvalid, "app %d (%s): falta la ruta del .exe (Windows) o la app de Linux (.desktop)", ee.Index+1, name)
+	}
 	return codedf(codeAllowedAppInvalid, "app %d (%s): la ruta debe ser un .exe instalado en Program Files, Windows o %%LOCALAPPDATA%%\\Programs, y no una herramienta del sistema", ee.Index+1, name)
 }
 
@@ -205,7 +211,7 @@ func (a *App) OpenPage(req OpenRequest) (OpenResult, error) {
 func (a *App) OpenApp(req OpenRequest) (OpenResult, error) {
 	for _, app := range a.AllowedApps().Apps {
 		if app.ID == req.AppID {
-			p := protocol.OpenApp{OpenID: protocol.NewID(), AppID: app.ID, Name: app.Name, Path: app.Path}
+			p := protocol.OpenApp{OpenID: protocol.NewID(), AppID: app.ID, Name: app.Name, Path: app.Path, Desktop: app.Desktop}
 			return a.sendOpen(p, p.OpenID, openapp.KindApp, app.Name, protocol.CapOpenApp, req.Hosts)
 		}
 	}

@@ -83,7 +83,9 @@ func TestOpenAppFromTheCatalogOnly(t *testing.T) {
 		t.Fatalf("%+v, %v", res, err)
 	}
 	p := h.class.takeDirect()[0].p.(protocol.OpenApp)
-	if p.AppID != "thonny" || p.Name != "Thonny" || p.Path != `%LOCALAPPDATA%\Programs\Thonny\thonny.exe` {
+	// Both forms travel: each agent uses the one of its OS (prompt 13).
+	if p.AppID != "thonny" || p.Name != "Thonny" || p.Path != `%LOCALAPPDATA%\Programs\Thonny\thonny.exe` ||
+		p.Desktop != "org.thonny.Thonny.desktop" {
 		t.Fatalf("order %+v", p)
 	}
 	// An ID outside the list is never sent, whatever the window asks.
@@ -117,10 +119,20 @@ func TestSaveAllowedApps(t *testing.T) {
 		{{Name: "Juego", Path: `%TEMP%\juego.exe`}},
 		{{Name: "", Path: `C:\Program Files\a.exe`}},
 		{{Name: "A", Path: `C:\Program Files\a.exe`}, {Name: "a", Path: `C:\Program Files\b.exe`}},
+		{{Name: "Nada"}},
+		{{Name: "Linux", Desktop: "/usr/share/applications/x.desktop"}},
 	} {
 		if _, err := h.app.SaveAllowedApps(bad); !isCode(err, codeAllowedAppInvalid) {
 			t.Errorf("SaveAllowedApps(%+v) = %v", bad, err)
 		}
+	}
+	// An app for Linux only (prompt 13): its .desktop is enough, and it is sent.
+	if s, err := h.app.SaveAllowedApps([]openapp.App{{Name: "Thonny", Desktop: "org.thonny.Thonny.desktop"}}); err != nil || s.Apps[0].Desktop != "org.thonny.Thonny.desktop" {
+		t.Fatalf("Linux only: %+v, %v", s, err)
+	}
+	_, err = h.app.SaveAllowedApps([]openapp.App{{Name: "Linux", Desktop: "a/b.desktop"}})
+	if err == nil || !strings.Contains(err.Error(), "org.thonny.Thonny.desktop") {
+		t.Errorf("the message must show the expected form: %v", err)
 	}
 	// The centre's file wins over the console's, and saving writes it.
 	if err := os.MkdirAll(centre, 0o700); err != nil {

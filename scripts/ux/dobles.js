@@ -245,11 +245,11 @@
   // Abrir página o app (apps/teacher/open.go): el catálogo de Ajustes y las últimas órdenes.
   // En lab-abrir ya hay una abierta en un equipo y fallida en otro (no tiene la app).
   const appsEjemplo = [
-    { id: "bloc-de-notas", name: "Bloc de notas", path: "%SystemRoot%\\System32\\notepad.exe" },
-    { id: "calculadora", name: "Calculadora", path: "%SystemRoot%\\System32\\calc.exe" },
+    { id: "bloc-de-notas", name: "Bloc de notas", path: "%SystemRoot%\\System32\\notepad.exe", desktop: "org.gnome.TextEditor.desktop" },
+    { id: "calculadora", name: "Calculadora", path: "%SystemRoot%\\System32\\calc.exe", desktop: "org.gnome.Calculator.desktop" },
     { id: "paint", name: "Paint", path: "%SystemRoot%\\System32\\mspaint.exe" },
-    { id: "vscode", name: "Visual Studio Code", path: "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe" },
-    { id: "thonny", name: "Thonny", path: "%LOCALAPPDATA%\\Programs\\Thonny\\thonny.exe" },
+    { id: "vscode", name: "Visual Studio Code", path: "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe", desktop: "code.desktop" },
+    { id: "thonny", name: "Thonny", path: "%LOCALAPPDATA%\\Programs\\Thonny\\thonny.exe", desktop: "org.thonny.Thonny.desktop" },
     { id: "scratch", name: "Scratch 3", path: "%ProgramFiles(x86)%\\Scratch 3\\Scratch 3.exe" },
   ];
   const rutaApps = "C:\\Users\\profe\\AppData\\Roaming\\Aula\\consola\\apps-permitidas.json";
@@ -772,10 +772,13 @@
     OpenRoomFolder: call("OpenRoomFolder"),
     DefaultAllowedApps: call("DefaultAllowedApps", () => appsEjemplo.slice()),
     SaveAllowedApps: call("SaveAllowedApps", (apps) => {
-      if (apps.some((a) => !a.name.trim() || !/\.exe$/i.test(a.path.trim()) || /\\(cmd|powershell)\.exe$/i.test(a.path.trim()))) {
+      const ruta = (a) => (a.path || "").trim(), desk = (a) => (a.desktop || "").trim();
+      if (apps.some((a) => !a.name.trim() || (!ruta(a) && !desk(a))
+        || (ruta(a) && (!/\.exe$/i.test(ruta(a)) || /\\(cmd|powershell)\.exe$/i.test(ruta(a))))
+        || (desk(a) && !/^[A-Za-z0-9][A-Za-z0-9._-]*\.desktop$/.test(desk(a))))) {
         return new Error("aula:allowedAppInvalid: app 1: la ruta debe ser un .exe instalado");
       }
-      allowed = { apps: apps.map((a, i) => ({ id: a.id || "app-" + i, name: a.name.trim(), path: a.path.trim() })), source: "consola", path: rutaApps };
+      allowed = { apps: apps.map((a, i) => ({ id: a.id || "app-" + i, name: a.name.trim(), path: ruta(a), desktop: desk(a) })), source: "consola", path: rutaApps };
       despues(() => window.__emit("aula:allowed-apps", allowed));
       return allowed;
     }),

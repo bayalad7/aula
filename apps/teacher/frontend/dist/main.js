@@ -5507,8 +5507,9 @@
   }
   $("nav-ajustes").addEventListener("click", () => abrirAjustes());
 
-  // Ajustes › Apps permitidas: el catálogo de «Abrir página o app». Cada fila es un nombre y la
-  // ruta del .exe; la consola revisa la forma y cada alumno vuelve a aplicar sus reglas fijas.
+  // Ajustes › Apps permitidas: el catálogo de «Abrir página o app». Cada fila es un nombre, la
+  // ruta del .exe (Windows) y su .desktop (Linux); la consola revisa la forma y cada alumno vuelve
+  // a aplicar sus reglas fijas.
   function filaApp(a) {
     const li = el("li", "fila-app");
     li.dataset.id = a.id || "";
@@ -5520,14 +5521,22 @@
     ruta.className = "control fila-app__ruta mono";
     ruta.dataset.icono = "carpeta";
     ruta.setAttribute("aria-label", T("ajustes.appsRuta"));
+    ruta.placeholder = T("ajustes.appsRutaEjemplo");
     ruta.title = T("ajustes.appsRutaAyuda");
+    // La misma app en Linux, por su .desktop del sistema (prompt 13); vacío: no se abre en Linux.
+    const desktop = Object.assign(el("input"), { type: "text", value: a.desktop || "", maxLength: 255, autocomplete: "off", spellcheck: false });
+    desktop.className = "control fila-app__desktop mono";
+    desktop.dataset.icono = "escritorio";
+    desktop.setAttribute("aria-label", T("ajustes.appsDesktop"));
+    desktop.placeholder = T("ajustes.appsDesktopEjemplo");
+    desktop.title = T("ajustes.appsDesktopAyuda");
     const quitar = el("button", "btn btn--fantasma btn--icono btn--sm");
     quitar.type = "button";
     quitar.setAttribute("aria-label", T("ajustes.appsQuitar", { nombre: a.name || T("ajustes.appsNombre") }));
     quitar.append(icono("cerrar"));
     quitar.addEventListener("click", () => { li.remove(); pintarVaciaApps(); $("aj-apps-agregar").focus(); });
-    for (const i of [nombre, ruta]) i.addEventListener("input", () => { $("aj-apps-error").hidden = true; });
-    li.append(nombre, ruta, quitar);
+    for (const i of [nombre, ruta, desktop]) i.addEventListener("input", () => { $("aj-apps-error").hidden = true; });
+    li.append(nombre, ruta, desktop, quitar);
     return li;
   }
   function pintarVaciaApps() { $("aj-apps-vacia").hidden = $("aj-apps-lista").children.length > 0; }
@@ -5539,7 +5548,7 @@
   }
   function appsEscritas() {
     return [...$("aj-apps-lista").children].map((li) => ({ id: li.dataset.id, name: li.querySelector(".fila-app__nombre").value,
-      path: li.querySelector(".fila-app__ruta").value }));
+      path: li.querySelector(".fila-app__ruta").value, desktop: li.querySelector(".fila-app__desktop").value }));
   }
   $("tab-apps").addEventListener("click", () => api.AllowedApps().then(pintarAppsAjustes, fallo));
   $("aj-apps-agregar").addEventListener("click", () => {

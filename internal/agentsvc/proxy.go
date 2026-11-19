@@ -56,6 +56,7 @@ type Ready struct {
 	Input     bool `json:"input"`     // keyboard and mouse injection, for remote control
 	Files     bool `json:"files"`     // the student's work folder, for file.push
 	Open      bool `json:"open"`      // open a page or an app in the session, for open.*
+	OpenApps  bool `json:"open_apps"` // and start apps too (false: pages only, open.url)
 	// Present: monitor capture, an H.264 encoder and windows that can be
 	// excluded from the capture, for student.present.* (§5.24).
 	Present bool `json:"present"`

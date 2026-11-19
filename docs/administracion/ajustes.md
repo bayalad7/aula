@@ -30,9 +30,13 @@ Elige **Sistema** (sigue a Windows), **Claro** u **Oscuro**. La consola recuerda
 
 Las apps que puedes abrir en los equipos con **Abrir página o app** (ver
 [Tareas frecuentes](tareas-frecuentes#abrir-una-página-o-una-app-en-los-equipos)). Cada una tiene un
-**nombre**, que es lo que ve el alumno, y la **ruta del .exe**. La ruta puede empezar con
+**nombre**, que es lo que ve el alumno, la **ruta del .exe** para los equipos con Windows y,
+debajo, la **app de Linux** para los equipos con Linux. La ruta puede empezar con
 `%ProgramFiles%`, `%ProgramFiles(x86)%`, `%LOCALAPPDATA%` o `%SystemRoot%`, y cada equipo la
-completa con sus propias carpetas.
+completa con sus propias carpetas. La app de Linux es solo el nombre de su archivo `.desktop`
+(`org.thonny.Thonny.desktop`, `code.desktop`); el técnico lo encuentra en
+`/usr/share/applications`. Una app puede tener las dos o solo una: si le falta la de un sistema,
+en esos equipos no se abre y la consola lo dice.
 
 Al principio la lista trae ejemplos: Bloc de notas, Calculadora, Paint, Visual Studio Code, Thonny y
 Scratch 3. Cámbialos, agrega los programas de tu laboratorio con **Agregar app** y pulsa
@@ -49,7 +53,10 @@ Scratch 3. Cámbialos, agrega los programas de tu laboratorio con **Agregar app*
     `%LOCALAPPDATA%\Programs`;
   - nunca abre nada en Documentos, Escritorio, Descargas ni la carpeta temporal, ni `cmd`,
     PowerShell u otras herramientas del sistema;
-  - siempre la abre sin argumentos.
+  - siempre la abre sin argumentos;
+  - en Linux, solo una app instalada en el sistema (nunca una que el alumno haya agregado en su
+    carpeta), que no sea una terminal ni una herramienta del sistema y que no pida permisos de
+    administrador.
 
   Si no cumple, en tu consola sale «su equipo no permite esa app».
 - Si un programa está instalado en otra carpeta en algunos equipos, en esos sale «esa app no está

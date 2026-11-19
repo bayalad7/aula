@@ -816,8 +816,8 @@ en Windows; esto es lo que cambia o se precisa. Qué funciona en cada sistema:
     español, `~/Documentos/Aula`). Valen las reglas 55–65: el agente corre como el alumno, no
     sigue enlaces simbólicos (los omite o rechaza y lo dice) y no escribe fuera de esa carpeta.
 99. **Lo demás no se declara.** Mientras no esté portado, el agente de Linux **no declara**
-    proyectar, restricciones ni abrir apps (la energía, el control remoto y la pantalla en blanco
-    llegaron con la segunda parte, reglas 100–103, y abrir páginas con la tercera, regla 104),
+    proyectar ni restricciones (la energía, el control remoto y la pantalla en blanco llegaron con
+    la segunda parte, reglas 100–103, y abrir páginas y apps con la tercera, regla 104),
     y recibir la transmisión solo si el WebView del equipo trae WebRTC y H.264 (el de Ubuntu
     24.04 no): la ficha «Qué puede hacer su equipo» lo muestra como no disponible y el
     alumno lo ve igual en «Qué puede hacer Aula en este equipo». Lo prueba
@@ -854,17 +854,18 @@ función; esto es lo que se precisa en Linux.
 
 Aprobada el 2026-11-18 con el prompt 13.
 
-104. **Abrir una página, igual que en Windows; apps, todavía no.** En Linux el agente declara
-     `open.url` y cumple las reglas 66–70: solo `http` y `https`, la abre el ayudante como el
-     alumno con `xdg-open` (su navegador predeterminado), el aviso en la esquina dice qué se
-     abrió y quién lo pidió, y los registros nunca llevan la URL. **No declara `open.app`:** las
-     reglas fijas de qué programa se puede abrir en Linux (`.desktop` instalados, nunca una
-     terminal ni una herramienta del sistema) son un diseño pendiente, y sin ellas no se abre
-     ninguno. El comprobador de conexión de la consola solo **lee** el firewall (`ufw` o
+104. **Abrir una página o una app, igual que en Windows.** En Linux el agente cumple las reglas
+     66–70: la página (`http` o `https`) la abre el ayudante como el alumno con `xdg-open`; la
+     app, por su `.desktop` (`docs/protocol.md` §5.22): solo una instalada **en las carpetas del
+     sistema** (nunca en `~/.local/share/applications`, que el alumno puede escribir, ni en
+     `Documentos`), una aplicación de verdad, sin terminal, que no sea una terminal, una
+     herramienta del sistema ni algo que pida privilegios, lanzada con `gio launch` **sin
+     argumentos**. El aviso en la esquina dice qué se abrió y quién lo pidió, y los registros
+     nunca llevan la URL ni el nombre de la app. El comprobador de conexión de la consola solo **lee** el firewall (`ufw` o
      `firewalld`) y nunca lo cambia.
 
 ## Pendiente para etapas futuras
 
-- Linux, siguientes partes (recepción y envío de transmisiones, restricciones, abrir apps,
-  icono del área de notificación) y macOS: sus textos de aviso se agregarán aquí antes
+- Linux, siguientes partes (recepción y envío de transmisiones, restricciones, icono del área
+  de notificación) y macOS: sus textos de aviso se agregarán aquí antes
   de implementarlos, con las mismas reglas 6–49.

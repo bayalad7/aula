@@ -92,8 +92,8 @@ Dos aplicaciones, mismo monorepo:
     `platform.WorkFolderReader` (en servicio, el ayudante).
   - `internal/openapp`: abrir una página o una app permitida en el equipo del alumno (`open.*`):
     las reglas fijas del agente (solo URLs http/https; solo un `.exe` ya instalado en Program
-    Files, Windows o `%LOCALAPPDATA%\Programs`, sin argumentos y nunca una herramienta del
-    sistema), el `Opener` del agente con su ritmo y el aviso de qué se abrió; del lado de la
+    Files, Windows o `%LOCALAPPDATA%\Programs`, o en Linux un `.desktop` de las carpetas del
+    sistema, sin argumentos y nunca una herramienta del sistema), el `Opener` del agente con su ritmo y el aviso de qué se abrió; del lado de la
     consola, el catálogo de Ajustes › Apps permitidas (`Catalog`, con ejemplos) y los acuses
     (`Tracker`). Abre por `platform.Launcher` (en servicio, el ayudante, que revisa otra vez).
   - `internal/connectcheck`: el comprobador de conexión de la consola: recorre el camino de un
@@ -307,8 +307,8 @@ interfaz en `platform` y una implementación por defecto que devuelve "no soport
 Qué funciona en cada SO: `docs/compatibilidad.md` (una fila por función visible); una función
 nueva que toca el SO agrega su fila. Linux va por capas (D-023): la capa 1 (pantalla y atajo solo
 en X11, `Documentos/Aula`, paquetes) y la 2 (servicio de systemd con ayudante, D-024; control
-remoto y pausa en X11; energía, encender y salud) están hechas; de la 3, abrir páginas y el
-comprobador de red. Lo no portado no se declara.
+remoto y pausa en X11; energía, encender y salud) están hechas; de la 3, abrir páginas y apps
+(por su `.desktop` del sistema) y el comprobador de red. Lo no portado no se declara.
 
 ## Privacidad (no negociable)
 Monitoreo transparente: cuando la pantalla del alumno se ve o transmite, su equipo muestra un

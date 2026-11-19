@@ -37,7 +37,7 @@ ventana siempre encima. Por eso, para ver la pantalla del alumno, el laboratorio
 | Pausar su pantalla | ✓ | ✓ (una ventana por monitor) | ✗ (Wayland no deja una ventana encima de todo) | ✗ |
 | Apagar, reiniciar y cerrar sesión | ✓ | parcial: apagar y reiniciar ✓ (systemd); cerrar sesión sin «forzar» también cierra los programas abiertos, sin dejarles guardar | igual que X11 | ✗ |
 | Bloquear apps y filtro web | ✓ | ✗ (pendiente: procesos y DNS local con systemd-resolved) | ✗ | ✗ |
-| Abrir una página o una app permitida | ✓ | parcial: páginas ✓ (`xdg-open`, el navegador del alumno); apps ✗ (sus reglas fijas para Linux son un diseño pendiente; no se declara `open.app`) | igual que X11 | ✗ |
+| Abrir una página o una app permitida | ✓ | ✓ páginas con `xdg-open`; apps por su `.desktop` del sistema con `gio launch` (en Ajustes › Apps permitidas, el campo «App de Linux») | igual que X11 | ✗ |
 | Encender el equipo desde la consola (Wake-on-LAN: el agente informa su MAC) | ✓ | ✓ (Wake-on-LAN activado en la BIOS y en la tarjeta) | ✓ | ✗ |
 | Salud del laboratorio | ✓ | parcial: todo menos la falla del disco (S.M.A.R.T.), que necesita root y una herramienta aparte; autodiagnóstico ✓ | igual que X11 | ✗ (se declara sin datos) |
 | Arranque | Servicio de Windows con ayudante en la sesión | Servicio de systemd (`aula-agente.service`) con ayudante en la sesión del alumno; arranca con el equipo, también sin sesión | igual que X11 | ✗ |

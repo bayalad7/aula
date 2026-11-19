@@ -316,7 +316,7 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `timer` | `timer.start`, `timer.extend`, `timer.stop` | v0.9 (§5.19). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana; también los alumnos simulados. |
 | `file.push` | `file.push` | v0.10 (§5.20). Windows, en modo ventana y como servicio con su ayudante (escribe en la sesión del alumno); también los alumnos simulados, que acusan sin escribir. Linux en modo ventana (prompt 13); macOS no la declara. |
 | `open.url` | `open.url` | v0.12 (§5.22). Windows, en modo ventana y como servicio con su ayudante (abre en la sesión del alumno); Linux igual, con `xdg-open` (prompt 13). Nunca los alumnos simulados. macOS no la declara. |
-| `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`, salvo Linux, que no la declara todavía (sin reglas fijas de apps). |
+| `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`; en Linux, con el campo `desktop` y sus reglas fijas, si hay `gio` (prompt 13). |
 | `poll` | `poll.open`, `poll.close`, `poll.results`, `poll.vote.ack`; y acepta `poll.vote` | v0.13 (§5.23). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 | `poll.quiz` | `poll.open` con `kind: "quiz"`, `poll.quiz.result`; y acepta `poll.vote` con `answers` | Sin publicar (§5.23.1). Se declara junto con `poll` (la ventana sabe mostrar varias preguntas); también los alumnos simulados. |
 | `screen.present` | `student.present.start`, `.offer`, `.ice`, `.stop` | v0.14 (§5.24). Windows, si hay captura de monitor, codificador H.264 y la ventana se puede excluir de la captura; en modo servicio, solo con el ayudante. Nunca los alumnos simulados. Linux y macOS no la declaran. |
@@ -1638,7 +1638,8 @@ Consola (P)                                        Agente (A)
 
 ```json
 { "open_id": "1b9e…", "app_id": "thonny", "name": "Thonny",
-  "path": "%ProgramFiles(x86)%\\Thonny\\thonny.exe" }
+  "path": "%ProgramFiles(x86)%\\Thonny\\thonny.exe",
+  "desktop": "org.thonny.Thonny.desktop" }
 ```
 
 | Campo | Tipo | Regla |
@@ -1646,7 +1647,8 @@ Consola (P)                                        Agente (A)
 | `open_id` | string | UUID v4 de la consola. |
 | `app_id` | string | El id de la app en el catálogo de la consola, `^[a-z0-9-]{1,32}$`. Solo informa (acuses y registros). |
 | `name` | string | 1–60 caracteres, texto plano: lo que ve el alumno en el aviso. |
-| `path` | string | 1–260 caracteres. Ruta absoluta a un `.exe`; puede empezar con `%ProgramFiles%`, `%ProgramFiles(x86)%`, `%LOCALAPPDATA%` o `%SystemRoot%`, que el agente expande **en la sesión del alumno**. Ninguna otra variable. |
+| `path` | string | Opcional, hasta 260 caracteres: la app en **Windows**. Ruta absoluta a un `.exe`; puede empezar con `%ProgramFiles%`, `%ProgramFiles(x86)%`, `%LOCALAPPDATA%` o `%SystemRoot%`, que el agente expande **en la sesión del alumno**. Ninguna otra variable. |
+| `desktop` | string | Opcional, hasta 255 caracteres, sin caracteres de control: la app en **Linux**, por su id de `.desktop` (`org.thonny.Thonny.desktop`). Agregado con el prompt 13: un campo opcional nuevo, compatible. Va al menos uno de los dos; cada agente usa el de su sistema y, si le falta, responde `not_installed`. |
 
 **Reglas fijas del agente para `open.app`** (la consola las aplica también, para avisar antes):
 
@@ -1664,6 +1666,21 @@ Consola (P)                                        Agente (A)
    mayúsculas).
 5. Se lanza **sin argumentos** y con el directorio de trabajo de su propia carpeta, como el
    alumno (en modo servicio, el ayudante con el token del alumno; nunca como SYSTEM).
+
+**Reglas fijas del agente de Linux para `open.app`** (con `desktop`; `privacidad.md` regla 104):
+
+1. `desktop` es solo un nombre `^[A-Za-z0-9][A-Za-z0-9._-]*\.desktop$`: nunca una ruta.
+2. Se busca **solo** en las carpetas de apps del sistema: `/usr/share/applications`,
+   `/usr/local/share/applications`, `/var/lib/flatpak/exports/share/applications` y
+   `/var/lib/snapd/desktop/applications`. Nunca en `~/.local/share/applications` ni en otra
+   carpeta que el alumno pueda escribir.
+3. El archivo es una app: `Type=Application`, con `Exec`, sin `Hidden=true` ni `Terminal=true`.
+4. No es una terminal, una herramienta del sistema ni algo que pida privilegios: se niega por
+   categoría (`TerminalEmulator`, `System`, `Settings`, `PackageManager`, `Security`, `Monitor`)
+   y por el programa de `Exec` (`sudo`, `pkexec`, `su`, shells, `python`/`python3` sueltos,
+   `env` y las terminales).
+5. Se lanza **sin argumentos** con `gio launch` sobre ese archivo, como el alumno (en modo
+   servicio, el ayudante; nunca como root).
 
 **`open.ack` (A → P)**
 

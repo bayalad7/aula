@@ -295,7 +295,9 @@ func TestServiceCommands(t *testing.T) {
 	}
 	out.Reset()
 	code := runServiceCLI([]string{"estado", "-nombre", "AulaNoExiste" + strconv.Itoa(os.Getpid())}, &out, &errOut)
-	if runtime.GOOS == "windows" {
+	// Windows, and Linux running systemd (D-024), know the service is missing.
+	_, sysErr := os.Stat("/run/systemd/system")
+	if runtime.GOOS == "windows" || (runtime.GOOS == "linux" && sysErr == nil) {
 		if code != exitNotInstalled || !strings.Contains(out.String(), "no instalado") {
 			t.Fatalf("estado of a missing service: %d %q", code, out.String())
 		}

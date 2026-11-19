@@ -405,6 +405,8 @@ La prueba completa con dos equipos está en `docs/prueba-vms.md` §32.
 | C-168 | En Laboratorio, **Revisar ahora** y **Autodiagnóstico** para el alumno Linux; luego **Apagar** con cuenta regresiva y **Posponer**, y después **Encender** | Aparecen disco, memoria, procesador, red y batería (si la hay) sin la línea de S.M.A.R.T.; el autodiagnóstico responde. La cuenta regresiva se pospone; tras apagarlo, «Encender» lo prende si su BIOS tiene Wake-on-LAN |
 | A-69 | Reinicia el equipo del alumno y entra con su usuario («Ubuntu en Xorg») | `systemctl status aula-agente` dice *active (running)*; la ventana de Aula aparece sola en la sesión (el ayudante) y la consola lo ve con energía, control remoto, pausa y salud. Abrir Aula Cliente desde Actividades trae esa misma ventana, no otra |
 | A-70 | Durante C-166, mueve el ratón del alumno | La franja de la consola dice «el alumno está usando su equipo» y el control se pausa hasta que deja de usarlo, como en Windows |
+| C-169 | Con un alumno Linux, **Abrir** una página (`https://docs.python.org`) desde la barra; luego intenta abrir una app del catálogo | La página abre en su navegador y el aviso en la esquina dice qué se abrió y quién lo pidió; la app no se ofrece para ese equipo (su ficha la muestra no disponible) |
+| C-170 | En una consola Linux, **Comprobar la conexión** con `ufw` activo y luego con `firewalld` (Fedora) | Con `firewalld`, el paso de la red dice si el puerto 47830 está abierto; con `ufw` y sin ser root, el paso queda sin juzgar en vez de decir que todo está bien |
 | A-71 | Cierra sesión en el equipo del alumno (sin apagar) | La consola lo sigue viendo conectado, solo con energía y salud; al volver a entrar, el ayudante abre la ventana otra vez |
 
 ### Encender equipos (10.19)

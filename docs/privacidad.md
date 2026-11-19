@@ -816,8 +816,8 @@ en Windows; esto es lo que cambia o se precisa. Qué funciona en cada sistema:
     español, `~/Documentos/Aula`). Valen las reglas 55–65: el agente corre como el alumno, no
     sigue enlaces simbólicos (los omite o rechaza y lo dice) y no escribe fuera de esa carpeta.
 99. **Lo demás no se declara.** Mientras no esté portado, el agente de Linux **no declara**
-    proyectar, restricciones ni abrir páginas o apps (la energía, el control remoto y la pantalla
-    en blanco llegaron con la segunda parte, reglas 100–103),
+    proyectar, restricciones ni abrir apps (la energía, el control remoto y la pantalla en blanco
+    llegaron con la segunda parte, reglas 100–103, y abrir páginas con la tercera, regla 104),
     y recibir la transmisión solo si el WebView del equipo trae WebRTC y H.264 (el de Ubuntu
     24.04 no): la ficha «Qué puede hacer su equipo» lo muestra como no disponible y el
     alumno lo ve igual en «Qué puede hacer Aula en este equipo». Lo prueba
@@ -850,8 +850,21 @@ función; esto es lo que se precisa en Linux.
      pendiente, red y batería); la falla del disco (S.M.A.R.T.) no se lee. Nunca procesos,
      archivos, sitios ni el nombre de la red.
 
+## Linux, tercera parte (sin publicar; etapa 13, capa 3)
+
+Aprobada el 2026-11-18 con el prompt 13.
+
+104. **Abrir una página, igual que en Windows; apps, todavía no.** En Linux el agente declara
+     `open.url` y cumple las reglas 66–70: solo `http` y `https`, la abre el ayudante como el
+     alumno con `xdg-open` (su navegador predeterminado), el aviso en la esquina dice qué se
+     abrió y quién lo pidió, y los registros nunca llevan la URL. **No declara `open.app`:** las
+     reglas fijas de qué programa se puede abrir en Linux (`.desktop` instalados, nunca una
+     terminal ni una herramienta del sistema) son un diseño pendiente, y sin ellas no se abre
+     ninguno. El comprobador de conexión de la consola solo **lee** el firewall (`ufw` o
+     `firewalld`) y nunca lo cambia.
+
 ## Pendiente para etapas futuras
 
-- Linux, tercera parte (recepción y envío de transmisiones, restricciones, abrir apps, red y
-  firewall, icono del área de notificación) y macOS: sus textos de aviso se agregarán aquí antes
+- Linux, siguientes partes (recepción y envío de transmisiones, restricciones, abrir apps,
+  icono del área de notificación) y macOS: sus textos de aviso se agregarán aquí antes
   de implementarlos, con las mismas reglas 6–49.

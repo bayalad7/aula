@@ -36,7 +36,8 @@ const (
 	// Windows, in window mode or as a service with its helper; Linux.
 	CapFileCollect Capability = "file.collect"
 	// CapOpenURL and CapOpenApp open a page or an allowed app in the student's
-	// session (§5.22). Windows, in window mode or as a service with its helper;
+	// session (§5.22). Windows, in window mode or as a service with its helper
+	// (Linux: open.url only);
 	// never the simulated students.
 	CapOpenURL Capability = "open.url"
 	CapOpenApp Capability = "open.app"

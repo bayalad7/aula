@@ -315,8 +315,8 @@ para ese agente. Si de todos modos llega, el agente responde `error` `unsupporte
 | `msg.student` | `msg.student`, `msg.student.ack` | v0.8 (§5.18). Igual que `hand`. |
 | `timer` | `timer.start`, `timer.extend`, `timer.stop` | v0.9 (§5.19). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana; también los alumnos simulados. |
 | `file.push` | `file.push` | v0.10 (§5.20). Windows, en modo ventana y como servicio con su ayudante (escribe en la sesión del alumno); también los alumnos simulados, que acusan sin escribir. Linux en modo ventana (prompt 13); macOS no la declara. |
-| `open.url` | `open.url` | v0.12 (§5.22). Windows, en modo ventana y como servicio con su ayudante (abre en la sesión del alumno). Nunca los alumnos simulados. Linux y macOS no la declaran. |
-| `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`. |
+| `open.url` | `open.url` | v0.12 (§5.22). Windows, en modo ventana y como servicio con su ayudante (abre en la sesión del alumno); Linux igual, con `xdg-open` (prompt 13). Nunca los alumnos simulados. macOS no la declara. |
+| `open.app` | `open.app` | v0.12 (§5.22). Igual que `open.url`, salvo Linux, que no la declara todavía (sin reglas fijas de apps). |
 | `poll` | `poll.open`, `poll.close`, `poll.results`, `poll.vote.ack`; y acepta `poll.vote` | v0.13 (§5.23). Todos los SO: no toca el sistema, solo la ventana del alumno. Igual que `hand`: se declara cuando hay ventana (en modo servicio, con el ayudante); también los alumnos simulados. |
 | `poll.quiz` | `poll.open` con `kind: "quiz"`, `poll.quiz.result`; y acepta `poll.vote` con `answers` | Sin publicar (§5.23.1). Se declara junto con `poll` (la ventana sabe mostrar varias preguntas); también los alumnos simulados. |
 | `screen.present` | `student.present.start`, `.offer`, `.ice`, `.stop` | v0.14 (§5.24). Windows, si hay captura de monitor, codificador H.264 y la ventana se puede excluir de la captura; en modo servicio, solo con el ayudante. Nunca los alumnos simulados. Linux y macOS no la declaran. |

@@ -6,7 +6,7 @@ hacer **no se declara**: la consola lo muestra como no disponible en la ficha de
 puede hacer su equipo»), y el alumno lo ve igual en «Qué puede hacer Aula en este equipo». En el
 equipo del alumno, `aula-cliente diagnostico` lista lo disponible en esa sesión.
 
-Al día con el prompt 13, capas 1 y 2 de Linux (2026-11-18). Ubuntu 24.04 LTS es la distribución de
+Al día con el prompt 13, capas 1 a 3 de Linux (2026-11-18). Ubuntu 24.04 LTS es la distribución de
 referencia; Linux X11 se prueba en el CI con Xvfb, pero **falta la prueba en un equipo real**
 (`docs/prueba-vms.md` §31). macOS todavía no se porta: compila y corre con los fallbacks, sin
 probar.
@@ -36,12 +36,12 @@ ventana siempre encima. Por eso, para ver la pantalla del alumno, el laboratorio
 | Control remoto | ✓ | ✓ (XTEST; se pausa cuando el alumno usa su teclado o ratón) | ✗ (Wayland no permite inyectar teclado y ratón sin portal) | ✗ (falta el permiso de Accesibilidad) |
 | Pausar su pantalla | ✓ | ✓ (una ventana por monitor) | ✗ (Wayland no deja una ventana encima de todo) | ✗ |
 | Apagar, reiniciar y cerrar sesión | ✓ | parcial: apagar y reiniciar ✓ (systemd); cerrar sesión sin «forzar» también cierra los programas abiertos, sin dejarles guardar | igual que X11 | ✗ |
-| Bloquear apps y filtro web | ✓ | ✗ (capa 3) | ✗ | ✗ |
-| Abrir una página o una app permitida | ✓ | ✗ (capa 3: `.desktop` instalados) | ✗ | ✗ |
+| Bloquear apps y filtro web | ✓ | ✗ (pendiente: procesos y DNS local con systemd-resolved) | ✗ | ✗ |
+| Abrir una página o una app permitida | ✓ | parcial: páginas ✓ (`xdg-open`, el navegador del alumno); apps ✗ (sus reglas fijas para Linux son un diseño pendiente; no se declara `open.app`) | igual que X11 | ✗ |
 | Encender el equipo desde la consola (Wake-on-LAN: el agente informa su MAC) | ✓ | ✓ (Wake-on-LAN activado en la BIOS y en la tarjeta) | ✓ | ✗ |
 | Salud del laboratorio | ✓ | parcial: todo menos la falla del disco (S.M.A.R.T.), que necesita root y una herramienta aparte; autodiagnóstico ✓ | igual que X11 | ✗ (se declara sin datos) |
 | Arranque | Servicio de Windows con ayudante en la sesión | Servicio de systemd (`aula-agente.service`) con ayudante en la sesión del alumno; arranca con el equipo, también sin sesión | igual que X11 | ✗ |
-| Icono del área de notificación | ✓ | ✗ (capa 3; cerrar minimiza la ventana y nunca termina el agente) | ✗ (igual) | ✗ |
+| Icono del área de notificación | ✓ | ✗ (pendiente; cerrar minimiza la ventana y nunca termina el agente) | ✗ (igual) | ✗ |
 | Modo compacto | ✓ (ventana nativa) | parcial: solo con Wails, sin quedar encima | igual que X11 | sin probar |
 | Diagnóstico `aula-cliente diagnostico` | ✓ | ✓ (dice si la sesión es X11 o Wayland, qué falta y la salud) | ✓ | sin probar |
 | Configurar canal y clave | Instalador (asistente o `/CANAL=`) | `sudo aula-cliente configurar -canal N -clave aula-centro.pub` | igual que X11 | — |
@@ -57,7 +57,7 @@ ventana siempre encima. Por eso, para ver la pantalla del alumno, el laboratorio
 | Ver miniaturas y capturas de los alumnos | ✓ | ✓ | ✓ (lo que falta en Wayland es del lado del alumno) | sin probar |
 | Abrir las carpetas de capturas y recolecciones | ✓ | ✓ (`xdg-open`) | ✓ | ✗ |
 | Transmitir su pantalla | ✓ | ✗ (falta un codificador H.264; decisión aparte) | ✗ | ✗ |
-| Comprobador de conexión | ✓ | parcial: recorre anuncio, puerto, TLS y clave; no lee la red ni el firewall del equipo | igual que X11 | sin probar |
+| Comprobador de conexión | ✓ | ✓ con `firewalld` o sin firewall; con `ufw` activo, sus reglas solo se leen como root, y el paso de la red queda sin juzgar (Linux no tiene redes «Públicas») | igual que X11 | sin probar |
 | Clave del centro (`aula-consola centro …`) | ✓ (`%ProgramData%\Aula\centro`) | ✓ (`/etc/Aula/centro`, grupo `aula`: `sudo usermod -aG aula <maestro>`) | ✓ | sin probar |
 | Paquete | `Aula-Consola-Setup-x.y.z.exe` | `.deb`, `.rpm` y AppImage (la AppImage usa el WebKitGTK del sistema) | igual que X11 | ✗ |
 

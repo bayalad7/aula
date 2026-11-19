@@ -192,6 +192,9 @@ retiraron; esta es la primera.
 - **Apagar, reiniciar y cerrar sesión**, **encender equipos** y la **salud del laboratorio** con
   su autodiagnóstico también en Linux (sin la revisión S.M.A.R.T. del disco). En Linux, cerrar
   sesión no les pregunta a los programas si guardar.
+- **Abrir una página** en el navegador del alumno también en Linux (las apps todavía no), y
+  **Comprobar la conexión** lee el firewall de una consola Linux (`firewalld`; con `ufw`, sin
+  permisos de administrador lo deja sin juzgar).
 - La clave del centro de una consola Linux la leen los maestros del grupo `aula`; el paquete
   abre el firewall (`ufw` o `firewalld`) si está activo. Lo que falta en Linux está en la tabla
   de compatibilidad (`docs/compatibilidad.md`).
@@ -199,5 +202,4 @@ retiraron; esta es la primera.
 ### Todavía no
 
 - La asistencia y bitácora, la auto-actualización, macOS y, en Linux, las restricciones, abrir
-  apps, transmitir y proyectar pantallas, el comprobador de red y el icono del área de
-  notificación.
+  apps, transmitir y proyectar pantallas y el icono del área de notificación.

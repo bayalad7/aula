@@ -307,7 +307,8 @@ interfaz en `platform` y una implementación por defecto que devuelve "no soport
 Qué funciona en cada SO: `docs/compatibilidad.md` (una fila por función visible); una función
 nueva que toca el SO agrega su fila. Linux va por capas (D-023): la capa 1 (pantalla y atajo solo
 en X11, `Documentos/Aula`, paquetes) y la 2 (servicio de systemd con ayudante, D-024; control
-remoto y pausa en X11; energía, encender y salud) están hechas; lo no portado no se declara.
+remoto y pausa en X11; energía, encender y salud) están hechas; de la 3, abrir páginas y el
+comprobador de red. Lo no portado no se declara.
 
 ## Privacidad (no negociable)
 Monitoreo transparente: cuando la pantalla del alumno se ve o transmite, su equipo muestra un

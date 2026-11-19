@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -293,8 +294,10 @@ func TestEndsWhenIdleOrTheHelperIsGone(t *testing.T) {
 
 func TestRateLimitAndConnectionClose(t *testing.T) {
 	h := newHarness()
-	now := time.Now()
-	h.a.Now = func() time.Time { return now }
+	// The agent's watch goroutine reads the clock while the test moves it.
+	var clock atomic.Int64
+	clock.Store(time.Now().UnixNano())
+	h.a.Now = func() time.Time { return time.Unix(0, clock.Load()) }
 	h.handle(t, start(ctlA))
 	for i := 1; i <= protocol.MaxRemoteRate+10; i++ {
 		h.handle(t, protocol.RemoteInput{ControlID: ctlA, Seq: i, Events: []protocol.InputEvent{{T: protocol.InputMove, X: 0.1, Y: 0.1}}})
@@ -303,7 +306,7 @@ func TestRateLimitAndConnectionClose(t *testing.T) {
 		t.Fatalf("injected %d messages in one second, want %d", n, protocol.MaxRemoteRate)
 	}
 	h.handle(t, protocol.RemoteInput{ControlID: ctlA, Seq: 999, Events: []protocol.InputEvent{{T: protocol.InputButton, B: protocol.ButtonRight, Down: true}}})
-	now = now.Add(time.Second)
+	clock.Add(int64(time.Second))
 	h.handle(t, protocol.RemoteInput{ControlID: ctlA, Seq: 1000, Events: []protocol.InputEvent{{T: protocol.InputButton, B: protocol.ButtonRight, Down: true}}})
 	h.a.Stop()
 	got := h.in.events()

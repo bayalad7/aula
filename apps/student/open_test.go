@@ -54,6 +54,10 @@ func (f *fakeLauncher) StartApp(p string) error {
 	return nil
 }
 
+func (f *fakeLauncher) ReadEntry(string) ([]byte, error) {
+	return nil, fmt.Errorf("read entry: %w", platform.ErrNotSupported)
+}
+
 // An opened page (docs/privacidad.md rules 66–67): the notice in the corner
 // says what and who, and the window never takes the focus from the browser.
 func TestOpenedPageNotifiesNeverRaises(t *testing.T) {
@@ -155,6 +159,9 @@ func TestHelperChecksOpenAgain(t *testing.T) {
 	h := &helper{launch: l, log: quiet}
 	call := func(name, arg string) protocol.OpenReason {
 		data, _ := json.Marshal(arg)
+		if name == agentsvc.CallOpenApp {
+			data, _ = json.Marshal(agentsvc.OpenAppArgs{Path: arg})
+		}
 		r, err := h.call(t.Context(), name, data)
 		if err != nil {
 			t.Fatal(err)

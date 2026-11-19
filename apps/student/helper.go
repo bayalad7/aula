@@ -407,8 +407,13 @@ func (h *helper) collectCall(name string, data json.RawMessage) (any, error) {
 // again with the fixed rules and this session's folders (docs/privacidad.md
 // rules 68–69). It logs only the result.
 func (h *helper) openCall(name string, data json.RawMessage) (any, error) {
-	var arg string
-	if err := json.Unmarshal(data, &arg); err != nil {
+	var url string
+	var app agentsvc.OpenAppArgs
+	target := any(&url)
+	if name == agentsvc.CallOpenApp {
+		target = &app
+	}
+	if err := json.Unmarshal(data, target); err != nil {
 		return nil, err
 	}
 	if h.launch == nil {
@@ -417,9 +422,9 @@ func (h *helper) openCall(name string, data json.RawMessage) (any, error) {
 	s := openapp.Local{Launcher: h.launch}
 	var err error
 	if name == agentsvc.CallOpenURL {
-		err = s.OpenURL(arg)
+		err = s.OpenURL(url)
 	} else {
-		err = s.StartApp(arg)
+		err = s.StartApp(app.Path, app.Desktop)
 	}
 	if err != nil {
 		h.log.Info("helper did not open", "kind", name, "reason", openapp.Reason(err))

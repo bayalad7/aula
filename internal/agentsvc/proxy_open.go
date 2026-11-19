@@ -14,8 +14,15 @@ import (
 // the fixed rules of internal/openapp, with the student's folders.
 const (
 	CallOpenURL = "open.url" // the URL (string) → OpenResult
-	CallOpenApp = "open.app" // the path from the console (string) → OpenResult
+	CallOpenApp = "open.app" // OpenAppArgs from the console → OpenResult
 )
+
+// OpenAppArgs are the arguments of CallOpenApp: the .exe path (Windows)
+// and the .desktop id (Linux) the console sent; the helper uses its own.
+type OpenAppArgs struct {
+	Path    string `json:"path,omitempty"`
+	Desktop string `json:"desktop,omitempty"`
+}
 
 // OpenResult is the reply of CallOpenURL and CallOpenApp: the open.ack
 // reason, empty when it opened.
@@ -30,7 +37,7 @@ const openCallTimeout = 20 * time.Second
 // Opener opens through the helper. It implements openapp.Session.
 type Opener struct{ Helper *Current }
 
-func (o Opener) call(name, arg string) error {
+func (o Opener) call(name string, arg any) error {
 	l := o.Helper.Get()
 	if l == nil {
 		return ErrNoHelper
@@ -48,4 +55,6 @@ func (o Opener) call(name, arg string) error {
 func (o Opener) OpenURL(url string) error { return o.call(CallOpenURL, url) }
 
 // StartApp implements openapp.Session.
-func (o Opener) StartApp(path string) error { return o.call(CallOpenApp, path) }
+func (o Opener) StartApp(path, desktop string) error {
+	return o.call(CallOpenApp, OpenAppArgs{Path: path, Desktop: desktop})
+}

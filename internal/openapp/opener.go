@@ -122,7 +122,7 @@ func (o *Opener) Handle(ctx context.Context, send Sender, env protocol.Envelope)
 	case protocol.OpenApp:
 		openID, kind = p.OpenID, KindApp
 		opened = Opened{ID: p.OpenID, Kind: KindApp, Shown: p.Name, Full: p.Name}
-		do = func() error { return o.Session.StartApp(p.Path) }
+		do = func() error { return o.Session.StartApp(p.Path, p.Desktop) }
 	default:
 		return nil, false
 	}

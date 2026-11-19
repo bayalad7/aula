@@ -176,6 +176,9 @@ func (f *fakeLauncher) StartApp(p string) error {
 	f.started = append(f.started, p)
 	return f.fail
 }
+func (f *fakeLauncher) ReadEntry(string) ([]byte, error) {
+	return nil, fmt.Errorf("read entry: %w", platform.ErrNotSupported)
+}
 
 func TestLocalStartApp(t *testing.T) {
 	thonny := `C:\Users\ana\AppData\Local\Programs\Thonny\thonny.exe`
@@ -184,16 +187,16 @@ func TestLocalStartApp(t *testing.T) {
 		strings.ToLower(`C:\Program Files\Enlace\a.exe`): `C:\Users\ana\Documents\Aula\virus.exe`, // a link out
 	}}
 	s := Local{Launcher: l}
-	if err := s.StartApp(`%LOCALAPPDATA%\Programs\Thonny\thonny.exe`); err != nil {
+	if err := s.StartApp(`%LOCALAPPDATA%\Programs\Thonny\thonny.exe`, ""); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.StartApp(`C:\Program Files\Enlace\a.exe`); !errors.Is(err, ErrNotAllowed) {
+	if err := s.StartApp(`C:\Program Files\Enlace\a.exe`, ""); !errors.Is(err, ErrNotAllowed) {
 		t.Errorf("a link to the work folder: %v", err)
 	}
-	if err := s.StartApp(`C:\Program Files\Falta\falta.exe`); Reason(err) != protocol.OpenNotInstalled {
+	if err := s.StartApp(`C:\Program Files\Falta\falta.exe`, ""); Reason(err) != protocol.OpenNotInstalled {
 		t.Errorf("missing app: %v", err)
 	}
-	if err := s.StartApp(`%USERPROFILE%\Documents\Aula\virus.exe`); Reason(err) != protocol.OpenNotAllowed {
+	if err := s.StartApp(`%USERPROFILE%\Documents\Aula\virus.exe`, ""); Reason(err) != protocol.OpenNotAllowed {
 		t.Errorf("a variable outside the list: %v", err)
 	}
 	if len(l.started) != 1 || l.started[0] != thonny {

@@ -19,7 +19,10 @@ const MaxApps = 50
 type App struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
-	Path string `json:"path"`
+	Path string `json:"path,omitempty"` // the .exe on Windows
+	// Desktop is the app's .desktop id on Linux (prompt 13); at least one of
+	// Path and Desktop.
+	Desktop string `json:"desktop,omitempty"`
 }
 
 // Catalog is the file of the allowed apps: apps-permitidas.json.
@@ -31,20 +34,21 @@ type Catalog struct {
 // changes them in Ajustes. They are programs a school lab usually has.
 func Defaults() []App {
 	return []App{
-		{ID: "bloc-de-notas", Name: "Bloc de notas", Path: `%SystemRoot%\System32\notepad.exe`},
-		{ID: "calculadora", Name: "Calculadora", Path: `%SystemRoot%\System32\calc.exe`},
+		{ID: "bloc-de-notas", Name: "Bloc de notas", Desktop: "org.gnome.TextEditor.desktop", Path: `%SystemRoot%\System32\notepad.exe`},
+		{ID: "calculadora", Name: "Calculadora", Desktop: "org.gnome.Calculator.desktop", Path: `%SystemRoot%\System32\calc.exe`},
 		{ID: "paint", Name: "Paint", Path: `%SystemRoot%\System32\mspaint.exe`},
-		{ID: "vscode", Name: "Visual Studio Code", Path: `%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe`},
-		{ID: "thonny", Name: "Thonny", Path: `%LOCALAPPDATA%\Programs\Thonny\thonny.exe`},
+		{ID: "vscode", Name: "Visual Studio Code", Desktop: "code.desktop", Path: `%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe`},
+		{ID: "thonny", Name: "Thonny", Desktop: "org.thonny.Thonny.desktop", Path: `%LOCALAPPDATA%\Programs\Thonny\thonny.exe`},
 		{ID: "scratch", Name: "Scratch 3", Path: `%ProgramFiles(x86)%\Scratch 3\Scratch 3.exe`},
 	}
 }
 
 // Fields of an EntryError.
 const (
-	FieldName = "name"
-	FieldPath = "path"
-	FieldList = "list" // too many apps
+	FieldName    = "name"
+	FieldPath    = "path"
+	FieldDesktop = "desktop"
+	FieldList    = "list" // too many apps
 )
 
 // EntryError says which entry and field of a catalog is wrong.
@@ -60,7 +64,10 @@ func (e *EntryError) Error() string {
 
 func (e *EntryError) Unwrap() error { return e.Err }
 
-var errDuplicate = errors.New("another app has that name")
+var (
+	errDuplicate = errors.New("another app has that name")
+	errNoPath    = errors.New("a Windows path or a Linux .desktop is required")
+)
 
 var (
 	notID   = regexp.MustCompile(`[^a-z0-9]+`)
@@ -107,7 +114,7 @@ func Normalize(apps []App) ([]App, error) {
 	out := make([]App, 0, len(apps))
 	names, ids := map[string]bool{}, map[string]bool{}
 	for i, a := range apps {
-		a.Name, a.Path = strings.TrimSpace(a.Name), strings.TrimSpace(a.Path)
+		a.Name, a.Path, a.Desktop = strings.TrimSpace(a.Name), strings.TrimSpace(a.Path), strings.TrimSpace(a.Desktop)
 		if n := utf8.RuneCountInString(a.Name); n == 0 || n > protocol.MaxOpenAppName || strings.ContainsFunc(a.Name, unicode.IsControl) {
 			return nil, &EntryError{Index: i, Field: FieldName, Err: fmt.Errorf("1-%d characters", protocol.MaxOpenAppName)}
 		}
@@ -115,8 +122,18 @@ func Normalize(apps []App) ([]App, error) {
 			return nil, &EntryError{Index: i, Field: FieldName, Err: errDuplicate}
 		}
 		names[strings.ToLower(a.Name)] = true
-		if err := CheckSyntax(a.Path); err != nil {
-			return nil, &EntryError{Index: i, Field: FieldPath, Err: err}
+		if a.Path == "" && a.Desktop == "" {
+			return nil, &EntryError{Index: i, Field: FieldPath, Err: errNoPath}
+		}
+		if a.Path != "" {
+			if err := CheckSyntax(a.Path); err != nil {
+				return nil, &EntryError{Index: i, Field: FieldPath, Err: err}
+			}
+		}
+		if a.Desktop != "" {
+			if err := CheckDesktopID(a.Desktop); err != nil {
+				return nil, &EntryError{Index: i, Field: FieldDesktop, Err: err}
+			}
 		}
 		out = append(out, a)
 	}

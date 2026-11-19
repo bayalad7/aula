@@ -24,6 +24,9 @@ license: Propietaria
 depends:
   - libgtk-3-0 | libgtk-3-0t64
   - libwebkit2gtk-4.1-0
+# xdg-open: abrir una página en el navegador del alumno (open.url).
+recommends:
+  - xdg-utils
 overrides:
   rpm:
     depends:

@@ -21,7 +21,7 @@ En PowerShell, desde la raíz del repositorio (`C:\aula`):
 
 ```powershell
 .\scripts\compilar.ps1                      # versión en preparación + "-dev" (docs/ux/notas/VERSION)
-.\scripts\compilar.ps1 -Version 0.2.0-dev   # o la que quieras ver en las apps
+.\scripts\compilar.ps1 -Version 0.1.0-dev   # o la que quieras ver en las apps
 ```
 
 La versión es lo que muestran las apps (`aula-consola version`, la barra del alumno y el

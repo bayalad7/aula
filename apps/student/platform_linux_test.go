@@ -15,7 +15,8 @@ import (
 // TestLinuxDeclaresOnlyWhatItDoes: in Linux the agent declares nothing it
 // does not do (docs/privacidad.md rules 96-103, docs/compatibilidad.md). The
 // screen, the remote control and the pause only in an X11 session; power
-// with systemd; never showing the screen, restrictions nor opening apps.
+// with systemd; pages with xdg-open; never showing the screen, restrictions
+// nor starting apps.
 func TestLinuxDeclaresOnlyWhatItDoes(t *testing.T) {
 	for _, tc := range []struct {
 		name, session, wayland, display string
@@ -42,7 +43,7 @@ func TestLinuxDeclaresOnlyWhatItDoes(t *testing.T) {
 			caps := a.hello.Capabilities
 
 			for _, c := range []protocol.Capability{protocol.CapScreenPresent, protocol.CapAppBlock,
-				protocol.CapWebFilter, protocol.CapOpenURL, protocol.CapOpenApp} {
+				protocol.CapWebFilter, protocol.CapOpenApp} {
 				if slices.Contains(caps, c) {
 					t.Errorf("declares %s, which Linux does not do yet", c)
 				}
@@ -61,6 +62,11 @@ func TestLinuxDeclaresOnlyWhatItDoes(t *testing.T) {
 				if slices.Contains(caps, c) != tc.screen {
 					t.Errorf("%s declared = %v, want %v (only in X11, with its notice)", c, !tc.screen, tc.screen)
 				}
+			}
+			// Pages open with xdg-open: declared exactly when it is there.
+			_, xerr := exec.LookPath("xdg-open")
+			if got := slices.Contains(caps, protocol.CapOpenURL); got != (xerr == nil) {
+				t.Errorf("open.url declared = %v, xdg-open present = %v", got, xerr == nil)
 			}
 			// Power goes through systemd: declared exactly when it is there.
 			_, err := exec.LookPath("systemctl")

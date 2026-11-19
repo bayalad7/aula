@@ -369,8 +369,13 @@ func (sa *serviceAgent) hello() protocol.HelloInfo {
 		h.Capabilities = append(h.Capabilities, protocol.CapFileCollect)
 	}
 	if sa.ready.Open {
-		// The helper opens as the student, never as SYSTEM (rule 69).
-		h.Capabilities = append(h.Capabilities, sa.app.opener.Capabilities()...)
+		// The helper opens as the student, never as SYSTEM (rule 69); apps
+		// only where it has their rules (pages only on Linux for now).
+		for _, c := range sa.app.opener.Capabilities() {
+			if c != protocol.CapOpenApp || sa.ready.OpenApps {
+				h.Capabilities = append(h.Capabilities, c)
+			}
+		}
 	}
 	if sa.ready.Pause {
 		// The helper covers the student's monitors and shows the band (rule 9).

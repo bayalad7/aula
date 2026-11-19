@@ -123,19 +123,21 @@ func TestNoOpenCapabilityWithoutLauncher(t *testing.T) {
 func TestServiceOpensOnlyThroughItsHelper(t *testing.T) {
 	sa := newServiceAgent(Config{Channel: "1"}, nil, nil, quiet)
 	for _, tc := range []struct {
-		ready *agentsvc.Ready
-		want  bool
+		ready     *agentsvc.Ready
+		url, apps bool
 	}{
-		{nil, false},
-		{&agentsvc.Ready{Capture: true, Files: true}, false},
-		{&agentsvc.Ready{Open: true}, true},
+		{nil, false, false},
+		{&agentsvc.Ready{Capture: true, Files: true}, false, false},
+		{&agentsvc.Ready{Open: true, OpenApps: true}, true, true},
+		// A helper that opens pages only (Linux): open.url, never open.app.
+		{&agentsvc.Ready{Open: true}, true, false},
 	} {
 		sa.mu.Lock()
 		sa.ready = tc.ready
 		sa.mu.Unlock()
 		h := sa.hello()
-		if protocol.Has(h.Capabilities, protocol.CapOpenURL) != tc.want || protocol.Has(h.Capabilities, protocol.CapOpenApp) != tc.want {
-			t.Errorf("ready %+v: open.* declared in %v, want %v", tc.ready, h.Capabilities, tc.want)
+		if protocol.Has(h.Capabilities, protocol.CapOpenURL) != tc.url || protocol.Has(h.Capabilities, protocol.CapOpenApp) != tc.apps {
+			t.Errorf("ready %+v: open.* declared in %v, want url %v apps %v", tc.ready, h.Capabilities, tc.url, tc.apps)
 		}
 	}
 	if _, ok := sa.app.opener.Session.(agentsvc.Opener); !ok {

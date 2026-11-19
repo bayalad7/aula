@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"slices"
 	"time"
 
@@ -36,7 +37,15 @@ type Opened struct {
 // and declares open.url and open.app. Call it before start.
 func (a *App) enableOpen(l platform.Launcher) {
 	a.opener.Session = openapp.Local{Launcher: l}
+	a.opener.URLOnly = !opensApps(l)
 	a.hello.Capabilities = append(slices.Clone(a.hello.Capabilities), a.opener.Capabilities()...)
+}
+
+// opensApps reports whether l has the rules to start apps; on Linux it only
+// opens pages for now (docs/compatibilidad.md).
+func opensApps(l platform.Launcher) bool {
+	_, err := l.Folders()
+	return !errors.Is(err, platform.ErrNotSupported)
 }
 
 // who is the teacher and channel the strip shows, for the notice.

@@ -102,7 +102,7 @@ func runHelper(channel string, log *slog.Logger) int {
 	ready := func(webrtc, h264 bool) {
 		once.Do(func() {
 			r := agentsvc.Ready{Capture: h.capture != nil, Clipboard: clipErr == nil, Broadcast: webrtc && h264,
-				Input: h.input != nil, Files: h.work != nil && h.read != nil, Open: h.launch != nil,
+				Input: h.input != nil, Files: h.work != nil && h.read != nil, Open: h.launch != nil, OpenApps: h.launch != nil && opensApps(h.launch),
 				Present: h.publish.Available(), Pause: h.pause != nil}
 			log.Info("helper ready", "capture", r.Capture, "clipboard", r.Clipboard, "broadcast", r.Broadcast, "input", r.Input, "files", r.Files, "open", r.Open)
 			_ = link.Notify(agentsvc.EventReady, r)

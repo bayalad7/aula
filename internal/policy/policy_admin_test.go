@@ -1,17 +1,12 @@
-//go:build windows && admintest
+//go:build (windows || linux) && admintest
 
 package policy
 
 import (
-	"context"
-	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/bayalad7/aula/internal/platform"
 	"github.com/bayalad7/aula/internal/protocol"
@@ -42,12 +37,7 @@ func TestAdminWebFilterEndToEnd(t *testing.T) {
 	m := &Manager{DNS: dnsR, DoH: doh, Journal: Journal{Path: filepath.Join(t.TempDir(), JournalName)}}
 	t.Cleanup(func() { _ = m.Clear("test end"); _ = m.Restore() })
 
-	resolve := func(name string) error {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_, err := net.DefaultResolver.LookupHost(ctx, name)
-		return err
-	}
+	resolve := resolveAsStudent
 	if err := resolve("www.youtube.com"); err != nil {
 		t.Skipf("no internet DNS on this runner: %v", err)
 	}
@@ -57,7 +47,7 @@ func TestAdminWebFilterEndToEnd(t *testing.T) {
 		t.Fatalf("not applied: %#v", reply)
 	}
 	if err := resolve("www.youtube.com"); err == nil {
-		t.Fatal("youtube.com still resolves with the filter on: the NRPT rule does not reach the resolver")
+		t.Fatal("youtube.com still resolves with the filter on: the system's rule does not reach the resolver")
 	}
 	if err := resolve("github.com"); err != nil {
 		t.Fatalf("an allowed name does not resolve: %v", err)
@@ -83,20 +73,6 @@ func TestAdminWebFilterEndToEnd(t *testing.T) {
 	// Name resolution alone does not prove the rule is gone: with the rule
 	// and no resolver listening, Windows falls back to the adapters' DNS.
 	if rules := aulaRules(t); rules != "" {
-		t.Fatalf("NRPT rules left after clearing:\n%s", rules)
+		t.Fatalf("Aula's rules left after clearing:\n%s", rules)
 	}
-}
-
-// aulaRules lists the NRPT rules tagged as Aula's ("" if none).
-func aulaRules(t *testing.T) string {
-	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-	exe := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
-	out, err := exec.CommandContext(ctx, exe, "-NoProfile", "-NonInteractive", "-Command",
-		"Get-DnsClientNrptRule | Where-Object { $_.Comment -eq 'aula-filtro-web' } | ForEach-Object { $_.Name } | Out-String").CombinedOutput()
-	if err != nil {
-		t.Fatalf("Get-DnsClientNrptRule: %v %s", err, out)
-	}
-	return strings.TrimSpace(string(out))
 }

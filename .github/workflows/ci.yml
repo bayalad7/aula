@@ -84,7 +84,7 @@ jobs:
       - name: Install Wails Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev nftables
           sudo useradd -m ana
 
       - name: Ciclo del servicio y pruebas como root
@@ -94,11 +94,20 @@ jobs:
           CGO_ENABLED: '1'
         run: |
           sudo -E env "PATH=$PATH" go test -tags servicetest -run TestServiceLifecycle -v ./apps/student/
-          sudo -E env "PATH=$PATH" go test -run 'TestLaunchAsTheStudent|TestServiceInstallWritesTheUnit|TestLocalChannel' -v ./internal/platform/
+          sudo -E env "PATH=$PATH" go test -run 'TestLaunchAsTheStudent|TestServiceInstallWritesTheUnit|TestLocalChannel|TestNftTableForReal' -v ./internal/platform/
 
-      - name: Quitar la unidad de prueba
+      # The class restrictions on a real system (D-025): the nftables table, the
+      # browser policies and the resolver, resolving as an ordinary user.
+      - name: Restricciones de la clase (nftables y políticas de navegadores)
+        env:
+          AULA_ADMIN_TEST: '1'
+          GOFLAGS: -tags=webkit2_41
+        run: sudo -E env "PATH=$PATH" go test -tags admintest -run Admin -v ./internal/policy/
+
+      - name: Quitar la unidad de prueba y la tabla del filtro
         if: always()
         run: |
+          sudo nft delete table inet aula 2>/dev/null || true
           sudo systemctl disable --now aula-agente-prueba.service 2>/dev/null || true
           sudo rm -f /etc/systemd/system/aula-agente-prueba.service
           sudo systemctl daemon-reload

@@ -24,6 +24,8 @@ license: Propietaria
 depends:
   - libgtk-3-0 | libgtk-3-0t64
   - libwebkit2gtk-4.1-0
+  # El filtro web de la clase: una tabla propia de nftables (D-025).
+  - nftables
 # xdg-open: abrir una página en el navegador del alumno (open.url).
 recommends:
   - xdg-utils
@@ -32,6 +34,7 @@ overrides:
     depends:
       - gtk3
       - webkit2gtk4.1
+      - nftables
 
 contents:
   - src: ./bin/aula-cliente

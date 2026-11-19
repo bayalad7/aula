@@ -42,6 +42,10 @@ type Opener struct {
 	// Session opens in the student's session; nil: the agent does not
 	// declare open.* (no session or no helper).
 	Session Session
+	// URLOnly: this system opens pages but has no rules to start apps yet
+	// (Linux, docs/compatibilidad.md): only open.url is declared, and
+	// open.app is refused as an unsupported capability.
+	URLOnly bool
 	// Who returns the teacher and channel of the connected console.
 	Who func() (teacher, channel string)
 	// OnOpened is called after the OS opened it.
@@ -58,10 +62,14 @@ type Opener struct {
 // Available reports whether the agent can open anything.
 func (o *Opener) Available() bool { return o != nil && o.Session != nil }
 
-// Capabilities are open.url and open.app when Available.
+// Capabilities are open.url and open.app when Available (only open.url
+// with URLOnly).
 func (o *Opener) Capabilities() []protocol.Capability {
 	if !o.Available() {
 		return nil
+	}
+	if o.URLOnly {
+		return []protocol.Capability{protocol.CapOpenURL}
 	}
 	return []protocol.Capability{protocol.CapOpenURL, protocol.CapOpenApp}
 }
@@ -118,7 +126,7 @@ func (o *Opener) Handle(ctx context.Context, send Sender, env protocol.Envelope)
 	default:
 		return nil, false
 	}
-	if !o.Available() {
+	if !o.Available() || (kind == KindApp && o.URLOnly) {
 		return protocol.NewError(env.ID, protocol.CodeUnsupportedCapability, "este agente no soporta "+string(env.Type)), true
 	}
 	log := o.log().With("open_id", openID, "kind", kind)

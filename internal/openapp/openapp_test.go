@@ -318,3 +318,26 @@ func TestTracker(t *testing.T) {
 		t.Error("Clear")
 	}
 }
+
+// URLOnly (Linux for now): pages open, apps are an unsupported capability
+// and nothing starts.
+func TestOpenerURLOnly(t *testing.T) {
+	l := &fakeLauncher{}
+	o := &Opener{Session: Local{Launcher: l}, URLOnly: true}
+	if caps := o.Capabilities(); len(caps) != 1 || caps[0] != protocol.CapOpenURL {
+		t.Fatalf("capabilities %v, want only open.url", caps)
+	}
+	var got acks
+	env := protocol.New(protocol.OpenApp{OpenID: protocol.NewID(), AppID: "thonny", Name: "Thonny", Path: `C:\Program Files\Thonny\thonny.exe`})
+	reply, ok := o.Handle(context.Background(), got.send, env)
+	if e, isErr := reply.(protocol.ErrorPayload); !ok || !isErr || e.Code != protocol.CodeUnsupportedCapability {
+		t.Fatalf("open.app = %#v, want unsupported_capability", reply)
+	}
+	if _, ok := o.Handle(context.Background(), got.send, protocol.New(protocol.OpenURL{OpenID: protocol.NewID(), URL: "https://python.org"})); !ok {
+		t.Fatal("open.url not handled")
+	}
+	o.Wait()
+	if len(l.started) != 0 || len(l.opened) != 1 {
+		t.Fatalf("started %v, opened %v", l.started, l.opened)
+	}
+}

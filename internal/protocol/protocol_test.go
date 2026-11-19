@@ -203,6 +203,8 @@ func TestOpenLimits(t *testing.T) {
 		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: "a\nb", Path: app.Path},
 		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: app.Name, Path: ""},
 		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: app.Name, Path: strings.Repeat("a", MaxOpenAppPath+1)},
+		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: app.Name, Desktop: strings.Repeat("a", MaxOpenAppDesktop+1)},
+		OpenApp{OpenID: testRefID, AppID: app.AppID, Name: app.Name, Desktop: "a\nb.desktop"},
 		OpenAck{RefID: testRefID, OpenID: testRefID, Status: OpenOpened, Reason: OpenBusy},
 		OpenAck{RefID: testRefID, OpenID: testRefID, Status: OpenFailed},
 		OpenAck{RefID: testRefID, OpenID: testRefID, Status: "closed"},
@@ -211,6 +213,10 @@ func TestOpenLimits(t *testing.T) {
 		if err := p.Validate(); !errors.Is(err, ErrInvalidMessage) {
 			t.Errorf("%T %+v: Validate = %v, want invalid_message", p, p, err)
 		}
+	}
+	// Linux only (prompt 13): the .desktop id alone is enough.
+	if err := (OpenApp{OpenID: testRefID, AppID: "thonny", Name: "Thonny", Desktop: "org.thonny.Thonny.desktop"}).Validate(); err != nil {
+		t.Errorf("desktop only: %v", err)
 	}
 	if err := app.Validate(); err != nil {
 		t.Errorf("a path outside the rules is still a valid message (the agent answers not_allowed): %v", err)

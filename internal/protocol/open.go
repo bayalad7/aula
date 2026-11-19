@@ -13,6 +13,8 @@ const (
 	MaxOpenURL     = 2048
 	MaxOpenAppName = 60
 	MaxOpenAppPath = 260
+	// MaxOpenAppDesktop is the length of the Linux .desktop id of open.app.
+	MaxOpenAppDesktop = 255
 )
 
 // OpenStatus is the result an open.ack reports.
@@ -88,7 +90,10 @@ type OpenApp struct {
 	OpenID string `json:"open_id"`
 	AppID  string `json:"app_id"`
 	Name   string `json:"name"`
-	Path   string `json:"path"`
+	Path   string `json:"path,omitempty"` // the .exe on Windows
+	// Desktop is the app's id on Linux ("org.thonny.Thonny.desktop"); each
+	// agent uses the one of its OS (§5.22). At least one of the two.
+	Desktop string `json:"desktop,omitempty"`
 }
 
 // MessageType implements Payload.
@@ -109,8 +114,14 @@ func (p OpenApp) Validate() error {
 	if strings.ContainsFunc(p.Name, unicode.IsControl) {
 		return invalid(TypeOpenApp, "name has control characters")
 	}
-	if p.Path == "" || utf8.RuneCountInString(p.Path) > MaxOpenAppPath {
-		return invalid(TypeOpenApp, "path must be 1-%d characters", MaxOpenAppPath)
+	if p.Path == "" && p.Desktop == "" {
+		return invalid(TypeOpenApp, "path or desktop is required")
+	}
+	if utf8.RuneCountInString(p.Path) > MaxOpenAppPath {
+		return invalid(TypeOpenApp, "path must be at most %d characters", MaxOpenAppPath)
+	}
+	if utf8.RuneCountInString(p.Desktop) > MaxOpenAppDesktop || strings.ContainsFunc(p.Desktop, unicode.IsControl) {
+		return invalid(TypeOpenApp, "desktop must be at most %d characters, without control characters", MaxOpenAppDesktop)
 	}
 	return nil
 }

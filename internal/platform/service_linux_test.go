@@ -250,6 +250,7 @@ func TestPowerArgsAndLogoff(t *testing.T) {
 		t.Errorf("forced powerArgs = %q", got)
 	}
 	t.Setenv("XDG_SESSION_ID", "4")
+	t.Setenv("XDG_CURRENT_DESKTOP", "") // no desktop: loginctl, as before
 	calls := fakeCommands(t, map[string]string{"loginctl terminate-session 4": ""})
 	p := systemdPower{}
 	if err := p.Logoff(7, false); !errors.Is(err, ErrNotSupported) {
@@ -318,5 +319,50 @@ func TestLaunchAsTheStudent(t *testing.T) {
 	// A session that is no longer the user's is refused.
 	if _, err := (logindSessions{}).Launch(Session{ID: 5, User: "ana", SID: "4242"}, "/bin/true", nil); err == nil {
 		t.Fatal("launched into a session of another user")
+	}
+}
+
+func TestSessionLogout(t *testing.T) {
+	for desktop, want := range map[string]string{
+		"ubuntu:GNOME":        "gnome-session-quit --logout --no-prompt",
+		"GNOME-Classic:GNOME": "gnome-session-quit --logout --no-prompt",
+		"X-Cinnamon":          "cinnamon-session-quit --logout --no-prompt",
+		"MATE":                "mate-session-save --logout",
+		"KDE":                 "",
+		"XFCE":                "",
+		"":                    "",
+	} {
+		name, args := sessionLogout(desktop)
+		if got := strings.TrimSpace(name + " " + strings.Join(args, " ")); got != want {
+			t.Errorf("sessionLogout(%q) = %q, want %q", desktop, got, want)
+		}
+	}
+}
+
+// Without force, GNOME's session manager logs out (programs may ask to
+// save); loginctl is not used. With force, loginctl ends the session.
+func TestLogoffAsksTheSessionManager(t *testing.T) {
+	bin := t.TempDir()
+	marker := filepath.Join(t.TempDir(), "llamado")
+	script := "#!/bin/sh\necho \"$@\" > " + marker + "\n"
+	if err := os.WriteFile(filepath.Join(bin, "gnome-session-quit"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("XDG_CURRENT_DESKTOP", "ubuntu:GNOME")
+	t.Setenv("XDG_SESSION_ID", "4")
+	calls := fakeCommands(t, map[string]string{"loginctl terminate-session 4": ""})
+	p := systemdPower{}
+	if err := p.Logoff(4, false); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := os.ReadFile(marker); strings.TrimSpace(string(got)) != "--logout --no-prompt" {
+		t.Fatalf("gnome-session-quit got %q", got)
+	}
+	if len(*calls) != 0 {
+		t.Fatalf("loginctl was used without force: %v", *calls)
+	}
+	if err := p.Logoff(4, true); err != nil || len(*calls) != 1 {
+		t.Fatalf("with force: %v, calls %v", err, *calls)
 	}
 }

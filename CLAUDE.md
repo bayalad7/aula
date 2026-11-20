@@ -139,6 +139,18 @@ misma LAN.
 - Cambios pequeños e incrementales; no refactorizar paquetes ajenos a la tarea.
 - Antes de terminar: `gofmt -l` (sin salida), `go vet ./...`, `staticcheck ./...`, `go test -race ./...`
   y `govulncheck ./...` (sin vulnerabilidades que el código llame; ver Integración continua).
+- **Docker solo para probar, y se limpia siempre al terminar** (el disco del equipo de desarrollo
+  se llenó con Docker; `docs/desarrollo/empaquetar-linux.md`, «Docker sin llenar el disco»):
+  - No crear imágenes propias (`docker build`): su caché de construcción se queda en el disco y no
+    se puede borrar por separado. Usar `docker run --rm` sobre la imagen base (`ubuntu:24.04`,
+    `fedora:42`) e instalar lo necesario dentro del contenedor.
+  - Todo lo que se cree lleva el prefijo `aula-` (contenedores con `--name aula-…`, volúmenes
+    `aula-…`) para reconocerlo; **nunca** tocar contenedores, imágenes, volúmenes ni caché de otros
+    proyectos.
+  - Al terminar la prueba: `docker rm -f` de los contenedores `aula-…`, `docker volume rm` de los
+    volúmenes `aula-…`, `docker rmi` de las imágenes base que bajó esta sesión (si nadie más las
+    usa), y `docker system df` para comprobarlo. Si Docker Desktop estaba detenido al empezar, se
+    vuelve a detener.
 
 ## Definición de terminado (toda función nueva o cambio visible)
 Vale para cualquier prompt, aunque se haya escrito antes de las etapas 18 y 19. Lo marcado con
@@ -309,7 +321,8 @@ nueva que toca el SO agrega su fila. Linux va por capas (D-023): la capa 1 (pant
 en X11, `Documentos/Aula`, paquetes) y la 2 (servicio de systemd con ayudante, D-024; control
 remoto y pausa en X11; energía, encender y salud) están hechas; de la 3, abrir páginas y apps
 (por su `.desktop` del sistema), el comprobador de red, las restricciones (D-025, `nftables`), el
-icono del área de notificación (StatusNotifierItem) y cerrar sesión que deja guardar.
+icono del área de notificación (StatusNotifierItem), cerrar sesión que deja guardar y transmitir
+y proyectar con openh264 (por `dlopen`; el alumno Linux aún no recibe transmisiones, P-07).
 Lo no portado no se declara.
 
 ## Privacidad (no negociable)

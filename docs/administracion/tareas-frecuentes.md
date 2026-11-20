@@ -29,6 +29,10 @@ Para terminar, pulsa **Detener** en la franja: la transmisión termina en todos 
 cada alumno vuelve a como estaba, sin tocar sus programas. Por ahora, solo equipos con Windows
 pueden recibirla.
 
+**Si tu consola está en Linux:** también puedes transmitir (en la sesión «Ubuntu en Xorg» y con
+openh264 instalado), pero Linux no deja ocultar una ventana: la de Aula también se ve en la
+transmisión si está a la vista, y la franja te lo recuerda. Minimízala o ponla en otro monitor.
+
 Nadie queda bloqueado: si un equipo pierde la conexión con tu consola, o tu consola deja de
 responder, su pantalla completa se quita sola en unos segundos. También termina al cerrar la
 clase o cambiar de canal. Si ese alumno se reconecta mientras sigues transmitiendo, vuelve a

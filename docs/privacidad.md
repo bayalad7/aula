@@ -880,7 +880,17 @@ Aprobada el 2026-11-18 con el prompt 13.
        se borra y los archivos vuelven a ser los de antes (el diario de la regla 24). La tabla
        no se guarda en disco: **reiniciar el equipo la quita siempre**, aunque Aula fallara.
 
+106. **Transmitir y proyectar desde Linux, con las reglas 12–17 y las de proyectar.** En una
+     sesión X11 la consola Linux puede transmitir la pantalla del profesor y el agente Linux
+     puede proyectar la del alumno, con los mismos avisos, banda y título que en Windows; en
+     Wayland no se ofrece. Linux no deja sacar una ventana de la captura: **la ventana de Aula
+     también se ve** en lo que se transmite o proyecta. La franja de la consola lo dice («Tu
+     ventana de Aula también se ve») y el alumno que proyecta ve su propia banda en lo que
+     muestra. Codifica con openh264 en el propio equipo; nada se guarda en disco. Un alumno
+     Linux **no recibe** transmisiones: su visor (WebKitGTK) no trae WebRTC, y no declara
+     `screen.broadcast`.
+
 ## Pendiente para etapas futuras
 
-- Linux, siguiente parte (recepción y envío de transmisiones) y macOS: sus textos de aviso se agregarán aquí antes
+- Linux, siguiente parte (recibir transmisiones en el alumno Linux: P-07) y macOS: sus textos de aviso se agregarán aquí antes
   de implementarlos, con las mismas reglas 6–49.

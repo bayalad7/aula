@@ -198,6 +198,9 @@ retiraron; esta es la primera.
 - En Linux, cerrar la ventana del alumno la deja en el **área de notificación**, con su icono y
   el menú «Abrir Aula», y el icono se marca cuando llega algo, como en Windows. Donde el
   escritorio no muestra esos iconos, cerrar sigue minimizando.
+- **Mostrar tu pantalla** desde una consola Linux y **proyectar** la de un alumno Linux a la
+  clase (sesión «Ubuntu en Xorg», con openh264). En Linux la ventana de Aula también se ve en lo
+  que se transmite, y la franja lo dice. Un alumno Linux todavía no puede ver transmisiones.
 - **Bloquear apps y sitios** también en Linux, con los mismos avisos: nunca se cierra el
   escritorio y reiniciar el equipo siempre quita el filtro de sitios.
 - **Comprobar la conexión** lee el firewall de una consola Linux (`firewalld`; con `ufw`, sin
@@ -208,5 +211,5 @@ retiraron; esta es la primera.
 
 ### Todavía no
 
-- La asistencia y bitácora, la auto-actualización, macOS y, en Linux, transmitir y proyectar
-  pantallas.
+- La asistencia y bitácora, la auto-actualización, macOS y, en Linux, ver las transmisiones en
+  el equipo del alumno.

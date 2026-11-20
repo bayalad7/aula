@@ -32,7 +32,7 @@ ventana siempre encima. Por eso, para ver la pantalla del alumno, el laboratorio
 | Recibir archivos y plantillas en `Documentos/Aula` | ✓ | ✓ (`xdg-user-dir DOCUMENTS`: `~/Documentos/Aula`) | ✓ | ✗ (falta su carpeta de trabajo) |
 | Recoger su trabajo de `Documentos/Aula/recolecciones` | ✓ | ✓ | ✓ | ✗ |
 | Ver la transmisión del profesor o de un compañero | ✓ | ✗ (el WebKitGTK de Ubuntu 24.04 no trae WebRTC; el agente lo declara solo si su WebView lo tiene) | igual que X11 | sin probar |
-| Proyectar su pantalla a la clase | ✓ | ✗ (falta un codificador H.264; decisión aparte) | ✗ (Wayland) | ✗ |
+| Proyectar su pantalla a la clase | ✓ | ✓ con openh264 (`libopenh264-7`); su ventana de Aula también se ve en lo proyectado | ✗ (Wayland) | ✗ |
 | Control remoto | ✓ | ✓ (XTEST; se pausa cuando el alumno usa su teclado o ratón) | ✗ (Wayland no permite inyectar teclado y ratón sin portal) | ✗ (falta el permiso de Accesibilidad) |
 | Pausar su pantalla | ✓ | ✓ (una ventana por monitor) | ✗ (Wayland no deja una ventana encima de todo) | ✗ |
 | Apagar, reiniciar y cerrar sesión | ✓ | ✓ (systemd); cerrar sesión sin «forzar» deja guardar en GNOME, Cinnamon y MATE; en otros escritorios cierra los programas sin preguntar | igual que X11 | ✗ |
@@ -56,7 +56,7 @@ ventana siempre encima. Por eso, para ver la pantalla del alumno, el laboratorio
 | Atajo global Ctrl+Alt+Mayús+C para capturar el portapapeles | ✓ | ✓ | ✗ (Wayland no permite atajos globales a una app; queda «Pegar» en Código) | ✗ |
 | Ver miniaturas y capturas de los alumnos | ✓ | ✓ | ✓ (lo que falta en Wayland es del lado del alumno) | sin probar |
 | Abrir las carpetas de capturas y recolecciones | ✓ | ✓ (`xdg-open`) | ✓ | ✗ |
-| Transmitir su pantalla | ✓ | ✗ (falta un codificador H.264; decisión aparte) | ✗ | ✗ |
+| Transmitir su pantalla | ✓ | ✓ con openh264 (`libopenh264-7`); la ventana de Aula también se ve y la franja lo dice | ✗ | ✗ |
 | Comprobador de conexión | ✓ | ✓ con `firewalld` o sin firewall; con `ufw` activo, sus reglas solo se leen como root, y el paso de la red queda sin juzgar (Linux no tiene redes «Públicas») | igual que X11 | sin probar |
 | Clave del centro (`aula-consola centro …`) | ✓ (`%ProgramData%\Aula\centro`) | ✓ (`/etc/Aula/centro`, grupo `aula`: `sudo usermod -aG aula <maestro>`) | ✓ | sin probar |
 | Paquete | `Aula-Consola-Setup-x.y.z.exe` | `.deb`, `.rpm` y AppImage (la AppImage usa el WebKitGTK del sistema) | igual que X11 | ✗ |

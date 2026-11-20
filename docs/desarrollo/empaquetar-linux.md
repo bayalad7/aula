@@ -85,7 +85,7 @@ en el CI y en un contenedor corren bajo Xvfb, **nunca** en el escritorio de una 
 atajo se prueba con teclas sintéticas de XTEST):
 
 ```sh
-GOFLAGS=-tags=webkit2_41 xvfb-run -a go test ./internal/platform/ ./apps/student/
+GOFLAGS=-tags=webkit2_41 xvfb-run -a -s -noreset dbus-run-session -- go test ./internal/platform/ ./apps/student/
 ```
 
 ## El servicio con systemd real
@@ -111,3 +111,46 @@ Lo que Xvfb no ve (un gestor de ventanas real, la sesión «Ubuntu en Xorg» fre
 servicio con una sesión gráfica real de logind, el portapapeles con otras apps) está en
 `docs/prueba-vms.md` §31 y §32 y en los casos C-162 a C-168 y A-66 a A-71 de
 `probar-consola-local.md`.
+
+## openh264 (transmitir y proyectar)
+
+El codificador H.264 de Linux es openh264, cargado al vuelo con `dlopen` desde
+`libopenh264.so.7` (`internal/platform/h264_linux.go`, solo con cgo). Para compilar hacen falta
+sus cabeceras (`libopenh264-dev`); en el equipo, solo la biblioteca (`libopenh264-7`, que los
+paquetes recomiendan). Sin ella, Aula arranca igual: la consola no ofrece «Mostrar mi pantalla» y
+el agente no declara `screen.present`.
+
+**Patentes:** Cisco paga la licencia de patentes de H.264 solo para **su** binario, descargado de
+`http://ciscobinary.openh264.org/libopenh264-2.4.1-linux64.7.so.bz2` (versión de la ABI de las
+cabeceras). El paquete de Debian/Ubuntu se compila desde el código fuente y no lleva esa
+cobertura. Para un centro que lo necesite: bajar ese archivo, descomprimirlo en
+`/usr/local/lib/libopenh264.so.7` y correr `sudo ldconfig`.
+
+## Docker sin llenar el disco
+
+Docker es solo para probar, y lo que se crea se borra al terminar. En el equipo de desarrollo
+el disco se llenó con imágenes, volúmenes y, sobre todo, la caché de construcción de
+`docker build`, que no se puede borrar por proyecto. Por eso:
+
+- **Sin imágenes propias.** Nada de `docker build`: se usa la imagen base con `--rm` y se instala
+  dentro lo que haga falta (más lento la primera vez, pero no deja caché).
+
+  ```sh
+  docker run --rm --name aula-prueba -v "$PWD:/src:ro" ubuntu:24.04 bash -c '
+    apt-get update -qq && apt-get install -y -qq libgtk-3-dev libwebkit2gtk-4.1-dev xvfb ...
+    ...'
+  ```
+- **Todo con el prefijo `aula-`** (contenedores y volúmenes), para reconocerlo y no tocar nunca lo
+  de otros proyectos.
+- **Al terminar:**
+
+  ```sh
+  docker ps -a --filter name=aula- -q | xargs -r docker rm -f
+  docker volume ls -q --filter name=aula- | xargs -r docker volume rm
+  docker rmi ubuntu:24.04 fedora:42   # solo las que bajó esta prueba y nadie más usa
+  docker system df                    # comprobar que no quedó nada de Aula
+  ```
+- **El disco de Docker Desktop no se encoge solo.** En Windows, Docker guarda todo en un disco
+  virtual (`docker_data.vhdx`) que crece y no devuelve el espacio al borrar. Para recuperarlo:
+  Docker Desktop › Troubleshoot › «Clean / Purge data», o con Docker detenido,
+  `wsl --shutdown` y compactar el `.vhdx` (`Optimize-VHD` o `diskpart` › `compact vdisk`).

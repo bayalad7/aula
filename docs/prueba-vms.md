@@ -1424,3 +1424,17 @@ Calculadora instalados. Todo a ojo en L2.
 | **LXR-E** Reinicio a mitad | Con el filtro puesto, apaga L2 de golpe (sin cerrar Aula) y vuelve a encenderla. | Al arrancar no hay tabla `aula` y YouTube carga; el servicio restaura los archivos de los navegadores desde el diario. |
 
 **Para aceptar** bastan LXR-A a LXR-C en ✅.
+
+## 34. Linux: transmitir y proyectar (13, regla 106)
+
+L1 (consola Linux) y L2 (alumno Linux) de §31, con `libopenh264-7` instalado y sesión «Ubuntu en
+Xorg», más una VM Windows de alumno (W1). Todo a ojo en cada VM.
+
+| Caso | Pasos | Esperado |
+|---|---|---|
+| **LXT-A** Transmitir (**aceptación**) | En L1, **Mostrar mi pantalla** en ventana y luego en pantalla completa a W1. | W1 ve la pantalla de L1 fluida; la franja de L1 dice que la ventana de Aula también se ve; Detener la quita. |
+| **LXT-B** Proyectar (**aceptación**) | Desde la consola, **Proyectar a la clase** la pantalla de L2. | W1 ve la pantalla de L2 con su nombre; L2 muestra su banda de proyección; al detener, se va. |
+| **LXT-C** Sin openh264 | En L1, `sudo apt remove libopenh264-7` y abre la consola. | «Mostrar mi pantalla» no está disponible, sin errores; el registro dice que falta el codificador. |
+| **LXT-D** Alumno Linux recibe | Transmite desde W-consola con L2 conectado. | L2 no la recibe (no declara `screen.broadcast`): la consola lo cuenta aparte, sin fallar (P-07). |
+
+**Para aceptar** bastan LXT-A y LXT-B en ✅.

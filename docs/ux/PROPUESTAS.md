@@ -114,3 +114,21 @@ SemVer).
 # App del alumno (prompt 19)
 
 Todavía sin propuestas.
+
+## P-07 · Recibir transmisiones en el alumno Linux
+
+**Estado:** propuesta (2026-11-20, etapa 13). **Por qué:** el WebKitGTK de Ubuntu 24.04 no trae
+WebRTC (`RTCPeerConnection` no existe), así que un alumno Linux no puede ver la pantalla que
+transmite el profesor ni la de un compañero proyectada, aunque Linux ya pueda **enviarlas**
+(regla 106).
+
+**Opciones:**
+1. **Visor nativo:** el agente recibe la pista con pion en Go, decodifica H.264 (openh264 tiene
+   decodificador) y pinta los cuadros en una ventana X11 propia, con la misma banda de
+   transparencia. Funciona en cualquier distribución; es la opción más larga.
+2. **Cuadros por la ventana actual:** pion en Go decodifica y manda imágenes (JPEG) a la ventana
+   de Wails por eventos, como las miniaturas. Simple, pero pesado a 10–15 cuadros por segundo.
+3. **Esperar un WebKitGTK con WebRTC:** algunas distribuciones lo compilan con WebRTC
+   (GStreamer); depende del sistema y no de Aula.
+
+**Recomendación:** la 1, como etapa propia, cuando haya laboratorios Linux que lo pidan.

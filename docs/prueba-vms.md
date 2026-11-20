@@ -1404,7 +1404,7 @@ Wake-on-LAN en el hipervisor si se prueba LX2-F. Todo a ojo en cada VM.
 | **LX2-B** Control remoto (**aceptación**) | Toma el control de L2, escribe en su editor y luego mueve el ratón de L2. | Aviso antes de la primera entrada y banda; lo escrito llega; el control se pausa cuando el alumno usa su equipo. Al detener, ninguna tecla queda presionada. |
 | **LX2-C** Pausa (**aceptación**) | Pausa L2 con un mensaje; con la pausa puesta, transmite (si la consola es Windows) o lanza una cuenta regresiva de energía y cancélala. | La pausa cubre todos los monitores de L2 y recibe los clics; la cuenta regresiva queda encima de la pausa; al reanudar, desaparece. |
 | **LX2-D** Wayland | Entra en L2 con «Ubuntu» (Wayland). | El ayudante abre la ventana; la consola no ofrece pantalla, control remoto ni pausa para L2. |
-| **LX2-E** Energía | Apaga L2 sin «forzar» con un documento sin guardar; vuelve a encenderla. Luego **Cerrar sesión**. | El apagado espera la cuenta regresiva; cerrar sesión termina la sesión (Linux no pregunta si guardar: regla 102). |
+| **LX2-E** Energía | Apaga L2 sin «forzar» con un documento sin guardar; vuelve a encenderla. Luego, con un texto sin guardar en el Editor de texto, **Cerrar sesión** sin forzar y después forzando. | El apagado espera la cuenta regresiva. Sin forzar, GNOME muestra que el Editor tiene trabajo sin guardar y el alumno decide; forzando, la sesión se cierra sin preguntar (regla 102). |
 | **LX2-F** Encender | Con L2 apagada, **Encender** desde la consola. | L2 enciende (si el hipervisor o la BIOS tienen Wake-on-LAN). |
 | **LX2-G** Quitar | `sudo apt purge aula-cliente` en L2. | El servicio se detiene y desaparece (`systemctl status aula-agente`: no existe), la ventana se cierra y `/var/log/aula` se borra. |
 

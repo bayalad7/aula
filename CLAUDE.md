@@ -308,7 +308,8 @@ Qué funciona en cada SO: `docs/compatibilidad.md` (una fila por función visibl
 nueva que toca el SO agrega su fila. Linux va por capas (D-023): la capa 1 (pantalla y atajo solo
 en X11, `Documentos/Aula`, paquetes) y la 2 (servicio de systemd con ayudante, D-024; control
 remoto y pausa en X11; energía, encender y salud) están hechas; de la 3, abrir páginas y apps
-(por su `.desktop` del sistema), el comprobador de red y las restricciones (D-025, `nftables`).
+(por su `.desktop` del sistema), el comprobador de red, las restricciones (D-025, `nftables`), el
+icono del área de notificación (StatusNotifierItem) y cerrar sesión que deja guardar.
 Lo no portado no se declara.
 
 ## Privacidad (no negociable)

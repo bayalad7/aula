@@ -35,13 +35,13 @@ ventana siempre encima. Por eso, para ver la pantalla del alumno, el laboratorio
 | Proyectar su pantalla a la clase | ✓ | ✗ (falta un codificador H.264; decisión aparte) | ✗ (Wayland) | ✗ |
 | Control remoto | ✓ | ✓ (XTEST; se pausa cuando el alumno usa su teclado o ratón) | ✗ (Wayland no permite inyectar teclado y ratón sin portal) | ✗ (falta el permiso de Accesibilidad) |
 | Pausar su pantalla | ✓ | ✓ (una ventana por monitor) | ✗ (Wayland no deja una ventana encima de todo) | ✗ |
-| Apagar, reiniciar y cerrar sesión | ✓ | parcial: apagar y reiniciar ✓ (systemd); cerrar sesión sin «forzar» también cierra los programas abiertos, sin dejarles guardar | igual que X11 | ✗ |
+| Apagar, reiniciar y cerrar sesión | ✓ | ✓ (systemd); cerrar sesión sin «forzar» deja guardar en GNOME, Cinnamon y MATE; en otros escritorios cierra los programas sin preguntar | igual que X11 | ✗ |
 | Bloquear apps y filtro web | ✓ (como servicio) | ✓ como servicio: apps del alumno (`app.slice` en GNOME; nunca el escritorio) y DNS con una tabla de `nftables` que reiniciar quita | ✓ (igual que X11: no dependen de la pantalla) | ✗ |
 | Abrir una página o una app permitida | ✓ | ✓ páginas con `xdg-open`; apps por su `.desktop` del sistema con `gio launch` (en Ajustes › Apps permitidas, el campo «App de Linux») | igual que X11 | ✗ |
 | Encender el equipo desde la consola (Wake-on-LAN: el agente informa su MAC) | ✓ | ✓ (Wake-on-LAN activado en la BIOS y en la tarjeta) | ✓ | ✗ |
 | Salud del laboratorio | ✓ | parcial: todo menos la falla del disco (S.M.A.R.T.), que necesita root y una herramienta aparte; autodiagnóstico ✓ | igual que X11 | ✗ (se declara sin datos) |
 | Arranque | Servicio de Windows con ayudante en la sesión | Servicio de systemd (`aula-agente.service`) con ayudante en la sesión del alumno; arranca con el equipo, también sin sesión | igual que X11 | ✗ |
-| Icono del área de notificación | ✓ | ✗ (pendiente; cerrar minimiza la ventana y nunca termina el agente) | ✗ (igual) | ✗ |
+| Icono del área de notificación | ✓ | ✓ (StatusNotifierItem: GNOME de Ubuntu con la extensión AppIndicator, KDE, XFCE, Cinnamon); sin quien muestre iconos, cerrar minimiza y nunca termina el agente | igual que X11 | ✗ |
 | Modo compacto | ✓ (ventana nativa) | parcial: solo con Wails, sin quedar encima | igual que X11 | sin probar |
 | Diagnóstico `aula-cliente diagnostico` | ✓ | ✓ (dice si la sesión es X11 o Wayland, qué falta y la salud) | ✓ | sin probar |
 | Configurar canal y clave | Instalador (asistente o `/CANAL=`) | `sudo aula-cliente configurar -canal N -clave aula-centro.pub` | igual que X11 | — |

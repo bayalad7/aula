@@ -190,11 +190,14 @@ retiraron; esta es la primera.
   no ve ni controla la pantalla y lo dice: la ficha lo muestra como no disponible y
   `aula-cliente diagnostico` explica qué hacer.
 - **Apagar, reiniciar y cerrar sesión**, **encender equipos** y la **salud del laboratorio** con
-  su autodiagnóstico también en Linux (sin la revisión S.M.A.R.T. del disco). En Linux, cerrar
-  sesión no les pregunta a los programas si guardar.
+  su autodiagnóstico también en Linux (sin la revisión S.M.A.R.T. del disco). Cerrar sesión sin
+  «forzar» deja que los programas pidan guardar en GNOME, Cinnamon y MATE, como en Windows.
 - **Abrir una página o una app** también en Linux. En Ajustes › Apps permitidas, cada app suma
   su nombre en Linux (por ejemplo `org.thonny.Thonny.desktop`); una misma lista sirve a un
   laboratorio con Windows y Linux.
+- En Linux, cerrar la ventana del alumno la deja en el **área de notificación**, con su icono y
+  el menú «Abrir Aula», y el icono se marca cuando llega algo, como en Windows. Donde el
+  escritorio no muestra esos iconos, cerrar sigue minimizando.
 - **Bloquear apps y sitios** también en Linux, con los mismos avisos: nunca se cierra el
   escritorio y reiniciar el equipo siempre quita el filtro de sitios.
 - **Comprobar la conexión** lee el firewall de una consola Linux (`firewalld`; con `ufw`, sin
@@ -206,4 +209,4 @@ retiraron; esta es la primera.
 ### Todavía no
 
 - La asistencia y bitácora, la auto-actualización, macOS y, en Linux, transmitir y proyectar
-  pantallas y el icono del área de notificación.
+  pantallas.

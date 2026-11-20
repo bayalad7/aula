@@ -843,8 +843,10 @@ función; esto es lo que se precisa en Linux.
 102. **Energía con la misma cuenta regresiva.** Apagar, reiniciar y cerrar sesión cumplen las
      reglas 26–30; en Linux los ejecuta systemd (`systemctl`, `loginctl`). Sin «forzar», los
      programas que lo pidan pueden retrasar el apagado y el reinicio; con «forzar», no. **Cerrar
-     sesión** termina la sesión del alumno con o sin «forzar»: Linux no les pregunta a los
-     programas si guardar. La cuenta regresiva y su aviso son la oportunidad de guardar.
+     sesión** sin «forzar» se la pide el ayudante al gestor de sesión del escritorio (GNOME,
+     Cinnamon y MATE), que deja que los programas con trabajo sin guardar avisen al alumno, como
+     en Windows; en otros escritorios, y con «forzar», `loginctl` termina la sesión sin
+     preguntar. La cuenta regresiva y su aviso son siempre la oportunidad de guardar.
 103. **Salud: la misma lista cerrada.** El agente de Linux informa los datos de la regla 92 que
      el sistema le da sin permisos especiales (disco, memoria, procesador, encendido, reinicio
      pendiente, red y batería); la falla del disco (S.M.A.R.T.) no se lee. Nunca procesos,
@@ -880,6 +882,5 @@ Aprobada el 2026-11-18 con el prompt 13.
 
 ## Pendiente para etapas futuras
 
-- Linux, siguientes partes (recepción y envío de transmisiones, icono del área de
-  notificación) y macOS: sus textos de aviso se agregarán aquí antes
+- Linux, siguiente parte (recepción y envío de transmisiones) y macOS: sus textos de aviso se agregarán aquí antes
   de implementarlos, con las mismas reglas 6–49.

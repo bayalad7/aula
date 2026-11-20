@@ -159,13 +159,13 @@ jobs:
       - name: Install Wails Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev xvfb
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libopenh264-dev xvfb
 
       # The X11 parts (notice, capture, hotkey) run under Xvfb, never on a desktop.
       - name: Tests (X11 under Xvfb)
         env:
           GOFLAGS: -tags=webkit2_41
-        run: xvfb-run -a dbus-run-session -- go test ./...
+        run: xvfb-run -a -s -noreset dbus-run-session -- go test ./...
 
       - name: Install the Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1

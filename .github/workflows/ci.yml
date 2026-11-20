@@ -33,9 +33,11 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev xvfb
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libopenh264-dev xvfb
           echo "GOFLAGS=-tags=webkit2_41" >> "$GITHUB_ENV"
-          echo "XVFB=xvfb-run -a dbus-run-session --" >> "$GITHUB_ENV"
+          # -noreset: Xvfb resets when its last client leaves, and a test that
+          # connects right then gets "connection reset" (flaky X11 tests).
+          echo "XVFB=xvfb-run -a -s -noreset dbus-run-session --" >> "$GITHUB_ENV"
 
       - name: gofmt
         run: |
@@ -84,7 +86,7 @@ jobs:
       - name: Install Wails Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev nftables
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libopenh264-dev nftables
           sudo useradd -m ana
 
       - name: Ciclo del servicio y pruebas como root
@@ -133,7 +135,7 @@ jobs:
       - name: Install Wails Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libopenh264-dev
 
       - name: Build the apps
         env:
@@ -180,7 +182,7 @@ jobs:
       - name: Install Wails Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libopenh264-dev
           echo "GOFLAGS=-tags=webkit2_41" >> "$GITHUB_ENV"
 
       # Ubuntu 24.04 blocks the unprivileged user namespaces Chromium's sandbox

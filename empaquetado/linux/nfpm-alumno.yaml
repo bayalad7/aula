@@ -29,12 +29,17 @@ depends:
 # xdg-open: abrir una página en el navegador del alumno (open.url).
 recommends:
   - xdg-utils
+  # openh264: proyectar la pantalla del alumno a la clase (sin él, no se ofrece).
+  - libopenh264-7
 overrides:
   rpm:
     depends:
       - gtk3
       - webkit2gtk4.1
       - nftables
+    recommends:
+      - xdg-utils
+      - openh264
 
 contents:
   - src: ./bin/aula-cliente

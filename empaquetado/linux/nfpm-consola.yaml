@@ -22,11 +22,16 @@ license: Propietaria
 depends:
   - libgtk-3-0 | libgtk-3-0t64
   - libwebkit2gtk-4.1-0
+# openh264: transmitir la pantalla del profesor (sin él, «Mostrar mi pantalla» no se ofrece).
+recommends:
+  - libopenh264-7
 overrides:
   rpm:
     depends:
       - gtk3
       - webkit2gtk4.1
+    recommends:
+      - openh264
 
 contents:
   - src: ./bin/aula-consola

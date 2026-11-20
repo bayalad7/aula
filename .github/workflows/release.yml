@@ -165,7 +165,7 @@ jobs:
       - name: Tests (X11 under Xvfb)
         env:
           GOFLAGS: -tags=webkit2_41
-        run: xvfb-run -a go test ./...
+        run: xvfb-run -a dbus-run-session -- go test ./...
 
       - name: Install the Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1

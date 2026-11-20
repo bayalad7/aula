@@ -243,6 +243,10 @@ type BroadcastState struct {
 	Mode string `json:"mode"`
 	// Targeted is how many computers were selected; 0 means every one.
 	Targeted int `json:"targeted"`
+	// ConsoleVisible: the console window would be part of what is
+	// broadcast, because this OS cannot hide it from the capture (Linux X11,
+	// rule 106); the strip and the panel say so.
+	ConsoleVisible bool `json:"consoleVisible"`
 }
 
 // History is the numbered list of snippets of the session.

@@ -311,7 +311,9 @@
   const personal = scene === "clave-personal";
   const cls = { channel: "1", consoleName: "Prof. Ayala", publicKey: "aula-ed25519:Hq0rB7Gm1o5dYH0yXx3l0k3pG2b8m2w7m0K1q0b9JzA=",
     fingerprint: "K7QD-3MX2-9PLA-W4TZ", keySource: personal ? "personal" : "centro", port: 47830, certExpires: "2036-10-29" };
-  const bcActive = scene === "lab-transmitiendo";
+  // lab-transmitiendo-linux: una consola Linux (X11), que no puede sacar su ventana de lo que
+  // transmite (regla 106): la franja lo dice.
+  const bcActive = scene === "lab-transmitiendo" || scene === "lab-transmitiendo-linux";
   // La pantalla de un alumno mostrada a la clase (PresentState de apps/teacher/present.go,
   // prompt 12.1). Escenas: lab-proyectar-conectando y lab-proyectando (la ven 1 de 2). «Proyectar a la clase» conecta y,
   // poco después, la ven los dos (el alumno no responde nada: lo decide el profesor).
@@ -485,7 +487,7 @@
       ? { combo: "Ctrl+Alt+Shift+C", active: false, reason: "InUse", error: "" }
       : { combo: "Ctrl+Alt+Shift+C", active: true, reason: "", error: "" },
     broadcast: { active: bcActive, display: bcActive ? 0 : -1, receivers: bcActive ? 2 : 0, eligible: 2, available: true,
-      mode: bcActive ? "fullscreen" : "", targeted: 0 },
+      mode: bcActive ? "fullscreen" : "", targeted: 0, consoleVisible: scene === "lab-transmitiendo-linux" },
     restrictions, remote, snapshots: snaps, participation: Object.assign({}, part, { arrival: null }),
     timer: Object.assign({}, timer), polls: copiaPolls(), present: Object.assign({}, present), pauses: resumenPausas(),
   });

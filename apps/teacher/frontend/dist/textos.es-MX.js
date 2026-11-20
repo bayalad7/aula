@@ -594,6 +594,7 @@ window.AulaTextos = Object.freeze({
   "transmitir.monitor": "Monitor",
   "transmitir.monitorN": "Monitor {n}",
   "transmitir.nota": "La ventana de Aula no aparece en la transmisión.",
+  "transmitir.notaVisible": "Tu ventana de Aula también se ve en la transmisión.",
   "transmitir.noDisponible": "Este equipo no puede capturar sus monitores.",
   "transmitir.empezar": "Empezar",
   "transmitir.detener": "Detener",

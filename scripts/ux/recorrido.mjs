@@ -38,6 +38,7 @@ await f("11-confirmar-energia", "lab", { pasos: seq(click(fila("LAB3-PC07")), cl
 await f("12-panel-restricciones-activas", "lab-restr-activa", { pasos: click('[data-panel="restricciones"]') });
 await f("13-panel-aviso-error", "lab", { pasos: seq(click('[data-panel="aviso"]'), click("#aviso-enviar")) });
 await f("14-transmitiendo", "lab-transmitiendo");
+await f("14b-transmitiendo-linux", "lab-transmitiendo-linux");
 await f("15-energia-pendiente", "lab-energia-pendiente");
 // Control remoto (docs/protocol.md §5.16): desde la Pantalla grande (las acciones sobre un alumno ya
 // no están en la ficha, nota de interfaz 5), la vista en vivo, la franja, la pausa y el fin.

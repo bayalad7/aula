@@ -2303,6 +2303,10 @@
       const TF = "transmitir.franja."; // + BroadcastState.Mode (window, fullscreen)
       $("f-transmitiendo-texto").textContent = T(TF + (s.mode || "window"), { monitor: m ? m.label.split(" · ")[0] : T("transmitir.monitorN", { n: s.display + 1 }), r: s.receivers, n: s.eligible });
     }
+    // Linux (X11) no puede sacar la ventana de la consola de lo que se transmite (regla 106).
+    const nota = T(s.consoleVisible ? "transmitir.notaVisible" : "transmitir.nota");
+    $("f-transmitiendo-nota").textContent = nota;
+    $("pantalla-nota").textContent = nota;
     const n = s.active ? s.eligible : receptoresPantalla().length;
     $("pantalla-destino").textContent = n ? P("transmitir.destino", n) : T(seleccion.size ? "transmitir.nadieSeleccion" : "transmitir.nadie");
     pintarModoPantalla();

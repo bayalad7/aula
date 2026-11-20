@@ -30,10 +30,12 @@ func (a *App) newBroadcaster(maxKbps int) *broadcast.Broadcaster {
 		MaxKbps:  maxKbps,
 		Logger:   a.log,
 	}
-	if c, err := platform.NewDisplayCapture(); err == nil {
-		b.Capture = c
-	} else {
+	if c, err := platform.NewDisplayCapture(); err != nil {
 		a.log.Info("screen broadcast not available", "err", err)
+	} else if !platform.H264Available() {
+		a.log.Info("screen broadcast not available: no H.264 encoder (on Linux, install libopenh264)")
+	} else {
+		b.Capture = c
 	}
 	return b
 }
@@ -126,7 +128,9 @@ func (a *App) stateOf(s broadcast.Status) BroadcastState {
 		display = a.bc.Display()
 	}
 	return BroadcastState{Active: s.Active, Display: display, Receivers: s.Receivers, Eligible: s.Eligible,
-		Available: a.bc.Capture != nil, Mode: string(s.Mode), Targeted: s.Targeted}
+		Available: a.bc.Capture != nil, Mode: string(s.Mode), Targeted: s.Targeted,
+		// X11 cannot leave the console out of what is broadcast (rule 106).
+		ConsoleVisible: !platform.CanExcludeFromCapture()}
 }
 
 // onBroadcastStatus forwards the receiver counts; it runs on the caster's

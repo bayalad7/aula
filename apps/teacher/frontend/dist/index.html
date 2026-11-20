@@ -75,7 +75,7 @@
       <!-- Franjas globales: visibles en todas las vistas. -->
       <p class="franja franja--transmitiendo" id="f-transmitiendo" role="status" hidden>
         <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#transmitir"/></svg>
-        <span class="franja__texto"><span id="f-transmitiendo-texto"></span> <span class="franja__nota" data-t="transmitir.nota"></span></span>
+        <span class="franja__texto"><span id="f-transmitiendo-texto"></span> <span class="franja__nota" id="f-transmitiendo-nota" data-t="transmitir.nota"></span></span>
         <button type="button" class="btn btn--sm" id="f-transmitiendo-detener" data-t="transmitir.detener" data-icono="detener"></button>
       </p>
       <!-- La pantalla de un alumno mostrada a la clase (prompt 12.1), como «Mostrar mi pantalla». -->
@@ -854,7 +854,7 @@
             <p data-destino-hosts></p>
             <p id="pantalla-destino"></p>
             <label class="campo"><span class="campo__etiqueta" data-t="transmitir.monitor"></span><select id="pantalla-monitor" data-icono="pantalla"></select>
-              <span class="campo__ayuda" data-t="transmitir.nota"></span></label>
+              <span class="campo__ayuda" id="pantalla-nota" data-t="transmitir.nota"></span></label>
             <fieldset class="campo"><legend class="campo__etiqueta" data-t="transmitir.modo"></legend>
               <div class="opciones-seg">
               <label class="opcion-seg"><input type="radio" name="pantalla-modo" value="window" checked> <svg class="icono" aria-hidden="true"><use href="sistema/iconos.svg#app"/></svg> <span data-t="transmitir.modoVentana"></span></label>

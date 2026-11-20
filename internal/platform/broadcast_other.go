@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows && !linux
 
 package platform
 
@@ -8,3 +8,5 @@ package platform
 func newDisplayCapture() (DisplayCapture, error) { return nil, ErrNotSupported }
 
 func excludeFromCapture(bool) error { return ErrNotSupported }
+
+func canExcludeFromCapture() bool { return false }

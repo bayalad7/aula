@@ -64,6 +64,31 @@ func NewH264Encoder(cfg VideoEncoderConfig) (VideoEncoder, error) {
 // from the capture; older versions paint them black.
 func ExcludeFromCapture(exclude bool) error { return excludeFromCapture(exclude) }
 
+var h264Probe struct {
+	once sync.Once
+	ok   bool
+}
+
+// H264Available reports whether this computer can encode H.264 (openh264 on
+// Linux, the system's encoder on Windows). It tries a small encoder once.
+// Without it the console does not offer to broadcast and the agent does
+// not declare screen.present.
+func H264Available() bool {
+	h264Probe.once.Do(func() {
+		e, err := NewH264Encoder(VideoEncoderConfig{Width: 64, Height: 64, FPS: 5, BitrateKbps: 100, KeyframeEvery: 10})
+		if err == nil {
+			_ = e.Close()
+			h264Probe.ok = true
+		}
+	})
+	return h264Probe.ok
+}
+
+// CanExcludeFromCapture reports whether ExcludeFromCapture really hides the
+// windows. On Linux (X11) it cannot: the window stays in what is broadcast,
+// and the console says so (docs/privacidad.md rule 106).
+func CanExcludeFromCapture() bool { return canExcludeFromCapture() }
+
 // RGBAToNV12 converts img to NV12 (BT.601, limited range) into dst, which
 // must hold w*h*3/2 bytes for even w and h. It is the OS-independent half of
 // the encoders, split by rows across the CPUs.

@@ -314,3 +314,33 @@ func keycodeOfSym(c *xgb.Conn, sym xproto.Keysym) (xproto.Keycode, error) {
 	}
 	return findKeycode(m.Keysyms, int(m.KeysymsPerKeycode), first, sym, sym)
 }
+
+// The monitors of the X11 session, grabbed at their size: what the
+// broadcast and the presentation encode (rule 106).
+func TestX11DisplaysAndGrab(t *testing.T) {
+	needDisplay(t)
+	dc, err := NewDisplayCapture()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ds, err := dc.Displays()
+	if err != nil || len(ds) == 0 || !ds[0].Primary {
+		t.Fatalf("Displays = %+v, %v", ds, err)
+	}
+	img, err := dc.Grab(context.Background(), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if img.Bounds().Dx() != ds[0].Bounds.Dx() || img.Bounds().Dy() != ds[0].Bounds.Dy() {
+		t.Fatalf("grab %v, monitor %v", img.Bounds(), ds[0].Bounds)
+	}
+	if _, err := dc.Grab(context.Background(), 99); err == nil {
+		t.Error("a monitor that does not exist was grabbed")
+	}
+	if CanExcludeFromCapture() {
+		t.Error("X11 cannot exclude a window: the console must say it is seen")
+	}
+	if err := ExcludeFromCapture(true); err != nil {
+		t.Errorf("ExcludeFromCapture must not fail on Linux (presenting would refuse): %v", err)
+	}
+}

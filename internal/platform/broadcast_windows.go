@@ -121,3 +121,7 @@ func setAffinity(hwnd uintptr, exclude bool) error {
 	}
 	return nil
 }
+
+// canExcludeFromCapture: Windows 10 2004+ removes the windows from the
+// capture (older versions paint them black: still hidden).
+func canExcludeFromCapture() bool { return true }

@@ -42,8 +42,12 @@ func TestLinuxDeclaresOnlyWhatItDoes(t *testing.T) {
 			enablePlatform(a, quiet)
 			caps := a.hello.Capabilities
 
-			for _, c := range []protocol.Capability{protocol.CapScreenPresent, protocol.CapAppBlock,
-				protocol.CapWebFilter} {
+			// Presenting needs X11 and an H.264 encoder (openh264, rule 106).
+			if got, want := slices.Contains(caps, protocol.CapScreenPresent), tc.screen && platform.H264Available(); got != want {
+				t.Errorf("screen.present declared = %v, want %v (X11 and openh264)", got, want)
+			}
+			// Restrictions only as a service (D-025), never in window mode.
+			for _, c := range []protocol.Capability{protocol.CapAppBlock, protocol.CapWebFilter} {
 				if slices.Contains(caps, c) {
 					t.Errorf("declares %s, which Linux does not do yet", c)
 				}

@@ -96,7 +96,7 @@ func enablePlatform(app *App, log *slog.Logger) {
 	} else {
 		log.Info("screen thumbnails not available", "capture", capErr, "indicator", indErr)
 	}
-	if dc, err := platform.NewDisplayCapture(); err == nil && app.screen.Available() {
+	if dc, err := platform.NewDisplayCapture(); err == nil && app.screen.Available() && platform.H264Available() {
 		// The window and the badge are this process's: they leave the capture.
 		app.enablePresent(&broadcast.LocalPublisher{Capture: dc, NewEncoder: platform.NewH264Encoder,
 			Exclude: platform.ExcludeFromCapture, Logger: log})

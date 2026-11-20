@@ -78,7 +78,7 @@ func runHelper(channel string, log *slog.Logger) int {
 	if o, err := newPauseOverlay(); err == nil {
 		h.pause = o
 	}
-	if dc, err := platform.NewDisplayCapture(); err == nil && h.capture != nil {
+	if dc, err := platform.NewDisplayCapture(); err == nil && h.capture != nil && platform.H264Available() {
 		// The window and the badge are this process's: they leave the capture.
 		h.publish = &broadcast.LocalPublisher{Capture: dc, NewEncoder: platform.NewH264Encoder,
 			Exclude: platform.ExcludeFromCapture, Logger: log}

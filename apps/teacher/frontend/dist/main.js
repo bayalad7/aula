@@ -244,7 +244,13 @@
   // La selección se guarda por equipo (sobrevive a las reconexiones, que
   // cambian el ID de sesión); al enviar se traduce a los IDs vigentes.
   const seleccion = new Set();
-  const clave = (s) => (s.simulated ? "s:" : "r:") + s.hostname;
+  // Equipos clonados de una misma imagen pueden llamarse igual (prueba en laboratorio,
+  // 2026-11-25). Entonces cada conexión lleva su id en la clave: su fila, su tarjeta, su pantalla
+  // y su selección. pintarAlumnos calcula los repetidos con cada lista.
+  let hostsRepetidos = new Set();
+  const clave = (s) => (s.simulated ? "s:" : "r:") + s.hostname +
+    (s.id && hostsRepetidos.has(claveEquipo(s.hostname, s.simulated)) ? "#" + s.id : "");
+  const repetido = (s) => !!s.id && hostsRepetidos.has(claveEquipo(s.hostname, s.simulated));
 
   // --- Nombre visible de un equipo (prompt 10.15) ------------------------------------------
   // La etiqueta del salón («Fila 2 · PC07») o, sin ella, el hostname. Toda la consola muestra un
@@ -496,6 +502,12 @@
 
   function pintarAlumnos(st) {
     alumnos = st;
+    const vistos = new Set();
+    hostsRepetidos = new Set();
+    for (const s of st.students) {
+      const k = claveEquipo(s.hostname, s.simulated);
+      if (vistos.has(k)) hostsRepetidos.add(k); else vistos.add(k);
+    }
     avisarDuplicados(st);
     const apagados = (st.off || []).map(aApagado);
     const verApagados = mostrarApagados && modo === "lista";
@@ -1099,7 +1111,9 @@
     li.querySelector(".estado").replaceChildren(s.simulated ? insignia("simulado", "simulado", T("alumnos.simulado")) : estadoDe(s));
     if (s.healthAlerts && s.state === "connected") li.querySelector(".estado").append(" ", insigniaSalud(s));
     const host = hostSecundario(s);
-    li.querySelector(".alumno__sub").textContent = (s.username || T("alumnos.sinSesion")) + (host ? " · " + host : "");
+    // Con el nombre repetido, la dirección distingue una tarjeta de otra.
+    li.querySelector(".alumno__sub").textContent = (s.username || T("alumnos.sinSesion")) + (host ? " · " + host : "") +
+      (repetido(s) && s.address ? " · " + s.address : "");
     const img = li.querySelector("img");
     const texto = li.querySelector(".alumno__pantalla-texto");
     const puede = s.state === "connected" && s.canThumb;
@@ -1221,7 +1235,12 @@
     pintarAlumnos(alumnos);
   }
   function pintarSalonAlumnos() {
-    const porClave = new Map(alumnos.students.map((s) => [claveEquipo(s.hostname, s.simulated), s]));
+    // Con el nombre repetido, el asiento es de la primera conexión; las demás quedan en «Sin acomodar».
+    const porClave = new Map();
+    for (const s of alumnos.students) {
+      const k = claveEquipo(s.hostname, s.simulated), ya = porClave.get(k);
+      if (!ya || (ya.state !== "connected" && s.state === "connected")) porClave.set(k, s);
+    }
     const apagados = new Map((alumnos.off || []).map((o) => [claveEquipo(o.hostname, false), aApagado(o)]));
     const items = [];
     const cabecera = (texto, aria, ic, f, c, accion) => {
@@ -5331,9 +5350,10 @@
   }
   function avisarDuplicados(st) {
     for (const s of st.students) {
-      // Uno por equipo, no por conexión: las dos conexiones comparten clave.
-      if (s.simulated || s.state !== "connected" || !(s.duplicateOf && s.duplicateOf.length) || duplicadosAvisados.has(clave(s))) continue;
-      duplicadosAvisados.add(clave(s));
+      // Uno por equipo, no por conexión: las dos comparten claveEquipo (clave lleva el id).
+      const k = claveEquipo(s.hostname, s.simulated);
+      if (s.simulated || s.state !== "connected" || !(s.duplicateOf && s.duplicateOf.length) || duplicadosAvisados.has(k)) continue;
+      duplicadosAvisados.add(k);
       toast("advertencia", T("alumnos.duplicadoAviso", { equipo: nombreEquipo(s) }), T("alumnos.duplicadoAvisoTexto"), null,
         "alumnos#dos-conexiones-dicen-ser-el-mismo-equipo");
     }

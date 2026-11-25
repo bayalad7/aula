@@ -510,8 +510,36 @@ await f("229-laboratorio-oscuro-900x600", "lab-laboratorio", { oscuro: true, w: 
 // Revisión 11, I-2: dos conexiones dicen ser LAB3-PC07. Las dos filas con «Duplicado», el aviso de
 // la primera vez y la ficha con las direcciones.
 await f("230-duplicado-lista", "lab-duplicado");
-await f("231-duplicado-ficha", "lab-duplicado", { pasos: click(`${fila("LAB3-PC07")} .ficha`) });
-await f("232-duplicado-oscuro-900x600", "lab-duplicado", { oscuro: true, w: 900, h: 600, pasos: click(`${fila("LAB3-PC07")} .ficha`) });
+await f("231-duplicado-ficha", "lab-duplicado", { pasos: click('#alumnos-filas tr[data-clave^="r:LAB3-PC07"] .ficha') });
+await f("232-duplicado-oscuro-900x600", "lab-duplicado", { oscuro: true, w: 900, h: 600, pasos: click('#alumnos-filas tr[data-clave^="r:LAB3-PC07"] .ficha') });
+// Prueba en laboratorio (2026-11-25): equipos clonados con el mismo hostname. Cada conexión tiene
+// su tarjeta en Miniaturas y en Salón con su propia pantalla, y marcar una no marca la otra.
+const tarjetasPC07 = (zona) => (p) => p.evaluate((z) => [...document.querySelectorAll(z + " .alumno")]
+  .filter((li) => li.querySelector(".alumno__nombre").textContent === "Fila 2 · PC07")
+  .map((li) => ({ clave: li.dataset.clave, src: li.querySelector("img").getAttribute("src") || "", sel: li.dataset.seleccionado })), zona);
+const cuadrosPC07 = async (p) => p.evaluate(() => ["s-LAB3-PC07", "s-LAB3-PC07-b"].forEach((id, i) => window.__emit("aula:frame",
+  { sessionId: id, seq: 1, width: 320, height: 180, jpeg: window.__thumb("Conexión " + (i + 1), 210 + i * 60) })));
+const dosTarjetas = (zona) => async (p) => {
+  await sleep(200);
+  const t = await tarjetasPC07(zona)(p);
+  if (t.length !== 2 || t[0].clave === t[1].clave || !t[0].src || t[0].src === t[1].src) {
+    throw new Error("dos conexiones con el mismo hostname deben tener dos tarjetas con su pantalla: " + JSON.stringify(t.map((x) => ({ ...x, src: x.src.length }))));
+  }
+};
+const marcarUna = (zona) => async (p) => {
+  await p.click(zona + ' .alumno[data-clave^="r:LAB3-PC07"] .marca');
+  await sleep(150);
+  const t = await tarjetasPC07(zona)(p);
+  if (t.filter((x) => x.sel === "true").length !== 1) throw new Error("marcar una conexión marcó las dos: " + JSON.stringify(t.map((x) => x.sel)));
+};
+await f("233-duplicado-miniaturas", "lab-duplicado", { pasos: seq(click('[data-modo="miniaturas"]'), cuadrosPC07,
+  dosTarjetas("#alumnos-cuadricula"), marcarUna("#alumnos-cuadricula")) });
+await f("234-duplicado-salon", "lab-duplicado", { pasos: seq(click('[data-modo="salon"]'), cuadrosPC07, dosTarjetas("#alumnos-salon")) });
+await f("235-duplicado-un-aviso", "lab-duplicado", { pasos: async (p) => {
+  await sleep(200);
+  const n = await p.evaluate(() => [...document.querySelectorAll(".toast")].filter((t) => t.textContent.includes("Dos conexiones")).length);
+  if (n !== 1) throw new Error("el aviso de duplicado debe salir una vez por equipo, salió " + n);
+} });
 
 await cerrar();
 let graves = 0;

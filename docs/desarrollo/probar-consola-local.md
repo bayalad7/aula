@@ -26,8 +26,8 @@ En PowerShell, desde `C:\aula`:
 .\scripts\compilar.ps1 -Solo consola -Abrir
 ```
 
-La consola queda en `dist\local\bin\aula-consola.exe`; para volver a abrirla sin compilar,
-`& dist\local\bin\aula-consola.exe`. Qué es cada ejecutable: `ejecutables.md`.
+La consola queda en `dist\local\windows\bin\aula-consola.exe`; para volver a abrirla sin compilar,
+`& dist\local\windows\bin\aula-consola.exe`. Qué es cada ejecutable: `ejecutables.md`.
 
 Antes de abrirla:
 
@@ -39,7 +39,7 @@ Antes de abrirla:
   franja amarilla. Es lo esperado (caso C-14).
 - **Datos de la consola:** guarda canales recientes y nombre en `%AppData%\Aula\consola`. Para no
   tocar los tuyos, ábrela con otro directorio:
-  `$env:AULA_CONSOLE_DIR = "$env:TEMP\aula-prueba"; & dist\local\bin\aula-consola.exe`.
+  `$env:AULA_CONSOLE_DIR = "$env:TEMP\aula-prueba"; & dist\local\windows\bin\aula-consola.exe`.
 
 **Regla del proyecto:** estas pruebas las hace una persona. No se automatizan con clics o
 teclas sintéticas sobre el escritorio (ver la memoria del proyecto). Las capturas automáticas se
@@ -359,7 +359,7 @@ pide la CLI de Wails v2.17.1 (`wails version`).
 
 | Caso | Pasos | Esperado |
 |---|---|---|
-| C-154 | Abre `dist\local\bin\aula-consola.exe`; con un agente instalado en otro equipo o VM, espera a que aparezca y emite un snippet | El alumno aparece en Alumnos (descubierto por mDNS, conectado por TLS) y el snippet le llega; la consola abre con su tema y su menú como antes |
+| C-154 | Abre `dist\local\windows\bin\aula-consola.exe`; con un agente instalado en otro equipo o VM, espera a que aparezca y emite un snippet | El alumno aparece en Alumnos (descubierto por mDNS, conectado por TLS) y el snippet le llega; la consola abre con su tema y su menú como antes |
 | C-155 | Con la consola abierta, ábrela otra vez (doble clic en el `.exe` o desde Inicio) | No se abre una segunda consola: la que ya estaba vuelve al frente |
 | C-156 | **Transmitir** a ese alumno y luego **Detener**; después, en **Archivos**, elige un archivo para enviar con el diálogo de Windows | La transmisión arranca y se detiene; el diálogo para elegir archivo se abre y lo elegido aparece como antes |
 | A-65 | En el equipo del alumno: llega el snippet de C-154; pulsa **Copiar** y pega en un editor; ábrelo otra vez desde Inicio | Se copia formateado; abrir de nuevo trae la ventana que ya estaba (no abre otra). Durante la transmisión de C-156 la banda de transparencia aparece y se va al detener |
@@ -373,7 +373,7 @@ Lo que cambió con las correcciones de `docs/auditoria-2026-11-17.md`.
 | C-157 | Con dos VM de alumno con el **mismo nombre de equipo** (clonadas) en el canal | Las dos filas llevan «Duplicado»; sale **un** aviso «Dos conexiones dicen ser …»; la insignia abre la ficha, que dice arriba «Aviso · Duplicado · Otra conexión dice ser este equipo, desde <IP>» y en «Dirección» la suya. Al cerrar Aula en una VM, la marca se quita de la otra |
 | C-158 | Con las dos VM duplicadas, lanza un cuestionario, responde en las dos, ciérralo y **Exportar calificaciones**; luego abre una recolección y **Recoger** | El CSV tiene la columna «Aviso» con «Otra conexión dijo ser este equipo» en esa fila (vacía en las demás). En `aula-recoleccion.json` de ese equipo: `"address"` y `"duplicate": true`. Nada se descartó |
 | C-159 | En una VM, haz de solo lectura `Documentos\Aula` y envía un archivo; con restricciones de apps, abre una app bloqueada; luego abre `aula-agente.log` (o `aula-cliente.log`) | La tarjeta dice que no se pudo guardar; el registro dice `file push not saved reason=… err_kind="platform: access denied"`, sin la ruta, el nombre del archivo ni el usuario. «blocked app closed» lleva la política, nunca el nombre de la app |
-| C-160 | Go 1.27 (10.29): `go version` dice 1.27.x; compila con `scripts\compilar.ps1`, abre `dist\local\bin\aula-consola.exe` y, en una VM, el agente instalado con el instalador de `dist\local` | El alumno aparece (mDNS), se conecta por TLS con la clave del centro, recibe un snippet y **Copiar** funciona; **Transmitir** arranca y **Detener** la quita, como con Go 1.26 |
+| C-160 | Go 1.27 (10.29): `go version` dice 1.27.x; compila con `scripts\compilar.ps1`, abre `dist\local\windows\bin\aula-consola.exe` y, en una VM, el agente instalado con el instalador de `dist\local\windows` | El alumno aparece (mDNS), se conecta por TLS con la clave del centro, recibe un snippet y **Copiar** funciona; **Transmitir** arranca y **Detener** la quita, como con Go 1.26 |
 | C-161 | Go 1.27: en la VM, reinicia con el agente como servicio y entra con un usuario de alumno | El servicio «Aula — agente del aula» arranca y el ayudante abre la ventana en la sesión del alumno, con su icono en el área de notificación; la consola lo ve con todas sus capacidades |
 
 ### Linux, capa 1 (13)

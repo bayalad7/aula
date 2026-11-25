@@ -49,7 +49,7 @@ $env:CGO_ENABLED = '0'; go build -o dist\dos_alumnos.exe ./examples/dos_alumnos;
 # compiladas con el script (docs/desarrollo/ejecutables.md)
 .\scripts\compilar.ps1 -Solo alumno
 .\scripts\compilar.ps1 -Solo consola
-Copy-Item dist\local\bin\aula-cliente.exe, dist\local\bin\aula-consola.exe dist\
+Copy-Item dist\local\windows\bin\aula-cliente.exe, dist\local\windows\bin\aula-consola.exe dist\
 
 # Código de muestra para enviar
 Copy-Item examples\snippets\*.py dist\
@@ -722,7 +722,7 @@ casos para ella.
 ### 11.1 Preparación
 
 La etapa 09 todavía no tiene versión publicada: compila las dos apps como en §2.1
-(`.\scripts\compilar.ps1 -Solo alumno` y `-Solo consola`, en `dist\local\bin`).
+(`.\scripts\compilar.ps1 -Solo alumno` y `-Solo consola`, en `dist\local\windows\bin`).
 
 - **Si las VMs ya tienen instalada la v0.2** (§10), reemplaza solo los ejecutables. La
   configuración (canal y clave del centro) se conserva. En cada VM, en PowerShell **como
@@ -1367,10 +1367,100 @@ VM 1, en modo ventana en la VM 2) y en Ajustes › Salud la dirección `www.goog
 
 ## 31. Linux, capa 1 (13)
 
+### 31.0 Preparar las VMs Linux (una sola vez, para §31–§34)
+
+Dos VMs con **Ubuntu 24.04 Desktop** en **Hyper-V**: **L1** hace de profesor y **L2** de alumno.
+Para los casos con Windows (LX-E, LXT) se usa una VM Windows de alumno de las secciones
+anteriores (W1), en el mismo conmutador. Calcula **unos 90 minutos** la primera vez.
+
+> **Espacio en disco:** cada VM ocupa de 15 a 25 GB (disco dinámico) y la ISO unos 6 GB. Al
+> terminar, bórralas (paso 8): Hyper-V no libera el espacio solo.
+
+**1. Bajar Ubuntu.** La ISO de Ubuntu 24.04 LTS Desktop de `ubuntu.com/download/desktop`.
+
+**2. Crear L1** en el Administrador de Hyper-V › Nuevo › Máquina virtual:
+
+| Opción | Valor |
+|---|---|
+| Nombre | `aula-L1` (y luego `aula-L2`) |
+| Generación | **2** |
+| Memoria | 4096 MB (mínimo 2048), memoria dinámica activada |
+| Red | El **mismo conmutador** que las VMs Windows de alumno (p. ej. «Default Switch»): mDNS solo llega dentro del mismo conmutador |
+| Disco | Nuevo, **25 GB** |
+| Instalación | La ISO del paso 1 |
+
+Antes de encenderla, en **Configuración › Seguridad**, cambia la plantilla de Arranque seguro a
+**«Entidad de certificación UEFI de Microsoft»** (con la plantilla de Windows, Ubuntu no
+arranca), y en **Procesador** dale **2** procesadores virtuales.
+
+**3. Instalar Ubuntu.** Instalación **normal** (no mínima), con un usuario cualquiera (p. ej.
+`profe` en L1 y `alumno` en L2) y el nombre de equipo `lab-ubuntu-01` en L1 y `lab-ubuntu-02` en
+L2. Repite los pasos 2 y 3 para L2 (o, con L1 recién instalada y apagada, expórtala e impórtala
+como copia, y en L2 cambia el nombre con `sudo hostnamectl set-hostname lab-ubuntu-02`).
+
+**4. Sin sesión mejorada, y en Xorg.** En la ventana de cada VM, menú **Ver › desmarca «Sesión
+mejorada»**: la sesión mejorada entra por xrdp, que para Linux es una sesión **remota**, y Aula a
+propósito no abre la ventana del alumno ni ve su pantalla en sesiones remotas (D-024). En la
+pantalla de inicio de sesión, elige tu usuario, pulsa la **rueda** de abajo a la derecha y elige
+**«Ubuntu en Xorg»** antes de escribir la contraseña. En L2 conviene además, para que nunca
+entre en Wayland, `sudo sed -i 's/^#WaylandEnable=false/WaylandEnable=false/' /etc/gdm3/custom.conf`
+y reiniciar (para el caso LX-C vuelve a ponerlo en `#WaylandEnable=false`).
+
+**5. Bajar los paquetes del CI** (en tu equipo, PowerShell, desde `C:\aula`). Cada push a
+`develop` deja los paquetes de Linux del job «Paquetes de Linux» durante 7 días, con la versión
+en preparación y el número de la corrida (p. ej. `0.1.0-ci.123`; en el `.deb`, `0.1.0~ci.123`, que
+`apt` ordena antes de la `0.1.0` publicada):
+
+```powershell
+.\scripts\compilar.ps1 -Solo linux   # a dist\local\linux: aula-cliente_0.1.0~ci.123_amd64.deb, …
+```
+
+Toma la última corrida verde de `develop` que los tenga y avisa si son de un commit distinto al
+tuyo (tus cambios sin subir no están en ellos). Con `-Linux` en vez de `-Solo linux` los baja
+además de compilar lo de Windows. Necesita `gh` con sesión (`gh auth login`).
+
+**6. Llevarlos a las VMs.** Sirve la carpeta desde tu equipo con Python (Windows preguntará por el
+firewall: permite solo **redes privadas**) y anota tu IP (`ipconfig`, la del adaptador del
+conmutador, p. ej. «vEthernet (Default Switch)»):
+
+```powershell
+cd dist\local\linux; python -m http.server 8000
+```
+
+En cada VM, en una terminal (`Ctrl+Alt+T`):
+
+```sh
+mkdir -p ~/aula && cd ~/aula
+wget http://<IP-de-tu-equipo>:8000/aula-consola_<versión>_amd64.deb   # en L1 (el nombre que dio `dir`)
+wget http://<IP-de-tu-equipo>:8000/aula-cliente_<versión>_amd64.deb   # en L2
+```
+
+Al terminar, `Ctrl+C` en la terminal de Python.
+
+**7. Instalar** (los pasos de §31 abajo; `apt` instala solo las dependencias, incluido
+`libopenh264-7` para transmitir y proyectar). Para los casos de las §33–§34, en L2 instala también
+`sudo apt install thonny` (Firefox ya viene). Para pasar `aula-centro.pub` de L1 a L2, en L1:
+`cd ~/aula && python3 -m http.server 8000`, y en L2 `wget http://<IP-de-L1>:8000/aula-centro.pub`
+(la IP con `ip -4 addr`).
+
+**8. Al terminar todo, borrar las VMs.** En PowerShell **como administrador**:
+
+```powershell
+Stop-VM aula-L1, aula-L2 -TurnOff -ErrorAction SilentlyContinue
+$discos = (Get-VM aula-L1, aula-L2 | Get-VMHardDiskDrive).Path
+Remove-VM aula-L1, aula-L2 -Force
+Remove-Item $discos
+Remove-Item C:\aula\dist\local\linux -Recurse -Force
+```
+
+Y borra la ISO si ya no la necesitas.
+
+### 31.1 Los casos de la capa 1
+
 Comprueba los criterios de aceptación del prompt 13 en Linux: un alumno con **Ubuntu 24.04** se
 conecta al canal, recibe código y lo pega intacto; existe el paquete instalable; la tabla de
-`docs/compatibilidad.md` es honesta. Dos VMs con Ubuntu 24.04 Desktop en la misma red, con los
-paquetes del release (o los de `docs/desarrollo/empaquetar-linux.md`):
+`docs/compatibilidad.md` es honesta. Las dos VMs de §31.0, con los paquetes del CI (o los de un
+release):
 
 - **VM L1 (profesor):** `sudo apt install ./aula-consola_*.deb`, `sudo aula-consola centro crear`,
   `sudo aula-consola centro publica -o aula-centro.pub`, `sudo usermod -aG aula <usuario>` y

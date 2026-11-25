@@ -32,12 +32,13 @@ wails dev         # abre la ventana con recarga en vivo
 
 ## Compilar
 
-En Windows, un solo comando deja todo en `dist\local` (qué es cada ejecutable:
+En Windows, un solo comando deja todo en `dist\local\windows` (y con `-Linux`, los paquetes de
+Linux del CI en `dist\local\linux`; qué es cada ejecutable:
 `docs/desarrollo/ejecutables.md`):
 
 ```powershell
 .\scripts\compilar.ps1                  # las dos apps y los dos instaladores
-.\scripts\compilar.ps1 -Solo consola    # solo dist\local\bin\aula-consola.exe
+.\scripts\compilar.ps1 -Solo consola    # solo dist\local\windows\bin\aula-consola.exe
 ```
 
 En Linux y macOS, `wails build` dentro de `apps/teacher` y `apps/student` (en Linux,

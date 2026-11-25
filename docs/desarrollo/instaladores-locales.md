@@ -26,10 +26,10 @@ En PowerShell, desde la raíz del repositorio (`C:\aula`):
 
 La versión es lo que muestran las apps (`aula-consola version`, la barra del alumno y el
 `hello`); deja un sufijo `-dev` para no confundirla con una versión publicada. El script vacía
-`dist\local`, compila las dos apps como el release (sin cgo, rutas recortadas, versión
+`dist\local\windows`, compila las dos apps como el release (sin cgo, rutas recortadas, versión
 embebida), comprueba la versión que quedó dentro y genera los instaladores con Inno Setup.
 
-Tarda unos 4 minutos. Resultado en `dist\local` (detalle en `ejecutables.md`):
+Tarda unos 4 minutos. Resultado en `dist\local\windows` (detalle en `ejecutables.md`):
 
 | Archivo | Uso |
 |---|---|
@@ -70,6 +70,6 @@ pueden verificar (`publicar.md` §5).
   - y en el alumno, `aula-cliente.exe diagnostico` en `cmd`.
 - Para dejar una VM limpia: desinstala "Aula Cliente" y "Aula Consola" desde Configuración →
   Aplicaciones. El servicio se borra con el alumno (`sc query AulaAgente` debe decir que no
-  existe). Para quitar los instaladores locales de tu equipo, borra `dist\local`.
+  existe). Para quitar los instaladores locales de tu equipo, borra `dist\local\windows`.
 - Cuando la prueba salga bien y quieras llevarlo al laboratorio, publica una prerelease
   (`vX.Y.Z-rc.N`) con `publicar.md`.

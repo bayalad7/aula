@@ -62,6 +62,20 @@ Los paquetes los describen `empaquetado/linux/nfpm-alumno.yaml` y `nfpm-consola.
 scripts en `empaquetado/linux/scripts/`. El mantenedor y la licencia son provisionales hasta la
 comercialización (prompt 16).
 
+## Paquetes de cada push
+
+El job «Paquetes de Linux» del CI sube en cada push los `.deb`, `.rpm` y la AppImage (versión
+`0.1.0-ci.<corrida>`: la versión en preparación de `docs/ux/notas/VERSION` y el número de la corrida) como
+artefacto `paquetes-linux`, por 7 días: sirven para probar en una VM sin compilar
+nada (`docs/prueba-vms.md` §31.0).
+
+En Windows, `.\scripts\compilar.ps1 -Solo linux` los baja de la última corrida verde de
+`develop` a `dist\local\linux` (`-Linux` lo hace además de compilar lo de Windows). A mano:
+
+```sh
+gh run download <id de la corrida> -n paquetes-linux -D dist/local/linux
+```
+
 ## Probar los paquetes
 
 **Cambia el equipo**: instala, crea una clave del centro, configura y desinstala. Úsalo en un

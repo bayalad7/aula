@@ -1,6 +1,6 @@
 # Progreso
 
-Última actualización: 2026-11-18 (13, capa 3 de Linux empezada sin commit: abrir páginas y comprobador de red; capa 2 en develop: servicio de systemd, control remoto, pausa, energía, encender y salud; capa 1 en develop: paquetes `.deb`, `.rpm` y AppImage, pantalla y atajo en X11, `docs/compatibilidad.md`; falta la prueba en VM §31; revisión 11 hecha y en `develop`: informe y correcciones en
+Última actualización: 2026-11-25 (corrección tras la prueba en laboratorio: equipos clonados con el mismo nombre compartían una sola miniatura que alternaba sus pantallas, y una sola casilla; ahora cada conexión tiene su tarjeta, su pantalla y su selección; falta C-176 en el laboratorio; 13, capa 3 de Linux empezada sin commit: abrir páginas y comprobador de red; capa 2 en develop: servicio de systemd, control remoto, pausa, energía, encender y salud; capa 1 en develop: paquetes `.deb`, `.rpm` y AppImage, pantalla y atajo en X11, `docs/compatibilidad.md`; falta la prueba en VM §31; revisión 11 hecha y en `develop`: informe y correcciones en
 `docs/auditoria-2026-11-17.md`, faltan C-157 a C-159 en VM; prompt 16.1 escrito: firma de código y distribución sin costo,
 para cuando empiece la comercialización; 10.29 Go 1.27 implementada y en `develop`: `go 1.27.0`,
 CI y release en `1.27.x`, ningún GODEBUG cambia lo que hace Aula, atiende M-8; faltan C-160 y

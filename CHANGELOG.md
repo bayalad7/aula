@@ -26,7 +26,10 @@ retiraron; esta es la primera.
 - **Duplicado:** si dos conexiones dicen ser el mismo equipo (un equipo clonado o alguien
   haciéndose pasar por otro), las dos filas lo marcan, la ficha dice desde qué dirección se conecta
   cada una y la consola avisa una vez. Las calificaciones (columna «Aviso») y lo recogido lo
-  registran; nada se descarta. La ficha muestra también la dirección de cada alumno.
+  registran; nada se descarta. La ficha muestra también la dirección de cada alumno. Equipos con
+  el mismo nombre tienen cada uno su miniatura (con su dirección), su pantalla y su casilla; antes
+  compartían una sola tarjeta que alternaba sus pantallas. En el Salón, el asiento es de uno y los
+  demás quedan en «Sin acomodar».
 
 ### Código
 

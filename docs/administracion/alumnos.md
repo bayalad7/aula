@@ -131,7 +131,9 @@ recoja guarda la dirección y la marca en `aula-recoleccion.json`.
 Qué revisar:
 
 1. **Dos equipos con el mismo nombre** (por ejemplo, clonados de la misma imagen): pide al
-   administrador que les ponga nombres distintos. Es lo más común.
+   administrador que les ponga nombres distintos. Es lo más común. Mientras tanto, cada uno tiene
+   su miniatura, que dice su dirección para distinguirlos; en el **Salón** solo uno ocupa el
+   asiento y los demás quedan en «Sin acomodar», porque el plano reconoce los equipos por su nombre.
 2. **Un equipo que no es del salón**: compara la dirección de cada ficha con la del equipo del
    alumno (en ese equipo, `ipconfig` en una terminal dice su «Dirección IPv4»). La que no coincide
    es la que se hace pasar por él: revisa a mano sus respuestas y su entrega y avisa al

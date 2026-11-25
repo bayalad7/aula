@@ -137,6 +137,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libopenh264-dev
 
+      # The version in preparation (docs/ux/notas/VERSION, as scripts/compilar.ps1 reads it)
+      # plus the run: 0.1.0-ci.123 (0.1.0~ci.123 in the .deb, which sorts before 0.1.0).
+      - name: Version of the packages
+        run: |
+          prep="$(tr -d '[:space:]' < docs/ux/notas/VERSION)"
+          echo "VERSION=${prep#v}-ci.${{ github.run_number }}" >> "$GITHUB_ENV"
+
       - name: Build the apps
         env:
           CGO_ENABLED: '1'
@@ -144,15 +151,24 @@ jobs:
           go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1
           mkdir -p dist/bin
           for app in teacher student; do
-            (cd "apps/$app" && wails build -clean -trimpath -tags webkit2_41 -ldflags "-X main.version=0.0.0-ci")
+            (cd "apps/$app" && wails build -clean -trimpath -tags webkit2_41 -ldflags "-X main.version=$VERSION")
           done
           cp apps/teacher/build/bin/aula-consola apps/student/build/bin/aula-cliente dist/bin/
 
       - name: Build the packages
-        run: bash empaquetado/linux/empaquetar.sh 0.0.0-ci dist/bin dist/release
+        run: bash empaquetado/linux/empaquetar.sh "$VERSION" dist/bin dist/release
+
+      # For the manual test on VMs (docs/prueba-vms.md, «Preparar las VMs Linux»):
+      # gh run download <run> -n paquetes-linux
+      - uses: actions/upload-artifact@v7
+        with:
+          name: paquetes-linux
+          path: dist/release/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Install, configure and remove the .deb
-        run: bash empaquetado/linux/probar-paquetes.sh deb dist/release 0.0.0-ci
+        run: bash empaquetado/linux/probar-paquetes.sh deb dist/release "$VERSION"
 
   # Walks the teacher console's real frontend in headless Chromium with the
   # bindings faked (scripts/ux): fails on JS errors or serious/critical axe-core

@@ -15,7 +15,7 @@ coverage.*
 go.work
 go.work.sum
 
-# Wails: build output (paso intermedio; el script lo copia a dist\local\bin) and generated bindings
+# Wails: build output (paso intermedio; el script lo copia a dist\local\windows\bin) and generated bindings
 apps/*/build/bin/
 apps/*/frontend/wailsjs/
 

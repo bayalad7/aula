@@ -79,8 +79,10 @@ function Get-LinuxPackages {
             $sha = $run.headSha.Substring(0, 7)
             Write-Host "== Paquetes de Linux del CI (commit $sha, $($run.createdAt)) en $dest"
             $head = (git -C $root rev-parse --short=7 HEAD).Trim()
-            if ($head -ne $sha -or (git -C $root status --porcelain)) {
-                Write-Warning "Son del commit $sha; tu código local ($head, con o sin cambios) no está en ellos."
+            if ($head -ne $sha) {
+                Write-Warning "Son del commit $sha y tu código está en ${head}: lo que no hayas subido no está en ellos."
+            } elseif (git -C $root status --porcelain) {
+                Write-Warning "Son de tu commit $sha, sin tus cambios que aún no tienen commit."
             }
             return
         }

@@ -15,8 +15,10 @@ import (
 )
 
 // inspectTimeout bounds the PowerShell run: listing the firewall filters
-// takes a few seconds on a machine with many rules.
-const inspectTimeout = 30 * time.Second
+// takes a few seconds on a machine with many rules, and the network profiles
+// come from WMI, which can be slow right after boot. A variable so the test,
+// on a loaded CI runner, can wait longer.
+var inspectTimeout = 30 * time.Second
 
 func newNetworkInspector() (NetworkInspector, error) { return winNetwork{}, nil }
 
@@ -57,6 +59,10 @@ func (winNetwork) Inspect(ctx context.Context, program string, port int) (Networ
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
+	if ctx.Err() != nil {
+		// Killed by the deadline or the caller: Windows reports only "exit status 1".
+		return NetworkState{}, fmt.Errorf("network inspect: %w", ctx.Err())
+	}
 	if err != nil {
 		return NetworkState{}, fmt.Errorf("network inspect: %w: %s", err, strings.TrimSpace(stderr.String()))
 	}
